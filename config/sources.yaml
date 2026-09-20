@@ -1,0 +1,19 @@
+sources:
+  - key: ga_supreme_opinions
+    name: Supreme Court of Georgia Opinions
+    base_url: https://www.gasupreme.us/
+    allowed_hosts: [www.gasupreme.us, gasupreme.us]
+    kind: appellate_opinions
+    authoritative: true
+  - key: ga_courts
+    name: Georgia Judicial Council / Administrative Office of the Courts
+    base_url: https://georgiacourts.gov/
+    allowed_hosts: [georgiacourts.gov, www.georgiacourts.gov, assets.georgiacourts.gov]
+    kind: court_rules_and_resources
+    authoritative: true
+  - key: ga_general_assembly
+    name: Georgia General Assembly
+    base_url: https://www.legis.ga.gov/
+    allowed_hosts: [www.legis.ga.gov, legis.ga.gov]
+    kind: legislation_and_public_documents
+    authoritative: true

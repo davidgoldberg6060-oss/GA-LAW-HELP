@@ -1,2 +1,17 @@
-# GA-LAW-HELP
-Stand alone assistant GA LAW HELP
+# STANDALONE ASSISTANT GA.LAW.HELP — v1.3 production foundation
+
+Production-oriented starter for a standalone Georgia legal research and case-intelligence application.
+
+Current layers include owner-scoped authenticated cases, email verification and SMTP password recovery, refresh-token rotation/reuse detection/revocation, evidence integrity and resumable large-media jobs, an encrypted-session Android client, official-source ingestion/provenance, historical legal authority/version handling, Supabase/PostgreSQL migrations, and Case Intelligence: retrieval, Why?, favorable/adverse authority, Red-Team and Second-Look screening.
+
+This remains a development build. Before public release it still requires production hosting and secret configuration, live migration and SMTP verification, complete official-source ingestion, a real search/vector index, model-provider integration, MFA, privacy/retention controls, observability, independent security review, Play Store release engineering, and legal-data QA.
+
+## Verification
+
+```bash
+python -m venv .venv
+.venv/bin/pip install -r backend/requirements.txt pytest httpx
+.venv/bin/pytest -q
+```
+
+See `docs/SUPABASE.md` for the GALAWHELP deployment contract and `android/README.md` for Android build configuration.
