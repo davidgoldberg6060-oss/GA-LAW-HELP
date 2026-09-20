@@ -1,5 +1,9 @@
 import os
 import tempfile
+import hashlib
+import hmac
+import json
+import time
 from pathlib import Path
 
 _tmp = Path(tempfile.mkdtemp(prefix="galawhelp-test-"))
@@ -119,3 +123,22 @@ def test_free_account_cannot_bypass_paid_api():
         assert client.get("/cases", headers=headers).status_code == 403
         assert client.get("/me", headers=headers).status_code == 200
         assert client.get("/health/live").status_code == 200
+
+
+def test_signed_billing_webhook_activates_membership():
+    os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_unit_test"
+    with TestClient(app) as client:
+        account = client.post("/auth/register", json={"email": "billing@example.com", "password": "billing-account-secure-password"}).json()
+        headers = auth_header(account["access_token"])
+        profile = client.get("/me", headers=headers).json()
+        assert profile["role"] == "user"
+        event = {"id":"evt_test_paid","type":"checkout.session.completed","data":{"object":{"client_reference_id":str(profile["id"]),"metadata":{"user_id":str(profile["id"])}}}}
+        payload = json.dumps(event, separators=(",", ":")).encode()
+        timestamp = int(time.time())
+        digest = hmac.new(b"whsec_unit_test", str(timestamp).encode() + b"." + payload, hashlib.sha256).hexdigest()
+        response = client.post("/billing/webhook", content=payload, headers={"Stripe-Signature":f"t={timestamp},v1={digest}","Content-Type":"application/json"})
+        assert response.status_code == 200
+        assert client.get("/me", headers=headers).json()["role"] == "paid"
+        assert client.get("/cases", headers=headers).status_code == 200
+        bad = client.post("/billing/webhook", content=payload, headers={"Stripe-Signature":f"t={timestamp},v1=bad"})
+        assert bad.status_code == 400

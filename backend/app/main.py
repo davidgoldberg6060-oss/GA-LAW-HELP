@@ -14,6 +14,7 @@ from .token_service import (issue_refresh, rotate_refresh, revoke_refresh, issue
     issue_email_verification, consume_email_verification, revoke_all_user_refresh_tokens)
 from .email_delivery import deliver_verification, deliver_password_reset, deliver_encounter_notice
 from .ai_assistant import ask_openai
+from .billing import checkout_configured, create_checkout, verify_webhook
 
 def validate_production_config():
     if os.getenv('ENVIRONMENT','development').lower() == 'production':
@@ -78,6 +79,35 @@ async def security_headers(request:Request,call_next):
 
 def audit(db, user_id, action, obj, oid=None):
     db.add(models.AuditLog(user_id=user_id, action=action, object_type=obj, object_id=str(oid) if oid else None))
+
+@app.get('/billing/status')
+def billing_status(user=Depends(current_user)):
+    return {'role':user.role,'paid':user.role in ('paid','admin'),'checkout_configured':checkout_configured()}
+
+@app.post('/billing/checkout')
+def billing_checkout(user=Depends(current_user)):
+    if user.role in ('paid','admin'): return {'already_paid':True}
+    try: return create_checkout(user.id,user.email)
+    except RuntimeError as exc: raise HTTPException(503,str(exc))
+
+@app.post('/billing/webhook')
+async def billing_webhook(request:Request,db:Session=Depends(get_db)):
+    payload=await request.body()
+    try: event=verify_webhook(payload,request.headers.get('Stripe-Signature',''))
+    except ValueError: raise HTTPException(400,'Invalid webhook signature')
+    event_type=str(event.get('type','')); obj=event.get('data',{}).get('object',{}) or {}
+    metadata=obj.get('metadata',{}) or {}
+    raw_uid=obj.get('client_reference_id') or metadata.get('user_id')
+    if event_type in ('checkout.session.completed','customer.subscription.created','customer.subscription.updated','customer.subscription.deleted') and raw_uid:
+        try: uid=int(raw_uid)
+        except (TypeError,ValueError): uid=0
+        account=db.get(models.User,uid) if uid else None
+        if account and account.role!='admin':
+            status=str(obj.get('status',''))
+            active=event_type=='checkout.session.completed' or (event_type!='customer.subscription.deleted' and status in ('active','trialing'))
+            account.role='paid' if active else 'user'
+            audit(db,account.id,'MEMBERSHIP_ACTIVATED' if active else 'MEMBERSHIP_DEACTIVATED','user',account.id);db.commit()
+    return {'received':True}
 
 @app.get('/health')
 def health(): return {'status':'ok','service':'GA.LAW.HELP','version':'1.3.0'}

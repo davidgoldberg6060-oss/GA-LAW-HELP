@@ -169,7 +169,7 @@ export default function App(){
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);const recoveryIdRef=useRef<string|null>(null);const recordingCaseIdRef=useRef<number|undefined>(undefined);
  const[incident,setIncident]=useState<IncidentDraft>(()=>{try{const saved=localStorage.getItem('ga_incident_draft');if(saved)return JSON.parse(saved)}catch{}return{startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''}});
  const[trusted,setTrusted]=useState<TrustedContact>(()=>{try{const saved=localStorage.getItem('ga_trusted_contact');if(saved)return JSON.parse(saved)}catch{}return{name:'',phone:''}});
- const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');const[caseDefenseResult,setCaseDefenseResult]=useState('');const[similarAuthorities,setSimilarAuthorities]=useState<SimilarAuthority[]>([]);const[evidence,setEvidence]=useState<EvidenceItem[]>([]);const[evidenceBusy,setEvidenceBusy]=useState(false);const[online,setOnline]=useState(()=>navigator.onLine);const[installPrompt,setInstallPrompt]=useState<any>(null);const[paywallOpen,setPaywallOpen]=useState(false);
+ const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');const[caseDefenseResult,setCaseDefenseResult]=useState('');const[similarAuthorities,setSimilarAuthorities]=useState<SimilarAuthority[]>([]);const[evidence,setEvidence]=useState<EvidenceItem[]>([]);const[evidenceBusy,setEvidenceBusy]=useState(false);const[online,setOnline]=useState(()=>navigator.onLine);const[installPrompt,setInstallPrompt]=useState<any>(null);const[paywallOpen,setPaywallOpen]=useState(false);const[billingBusy,setBillingBusy]=useState(false);
 
  useEffect(()=>{
   const updateOnline=()=>setOnline(navigator.onLine);const captureInstall=(event:any)=>{event.preventDefault();setInstallPrompt(event)};
@@ -180,7 +180,14 @@ export default function App(){
   authApi('/me').then(setUser).catch(()=>{clearSession();setUser(null)});
  },[]);
  useEffect(()=>{
-  const params=new URLSearchParams(window.location.search);const token=params.get('token');
+  const params=new URLSearchParams(window.location.search);const membership=params.get('membership');
+  if(membership==='cancelled'){window.history.replaceState({},'', '/');setNotice('Checkout cancelled. You were not charged.')}
+  if(membership==='success'&&accessToken()){
+   window.history.replaceState({},'', '/');setNotice('Payment received. Activating membership…');
+   let attempts=0;const check=()=>authApi('/me').then(profile=>{setUser(profile);if(profile.role==='paid'||profile.role==='admin'){setPaywallOpen(false);setNotice('Membership active. Paid tools are unlocked.');return}if(++attempts<6)window.setTimeout(check,2000)}).catch(()=>{});
+   check();
+  }
+  const token=params.get('token');
   if(window.location.pathname==='/reset-password'&&token){setMode('reset');setAuthOpen(true);setAuthError('');return}
   if(window.location.pathname==='/verify-email'&&token){
    setAuthOpen(true);setAuthBusy(true);
@@ -434,6 +441,12 @@ export default function App(){
   if(!('speechSynthesis'in window)){setNotice('Read-aloud is not supported in this browser.');return}
   window.speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(text);speech.rate=.9;speech.pitch=1;window.speechSynthesis.speak(speech);
  }
+ async function startCheckout(){
+  if(!user){setPaywallOpen(false);setMode('register');setAuthOpen(true);return}
+  setBillingBusy(true);
+  try{const result=await authApi('/billing/checkout',{method:'POST',body:'{}'});if(result.already_paid){setPaywallOpen(false);setUser({...user,role:'paid'});return}if(!result.checkout_url)throw new Error('Secure checkout is unavailable.');window.location.assign(result.checkout_url)}
+  catch(error){setNotice(error instanceof Error?error.message:'Secure checkout could not be started.')}finally{setBillingBusy(false)}
+ }
  async function installApp(){
   if(!installPrompt)return;await installPrompt.prompt();await installPrompt.userChoice.catch(()=>null);setInstallPrompt(null);
  }
@@ -552,8 +565,8 @@ export default function App(){
   {paywallOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)setPaywallOpen(false)}}><section className="modal paywallModal" role="dialog" aria-modal="true" aria-label="Paid membership required">
    <button className="close" onClick={()=>setPaywallOpen(false)} aria-label="Close"><X/></button><LockKeyhole className="modalLogo"/><span className="eyebrow">GA.LAW.HELP Membership</span><h2>Paid feature</h2>
    <p>Funny & Myth Checker stays free. Ask GA.LAW.HELP, rights guidance, police-encounter help, emergency guidance, cases, documents, recordings, motion screening and defense analysis require a paid membership.</p>
-   {!user?<div className="paywallActions"><button className="primary" onClick={()=>{setPaywallOpen(false);setMode('register');setAuthOpen(true)}}>Create account</button><button onClick={()=>{setPaywallOpen(false);setMode('login');setAuthOpen(true)}}>Sign in</button></div>:<div className="membershipStatus"><ShieldCheck/><span><b>Signed in — membership inactive</b><small>Secure checkout is the next connection. Your free account remains available for Funny & Myth learning.</small></span></div>}
-   <small className="previewNote">No charge will occur until a secure checkout provider and price are connected.</small>
+   {!user?<div className="paywallActions"><button className="primary" onClick={()=>{setPaywallOpen(false);setMode('register');setAuthOpen(true)}}>Create account</button><button onClick={()=>{setPaywallOpen(false);setMode('login');setAuthOpen(true)}}>Sign in</button></div>:<><div className="membershipStatus"><ShieldCheck/><span><b>Signed in — membership inactive</b><small>Your free account remains available for Funny & Myth learning.</small></span></div><button className="primary membershipCheckout" disabled={billingBusy} onClick={startCheckout}>{billingBusy?<><LoaderCircle className="spin" size={16}/>Opening secure checkout…</>:<>Start paid membership</>}</button></>}
+   <small className="previewNote">Checkout opens on Stripe. Access unlocks only after Stripe confirms the subscription.</small>
   </section></div>}
   {authOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget&&mode!=='reset')setAuthOpen(false)}}><section className={`modal authModal ${mode==='register'?'registerMode':''}`} role="dialog" aria-modal="true" aria-label="Account access">
    <button className="close" onClick={()=>{if(mode==='reset')window.history.replaceState({},'', '/');setAuthOpen(false)}} aria-label="Close"><X/></button>
