@@ -5,6 +5,10 @@ const API='https://api-production-60cc.up.railway.app';
 type Resource={title:string;url:string;kind:string;official:boolean};
 type Research={query:string;topic:string;guidance:string;resources:Resource[];notice:string};
 type User={id:number;email:string;role:string};
+type CaseSummary={id:number;title:string;case_number:string|null;county:string|null;case_type:string;stage:string|null};
+type CaseForm={title:string;case_number:string;county:string;case_type:string;stage:string;narrative:string};
+type Finding={id:number;issue:string;category:string;favors:string;analysis:string;counterargument:string;facts_needed:string;confidence:string};
+const emptyCase=():CaseForm=>({title:'',case_number:'',county:'',case_type:'criminal',stage:'investigation',narrative:''});
 const funFacts=[
 {title:'Why old laws can sound strange',text:'Georgia law has been revised for generations. Some rules that sound funny online may be outdated, local, misquoted, or missing important context.'},
 {title:'Myth or real law?',text:'GA.LAW.HELP separates viral “weird law” claims from rules that can be traced to an official source.'},
@@ -116,19 +120,24 @@ async function api(path:string,options:RequestInit={}){
  if(!res.ok)throw new Error(typeof data.detail==='string'?data.detail:'Request failed');
  return data;
 }
+async function authApi(path:string,options:RequestInit={}){
+ const token=localStorage.getItem('ga_access_token');if(!token)throw new Error('Sign in to use the private case workspace.');
+ return api(path,{...options,headers:{...(options.headers||{}),Authorization:'Bearer '+token}});
+}
 
 export default function App(){
  const[q,setQ]=useState('');const[research,setResearch]=useState<Research|null>(null);const[researching,setResearching]=useState(false);
  const[authOpen,setAuthOpen]=useState(false);const[mode,setMode]=useState<'login'|'register'>('login');
  const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[authError,setAuthError]=useState('');const[authBusy,setAuthBusy]=useState(false);
  const[user,setUser]=useState<User|null>(null);const[notice,setNotice]=useState('');
- const[tool,setTool]=useState<'avoid'|'police'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
+ const[tool,setTool]=useState<'avoid'|'police'|'case'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
  const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);
  const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
  const[retentionDays,setRetentionDays]=useState<180|365|400>(()=>{const saved=Number(localStorage.getItem('ga_audio_retention_days'));return saved===180||saved===400?saved:365});
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);
  const[incident,setIncident]=useState<IncidentDraft>(()=>{try{const saved=localStorage.getItem('ga_incident_draft');if(saved)return JSON.parse(saved)}catch{}return{startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''}});
  const[trusted,setTrusted]=useState<TrustedContact>(()=>{try{const saved=localStorage.getItem('ga_trusted_contact');if(saved)return JSON.parse(saved)}catch{}return{name:'',phone:''}});
+ const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);
 
  useEffect(()=>{const token=localStorage.getItem('ga_access_token');if(!token)return;
   fetch(API+'/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.ok?r.json():Promise.reject()).then(setUser).catch(()=>{localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token')});
@@ -199,6 +208,31 @@ export default function App(){
  function clearIncident(){if(!window.confirm('Clear the local incident report? Download it first if you need a copy.'))return;setIncident({startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''})}
  function stopListening(){recognitionRef.current?.stop();recognitionRef.current=null;setListening(false)}
  function closeTool(){stopRecording();stopListening();window.speechSynthesis?.cancel();setTool(null)}
+ async function openCaseWorkspace(){
+  if(!user){setMode('login');setAuthOpen(true);setNotice('Sign in to open your private case workspace.');return}
+  setTool('case');setCaseBusy(true);
+  try{const rows=await authApi('/cases');setCases(rows);if(rows.length)await selectCase(rows[0].id);else startNewCase()}
+  catch(error){setNotice(error instanceof Error?error.message:'The case workspace could not be loaded.')}finally{setCaseBusy(false)}
+ }
+ function startNewCase(){setActiveCaseId(null);setCaseForm(emptyCase());setFindings([])}
+ async function selectCase(id:number){
+  setCaseBusy(true);try{const[detail,analysis]=await Promise.all([authApi('/cases/'+id),authApi('/cases/'+id+'/analysis')]);setActiveCaseId(id);setCaseForm({title:detail.title||'',case_number:detail.case_number||'',county:detail.county||'',case_type:detail.case_type||'criminal',stage:detail.stage||'',narrative:detail.narrative||''});setFindings(analysis.findings||[])}
+  catch(error){setNotice(error instanceof Error?error.message:'The case could not be opened.')}finally{setCaseBusy(false)}
+ }
+ function updateCaseForm(field:keyof CaseForm,value:string){setCaseForm(previous=>({...previous,[field]:value}))}
+ async function saveCase(event?:FormEvent){
+  event?.preventDefault();if(!caseForm.title.trim()){setNotice('Add a short case title first.');return null}setCaseBusy(true);
+  try{const payload={...caseForm,title:caseForm.title.trim(),case_number:caseForm.case_number||null,county:caseForm.county||null,stage:caseForm.stage||null,narrative:caseForm.narrative||null};const saved=activeCaseId?await authApi('/cases/'+activeCaseId,{method:'PATCH',body:JSON.stringify(payload)}):await authApi('/cases',{method:'POST',body:JSON.stringify(payload)});const id=activeCaseId||saved.id;const rows=await authApi('/cases');setCases(rows);setActiveCaseId(id);setNotice(activeCaseId?'Private case updated.':'Private case created.');return id}
+  catch(error){setNotice(error instanceof Error?error.message:'The case could not be saved.');return null}finally{setCaseBusy(false)}
+ }
+ async function runCaseScreening(){
+  let id=activeCaseId;if(!id)id=await saveCase() as number|null;if(!id)return;setCaseBusy(true);
+  try{await authApi('/cases/'+id,{method:'PATCH',body:JSON.stringify({...caseForm,case_number:caseForm.case_number||null,county:caseForm.county||null,stage:caseForm.stage||null,narrative:caseForm.narrative||null})});const result=await authApi('/cases/'+id+'/analysis/run',{method:'POST',body:JSON.stringify({focus:'full_case'})});setFindings(result.findings||[]);setNotice('Issue screening completed. Each finding still needs record and source verification.')}
+  catch(error){setNotice(error instanceof Error?error.message:'The screening could not be completed.')}finally{setCaseBusy(false)}
+ }
+ function exportCasePlan(){
+  const lines=['GA.LAW.HELP — PRIVATE CASE SCREENING','Created: '+new Date().toLocaleString(),'Title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'County: '+(caseForm.county||'Not entered'),'Type: '+caseForm.case_type,'Stage: '+(caseForm.stage||'Not entered'),'','User narrative:',caseForm.narrative||'None entered','','SCREENING LEADS',...findings.flatMap((item,index)=>['',String(index+1)+'. '+item.issue,'Why it may matter: '+item.analysis,'Possible opposing position: '+item.counterargument,'Records and facts needed: '+item.facts_needed,'Status: '+item.confidence]),'','These are issue-screening leads, not legal conclusions or attorney advice. Verify the full record, deadlines, current law, and procedural posture with a licensed lawyer.'];const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='ga-law-help-case-screening-'+new Date().toISOString().slice(0,10)+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+ }
  function openPolice(){if(!user){setMode('login');setAuthOpen(true);setNotice('Sign in to use the paid police-encounter assistant.');return}setTool('police')}
  function startListening(){
   if(recording){setNotice('Stop the local audio recording before starting live transcription.');return}
@@ -231,19 +265,26 @@ export default function App(){
    <p className="question">“{research.query}”</p><p>{research.guidance}</p><div className="sources">{research.resources.map(r=><a key={r.url} href={r.url} target="_blank" rel="noreferrer"><div><b>{r.title}</b><span>{r.kind} · Official source</span></div><ExternalLink size={18}/></a>)}</div><small>{research.notice}</small></section>}
   <section className="cards" aria-label="Choose a tool">
    <button className="toolCard" onClick={()=>document.getElementById('law-library')?.scrollIntoView({behavior:'smooth'})}><FileText/><span><h3>Georgia Law Library</h3><p>Explore statutes, opinions and official legal sources.</p></span><ChevronRight/></button>
-   <button className="toolCard" onClick={()=>user?setNotice('Your private case workspace is ready for the next build step.'):setAuthOpen(true)}><MessageSquare/><span><h3>Private Case Assistant</h3><p>Organize private facts, evidence and saved research.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={openCaseWorkspace}><MessageSquare/><span><h3>Private Case Assistant</h3><p>Create cases, screen issues, test counterarguments and identify missing records.</p></span><ChevronRight/></button>
    <button className="toolCard" onClick={()=>setTool('avoid')}><ShieldAlert/><span><h3>Avoid Trouble</h3><p>Pick a situation and see calm, practical safety steps.</p></span><ChevronRight/></button>
    <button className="toolCard premiumCard" onClick={openPolice}><Car/><span><b className="premiumLabel"><LockKeyhole size={13}/> PAID SERVICE</b><h3>Help Me Talk to Police</h3><p>Listen, suggest and read respectful responses aloud.</p></span><ChevronRight/></button>
   </section>
   <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse as a guest. Claims should be verified against an official source before being presented as current law.</p></div></div>
    <div className="funGrid">{funFacts.map(x=><article key={x.title}><h3>{x.title}</h3><p>{x.text}</p></article>)}</div></section>
   <button className="encounterFab" onClick={()=>{setScenario('traffic');openPolice()}}><ShieldAlert size={20}/><span><b>Encounter Help</b><small>Open safety mode</small></span></button>
-  {tool&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)closeTool()}}><section className="toolModal" role="dialog" aria-modal="true" aria-label={tool==='avoid'?'Avoid trouble':'Help me talk to police'}>
+  {tool&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)closeTool()}}><section className="toolModal" role="dialog" aria-modal="true" aria-label={tool==='avoid'?'Avoid trouble':tool==='case'?'Private case assistant':'Help me talk to police'}>
    <button className="close" onClick={closeTool} aria-label="Close"><X/></button>
    {tool==='avoid'?<><ShieldAlert className="modalLogo"/><h2>Avoid Trouble</h2><p>Choose the situation closest to what is happening. Safety comes first; this is general information, not a substitute for a lawyer.</p>
     <div className="scenarioButtons">{scenarioKeys.map(key=><button key={key} className={scenario===key?'active':''} onClick={()=>setScenario(key)}>{scenarios[key].label}</button>)}</div>
     <div className="guidance"><h3>{scenarios[scenario].title}</h3><ul>{scenarios[scenario].tips.map(tip=><li key={tip}>{tip}</li>)}</ul></div>
     <div className="dangerNote"><ShieldAlert/>If anyone is in immediate danger or needs medical care, call 911. Never physically resist or make sudden movements to operate the app.</div>
+   </>:tool==='case'?<><MessageSquare className="modalLogo"/><h2>Private Case Assistant</h2><p>Organize the facts, identify research leads, test the opposing position, and build a record checklist. Only you can access cases through your signed-in account.</p>
+    <div className="caseTabs"><button className={!activeCaseId?'active':''} onClick={startNewCase}>+ New case</button>{cases.map(item=><button key={item.id} className={activeCaseId===item.id?'active':''} onClick={()=>selectCase(item.id)}>{item.title}</button>)}</div>
+    <form className="caseForm" onSubmit={saveCase}><div className="caseGrid"><label>Case title<input value={caseForm.title} onChange={e=>updateCaseForm('title',e.target.value)} placeholder="Example: Fulton County criminal case" required/></label><label>Case number<input value={caseForm.case_number} onChange={e=>updateCaseForm('case_number',e.target.value)} placeholder="If known"/></label><label>Georgia county<input value={caseForm.county} onChange={e=>updateCaseForm('county',e.target.value)} placeholder="County"/></label><label>Case type<select value={caseForm.case_type} onChange={e=>updateCaseForm('case_type',e.target.value)}><option value="criminal">Criminal</option><option value="appeal">Appeal</option><option value="habeas">Habeas / post-conviction</option><option value="probation">Probation / parole</option><option value="family">Family</option><option value="housing">Housing</option><option value="civil">Other civil</option></select></label><label>Current stage<select value={caseForm.stage} onChange={e=>updateCaseForm('stage',e.target.value)}><option value="investigation">Investigation</option><option value="charged">Charged / pretrial</option><option value="plea">Plea discussions</option><option value="trial">Trial</option><option value="sentencing">Sentencing</option><option value="appeal">Appeal</option><option value="habeas">Habeas / post-conviction</option><option value="probation">Probation or parole</option></select></label></div><label className="caseNarrative">What happened and what needs review<textarea value={caseForm.narrative} onChange={e=>updateCaseForm('narrative',e.target.value)} placeholder="Include important dates, charges, police actions, plea or trial history, sentence, prior appeals, and what records you have. Separate facts from assumptions."/></label>
+     <div className="caseActions"><button type="submit" disabled={caseBusy}>{caseBusy?<LoaderCircle className="spin" size={16}/>:<Save size={16}/>}Save private case</button><button type="button" className="screenButton" disabled={caseBusy} onClick={runCaseScreening}><ShieldCheck size={16}/>Run issue screening</button>{findings.length>0&&<button type="button" onClick={exportCasePlan}><Download size={16}/>Export plan</button>}</div>
+    </form>
+    <div className="screeningNotice">This system identifies issues to investigate. It does not determine guilt, promise an outcome, or replace a licensed attorney.</div>
+    {findings.length>0?<div className="findings"><h3>Screening leads</h3>{findings.map(item=><article key={item.id}><div className="findingHead"><b>{item.issue}</b><span>{item.confidence.replaceAll('_',' ')}</span></div><p>{item.analysis}</p><details><summary>Possible opposing position</summary><p>{item.counterargument}</p></details><details><summary>Records and facts needed</summary><p>{item.facts_needed}</p></details></article>)}</div>:activeCaseId&&<div className="emptyFindings">Save the facts, then run issue screening to create a review plan.</div>}
    </>:<><div className="premiumHeading"><Mic className="modalLogo"/><span className="premiumLabel"><LockKeyhole size={13}/> PAID SERVICE PREVIEW</span></div><h2>Help Me Talk to Police</h2>
     <div className="dangerNote"><ShieldAlert/>Only use the phone when it is safe and permitted. Keep your hands visible, follow physical directions, and never let the app argue, resist, or interrupt.</div>
     <div className="scenarioButtons">{scenarioKeys.slice(0,5).map(key=><button key={key} className={scenario===key?'active':''} onClick={()=>{setScenario(key);setTranscript('')}}>{scenarios[key].label}</button>)}</div>
