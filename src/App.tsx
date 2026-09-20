@@ -161,8 +161,7 @@ export default function App(){
  const[authOpen,setAuthOpen]=useState(false);const[mode,setMode]=useState<'login'|'register'|'forgot'|'reset'>('login');
  const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[showPassword,setShowPassword]=useState(false);const[authError,setAuthError]=useState('');const[authBusy,setAuthBusy]=useState(false);
  const passwordAccepted=password.length>=15&&password.length<=128;
- const paid=!!user&&(user.role==='paid'||user.role==='admin');
- const[user,setUser]=useState<User|null>(null);const[notice,setNotice]=useState('');
+ const[user,setUser]=useState<User|null>(null);const paid=!!user&&(user.role==='paid'||user.role==='admin');const[notice,setNotice]=useState('');
  const[tool,setTool]=useState<'avoid'|'police'|'case'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
  const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);const[encounterReply,setEncounterReply]=useState('');const[encounterBusy,setEncounterBusy]=useState(false);const encounterTimerRef=useRef<number|null>(null);const[cameraOn,setCameraOn]=useState(false);const cameraVideoRef=useRef<HTMLVideoElement|null>(null);const cameraStreamRef=useRef<MediaStream|null>(null);
  const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
