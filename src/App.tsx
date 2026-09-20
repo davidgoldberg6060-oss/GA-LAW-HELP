@@ -87,7 +87,7 @@ function suggestedReply(text:string,scenario:ScenarioKey){
 }
 
 
-type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string;sha256?:string;interrupted?:boolean;cloudCopiedAt?:number};
+type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string;caseId?:number;sha256?:string;interrupted?:boolean;cloudCopiedAt?:number};
 type TrustedContact={name:string;phone:string};
 type IncidentDraft={startedAt:string;location:string;agency:string;officer:string;badge:string;vehicle:string;notes:string};
 const AUDIO_DB='ga-law-help-local-audio';
@@ -114,8 +114,8 @@ async function deleteLocalRecording(id:string){
 }
 function formatBytes(bytes:number){if(bytes<1024)return bytes+' B';if(bytes<1048576)return(bytes/1024).toFixed(1)+' KB';return(bytes/1048576).toFixed(1)+' MB'}
 async function sha256Blob(blob:Blob){const digest=await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());return Array.from(new Uint8Array(digest)).map(byte=>byte.toString(16).padStart(2,'0')).join('')}
-async function uploadEncounterCopy(blob:Blob,scenario:ScenarioKey){
- const token=localStorage.getItem('ga_access_token');const caseId=localStorage.getItem('ga_encounter_case_id');
+async function uploadEncounterCopy(blob:Blob,scenario:ScenarioKey,recordingCaseId?:number){
+ const token=localStorage.getItem('ga_access_token');const caseId=recordingCaseId?String(recordingCaseId):localStorage.getItem('ga_encounter_case_id');
  if(!token||!caseId)return {uploaded:false,reason:'Sign in and select an encounter case to enable protected cloud/email copies.'};
  const ext=blob.type.includes('ogg')?'ogg':blob.type.includes('mp4')?'m4a':'webm';
  const form=new FormData();form.append('file',blob,'encounter-'+scenario+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+ext);
@@ -144,7 +144,7 @@ export default function App(){
  const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);const[encounterReply,setEncounterReply]=useState('');const[encounterBusy,setEncounterBusy]=useState(false);const encounterTimerRef=useRef<number|null>(null);const[cameraOn,setCameraOn]=useState(false);const cameraVideoRef=useRef<HTMLVideoElement|null>(null);const cameraStreamRef=useRef<MediaStream|null>(null);
  const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
  const[retentionDays,setRetentionDays]=useState<180|365|400>(()=>{const saved=Number(localStorage.getItem('ga_audio_retention_days'));return saved===180||saved===400?saved:365});
- const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);const recoveryIdRef=useRef<string|null>(null);
+ const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);const recoveryIdRef=useRef<string|null>(null);const recordingCaseIdRef=useRef<number|undefined>(undefined);
  const[incident,setIncident]=useState<IncidentDraft>(()=>{try{const saved=localStorage.getItem('ga_incident_draft');if(saved)return JSON.parse(saved)}catch{}return{startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''}});
  const[trusted,setTrusted]=useState<TrustedContact>(()=>{try{const saved=localStorage.getItem('ga_trusted_contact');if(saved)return JSON.parse(saved)}catch{}return{name:'',phone:''}});
  const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');
@@ -226,15 +226,15 @@ export default function App(){
    if(cameraOn){cameraStreamRef.current?.getTracks().forEach(track=>track.stop());cameraStreamRef.current=stream;if(cameraVideoRef.current){cameraVideoRef.current.srcObject=stream;cameraVideoRef.current.play().catch(()=>{})}}
    navigator.storage?.persist?.().catch(()=>false);
    const preferred=cameraOn?(MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')?'video/webm;codecs=vp8,opus':MediaRecorder.isTypeSupported('video/webm')?'video/webm':''):(MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'');
-   const recorder=new MediaRecorder(stream,preferred?{mimeType:preferred}:undefined);mediaRecorderRef.current=recorder;audioChunksRef.current=[];recoveryIdRef.current='recovery-'+(crypto.randomUUID?.()||String(Date.now()));
-   recorder.ondataavailable=event=>{if(event.data.size){audioChunksRef.current.push(event.data);const recoveryId=recoveryIdRef.current;if(recoveryId){const recoveryBlob=new Blob(audioChunksRef.current,{type:recorder.mimeType||'audio/webm'});const now=Date.now();saveLocalRecording({id:recoveryId,blob:recoveryBlob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType:recorder.mimeType||'audio/webm'}).catch(()=>{})}}};
+   const recorder=new MediaRecorder(stream,preferred?{mimeType:preferred}:undefined);mediaRecorderRef.current=recorder;audioChunksRef.current=[];recoveryIdRef.current='recovery-'+(crypto.randomUUID?.()||String(Date.now()));recordingCaseIdRef.current=Number(localStorage.getItem('ga_encounter_case_id'))||undefined;
+   recorder.ondataavailable=event=>{if(event.data.size){audioChunksRef.current.push(event.data);const recoveryId=recoveryIdRef.current;if(recoveryId){const recoveryBlob=new Blob(audioChunksRef.current,{type:recorder.mimeType||'audio/webm'});const now=Date.now();saveLocalRecording({id:recoveryId,blob:recoveryBlob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType:recorder.mimeType||'audio/webm',caseId:recordingCaseIdRef.current}).catch(()=>{})}}};
    recorder.onerror=()=>{stream.getTracks().forEach(track=>track.stop());setRecording(false);setNotice('Recording stopped because the browser reported an audio error.')};
    recorder.onstop=async()=>{
     try{
      const mimeType=recorder.mimeType||'audio/webm';const blob=new Blob(audioChunksRef.current,{type:mimeType});
-     if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);const sha256=await sha256Blob(blob);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType,sha256});setRecordings(await purgeExpiredLocalRecordings());try{const copy=await uploadEncounterCopy(blob,scenario);setNotice(copy.uploaded?'Encounter preserved locally and in GA.LAW.HELP. Email confirmation attempted for your account.':'Encounter preserved locally. '+copy.reason)}catch{setNotice('Encounter preserved locally. Protected cloud/email copy could not be completed; keep this device copy.')}}
+     if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);const sha256=await sha256Blob(blob);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType,caseId:recordingCaseIdRef.current,sha256});setRecordings(await purgeExpiredLocalRecordings());try{const copy=await uploadEncounterCopy(blob,scenario,recordingCaseIdRef.current);setNotice(copy.uploaded?'Encounter preserved locally and in GA.LAW.HELP. Email confirmation attempted for your account.':'Encounter preserved locally. '+copy.reason)}catch{setNotice('Encounter preserved locally. Protected cloud/email copy could not be completed; keep this device copy.')}}
     }catch{setNotice('The recording could not be saved. Your browser storage may be full or unavailable.')}
-    finally{const recoveryId=recoveryIdRef.current;recoveryIdRef.current=null;if(recoveryId)deleteLocalRecording(recoveryId).catch(()=>{});stream.getTracks().forEach(track=>track.stop());mediaRecorderRef.current=null;mediaStreamRef.current=null;audioChunksRef.current=[];setRecording(false)}
+    finally{const recoveryId=recoveryIdRef.current;recoveryIdRef.current=null;if(recoveryId)deleteLocalRecording(recoveryId).catch(()=>{});stream.getTracks().forEach(track=>track.stop());mediaRecorderRef.current=null;mediaStreamRef.current=null;audioChunksRef.current=[];recordingCaseIdRef.current=undefined;if(cameraOn){cameraStreamRef.current=null;if(cameraVideoRef.current)cameraVideoRef.current.srcObject=null;setCameraOn(false)}setRecording(false)}
    };
    recorder.start(1000);setRecording(true);setNotice(cameraOn?'Video + audio encounter recording started. Recovery checkpoints stay on this device while recording.':'Audio recording started. Recovery checkpoints stay on this device while recording.');
   }catch{setNotice('Microphone permission was not granted. Allow microphone access and try again.')}
@@ -248,7 +248,7 @@ export default function App(){
   let copied=0;
   for(const row of pending){
    try{
-    const result=await uploadEncounterCopy(row.blob,row.scenario);
+    const result=await uploadEncounterCopy(row.blob,row.scenario,row.caseId);
     if(result.uploaded){const updated={...row,cloudCopiedAt:Date.now()};await saveLocalRecording(updated);copied++}
    }catch{}
   }
