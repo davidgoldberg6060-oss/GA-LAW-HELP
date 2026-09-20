@@ -136,6 +136,22 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(current_user),db:Se
     audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit()
     return {'analysis':answer,'notice':'AI-generated legal information, not legal advice. Verify current authority, deadlines, record facts, and local filing requirements before filing.'}
 
+@app.post('/admin/legal/authorities/import')
+def import_authority(body:schemas.AuthorityCreate,admin=Depends(require_admin),db:Session=Depends(get_db)):
+    citation=body.citation.strip(); source=(body.source_url or '').strip()
+    if not citation: raise HTTPException(400,'Citation is required')
+    if source and not source.startswith('https://'): raise HTTPException(400,'Authority source must use HTTPS')
+    existing=db.query(models.LegalAuthority).filter(models.LegalAuthority.jurisdiction==body.jurisdiction,models.LegalAuthority.citation==citation).first()
+    if existing:
+        return {'id':existing.id,'created':False,'citation':existing.citation,'status':existing.status,'notice':'Existing authority retained; add a separately sourced version rather than silently overwriting legal text.'}
+    row=models.LegalAuthority(**body.model_dump()); row.citation=citation; row.retrieved_at=models.utcnow(); db.add(row);db.flush();audit(db,admin.id,'IMPORT_AUTHORITY','legal_authority',row.id);db.commit();db.refresh(row)
+    return {'id':row.id,'created':True,'citation':row.citation,'status':row.status,'source_url':row.source_url}
+
+@app.get('/admin/legal/sources')
+def legal_sources(admin=Depends(require_admin),db:Session=Depends(get_db)):
+    rows=db.query(models.LegalSource).order_by(models.LegalSource.official.desc(),models.LegalSource.name).all()
+    return [{'id':x.id,'name':x.name,'jurisdiction':x.jurisdiction,'base_url':x.base_url,'source_type':x.source_type,'official':x.official,'enabled':x.enabled} for x in rows]
+
 @app.get('/legal/authorities/stats')
 def authority_stats(user=Depends(current_user),db:Session=Depends(get_db)):
     total=db.query(models.LegalAuthority).count()
