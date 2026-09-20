@@ -1,11 +1,6 @@
 import os, time
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from .models import AnalysisJob, utcnow
-
-DB=os.getenv('DATABASE_URL','sqlite:///./ga_law_help.db')
-engine=create_engine(DB,pool_pre_ping=True)
-Session=sessionmaker(bind=engine)
+from .database import SessionLocal
 
 def process(job):
     # Production-safe worker shell: job types are explicit and originals are never modified.
@@ -15,7 +10,7 @@ def process(job):
 
 def run():
     while True:
-        db=Session()
+        db=SessionLocal()
         try:
             job=db.query(AnalysisJob).filter_by(status='QUEUED').order_by(AnalysisJob.id).first()
             if job:

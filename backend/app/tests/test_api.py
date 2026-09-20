@@ -21,6 +21,8 @@ def auth_header(token: str) -> dict[str, str]:
 
 def test_end_to_end_owner_security_evidence_and_authority():
     with TestClient(app) as client:
+        assert client.get("/health/live").json() == {"status": "ok"}
+        assert client.get("/health/ready").json() == {"status": "ready", "database": "ok"}
         admin = client.post("/auth/register", json={"email": "admin@example.com", "password": "correct-horse-battery"})
         assert admin.status_code == 200
         admin_json = admin.json()

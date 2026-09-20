@@ -3,8 +3,9 @@ from contextlib import asynccontextmanager
 from .storage import MAX_EVIDENCE_BYTES, save_chunk, finalize_chunks, store_stream, hash_stored
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy.orm import Session
-from .database import Base, engine, get_db
+from .database import Base, engine, get_db, database_health, verify_production_schema
 from . import models, schemas
 from .auth import hash_password, verify_password, create_token, current_user, owned_case, require_admin
 from .token_service import (issue_refresh, rotate_refresh, revoke_refresh, issue_reset, consume_reset,
@@ -19,22 +20,42 @@ def validate_production_config():
             raise RuntimeError('JWT_SECRET must contain at least 32 characters')
         if os.getenv('DATABASE_URL','').startswith('sqlite') or not os.getenv('DATABASE_URL'):
             raise RuntimeError('A production PostgreSQL DATABASE_URL is required')
+        if 'sslmode=' not in os.getenv('DATABASE_URL',''):
+            raise RuntimeError('Production DATABASE_URL must explicitly enable SSL with sslmode=require or verify-full')
+        if os.getenv('DEV_EXPOSE_RESET_TOKEN','false').lower() == 'true' or os.getenv('DEV_EXPOSE_VERIFICATION_TOKEN','false').lower() == 'true':
+            raise RuntimeError('Development token exposure must be disabled in production')
+        if os.getenv('STORAGE_BACKEND','local').lower() != 's3':
+            raise RuntimeError('Production evidence storage must use STORAGE_BACKEND=s3')
+        storage_required=('S3_BUCKET','S3_ENDPOINT_URL','AWS_REGION','AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY')
+        storage_missing=[name for name in storage_required if not os.getenv(name)]
+        if storage_missing:
+            raise RuntimeError('Production S3 storage configuration is incomplete: '+', '.join(storage_missing))
+        if not os.getenv('ALLOWED_HOSTS','').strip():
+            raise RuntimeError('ALLOWED_HOSTS must list the production API hostname')
         if os.getenv('REQUIRE_VERIFIED_EMAIL','true').lower() == 'true':
             required=('PUBLIC_APP_URL','SMTP_HOST','SMTP_FROM')
             missing=[name for name in required if not os.getenv(name)]
             if os.getenv('MAIL_DELIVERY_MODE','disabled').lower() != 'smtp' or missing:
                 raise RuntimeError('Verified-email production mode requires SMTP delivery: '+', '.join(missing))
+            if not os.getenv('PUBLIC_APP_URL','').startswith('https://'):
+                raise RuntimeError('PUBLIC_APP_URL must use HTTPS in production')
 
 @asynccontextmanager
 async def lifespan(_app:FastAPI):
     validate_production_config()
+    if os.getenv('ENVIRONMENT','development').lower() == 'production':
+        verify_production_schema()
+    else:
+        Base.metadata.create_all(bind=engine)
     yield
 
-Base.metadata.create_all(bind=engine)
 app = FastAPI(title='STANDALONE ASSISTANT GA.LAW.HELP', version='1.3.0', lifespan=lifespan)
 EVIDENCE_DIR = os.getenv('EVIDENCE_DIR', './evidence_store'); os.makedirs(EVIDENCE_DIR, exist_ok=True)
 origins=[x.strip() for x in os.getenv('CORS_ALLOWED_ORIGINS','').split(',') if x.strip()]
 app.add_middleware(CORSMiddleware,allow_origins=origins,allow_credentials=False,allow_methods=['GET','POST','PUT','PATCH','DELETE'],allow_headers=['Authorization','Content-Type','X-Request-ID'])
+allowed_hosts=[x.strip() for x in os.getenv('ALLOWED_HOSTS','').split(',') if x.strip()]
+if allowed_hosts:
+    app.add_middleware(TrustedHostMiddleware,allowed_hosts=allowed_hosts)
 
 @app.middleware('http')
 async def security_headers(request:Request,call_next):
@@ -45,6 +66,8 @@ async def security_headers(request:Request,call_next):
     response.headers['X-Frame-Options']='DENY'
     response.headers['Referrer-Policy']='no-referrer'
     response.headers['Cache-Control']='no-store'
+    if os.getenv('ENVIRONMENT','development').lower() == 'production':
+        response.headers['Strict-Transport-Security']='max-age=31536000; includeSubDomains'
     return response
 
 def audit(db, user_id, action, obj, oid=None):
@@ -52,6 +75,16 @@ def audit(db, user_id, action, obj, oid=None):
 
 @app.get('/health')
 def health(): return {'status':'ok','service':'GA.LAW.HELP','version':'1.3.0'}
+
+@app.get('/health/live')
+def liveness(): return {'status':'ok'}
+
+@app.get('/health/ready')
+def readiness():
+    try:
+        return {'status':'ready',**database_health()}
+    except Exception:
+        raise HTTPException(503,'Database unavailable')
 
 @app.post('/auth/register')
 def register(body: schemas.UserCreate, db: Session=Depends(get_db)):

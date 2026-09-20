@@ -1,8 +1,15 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./ga_law_help.db")
+EXPECTED_TABLES = {
+    "users", "cases", "timeline_events", "evidence", "evidence_findings",
+    "upload_sessions", "analysis_jobs", "legal_sources", "legal_authorities",
+    "authority_versions", "case_authority_links", "issue_analyses",
+    "audit_logs", "refresh_tokens", "password_reset_tokens",
+    "email_verification_tokens",
+}
 
 def engine_options(url: str) -> dict:
     if url.startswith("sqlite"):
@@ -25,6 +32,20 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 class Base(DeclarativeBase):
     pass
+
+def database_health() -> dict:
+    with engine.connect() as connection:
+        connection.execute(text("select 1"))
+    return {"database": "ok"}
+
+def verify_production_schema() -> None:
+    database_health()
+    existing = set(inspect(engine).get_table_names())
+    missing = sorted(EXPECTED_TABLES - existing)
+    if missing:
+        raise RuntimeError(
+            "Database migrations are incomplete; missing tables: " + ", ".join(missing)
+        )
 
 def get_db():
     db = SessionLocal()

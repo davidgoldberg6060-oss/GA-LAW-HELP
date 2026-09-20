@@ -34,6 +34,10 @@ Apply every migration in order, including the v1.3 email-verification-token
 migration. Its table has RLS enabled and no `anon` or `authenticated` access;
 only the protected FastAPI database connection may use it.
 
+Production startup never creates or alters tables. It verifies database
+connectivity and requires all 16 migrated application tables before accepting
+traffic.
+
 For a persistent container backend, use the direct connection when IPv6 is
 available or the shared **session** pooler on IPv4. For serverless deployment,
 use the transaction pooler and set `DATABASE_POOL_MODE=transaction`; the backend

@@ -21,3 +21,4 @@ jobs:
           JWT_SECRET: test-only-secret-at-least-32-characters
           DATABASE_URL: sqlite:///./ci.db
           EVIDENCE_DIR: ./ci-evidence
+      - run: docker build -t ga-law-help-api:ci .

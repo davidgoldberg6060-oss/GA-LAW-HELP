@@ -1,0 +1,14 @@
+.git
+.github
+.env
+.venv
+__pycache__
+*.py[cod]
+*.db
+.pytest_cache
+.ruff_cache
+evidence_store
+ci-evidence
+android
+docs
+supabase

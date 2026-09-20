@@ -8,6 +8,9 @@
 - Every public application table has RLS enabled; `anon` and `authenticated` have no direct table grants.
 - The earlier empty five-table prototype is preserved in the access-restricted `legacy` schema.
 - Repository migration versions match the live Supabase migration history.
+- Production images run as a non-root user with liveness/readiness probes.
+- Production startup validates secrets, SSL, object storage, database reachability, and the complete migration contract.
+- Runtime port and worker count are configurable for container hosting.
 
 Implemented and verified in this increment:
 - Native Android registration and login against the FastAPI backend
@@ -36,8 +39,8 @@ Implemented and verified in this increment:
 - Idempotency guards for completed resumable uploads
 
 Still required before production release:
-- Production HTTPS domain/backend configuration and live connectivity verification
-- S3-compatible encrypted object storage instead of local server disk
+- A production container host, HTTPS domain, and provider-side environment secrets
+- Live API-to-Supabase connection verification from that host
 - production SMTP/domain configuration and MFA
 - background/resumable uploads for very large video
 - worker queue and media-analysis pipeline
