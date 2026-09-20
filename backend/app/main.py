@@ -194,21 +194,30 @@ def authority_stats(user=Depends(current_user),db:Session=Depends(get_db)):
 @app.get('/cases/{case_id}/similar-authorities')
 def similar_authorities(case_id:int,q:str='',user=Depends(current_user),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db)
-    terms=[x.strip() for x in (q or ((case.case_type or '')+' '+(case.stage or ''))).split() if len(x.strip())>=3][:8]
-    query=db.query(models.LegalAuthority)
+    raw=q.strip() or ' '.join(filter(None,[case.case_type,case.stage,case.narrative or '']))
+    stop={'case','court','georgia','criminal','civil','with','from','that','this','have','were','been','into','your','their','about','not','entered','current'}
+    terms=[]
+    for token in raw.replace('\\n',' ').replace(',',' ').replace('.',' ').split():
+        term=''.join(ch for ch in token.lower() if ch.isalnum() or ch in ('-','/'))
+        if len(term)>=4 and term not in stop and term not in terms: terms.append(term)
+        if len(terms)>=12: break
+    query=db.query(models.LegalAuthority).filter(models.LegalAuthority.jurisdiction.ilike('%Georgia%'))
     if terms:
+        from sqlalchemy import or_
         filters=[]
         for term in terms:
-            like='%'+term+'%'
-            filters.extend([models.LegalAuthority.title.ilike(like),models.LegalAuthority.citation.ilike(like)])
-        from sqlalchemy import or_
+            like='%'+term+'%'; filters.extend([models.LegalAuthority.title.ilike(like),models.LegalAuthority.citation.ilike(like),models.LegalAuthority.text.ilike(like)])
         query=query.filter(or_(*filters))
-    rows=query.limit(25).all(); results=[]
+    rows=query.limit(40).all(); ranked=[]
     for authority in rows:
+        hay=' '.join(filter(None,[authority.title,authority.citation,authority.text])).lower()
+        score=sum(1 for term in terms if term in hay)
         versions=db.query(models.AuthorityVersion).filter_by(authority_id=authority.id).all()
         verified=[v for v in versions if str(v.verification_status or '').upper() in ('VERIFIED','OFFICIAL','CURRENT')]
-        results.append({'id':authority.id,'citation':authority.citation,'title':authority.title,'status':authority.status,'source_url':authority.source_url,'verified_versions':[{'id':v.id,'source_url':v.source_url,'effective_from':v.effective_from,'effective_to':v.effective_to,'verification_status':v.verification_status} for v in verified]})
-    return {'case_id':case_id,'query_terms':terms,'results':results,'notice':'Similarity is a research lead, not a holding that the authority controls this case. Verify facts, procedural posture, authority status, and current law.'}
+        ranked.append((score,authority,verified))
+    ranked.sort(key=lambda item:(item[0],len(item[2])),reverse=True)
+    results=[{'id':a.id,'citation':a.citation,'title':a.title,'status':a.status,'source_url':a.source_url,'match_score':score,'verified_versions':[{'id':v.id,'source_url':v.source_url,'effective_from':v.effective_from,'effective_to':v.effective_to,'verification_status':v.verification_status} for v in verified]} for score,a,verified in ranked[:25]]
+    return {'case_id':case_id,'query_terms':terms,'results':results,'notice':'Results are ranked research leads from the indexed Georgia authority corpus, not a determination that an authority controls this case. Verify facts, procedural posture, dates, authority status, and current law.'}
 
 @app.post('/cases/{case_id}/defense-analysis')
 def defense_analysis(case_id:int,body:dict,user=Depends(current_user),db:Session=Depends(get_db)):
