@@ -1,5 +1,5 @@
 import React,{FormEvent,useEffect,useRef,useState}from'react';
-import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList}from'lucide-react';
+import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint}from'lucide-react';
 
 const API='https://api-production-60cc.up.railway.app';
 type Resource={title:string;url:string;kind:string;official:boolean};
@@ -82,7 +82,8 @@ function suggestedReply(text:string,scenario:ScenarioKey){
 }
 
 
-type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string};
+type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string;sha256?:string};
+type TrustedContact={name:string;phone:string};
 type IncidentDraft={startedAt:string;location:string;agency:string;officer:string;badge:string;vehicle:string;notes:string};
 const AUDIO_DB='ga-law-help-local-audio';
 function openAudioDb():Promise<IDBDatabase>{
@@ -107,6 +108,7 @@ async function deleteLocalRecording(id:string){
  const db=await openAudioDb();const transaction=db.transaction('recordings','readwrite');transaction.objectStore('recordings').delete(id);await idbDone(transaction);db.close();
 }
 function formatBytes(bytes:number){if(bytes<1024)return bytes+' B';if(bytes<1048576)return(bytes/1024).toFixed(1)+' KB';return(bytes/1048576).toFixed(1)+' MB'}
+async function sha256Blob(blob:Blob){const digest=await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());return Array.from(new Uint8Array(digest)).map(byte=>byte.toString(16).padStart(2,'0')).join('')}
 
 async function api(path:string,options:RequestInit={}){
  const res=await fetch(API+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
@@ -126,12 +128,14 @@ export default function App(){
  const[retentionDays,setRetentionDays]=useState<180|365|400>(()=>{const saved=Number(localStorage.getItem('ga_audio_retention_days'));return saved===180||saved===400?saved:365});
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);
  const[incident,setIncident]=useState<IncidentDraft>(()=>{try{const saved=localStorage.getItem('ga_incident_draft');if(saved)return JSON.parse(saved)}catch{}return{startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''}});
+ const[trusted,setTrusted]=useState<TrustedContact>(()=>{try{const saved=localStorage.getItem('ga_trusted_contact');if(saved)return JSON.parse(saved)}catch{}return{name:'',phone:''}});
 
  useEffect(()=>{const token=localStorage.getItem('ga_access_token');if(!token)return;
   fetch(API+'/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.ok?r.json():Promise.reject()).then(setUser).catch(()=>{localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token')});
  },[]);
  useEffect(()=>{purgeExpiredLocalRecordings().then(setRecordings).catch(()=>setNotice('Local recording storage could not be opened on this device.'))},[]);
  useEffect(()=>{localStorage.setItem('ga_incident_draft',JSON.stringify(incident))},[incident]);
+ useEffect(()=>{localStorage.setItem('ga_trusted_contact',JSON.stringify(trusted))},[trusted]);
 
  async function runResearch(e?:FormEvent){e?.preventDefault();if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
   setNotice('');setResearching(true);try{setResearch(await api('/public/research?q='+encodeURIComponent(q.trim())));setTimeout(()=>document.getElementById('research-results')?.scrollIntoView({behavior:'smooth'}),50)}
@@ -159,7 +163,7 @@ export default function App(){
    recorder.onstop=async()=>{
     try{
      const mimeType=recorder.mimeType||'audio/webm';const blob=new Blob(audioChunksRef.current,{type:mimeType});
-     if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType});setRecordings(await purgeExpiredLocalRecordings());setNotice('Audio saved locally on this device.')}
+     if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);const sha256=await sha256Blob(blob);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType,sha256});setRecordings(await purgeExpiredLocalRecordings());setNotice('Audio saved locally with a SHA-256 integrity fingerprint.')}
     }catch{setNotice('The recording could not be saved. Your browser storage may be full or unavailable.')}
     finally{stream.getTracks().forEach(track=>track.stop());mediaRecorderRef.current=null;mediaStreamRef.current=null;audioChunksRef.current=[];setRecording(false)}
    };
@@ -171,6 +175,14 @@ export default function App(){
  function downloadRecording(row:LocalRecording){const url=URL.createObjectURL(row.blob);const link=document.createElement('a');const extension=row.mimeType.includes('ogg')?'ogg':row.mimeType.includes('mp4')?'m4a':'webm';link.href=url;link.download='ga-law-help-'+new Date(row.createdAt).toISOString().replace(/[:.]/g,'-')+'.'+extension;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
  async function removeRecording(row:LocalRecording){if(!window.confirm('Permanently delete this local recording? This cannot be undone.'))return;await deleteLocalRecording(row.id);setRecordings(await purgeExpiredLocalRecordings())}
  function changeRetention(value:string){const days=Number(value) as 180|365|400;setRetentionDays(days);localStorage.setItem('ga_audio_retention_days',String(days))}
+ function updateTrusted(field:keyof TrustedContact,value:string){setTrusted(previous=>({...previous,[field]:value}))}
+ async function shareSafetyStatus(safe=false){
+  if(!trusted.phone.trim()){setNotice('Add a trusted contact phone number first.');return}
+  const location=incident.location?' Location: '+incident.location+'.':'';
+  const message=safe?'GA.LAW.HELP safety check: I am safe after my law-enforcement encounter. I will contact you when I am able.':'GA.LAW.HELP safety check: I am currently in a '+scenarios[scenario].label.toLowerCase()+' encounter. It began around '+(incident.startedAt||new Date().toLocaleString())+'.'+location+' I will check in when safe.';
+  const sms='sms:'+trusted.phone.replace(/[^+\d]/g,'')+'?body='+encodeURIComponent(message);
+  try{if(navigator.share){await navigator.share({title:'GA.LAW.HELP safety check',text:message})}else{window.location.href=sms}}catch(error){if((error as Error)?.name!=='AbortError')window.location.href=sms}
+ }
  function updateIncident(field:keyof IncidentDraft,value:string){setIncident(previous=>({...previous,[field]:value}))}
  function captureLocation(){
   if(!navigator.geolocation){setNotice('Location is not available in this browser.');return}
@@ -181,7 +193,7 @@ export default function App(){
   );
  }
  function exportIncident(){
-  const lines=['GA.LAW.HELP — INCIDENT SUMMARY','Created: '+new Date().toLocaleString(),'Encounter type: '+scenarios[scenario].label,'Encounter began: '+(incident.startedAt||'Not entered'),'Location: '+(incident.location||'Not entered'),'Agency: '+(incident.agency||'Not entered'),'Officer: '+(incident.officer||'Not entered'),'Badge number: '+(incident.badge||'Not entered'),'Vehicle / unit: '+(incident.vehicle||'Not entered'),'','User notes:',incident.notes||'None entered','','Local recordings listed in this browser: '+recordings.length,...recordings.map(row=>'- '+new Date(row.createdAt).toLocaleString()+' | '+scenarios[row.scenario].label+' | '+formatBytes(row.blob.size)+' | expires '+new Date(row.expiresAt).toLocaleDateString()),'','This user-created summary is not legal advice. Preserve original files and provide copies only to people the user authorizes.'];
+  const lines=['GA.LAW.HELP — INCIDENT SUMMARY','Created: '+new Date().toLocaleString(),'Encounter type: '+scenarios[scenario].label,'Encounter began: '+(incident.startedAt||'Not entered'),'Location: '+(incident.location||'Not entered'),'Agency: '+(incident.agency||'Not entered'),'Officer: '+(incident.officer||'Not entered'),'Badge number: '+(incident.badge||'Not entered'),'Vehicle / unit: '+(incident.vehicle||'Not entered'),'','User notes:',incident.notes||'None entered','','Local recordings listed in this browser: '+recordings.length,...recordings.map(row=>'- '+new Date(row.createdAt).toLocaleString()+' | '+scenarios[row.scenario].label+' | '+formatBytes(row.blob.size)+' | expires '+new Date(row.expiresAt).toLocaleDateString()+(row.sha256?' | SHA-256 '+row.sha256:'')),'','This user-created summary is not legal advice. Preserve original files and provide copies only to people the user authorizes.'];
   const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='ga-law-help-incident-'+new Date().toISOString().slice(0,10)+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
  function clearIncident(){if(!window.confirm('Clear the local incident report? Download it first if you need a copy.'))return;setIncident({startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''})}
@@ -243,13 +255,18 @@ export default function App(){
      <button className={recording?'recordStop':'recordStart'} onClick={recording?stopRecording:startRecording}>{recording?<><Square size={16}/>Stop and save recording</>:<><Circle size={17}/>Start local recording</>}</button>
      {recording&&<div className="recordingActive"><span/>Recording in progress — keep the phone visible and use it only when safe and permitted.</div>}
      <p className="recordingWarning">Record only when lawful. Consent and location rules can vary. Files remain in this browser profile, are removed when the app next opens after expiration, and may disappear earlier if the browser or phone clears site data. Download important recordings.</p>
-     {recordings.length>0&&<div className="recordingList"><h3>Saved on this device</h3>{recordings.map(row=><article key={row.id}><div><b>{scenarios[row.scenario].label}</b><span>{new Date(row.createdAt).toLocaleString()} · {formatBytes(row.blob.size)}</span><small>Expires {new Date(row.expiresAt).toLocaleDateString()}</small></div><div><button onClick={()=>playRecording(row)} aria-label="Play recording"><Play size={16}/></button><button onClick={()=>downloadRecording(row)} aria-label="Download recording"><Download size={16}/></button><button className="deleteRecording" onClick={()=>removeRecording(row)} aria-label="Delete recording"><Trash2 size={16}/></button></div></article>)}</div>}
+     {recordings.length>0&&<div className="recordingList"><h3>Saved on this device</h3>{recordings.map(row=><article key={row.id}><div><b>{scenarios[row.scenario].label}</b><span>{new Date(row.createdAt).toLocaleString()} · {formatBytes(row.blob.size)}</span><small>Expires {new Date(row.expiresAt).toLocaleDateString()}</small>{row.sha256&&<small className="hashLine"><Fingerprint size={11}/>SHA-256 {row.sha256.slice(0,16)}…</small>}</div><div><button onClick={()=>playRecording(row)} aria-label="Play recording"><Play size={16}/></button><button onClick={()=>downloadRecording(row)} aria-label="Download recording"><Download size={16}/></button><button className="deleteRecording" onClick={()=>removeRecording(row)} aria-label="Delete recording"><Trash2 size={16}/></button></div></article>)}</div>}
     </section>
     <details className="protectionPanel"><summary><ClipboardList size={18}/><span><b>Build an incident report</b><small>Saved locally as you type</small></span></summary>
      <div className="incidentGrid"><label>Encounter began<input type="datetime-local" value={incident.startedAt} onChange={e=>updateIncident('startedAt',e.target.value)}/></label><label>Location<input value={incident.location} onChange={e=>updateIncident('location',e.target.value)} placeholder="Address or coordinates"/></label><label>Agency<input value={incident.agency} onChange={e=>updateIncident('agency',e.target.value)} placeholder="Police or sheriff department"/></label><label>Officer name<input value={incident.officer} onChange={e=>updateIncident('officer',e.target.value)} placeholder="If known"/></label><label>Badge number<input value={incident.badge} onChange={e=>updateIncident('badge',e.target.value)} inputMode="numeric" placeholder="If visible"/></label><label>Vehicle / unit<input value={incident.vehicle} onChange={e=>updateIncident('vehicle',e.target.value)} placeholder="Patrol car or unit number"/></label></div>
      <button className="locationButton" onClick={captureLocation}><MapPin size={16}/>Add my current coordinates</button>
      <label className="incidentNotes">Timeline and notes<textarea value={incident.notes} onChange={e=>updateIncident('notes',e.target.value)} placeholder="Write only what you remember. Separate what you personally saw or heard from what someone else told you."/></label>
      <div className="incidentActions"><button onClick={exportIncident}><Download size={16}/>Export report</button><button className="clearReport" onClick={clearIncident}><Trash2 size={16}/>Clear</button></div>
+    </details>
+    <details className="protectionPanel"><summary><UserPlus size={18}/><span><b>Trusted contact check-in</b><small>Contact details stay on this device</small></span></summary>
+     <div className="trustedFields"><label>Contact name<input value={trusted.name} onChange={e=>updateTrusted('name',e.target.value)} placeholder="Family member or trusted person"/></label><label>Mobile number<input type="tel" value={trusted.phone} onChange={e=>updateTrusted('phone',e.target.value)} placeholder="Phone number"/></label></div>
+     <p className="trustedNote">The app prepares a message, but you choose whether and how to send it. Automatic silent messages are not sent.</p>
+     <div className="trustedActions"><button onClick={()=>shareSafetyStatus(false)}><Send size={16}/>Share encounter started</button><button className="safeButton" onClick={()=>shareSafetyStatus(true)}><CheckCircle2 size={16}/>Send “I’m safe”</button></div>
     </details>
     <details className="protectionPanel"><summary><Phone size={18}/><span><b>Reach real legal help</b><small>Independent lawyer and legal-aid resources</small></span></summary>
      <div className="legalHelpLinks"><a href="https://www.glsp.org/" target="_blank" rel="noreferrer"><b>Georgia Legal Services Program</b><span>Statewide civil legal aid outside metro Atlanta</span><ExternalLink size={16}/></a><a href="https://atlantalegalaid.org/" target="_blank" rel="noreferrer"><b>Atlanta Legal Aid</b><span>Civil legal aid in the Atlanta area</span><ExternalLink size={16}/></a><a href="https://www.gabar.org/" target="_blank" rel="noreferrer"><b>State Bar of Georgia</b><span>Find public resources and Georgia lawyers</span><ExternalLink size={16}/></a><a href="https://www.lsc.gov/about-lsc/what-legal-aid/i-need-legal-help" target="_blank" rel="noreferrer"><b>Legal Services Corporation</b><span>Search for funded legal aid by location</span><ExternalLink size={16}/></a></div>
