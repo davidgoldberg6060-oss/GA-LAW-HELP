@@ -133,7 +133,7 @@ export default function App(){
  const passwordAccepted=password.length>=15&&password.length<=128;
  const[user,setUser]=useState<User|null>(null);const[notice,setNotice]=useState('');
  const[tool,setTool]=useState<'avoid'|'police'|'case'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
- const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);
+ const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);const[encounterReply,setEncounterReply]=useState('');const[encounterBusy,setEncounterBusy]=useState(false);const encounterTimerRef=useRef<number|null>(null);
  const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
  const[retentionDays,setRetentionDays]=useState<180|365|400>(()=>{const saved=Number(localStorage.getItem('ga_audio_retention_days'));return saved===180||saved===400?saved:365});
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);
@@ -158,6 +158,23 @@ export default function App(){
    setAiAnswer(answer);setResearch(researchResult);setTimeout(()=>document.getElementById('research-results')?.scrollIntoView({behavior:'smooth'}),50)
   }catch(err){setNotice(err instanceof Error?err.message:'GA.LAW.HELP is temporarily unavailable.')}finally{setResearching(false)}
  }
+
+ async function getEncounterAI(text:string){
+  const heard=text.trim();if(!heard||encounterBusy)return;
+  setEncounterBusy(true);
+  try{
+   const prompt='LIVE POLICE ENCOUNTER. Scenario: '+scenarios[scenario].label+'. The officer/person said: "'+heard+'". Give ONE short, calm sentence the user can safely say aloud now. Prioritize physical compliance and safety. Do not argue, threaten, evade, resist, lie, or give a long legal explanation.';
+   const data=await api('/public/ask',{method:'POST',body:JSON.stringify({question:prompt})});
+   setEncounterReply(data.answer||suggestedReply(heard,scenario));
+  }catch{setEncounterReply(suggestedReply(heard,scenario))}
+  finally{setEncounterBusy(false)}
+ }
+ useEffect(()=>{
+  if(!tool||tool!=='police'||!transcript.trim())return;
+  if(encounterTimerRef.current)window.clearTimeout(encounterTimerRef.current);
+  encounterTimerRef.current=window.setTimeout(()=>getEncounterAI(transcript),450);
+  return()=>{if(encounterTimerRef.current)window.clearTimeout(encounterTimerRef.current)}
+ },[transcript,scenario,tool]);
 
  async function submitAuth(e:FormEvent){e.preventDefault();setAuthError('');
   if(mode==='register'&&!passwordAccepted){setAuthError('Your password must be between 15 and 128 characters.');return}
@@ -326,7 +343,7 @@ export default function App(){
      <p className="lawyerBoundary">Opening a resource does not create an attorney-client relationship. A lawyer must accept the matter and confirm representation.</p>
     </details>
         <label className="transcriptLabel">What was heard<textarea value={transcript} onChange={e=>setTranscript(e.target.value)} placeholder="The live transcript will appear here. You can also type what the officer said."/></label>
-    <div className="replyCard"><small>Suggested calm response</small><p>{suggestedReply(transcript,scenario)}</p><button onClick={()=>speak(suggestedReply(transcript,scenario))}><Volume2 size={17}/>Read this aloud</button></div>
+    <div className="replyCard"><small>{encounterBusy?'AI is preparing a fast response…':'Suggested calm response'}</small><p>{encounterReply||suggestedReply(transcript,scenario)}</p><button onClick={()=>speak(encounterReply||suggestedReply(transcript,scenario))}><Volume2 size={17}/>Read this aloud</button></div>
     <button className="rightsButton" onClick={()=>speak(rightsStatement)}><ShieldCheck size={18}/><span><b>Read my rights statement aloud</b><small>States silence, no consent to search, request for counsel, and no resistance.</small></span></button>
     <div className="sourceLinks"><span>General constitutional references:</span><a href="https://constitution.congress.gov/constitution/amendment-4/" target="_blank" rel="noreferrer">Fourth Amendment</a><a href="https://constitution.congress.gov/constitution/amendment-5/" target="_blank" rel="noreferrer">Fifth Amendment</a><a href="https://constitution.congress.gov/constitution/amendment-6/" target="_blank" rel="noreferrer">Sixth Amendment</a></div>
     <small className="previewNote">Preview access is enabled for testing. A secure subscription checkout must be connected before customers can be charged.</small>
