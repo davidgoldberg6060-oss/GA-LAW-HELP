@@ -136,6 +136,24 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(current_user),db:Se
     audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit()
     return {'analysis':answer,'notice':'AI-generated legal information, not legal advice. Verify current authority, deadlines, record facts, and local filing requirements before filing.'}
 
+@app.post('/admin/legal/sources/bootstrap-georgia')
+def bootstrap_georgia_sources(admin=Depends(require_admin),db:Session=Depends(get_db)):
+    sources=[
+      {'name':'Supreme Court of Georgia — Opinions','jurisdiction':'Georgia','base_url':'https://www.gasupreme.us/opinions/','source_type':'COURT_OPINIONS','official':True,'enabled':True},
+      {'name':'Court of Appeals of Georgia — Opinions','jurisdiction':'Georgia','base_url':'https://www.gaappeals.us/opinions/','source_type':'COURT_OPINIONS','official':True,'enabled':True},
+      {'name':'Georgia General Assembly — Georgia Code','jurisdiction':'Georgia','base_url':'https://www.legis.ga.gov/legislation/georgia-code','source_type':'STATUTES','official':True,'enabled':True},
+      {'name':'Judicial Council of Georgia','jurisdiction':'Georgia','base_url':'https://georgiacourts.gov/','source_type':'COURT_RESOURCES','official':True,'enabled':True},
+    ]
+    created=0
+    for item in sources:
+        row=db.query(models.LegalSource).filter_by(name=item['name']).first()
+        if row:
+            row.base_url=item['base_url'];row.source_type=item['source_type'];row.official=True;row.enabled=True
+        else:
+            db.add(models.LegalSource(**item));created+=1
+    audit(db,admin.id,'BOOTSTRAP_GEORGIA_SOURCES','legal_source');db.commit()
+    return {'created':created,'configured':len(sources),'notice':'Official-source registry configured. This does not claim all opinions have been ingested; coverage stats show actual indexed material.'}
+
 @app.post('/admin/legal/authorities/import')
 def import_authority(body:schemas.AuthorityCreate,admin=Depends(require_admin),db:Session=Depends(get_db)):
     citation=body.citation.strip(); source=(body.source_url or '').strip()
