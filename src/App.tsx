@@ -169,8 +169,13 @@ export default function App(){
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);const recoveryIdRef=useRef<string|null>(null);const recordingCaseIdRef=useRef<number|undefined>(undefined);
  const[incident,setIncident]=useState<IncidentDraft>(()=>{try{const saved=localStorage.getItem('ga_incident_draft');if(saved)return JSON.parse(saved)}catch{}return{startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''}});
  const[trusted,setTrusted]=useState<TrustedContact>(()=>{try{const saved=localStorage.getItem('ga_trusted_contact');if(saved)return JSON.parse(saved)}catch{}return{name:'',phone:''}});
- const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');const[caseDefenseResult,setCaseDefenseResult]=useState('');const[similarAuthorities,setSimilarAuthorities]=useState<SimilarAuthority[]>([]);const[evidence,setEvidence]=useState<EvidenceItem[]>([]);const[evidenceBusy,setEvidenceBusy]=useState(false);
+ const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');const[caseDefenseResult,setCaseDefenseResult]=useState('');const[similarAuthorities,setSimilarAuthorities]=useState<SimilarAuthority[]>([]);const[evidence,setEvidence]=useState<EvidenceItem[]>([]);const[evidenceBusy,setEvidenceBusy]=useState(false);const[online,setOnline]=useState(()=>navigator.onLine);const[installPrompt,setInstallPrompt]=useState<any>(null);
 
+ useEffect(()=>{
+  const updateOnline=()=>setOnline(navigator.onLine);const captureInstall=(event:any)=>{event.preventDefault();setInstallPrompt(event)};
+  window.addEventListener('online',updateOnline);window.addEventListener('offline',updateOnline);window.addEventListener('beforeinstallprompt',captureInstall);
+  return()=>{window.removeEventListener('online',updateOnline);window.removeEventListener('offline',updateOnline);window.removeEventListener('beforeinstallprompt',captureInstall)}
+ },[]);
  useEffect(()=>{migrateLegacySession();if(!accessToken())return;
   authApi('/me').then(setUser).catch(()=>{clearSession();setUser(null)});
  },[]);
@@ -427,6 +432,9 @@ export default function App(){
   if(!('speechSynthesis'in window)){setNotice('Read-aloud is not supported in this browser.');return}
   window.speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(text);speech.rate=.9;speech.pitch=1;window.speechSynthesis.speak(speech);
  }
+ async function installApp(){
+  if(!installPrompt)return;await installPrompt.prompt();await installPrompt.userChoice.catch(()=>null);setInstallPrompt(null);
+ }
  async function logout(){
   const refresh=refreshToken();clearSession();localStorage.removeItem('ga_encounter_case_id');setUser(null);setNotice('You are signed out.');
   if(refresh)try{await api('/auth/logout',{method:'POST',body:JSON.stringify({refresh_token:refresh})})}catch{}
@@ -437,9 +445,10 @@ export default function App(){
 
  return <main>
   <header><div className="brand"><Scale/><div><b>STANDALONE ASSISTANT</b><span>GA.LAW.HELP</span></div></div>
-   {user?<div className="account"><span><UserRound size={16}/>{user.email}</span><button onClick={logout} aria-label="Sign out"><LogOut size={17}/> Sign out</button></div>:
-   <button onClick={()=>setAuthOpen(true)}>Sign in</button>}
+   <div className="headerActions">{installPrompt&&<button className="installButton" onClick={installApp}>Install app</button>}{user?<div className="account"><span><UserRound size={16}/>{user.email}</span><button onClick={logout} aria-label="Sign out"><LogOut size={17}/> Sign out</button></div>:
+   <button onClick={()=>setAuthOpen(true)}>Sign in</button>}</div>
   </header>
+  {!online&&<div className="offlineBanner" role="status"><ShieldAlert size={16}/><span><b>Offline safety mode</b> — encounter guidance and saved device recordings remain available. AI, sign-in, syncing and case files need internet.</span></div>}
   {notice&&<div className="notice" role="status">{notice}</div>}
   <section className="hero"><div className="pill"><ShieldCheck size={16}/> Georgia legal research workspace</div><h1>Georgia law.<br/><em>Clearer answers.</em></h1>
    <p>Learn about Georgia law without creating an account. Sign in only when you want private case tools, saved research, evidence uploads, and syncing.</p>
