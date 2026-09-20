@@ -212,7 +212,7 @@ export default function App(){
    recorder.onstop=async()=>{
     try{
      const mimeType=recorder.mimeType||'audio/webm';const blob=new Blob(audioChunksRef.current,{type:mimeType});
-     if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);const sha256=await sha256Blob(blob);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType,sha256});setRecordings(await purgeExpiredLocalRecordings());setNotice('Audio saved locally with a SHA-256 integrity fingerprint.')}
+     if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);const sha256=await sha256Blob(blob);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType,sha256});setRecordings(await purgeExpiredLocalRecordings());setNotice('Encounter recording preserved on this device. Your app copy remains available while the user-copy delivery system is being completed.')}
     }catch{setNotice('The recording could not be saved. Your browser storage may be full or unavailable.')}
     finally{stream.getTracks().forEach(track=>track.stop());mediaRecorderRef.current=null;mediaStreamRef.current=null;audioChunksRef.current=[];setRecording(false)}
    };
