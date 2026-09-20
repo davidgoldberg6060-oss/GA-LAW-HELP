@@ -45,6 +45,25 @@ def _send(to_email: str, subject: str, text: str) -> bool:
         return False
 
 
+
+def deliver_encounter_notice(to_email: str, filename: str, sha256: str, size_bytes: int) -> bool:
+    """Notify the account owner that an encounter recording was preserved.
+
+    Large evidence files should remain in protected evidence storage rather than
+    being attached to email. A separate authenticated download route can be
+    linked here once that route is available.
+    """
+    subject = "GA.LAW.HELP encounter recording preserved"
+    text = (
+        "Your encounter recording was preserved by GA.LAW.HELP.\n\n"
+        f"File: {filename}\n"
+        f"Size: {size_bytes} bytes\n"
+        f"SHA-256: {sha256}\n\n"
+        "The protected app copy remains preserved. Do not forward sensitive "
+        "evidence unless you intend to share it."
+    )
+    return _send(to_email, subject, text)
+
 def deliver_verification(to_email: str, token: str) -> bool:
     if os.getenv("MAIL_DELIVERY_MODE", "disabled").lower() != "smtp": return False
     link = _public_link("/verify-email", token)
