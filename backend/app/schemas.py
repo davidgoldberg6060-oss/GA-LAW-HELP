@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=10, max_length=128)
+    password: str = Field(min_length=15, max_length=128)
 class Login(BaseModel):
     email: EmailStr
     password: str
@@ -80,7 +80,7 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     token: str
-    new_password: str = Field(min_length=12, max_length=128)
+    new_password: str = Field(min_length=15, max_length=128)
 
 class VerifyEmailRequest(BaseModel):
     token: str = Field(min_length=32, max_length=256)
