@@ -1,5 +1,5 @@
 import React,{FormEvent,useEffect,useRef,useState}from'react';
-import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint}from'lucide-react';
+import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint,Eye,EyeOff}from'lucide-react';
 
 const API='https://api-production-60cc.up.railway.app';
 type Resource={title:string;url:string;kind:string;official:boolean};
@@ -128,7 +128,8 @@ async function authApi(path:string,options:RequestInit={}){
 export default function App(){
  const[q,setQ]=useState('');const[research,setResearch]=useState<Research|null>(null);const[researching,setResearching]=useState(false);
  const[authOpen,setAuthOpen]=useState(false);const[mode,setMode]=useState<'login'|'register'>('login');
- const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[authError,setAuthError]=useState('');const[authBusy,setAuthBusy]=useState(false);
+ const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[showPassword,setShowPassword]=useState(false);const[authError,setAuthError]=useState('');const[authBusy,setAuthBusy]=useState(false);
+ const passwordAccepted=password.length>=15&&password.length<=128;
  const[user,setUser]=useState<User|null>(null);const[notice,setNotice]=useState('');
  const[tool,setTool]=useState<'avoid'|'police'|'case'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
  const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);
@@ -151,7 +152,9 @@ export default function App(){
   catch(err){setNotice(err instanceof Error?err.message:'Research is temporarily unavailable.')}finally{setResearching(false)}
  }
 
- async function submitAuth(e:FormEvent){e.preventDefault();setAuthError('');setAuthBusy(true);
+ async function submitAuth(e:FormEvent){e.preventDefault();setAuthError('');
+  if(mode==='register'&&!passwordAccepted){setAuthError('Your password must be between 15 and 128 characters.');return}
+  setAuthBusy(true);
   try{const data=await api(mode==='login'?'/auth/login':'/auth/register',{method:'POST',body:JSON.stringify({email,password})});
    if(!data.access_token)throw new Error('Your account was created, but sign-in is waiting for email verification.');
    localStorage.setItem('ga_access_token',data.access_token);localStorage.setItem('ga_refresh_token',data.refresh_token);
@@ -320,14 +323,24 @@ export default function App(){
     <small className="previewNote">Preview access is enabled for testing. A secure subscription checkout must be connected before customers can be charged.</small>
    </>}
   </section></div>}
-  {authOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)setAuthOpen(false)}}><section className="modal" role="dialog" aria-modal="true" aria-label="Account access">
-   <button className="close" onClick={()=>setAuthOpen(false)} aria-label="Close"><X/></button><Scale className="modalLogo"/><h2>{mode==='login'?'Sign in to your private workspace':'Create your private account'}</h2>
-   <p>Public learning stays open to everyone. Your account protects private cases, documents and evidence.</p>
-   <div className="tabs"><button className={mode==='login'?'active':''} onClick={()=>{setMode('login');setAuthError('')}}>Sign in</button><button className={mode==='register'?'active':''} onClick={()=>{setMode('register');setAuthError('')}}>Create account</button></div>
-   <form onSubmit={submitAuth}><label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" required/></label>
-    <label>Password<input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} minLength={mode==='register'?10:1} required/></label>
-    {mode==='register'&&<small>Use at least 10 characters.</small>}{authError&&<div className="error">{authError}</div>}
-    <button className="primary" disabled={authBusy}>{authBusy?<><LoaderCircle className="spin" size={17}/>Please wait</>:mode==='login'?'Sign in':'Create account'}</button>
+  {authOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)setAuthOpen(false)}}><section className={`modal authModal ${mode==='register'?'registerMode':''}`} role="dialog" aria-modal="true" aria-label="Account access">
+   <button className="close" onClick={()=>setAuthOpen(false)} aria-label="Close"><X/></button>
+   <div className="authHeading"><span className="authIcon"><Scale/></span><div><span className="eyebrow">{mode==='login'?'Private workspace':'Secure account setup'}</span><h2>{mode==='login'?'Welcome back':'Create your private account'}</h2><p>{mode==='login'?'Sign in to continue to your saved cases and tools.':'One secure account for your cases, incident notes and evidence.'}</p></div></div>
+   <div className="tabs" aria-label="Choose account action"><button type="button" className={mode==='login'?'active':''} onClick={()=>{setMode('login');setAuthError('');setShowPassword(false)}}>Sign in</button><button type="button" className={mode==='register'?'active':''} onClick={()=>{setMode('register');setAuthError('');setShowPassword(false)}}>Create account</button></div>
+   {mode==='register'&&<div className="accountBenefits" aria-label="Account benefits">
+    <div><LockKeyhole size={19}/><span><b>Private workspace</b><small>Keep saved case work behind your sign-in.</small></span></div>
+    <div><ShieldCheck size={19}/><span><b>Security starts here</b><small>Use a unique password you do not use elsewhere.</small></span></div>
+   </div>}
+   <form onSubmit={submitAuth}>
+    <label>Email address<input type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" placeholder="you@example.com" required/></label>
+    <label>Password<div className="passwordInput"><input type={showPassword?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} minLength={mode==='register'?15:1} maxLength={mode==='register'?128:undefined} aria-describedby={mode==='register'?'password-help':undefined} aria-invalid={mode==='register'&&password.length>0&&!passwordAccepted} required/><button type="button" onClick={()=>setShowPassword(value=>!value)} aria-label={showPassword?'Hide password':'Show password'}>{showPassword?<EyeOff size={18}/>:<Eye size={18}/>}</button></div></label>
+    {mode==='register'&&<div className="passwordGuide" id="password-help">
+     <div className={`passwordRule ${passwordAccepted?'met':''}`}><CheckCircle2 size={18}/><span><b>15–128 characters required</b><small>{password.length?password.length+' characters entered':'Spaces count and are allowed.'}</small></span></div>
+     <div className="passwordTip"><Fingerprint size={18}/><span><b>Make it memorable and unique</b><small>Try four or more unrelated words, or use a password manager. Capital letters, numbers and symbols are allowed, but not required.</small></span></div>
+    </div>}
+    {authError&&<div className="error" role="alert">{authError}</div>}
+    <button className="primary accountSubmit" disabled={authBusy||(mode==='register'&&!passwordAccepted)}>{authBusy?<><LoaderCircle className="spin" size={17}/>Please wait</>:mode==='login'?'Sign in securely':'Create secure account'}</button>
+    {mode==='register'&&<small className="accountFinePrint">Public legal learning remains available without an account.</small>}
    </form></section></div>}
  </main>
 }
