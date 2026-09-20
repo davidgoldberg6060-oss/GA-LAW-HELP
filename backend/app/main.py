@@ -11,6 +11,7 @@ from .auth import hash_password, verify_password, create_token, current_user, ow
 from .token_service import (issue_refresh, rotate_refresh, revoke_refresh, issue_reset, consume_reset,
     issue_email_verification, consume_email_verification, revoke_all_user_refresh_tokens)
 from .email_delivery import deliver_verification, deliver_password_reset
+from .ai_assistant import ask_openai
 
 def validate_production_config():
     if os.getenv('ENVIRONMENT','development').lower() == 'production':
@@ -121,6 +122,23 @@ def public_research(q:str=''):
         'guidance':guidance,
         'resources':resources,
         'notice':'This is a research starting point, not legal advice. Verify the current text, dates, court rules, and case-specific facts before relying on it.'
+    }
+
+@app.post('/public/ask')
+def public_ask(body: dict):
+    question=str(body.get('question','')).strip()
+    if not question:
+        raise HTTPException(400,'Enter a Georgia legal question')
+    if len(question) > 6000:
+        raise HTTPException(400,'Question is too long')
+    try:
+        answer=ask_openai(question)
+    except RuntimeError:
+        raise HTTPException(503,'The AI assistant is temporarily unavailable. Please try again shortly.')
+    return {
+        'question':question,
+        'answer':answer,
+        'notice':'AI-generated legal information can be wrong or incomplete. Verify important points against current official law and consult a licensed attorney for advice about your situation.'
     }
 
 @app.post('/auth/register')
