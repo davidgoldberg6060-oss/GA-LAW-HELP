@@ -308,14 +308,14 @@ export default function App(){
   let id=activeCaseId;if(!id)id=await saveCase() as number|null;if(!id)return;
   const facts=['Case title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'Georgia county: '+(caseForm.county||'Not entered'),'Case type: '+caseForm.case_type,'Current stage: '+(caseForm.stage||'Not entered'),'User narrative: '+(caseForm.narrative||'Not entered')].join('\n');
   setCaseBusy(true);setCaseMotionResult('');
-  try{const data=await authApi('/cases/'+id+'/motion-screen',{method:'POST',body:JSON.stringify({facts})});setCaseMotionResult(data.analysis);setNotice('Motion and relief screening completed. Verify authorities and deadlines before filing.')}
+  try{const data=await authApi('/cases/'+id+'/motion-screen',{method:'POST',body:JSON.stringify({})});setCaseMotionResult(data.analysis);setNotice('Motion and relief screening completed. Verify authorities and deadlines before filing.')}
   catch(error){setNotice(error instanceof Error?error.message:'Motion screening could not be completed.')}finally{setCaseBusy(false)}
  }
  async function checkDefenseStrategy(){
   let id=activeCaseId;if(!id)id=await saveCase() as number|null;if(!id)return;
   const facts=['Case title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'Georgia county: '+(caseForm.county||'Not entered'),'Case type: '+caseForm.case_type,'Current stage: '+(caseForm.stage||'Not entered'),'User narrative: '+(caseForm.narrative||'Not entered')].join('\n');
   setCaseBusy(true);setCaseDefenseResult('');
-  try{const data=await authApi('/cases/'+id+'/defense-analysis',{method:'POST',body:JSON.stringify({facts})});setCaseDefenseResult(data.analysis);setNotice('Defense-side analysis completed. Verify the record and cited authority before relying on it.')}
+  try{const data=await authApi('/cases/'+id+'/defense-analysis',{method:'POST',body:JSON.stringify({})});setCaseDefenseResult(data.analysis);setNotice('Defense-side analysis completed. Verify the record and cited authority before relying on it.')}
   catch(error){setNotice(error instanceof Error?error.message:'Defense analysis could not be completed.')}finally{setCaseBusy(false)}
  }
  async function findSimilarAuthorities(){
