@@ -451,10 +451,23 @@ export default function App(){
    {aiAnswer&&<><div className="resultHead"><MessageSquare/><div><span>Ask GA.LAW.HELP</span><h2>AI legal information</h2></div></div><p className="question">“{aiAnswer.question}”</p><div className="aiAnswer" style={{whiteSpace:'pre-wrap'}}>{aiAnswer.answer}</div><small>{aiAnswer.notice}</small></>}
    {research&&<><div className="resultHead" style={{marginTop:'1.5rem'}}><Search/><div><span>Verify and research</span><h2>{research.topic}</h2></div></div><p>{research.guidance}</p><div className="sources">{research.resources.map(r=><a key={r.url} href={r.url} target="_blank" rel="noreferrer"><div><b>{r.title}</b><span>{r.kind} · Official source</span></div><ExternalLink size={18}/></a>)}</div><small>{research.notice}</small></>}
   </section>}
-  <section className="cards" aria-label="Choose a tool">
-   <button className="toolCard" onClick={()=>document.getElementById('law-library')?.scrollIntoView({behavior:'smooth'})}><FileText/><span><h3>Georgia Law Library</h3><p>Explore statutes, opinions and official legal sources.</p></span><ChevronRight/></button>
-   <button className="toolCard" onClick={openCaseWorkspace}><MessageSquare/><span><h3>Private Case Assistant</h3><p>Create cases, screen issues, test counterarguments and identify missing records.</p></span><ChevronRight/></button>
-   <button className="toolCard" onClick={()=>setTool('avoid')}><ShieldAlert/><span><h3>Avoid Trouble</h3><p>Pick a situation and see calm, practical safety steps.</p></span><ChevronRight/></button>
+  <section className="homeDashboard" aria-label="Quick legal help">
+   <div className="dashboardHeading"><div><span className="eyebrow">What is happening?</span><h2>Get to the right help fast</h2></div><p>Choose the closest situation. During an encounter, keep your hands visible and operate your phone only when safe and permitted.</p></div>
+   <div className="encounterGrid">
+    <button onClick={()=>{setScenario('traffic');openPolice()}}><Car/><span><b>Traffic Stop</b><small>Calm phrases and safety mode</small></span></button>
+    <button onClick={()=>{setScenario('questioning');openPolice()}}><Mic/><span><b>Being Questioned</b><small>Silence and lawyer request</small></span></button>
+    <button onClick={()=>{setScenario('arrest');openPolice()}}><ShieldAlert/><span><b>Arrested / Detained</b><small>Protect safety and the record</small></span></button>
+    <button onClick={()=>{setScenario('home');openPolice()}}><ShieldCheck/><span><b>Police at My Door</b><small>Warrant and consent guidance</small></span></button>
+    <button onClick={()=>{setScenario('public');setTool('avoid')}}><UserRound/><span><b>Public Encounter</b><small>Ask if you are free to leave</small></span></button>
+    <button className="emergencyAction" onClick={()=>{setScenario('witness');setTool('avoid')}}><Phone/><span><b>Emergency Information</b><small>Danger, medical help, witnesses</small></span></button>
+   </div>
+  </section>
+  <section className="cards" aria-label="Your legal tools">
+   <button className="toolCard" onClick={()=>document.getElementById('law-library')?.scrollIntoView({behavior:'smooth'})}><FileText/><span><h3>Georgia Laws</h3><p>Explore statutes, opinions, official sources and surprising Georgia-law claims.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={openCaseWorkspace}><MessageSquare/><span><h3>My Cases</h3><p>Create private cases, screen issues, test counterarguments and organize the record.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={openCaseWorkspace}><HardDrive/><span><h3>My Documents</h3><p>Upload, verify and download case documents and preserved evidence.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={()=>{setScenario('traffic');openPolice()}}><Play/><span><h3>My Recordings</h3><p>Open legal-encounter recordings stored on this device and protected case copies.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={()=>setTool('avoid')}><ShieldAlert/><span><h3>Know My Rights</h3><p>Choose a situation and see calm, practical safety steps in plain language.</p></span><ChevronRight/></button>
    <button className="toolCard premiumCard" onClick={openPolice}><Car/><span><b className="premiumLabel"><LockKeyhole size={13}/> PAID SERVICE</b><h3>Help Me Talk to Police</h3><p>Listen, suggest and read respectful responses aloud.</p></span><ChevronRight/></button>
   </section>
   <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse as a guest. Claims should be verified against an official source before being presented as current law.</p></div></div>
