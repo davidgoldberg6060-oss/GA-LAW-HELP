@@ -188,6 +188,7 @@ export default function App(){
   }catch{setNotice('Camera permission was not granted. Encounter help still works without the camera.')}
  }
  function stopCamera(){
+  if(recording){setNotice('Stop the legal-encounter recording before turning the camera off so the evidence file is not unexpectedly interrupted.');return}
   cameraStreamRef.current?.getTracks().forEach(track=>track.stop());cameraStreamRef.current=null;
   if(cameraVideoRef.current)cameraVideoRef.current.srcObject=null;setCameraOn(false);
  }
