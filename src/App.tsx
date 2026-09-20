@@ -309,7 +309,7 @@ export default function App(){
   let id=activeCaseId;if(!id)id=await saveCase() as number|null;if(!id)return;
   const facts=['Case title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'Georgia county: '+(caseForm.county||'Not entered'),'Case type: '+caseForm.case_type,'Current stage: '+(caseForm.stage||'Not entered'),'User narrative: '+(caseForm.narrative||'Not entered')].join('\n');
   setCaseBusy(true);setCaseMotionResult('');
-  try{const data=await api('/public/motion-screen',{method:'POST',body:JSON.stringify({facts})});setCaseMotionResult(data.analysis);setNotice('Motion and relief screening completed. Verify authorities and deadlines before filing.')}
+  try{const data=await authApi('/cases/'+id+'/motion-screen',{method:'POST',body:JSON.stringify({facts})});setCaseMotionResult(data.analysis);setNotice('Motion and relief screening completed. Verify authorities and deadlines before filing.')}
   catch(error){setNotice(error instanceof Error?error.message:'Motion screening could not be completed.')}finally{setCaseBusy(false)}
  }
  function exportCasePlan(){
