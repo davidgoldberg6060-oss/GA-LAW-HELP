@@ -87,7 +87,7 @@ function suggestedReply(text:string,scenario:ScenarioKey){
 }
 
 
-type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string;sha256?:string;interrupted?:boolean};
+type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string;sha256?:string;interrupted?:boolean;cloudCopiedAt?:number};
 type TrustedContact={name:string;phone:string};
 type IncidentDraft={startedAt:string;location:string;agency:string;officer:string;badge:string;vehicle:string;notes:string};
 const AUDIO_DB='ga-law-help-local-audio';
@@ -152,6 +152,7 @@ export default function App(){
  useEffect(()=>{const token=localStorage.getItem('ga_access_token');if(!token)return;
   fetch(API+'/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.ok?r.json():Promise.reject()).then(setUser).catch(()=>{localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token')});
  },[]);
+ useEffect(()=>{const sync=()=>{syncRecoveredRecordings().catch(()=>{})};window.addEventListener('online',sync);const timer=window.setTimeout(sync,1200);return()=>{window.removeEventListener('online',sync);window.clearTimeout(timer)}},[user]);
  useEffect(()=>{purgeExpiredLocalRecordings().then(async rows=>{
   const recovered=rows.filter(row=>row.id.startsWith('recovery-'));
   if(recovered.length){
@@ -239,6 +240,20 @@ export default function App(){
   }catch{setNotice('Microphone permission was not granted. Allow microphone access and try again.')}
  }
  function stopRecording(){const recorder=mediaRecorderRef.current;if(recorder&&recorder.state!=='inactive')recorder.stop()}
+ async function syncRecoveredRecordings(){
+  if(!navigator.onLine)return;
+  const rows=await purgeExpiredLocalRecordings();
+  const pending=rows.filter(row=>row.interrupted&&!row.cloudCopiedAt&&row.blob.size>0);
+  if(!pending.length)return;
+  let copied=0;
+  for(const row of pending){
+   try{
+    const result=await uploadEncounterCopy(row.blob,row.scenario);
+    if(result.uploaded){const updated={...row,cloudCopiedAt:Date.now()};await saveLocalRecording(updated);copied++}
+   }catch{}
+  }
+  if(copied){setRecordings(await purgeExpiredLocalRecordings());setNotice(copied+' recovered encounter recording'+(copied===1?' was':'s were')+' copied to protected GA.LAW.HELP storage. Account email confirmation was attempted.')}
+ }
  function playRecording(row:LocalRecording){const url=URL.createObjectURL(row.blob);const audio=new Audio(url);audio.onended=()=>URL.revokeObjectURL(url);audio.onerror=()=>URL.revokeObjectURL(url);audio.play().catch(()=>{URL.revokeObjectURL(url);setNotice('This recording could not be played by the browser.')})}
  function downloadRecording(row:LocalRecording){const url=URL.createObjectURL(row.blob);const link=document.createElement('a');const extension=row.mimeType.includes('ogg')?'ogg':row.mimeType.includes('mp4')?'m4a':'webm';link.href=url;link.download='ga-law-help-'+new Date(row.createdAt).toISOString().replace(/[:.]/g,'-')+'.'+extension;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
  async function removeRecording(row:LocalRecording){if(!window.confirm('Permanently delete this local recording? This cannot be undone.'))return;await deleteLocalRecording(row.id);setRecordings(await purgeExpiredLocalRecordings())}
