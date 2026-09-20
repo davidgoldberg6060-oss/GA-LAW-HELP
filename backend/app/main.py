@@ -146,6 +146,15 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(current_user),db:Se
     audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit()
     return {'analysis':answer,'notice':'AI-generated legal information, not legal advice. Verify current authority, deadlines, record facts, and local filing requirements before filing.'}
 
+@app.get('/legal/authorities/stats')
+def authority_stats(user=Depends(current_user),db:Session=Depends(get_db)):
+    total=db.query(models.LegalAuthority).count()
+    versions=db.query(models.AuthorityVersion).count()
+    verified_versions=db.query(models.AuthorityVersion).filter(models.AuthorityVersion.verification_status.in_(['VERIFIED','OFFICIAL','CURRENT'])).count()
+    ga_cases=db.query(models.LegalAuthority).filter(models.LegalAuthority.jurisdiction.ilike('%Georgia%'),models.LegalAuthority.authority_type.ilike('%case%')).count()
+    official_sources=db.query(models.LegalSource).filter_by(official=True,enabled=True).count()
+    return {'authorities':total,'authority_versions':versions,'verified_versions':verified_versions,'georgia_cases':ga_cases,'enabled_official_sources':official_sources,'notice':'Coverage counts describe what GA.LAW.HELP has actually indexed; they do not imply every public Georgia court record is present.'}
+
 @app.get('/cases/{case_id}/similar-authorities')
 def similar_authorities(case_id:int,q:str='',user=Depends(current_user),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db)
