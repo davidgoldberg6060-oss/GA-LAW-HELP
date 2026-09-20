@@ -114,6 +114,14 @@ async function deleteLocalRecording(id:string){
 }
 function formatBytes(bytes:number){if(bytes<1024)return bytes+' B';if(bytes<1048576)return(bytes/1024).toFixed(1)+' KB';return(bytes/1048576).toFixed(1)+' MB'}
 async function sha256Blob(blob:Blob){const digest=await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());return Array.from(new Uint8Array(digest)).map(byte=>byte.toString(16).padStart(2,'0')).join('')}
+async function uploadEncounterCopy(blob:Blob,scenario:ScenarioKey){
+ const token=localStorage.getItem('ga_access_token');const caseId=localStorage.getItem('ga_encounter_case_id');
+ if(!token||!caseId)return {uploaded:false,reason:'Sign in and select an encounter case to enable protected cloud/email copies.'};
+ const ext=blob.type.includes('ogg')?'ogg':blob.type.includes('mp4')?'m4a':'webm';
+ const form=new FormData();form.append('file',blob,'encounter-'+scenario+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+ext);
+ const res=await fetch(API+'/cases/'+encodeURIComponent(caseId)+'/evidence',{method:'POST',headers:{Authorization:'Bearer '+token},body:form});
+ const data=await res.json().catch(()=>({detail:'Upload failed'}));if(!res.ok)throw new Error(data.detail||'Upload failed');return {uploaded:true,...data};
+}
 
 async function api(path:string,options:RequestInit={}){
  const res=await fetch(API+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
@@ -212,7 +220,7 @@ export default function App(){
    recorder.onstop=async()=>{
     try{
      const mimeType=recorder.mimeType||'audio/webm';const blob=new Blob(audioChunksRef.current,{type:mimeType});
-     if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);const sha256=await sha256Blob(blob);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType,sha256});setRecordings(await purgeExpiredLocalRecordings());setNotice('Encounter recording preserved on this device. Your app copy remains available while the user-copy delivery system is being completed.')}
+     if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);const sha256=await sha256Blob(blob);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType,sha256});setRecordings(await purgeExpiredLocalRecordings());try{const copy=await uploadEncounterCopy(blob,scenario);setNotice(copy.uploaded?'Encounter preserved locally and in GA.LAW.HELP. Email confirmation attempted for your account.':'Encounter preserved locally. '+copy.reason)}catch{setNotice('Encounter preserved locally. Protected cloud/email copy could not be completed; keep this device copy.')}}
     }catch{setNotice('The recording could not be saved. Your browser storage may be full or unavailable.')}
     finally{stream.getTracks().forEach(track=>track.stop());mediaRecorderRef.current=null;mediaStreamRef.current=null;audioChunksRef.current=[];setRecording(false)}
    };
