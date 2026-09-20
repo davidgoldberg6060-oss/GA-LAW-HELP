@@ -33,6 +33,11 @@ def current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)):
     if not user or not user.is_active: raise HTTPException(401, 'User is unavailable')
     return user
 
+def require_paid(user: models.User = Depends(current_user)):
+    if user.role not in ('paid','admin'):
+        raise HTTPException(403, 'Paid membership required')
+    return user
+
 def require_admin(user: models.User = Depends(current_user)):
     if user.role != 'admin':
         raise HTTPException(403, 'Administrator access required')

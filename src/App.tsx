@@ -161,6 +161,7 @@ export default function App(){
  const[authOpen,setAuthOpen]=useState(false);const[mode,setMode]=useState<'login'|'register'|'forgot'|'reset'>('login');
  const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[showPassword,setShowPassword]=useState(false);const[authError,setAuthError]=useState('');const[authBusy,setAuthBusy]=useState(false);
  const passwordAccepted=password.length>=15&&password.length<=128;
+ const paid=!!user&&(user.role==='paid'||user.role==='admin');
  const[user,setUser]=useState<User|null>(null);const[notice,setNotice]=useState('');
  const[tool,setTool]=useState<'avoid'|'police'|'case'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
  const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);const[encounterReply,setEncounterReply]=useState('');const[encounterBusy,setEncounterBusy]=useState(false);const encounterTimerRef=useRef<number|null>(null);const[cameraOn,setCameraOn]=useState(false);const cameraVideoRef=useRef<HTMLVideoElement|null>(null);const cameraStreamRef=useRef<MediaStream|null>(null);
@@ -169,7 +170,7 @@ export default function App(){
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);const recoveryIdRef=useRef<string|null>(null);const recordingCaseIdRef=useRef<number|undefined>(undefined);
  const[incident,setIncident]=useState<IncidentDraft>(()=>{try{const saved=localStorage.getItem('ga_incident_draft');if(saved)return JSON.parse(saved)}catch{}return{startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''}});
  const[trusted,setTrusted]=useState<TrustedContact>(()=>{try{const saved=localStorage.getItem('ga_trusted_contact');if(saved)return JSON.parse(saved)}catch{}return{name:'',phone:''}});
- const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');const[caseDefenseResult,setCaseDefenseResult]=useState('');const[similarAuthorities,setSimilarAuthorities]=useState<SimilarAuthority[]>([]);const[evidence,setEvidence]=useState<EvidenceItem[]>([]);const[evidenceBusy,setEvidenceBusy]=useState(false);const[online,setOnline]=useState(()=>navigator.onLine);const[installPrompt,setInstallPrompt]=useState<any>(null);
+ const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');const[caseDefenseResult,setCaseDefenseResult]=useState('');const[similarAuthorities,setSimilarAuthorities]=useState<SimilarAuthority[]>([]);const[evidence,setEvidence]=useState<EvidenceItem[]>([]);const[evidenceBusy,setEvidenceBusy]=useState(false);const[online,setOnline]=useState(()=>navigator.onLine);const[installPrompt,setInstallPrompt]=useState<any>(null);const[paywallOpen,setPaywallOpen]=useState(false);
 
  useEffect(()=>{
   const updateOnline=()=>setOnline(navigator.onLine);const captureInstall=(event:any)=>{event.preventDefault();setInstallPrompt(event)};
@@ -204,12 +205,12 @@ export default function App(){
  useEffect(()=>{localStorage.setItem('ga_incident_draft',JSON.stringify(incident))},[incident]);
  useEffect(()=>{localStorage.setItem('ga_trusted_contact',JSON.stringify(trusted))},[trusted]);
 
- async function runResearch(e?:FormEvent){e?.preventDefault();if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
+ async function runResearch(e?:FormEvent){e?.preventDefault();if(!paid){setPaywallOpen(true);return}if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
   setNotice('');setResearching(true);setAiAnswer(null);setResearch(null);
   try{
    const [answer,researchResult]=await Promise.all([
-    api('/public/ask',{method:'POST',body:JSON.stringify({question:q.trim()})}),
-    api('/public/research?q='+encodeURIComponent(q.trim()))
+    authApi('/public/ask',{method:'POST',body:JSON.stringify({question:q.trim()})}),
+    authApi('/public/research?q='+encodeURIComponent(q.trim()))
    ]);
    setAiAnswer(answer);setResearch(researchResult);setTimeout(()=>document.getElementById('research-results')?.scrollIntoView({behavior:'smooth'}),50)
   }catch(err){setNotice(err instanceof Error?err.message:'GA.LAW.HELP is temporarily unavailable.')}finally{setResearching(false)}
@@ -234,7 +235,7 @@ export default function App(){
   setEncounterBusy(true);
   try{
    const prompt='LIVE POLICE ENCOUNTER. Scenario: '+scenarios[scenario].label+'. The officer/person said: "'+heard+'". Give ONE short, calm sentence the user can safely say aloud now. Prioritize physical compliance and safety. Do not argue, threaten, evade, resist, lie, or give a long legal explanation.';
-   const data=await api('/public/ask',{method:'POST',body:JSON.stringify({question:prompt})});
+   const data=await authApi('/public/ask',{method:'POST',body:JSON.stringify({question:prompt})});
    setEncounterReply(data.answer||suggestedReply(heard,scenario));
   }catch{setEncounterReply(suggestedReply(heard,scenario))}
   finally{setEncounterBusy(false)}
@@ -340,7 +341,8 @@ export default function App(){
  function stopListening(){recognitionRef.current?.stop();recognitionRef.current=null;setListening(false)}
  function closeTool(){stopRecording();stopListening();window.speechSynthesis?.cancel();setTool(null)}
  async function openCaseWorkspace(){
-  if(!user){setMode('login');setAuthOpen(true);setNotice('Sign in to open your private case workspace.');return}
+  if(!user){setPaywallOpen(true);return}
+  if(!paid){setPaywallOpen(true);return}
   setTool('case');setCaseBusy(true);
   try{const rows=await authApi('/cases');setCases(rows);if(rows.length)await selectCase(rows[0].id);else startNewCase()}
   catch(error){setNotice(error instanceof Error?error.message:'The case workspace could not be loaded.')}finally{setCaseBusy(false)}
@@ -366,7 +368,7 @@ export default function App(){
   setMotionBusy(true);setMotionResult('');
   try{
    const prompt='GEORGIA CRIMINAL CASE MOTION AND RELIEF SCREEN. Analyze only the user-supplied information below. Identify lawful motions, objections, sentencing issues, appeal issues, or post-conviction remedies that counsel could reasonably investigate. Separate known facts from missing facts. For every option state what records are needed, timing or preservation questions to verify, likely State counterarguments, and what current official Georgia authority must be checked. Never invent citations, deadlines, facts, or outcomes. USER-SUPPLIED CASE INFORMATION:\n'+motionFacts.trim();
-   const data=await api('/public/ask',{method:'POST',body:JSON.stringify({question:prompt})});setMotionResult(data.answer);setNotice('Motion screening completed. Verify the record, current authority, and every deadline before relying on it.');
+   const data=await authApi('/public/ask',{method:'POST',body:JSON.stringify({question:prompt})});setMotionResult(data.answer);setNotice('Motion screening completed. Verify the record, current authority, and every deadline before relying on it.');
   }catch(error){setNotice(error instanceof Error?error.message:'Motion screening could not be completed.')}finally{setMotionBusy(false)}
  }
  async function checkActiveCaseMotions(){
@@ -418,7 +420,8 @@ export default function App(){
  function exportCasePlan(){
   const lines=['GA.LAW.HELP — PRIVATE CASE SCREENING','Created: '+new Date().toLocaleString(),'Title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'County: '+(caseForm.county||'Not entered'),'Type: '+caseForm.case_type,'Stage: '+(caseForm.stage||'Not entered'),'','User narrative:',caseForm.narrative||'None entered','','SCREENING LEADS',...findings.flatMap((item,index)=>['',String(index+1)+'. '+item.issue,'Why it may matter: '+item.analysis,'Possible opposing position: '+item.counterargument,'Records and facts needed: '+item.facts_needed,'Status: '+item.confidence]),'','These are issue-screening leads, not legal conclusions or attorney advice. Verify the full record, deadlines, current law, and procedural posture with a licensed lawyer.'];const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='ga-law-help-case-screening-'+new Date().toISOString().slice(0,10)+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
  }
- function openPolice(){if(!user){setMode('login');setAuthOpen(true);setNotice('Sign in to use the paid police-encounter assistant.');return}setTool('police')}
+ function openPolice(){if(!paid){setPaywallOpen(true);return}setTool('police')}
+ function openRights(next:ScenarioKey=scenario){setScenario(next);if(!paid){setPaywallOpen(true);return}setTool('avoid')}
  function startListening(){
   if(recording){setNotice('Stop the local audio recording before starting live transcription.');return}
   const SpeechRecognition=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition;
@@ -453,7 +456,7 @@ export default function App(){
   <section className="hero"><div className="pill"><ShieldCheck size={16}/> Georgia legal research workspace</div><h1>Georgia law.<br/><em>Clearer answers.</em></h1>
    <p>Learn about Georgia law without creating an account. Sign in only when you want private case tools, saved research, evidence uploads, and syncing.</p>
    <form className="ask" onSubmit={runResearch}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about Georgia law…" aria-label="Georgia legal question"/>
-    <button disabled={researching}>{researching?<><LoaderCircle className="spin" size={17}/>Checking</>:'Research'}</button></form>
+    <button disabled={researching}><LockKeyhole size={15}/>{researching?<><LoaderCircle className="spin" size={17}/>Checking</>:'Paid research'}</button></form>
    <small>Legal information and research assistance — not a substitute for advice from a licensed attorney.</small>
   </section>
   {(aiAnswer||research)&&<section className="results" id="research-results">
@@ -467,16 +470,16 @@ export default function App(){
     <button onClick={()=>{setScenario('questioning');openPolice()}}><Mic/><span><b>Being Questioned</b><small>Silence and lawyer request</small></span></button>
     <button onClick={()=>{setScenario('arrest');openPolice()}}><ShieldAlert/><span><b>Arrested / Detained</b><small>Protect safety and the record</small></span></button>
     <button onClick={()=>{setScenario('home');openPolice()}}><ShieldCheck/><span><b>Police at My Door</b><small>Warrant and consent guidance</small></span></button>
-    <button onClick={()=>{setScenario('public');setTool('avoid')}}><UserRound/><span><b>Public Encounter</b><small>Ask if you are free to leave</small></span></button>
-    <button className="emergencyAction" onClick={()=>{setScenario('witness');setTool('avoid')}}><Phone/><span><b>Emergency Information</b><small>Danger, medical help, witnesses</small></span></button>
+    <button onClick={()=>openRights('public')}><UserRound/><span><b>Public Encounter</b><small>Ask if you are free to leave</small></span></button>
+    <button className="emergencyAction" onClick={()=>openRights('witness')}><Phone/><span><b>Emergency Information</b><small>Danger, medical help, witnesses</small></span></button>
    </div>
   </section>
   <section className="cards" aria-label="Your legal tools">
-   <button className="toolCard" onClick={()=>document.getElementById('law-library')?.scrollIntoView({behavior:'smooth'})}><FileText/><span><h3>Georgia Laws</h3><p>Explore statutes, opinions, official sources and surprising Georgia-law claims.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={()=>document.getElementById('law-library')?.scrollIntoView({behavior:'smooth'})}><FileText/><span><h3>Funny & Myth Checker</h3><p>Free: explore surprising Georgia-law claims and learn how to separate myths from verified law.</p></span><ChevronRight/></button>
    <button className="toolCard" onClick={openCaseWorkspace}><MessageSquare/><span><h3>My Cases</h3><p>Create private cases, screen issues, test counterarguments and organize the record.</p></span><ChevronRight/></button>
    <button className="toolCard" onClick={openCaseWorkspace}><HardDrive/><span><h3>My Documents</h3><p>Upload, verify and download case documents and preserved evidence.</p></span><ChevronRight/></button>
    <button className="toolCard" onClick={()=>{setScenario('traffic');openPolice()}}><Play/><span><h3>My Recordings</h3><p>Open legal-encounter recordings stored on this device and protected case copies.</p></span><ChevronRight/></button>
-   <button className="toolCard" onClick={()=>setTool('avoid')}><ShieldAlert/><span><h3>Know My Rights</h3><p>Choose a situation and see calm, practical safety steps in plain language.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={()=>openRights()}><ShieldAlert/><span><h3>Know My Rights</h3><p>Choose a situation and see calm, practical safety steps in plain language.</p></span><ChevronRight/></button>
    <button className="toolCard premiumCard" onClick={openPolice}><Car/><span><b className="premiumLabel"><LockKeyhole size={13}/> PAID SERVICE</b><h3>Help Me Talk to Police</h3><p>Listen, suggest and read respectful responses aloud.</p></span><ChevronRight/></button>
   </section>
   <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse as a guest. Claims should be verified against an official source before being presented as current law.</p></div></div>
@@ -546,6 +549,12 @@ export default function App(){
     <div className="sourceLinks"><span>General constitutional references:</span><a href="https://constitution.congress.gov/constitution/amendment-4/" target="_blank" rel="noreferrer">Fourth Amendment</a><a href="https://constitution.congress.gov/constitution/amendment-5/" target="_blank" rel="noreferrer">Fifth Amendment</a><a href="https://constitution.congress.gov/constitution/amendment-6/" target="_blank" rel="noreferrer">Sixth Amendment</a></div>
     <small className="previewNote">Preview access is enabled for testing. A secure subscription checkout must be connected before customers can be charged.</small>
    </>}
+  </section></div>}
+  {paywallOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)setPaywallOpen(false)}}><section className="modal paywallModal" role="dialog" aria-modal="true" aria-label="Paid membership required">
+   <button className="close" onClick={()=>setPaywallOpen(false)} aria-label="Close"><X/></button><LockKeyhole className="modalLogo"/><span className="eyebrow">GA.LAW.HELP Membership</span><h2>Paid feature</h2>
+   <p>Funny & Myth Checker stays free. Ask GA.LAW.HELP, rights guidance, police-encounter help, emergency guidance, cases, documents, recordings, motion screening and defense analysis require a paid membership.</p>
+   {!user?<div className="paywallActions"><button className="primary" onClick={()=>{setPaywallOpen(false);setMode('register');setAuthOpen(true)}}>Create account</button><button onClick={()=>{setPaywallOpen(false);setMode('login');setAuthOpen(true)}}>Sign in</button></div>:<div className="membershipStatus"><ShieldCheck/><span><b>Signed in — membership inactive</b><small>Secure checkout is the next connection. Your free account remains available for Funny & Myth learning.</small></span></div>}
+   <small className="previewNote">No charge will occur until a secure checkout provider and price are connected.</small>
   </section></div>}
   {authOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget&&mode!=='reset')setAuthOpen(false)}}><section className={`modal authModal ${mode==='register'?'registerMode':''}`} role="dialog" aria-modal="true" aria-label="Account access">
    <button className="close" onClick={()=>{if(mode==='reset')window.history.replaceState({},'', '/');setAuthOpen(false)}} aria-label="Close"><X/></button>

@@ -7,6 +7,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_tmp / 'api.db'}"
 os.environ["EVIDENCE_DIR"] = str(_tmp / "evidence")
 os.environ["JWT_SECRET"] = "unit-test-secret-that-is-longer-than-32-characters"
 os.environ["ADMIN_EMAILS"] = "admin@example.com"
+os.environ["PAID_ACCESS_EMAILS"] = "user@example.com"
 os.environ["DEV_EXPOSE_RESET_TOKEN"] = "true"
 os.environ["DEV_EXPOSE_VERIFICATION_TOKEN"] = "true"
 os.environ["REQUIRE_VERIFIED_EMAIL"] = "false"
@@ -106,3 +107,15 @@ def test_password_reset_revokes_sessions_and_hides_unknown_accounts():
         assert client.post("/auth/refresh", json={"refresh_token": account["refresh_token"]}).status_code == 401
         assert client.post("/auth/login", json={"email": "reset@example.com", "password": "correct-horse-battery"}).status_code == 401
         assert client.post("/auth/login", json={"email": "reset@example.com", "password": "new-correct-horse-battery"}).status_code == 200
+
+
+def test_free_account_cannot_bypass_paid_api():
+    with TestClient(app) as client:
+        free = client.post("/auth/register", json={"email": "free@example.com", "password": "free-account-secure-password"})
+        assert free.status_code == 200
+        headers = auth_header(free.json()["access_token"])
+        assert client.get("/public/research", params={"q": "Georgia arrest law"}, headers=headers).status_code == 403
+        assert client.post("/public/ask", json={"question": "What are my rights?"}, headers=headers).status_code == 403
+        assert client.get("/cases", headers=headers).status_code == 403
+        assert client.get("/me", headers=headers).status_code == 200
+        assert client.get("/health/live").status_code == 200

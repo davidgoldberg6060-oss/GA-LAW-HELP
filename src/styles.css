@@ -95,3 +95,6 @@
 
 .headerActions{display:flex;align-items:center;gap:9px}.installButton{padding:9px 13px;background:#176649;border-color:#3b9e79}.offlineBanner{position:sticky;top:8px;z-index:35;display:flex;align-items:center;gap:9px;margin:10px auto 0;padding:11px 14px;max-width:760px;background:#493317;border:1px solid #9a7133;color:#ffe3ae;border-radius:11px;box-shadow:0 10px 30px #0007;font-size:12px;line-height:1.4}.offlineBanner svg{flex:0 0 auto}
 @media(max-width:600px){.installButton{font-size:11px;padding:8px 10px}.headerActions{gap:5px}}
+
+.paywallModal{width:min(540px,100%);background:linear-gradient(150deg,#10243a,#091421);border-color:#477ba8}.paywallModal>.eyebrow{display:block;margin-top:12px}.paywallActions{display:flex;gap:9px;margin-top:18px}.paywallActions button{flex:1}.membershipStatus{display:flex;align-items:flex-start;gap:11px;background:#0a1929;border:1px solid #315a7d;border-radius:12px;padding:14px;margin:18px 0}.membershipStatus>svg{color:#78bcff;flex:0 0 auto}.membershipStatus span{display:grid;gap:4px}.membershipStatus small{color:#8298ad;line-height:1.4}
+@media(max-width:520px){.paywallActions{flex-direction:column}}

@@ -9,7 +9,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy.orm import Session
 from .database import Base, engine, get_db, database_health, verify_production_schema
 from . import models, schemas
-from .auth import hash_password, verify_password, create_token, current_user, owned_case, require_admin
+from .auth import hash_password, verify_password, create_token, current_user, owned_case, require_admin, require_paid
 from .token_service import (issue_refresh, rotate_refresh, revoke_refresh, issue_reset, consume_reset,
     issue_email_verification, consume_email_verification, revoke_all_user_refresh_tokens)
 from .email_delivery import deliver_verification, deliver_password_reset, deliver_encounter_notice
@@ -93,7 +93,7 @@ def readiness():
         raise HTTPException(503,'Database unavailable')
 
 @app.get('/public/research')
-def public_research(q:str=''):
+def public_research(q:str='',user=Depends(require_paid)):
     query=q.strip()
     if not query:
         raise HTTPException(400,'Enter a Georgia legal question')
@@ -127,7 +127,7 @@ def public_research(q:str=''):
     }
 
 @app.post('/cases/{case_id}/motion-screen')
-def private_motion_screen(case_id:int,body:dict,user=Depends(current_user),db:Session=Depends(get_db)):
+def private_motion_screen(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db)
     additional=str(body.get('additional_facts','')).strip()
     if len(additional)>4000: raise HTTPException(400,'Additional case facts are too long.')
@@ -187,7 +187,7 @@ def legal_sources(admin=Depends(require_admin),db:Session=Depends(get_db)):
     return [{'id':x.id,'name':x.name,'jurisdiction':x.jurisdiction,'base_url':x.base_url,'source_type':x.source_type,'official':x.official,'enabled':x.enabled} for x in rows]
 
 @app.get('/legal/authorities/stats')
-def authority_stats(user=Depends(current_user),db:Session=Depends(get_db)):
+def authority_stats(user=Depends(require_paid),db:Session=Depends(get_db)):
     total=db.query(models.LegalAuthority).count()
     versions=db.query(models.AuthorityVersion).count()
     verified_versions=db.query(models.AuthorityVersion).filter(models.AuthorityVersion.verification_status.in_(['VERIFIED','OFFICIAL','CURRENT'])).count()
@@ -196,7 +196,7 @@ def authority_stats(user=Depends(current_user),db:Session=Depends(get_db)):
     return {'authorities':total,'authority_versions':versions,'verified_versions':verified_versions,'georgia_cases':ga_cases,'enabled_official_sources':official_sources,'notice':'Coverage counts describe what GA.LAW.HELP has actually indexed; they do not imply every public Georgia court record is present.'}
 
 @app.get('/cases/{case_id}/similar-authorities')
-def similar_authorities(case_id:int,q:str='',user=Depends(current_user),db:Session=Depends(get_db)):
+def similar_authorities(case_id:int,q:str='',user=Depends(require_paid),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db)
     raw=q.strip() or ' '.join(filter(None,[case.case_type,case.stage,case.narrative or '']))
     stop={'case','court','georgia','criminal','civil','with','from','that','this','have','were','been','into','your','their','about','not','entered','current'}
@@ -224,7 +224,7 @@ def similar_authorities(case_id:int,q:str='',user=Depends(current_user),db:Sessi
     return {'case_id':case_id,'query_terms':terms,'results':results,'notice':'Results are ranked research leads from the indexed Georgia authority corpus, not a determination that an authority controls this case. Verify facts, procedural posture, dates, authority status, and current law.'}
 
 @app.post('/cases/{case_id}/defense-analysis')
-def defense_analysis(case_id:int,body:dict,user=Depends(current_user),db:Session=Depends(get_db)):
+def defense_analysis(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db)
     additional=str(body.get('additional_facts','')).strip()
     if len(additional)>4000: raise HTTPException(400,'Additional case facts are too long.')
@@ -255,7 +255,7 @@ def defense_analysis(case_id:int,body:dict,user=Depends(current_user),db:Session
     return {'analysis':answer,'linked_authorities':linked,'notice':'Defense-side research analysis only. It does not establish innocence or guilt and is not legal advice. Verify the record, current authority, deadlines, and local rules.'}
 
 @app.post('/public/ask')
-def public_ask(body: dict):
+def public_ask(body: dict,user=Depends(require_paid)):
     question=str(body.get('question','')).strip()
     if not question:
         raise HTTPException(400,'Enter a Georgia legal question')
@@ -276,7 +276,9 @@ def register(body: schemas.UserCreate, db: Session=Depends(get_db)):
     email=body.email.lower()
     if db.query(models.User).filter_by(email=email).first(): raise HTTPException(409,'Email exists')
     admin_emails={x.strip().lower() for x in os.getenv('ADMIN_EMAILS','').split(',') if x.strip()}
-    u=models.User(email=email,password_hash=hash_password(body.password),role='admin' if email in admin_emails else 'user'); db.add(u); db.flush(); audit(db,u.id,'REGISTER','user',u.id)
+    paid_emails={x.strip().lower() for x in os.getenv('PAID_ACCESS_EMAILS','').split(',') if x.strip()}
+    role='admin' if email in admin_emails else ('paid' if email in paid_emails else 'user')
+    u=models.User(email=email,password_hash=hash_password(body.password),role=role); db.add(u); db.flush(); audit(db,u.id,'REGISTER','user',u.id)
     verification=issue_email_verification(db,u.id); db.commit()
     delivered=deliver_verification(u.email,verification)
     response={'verification_required':os.getenv('REQUIRE_VERIFIED_EMAIL','false').lower()=='true','user':{'id':u.id,'email':u.email}}
@@ -350,22 +352,22 @@ def resend_verification(body: schemas.ResendVerificationRequest, db: Session=Dep
 def me(user=Depends(current_user)): return {'id':user.id,'email':user.email,'role':user.role,'verified_at':user.verified_at,'created_at':user.created_at}
 
 @app.get('/cases')
-def list_cases(user=Depends(current_user), db:Session=Depends(get_db)):
+def list_cases(user=Depends(require_paid), db:Session=Depends(get_db)):
     rows=db.query(models.Case).filter_by(owner_id=user.id).order_by(models.Case.created_at.desc()).all()
     return [{'id':c.id,'title':c.title,'case_number':c.case_number,'county':c.county,'case_type':c.case_type,'stage':c.stage} for c in rows]
 
 @app.post('/cases')
-def create_case(body:schemas.CaseCreate,user=Depends(current_user),db:Session=Depends(get_db)):
+def create_case(body:schemas.CaseCreate,user=Depends(require_paid),db:Session=Depends(get_db)):
     c=models.Case(owner_id=user.id,**body.model_dump()); db.add(c); db.flush(); audit(db,user.id,'CREATE_CASE','case',c.id); db.commit(); db.refresh(c)
     return {'id':c.id,'title':c.title,'stage':c.stage}
 
 @app.get('/cases/{case_id}')
-def get_case(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def get_case(case_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     c=owned_case(case_id,user,db)
     return {'id':c.id,'title':c.title,'case_number':c.case_number,'county':c.county,'case_type':c.case_type,'stage':c.stage,'narrative':c.narrative,'created_at':c.created_at}
 
 @app.patch('/cases/{case_id}')
-def update_case(case_id:int,body:schemas.CaseUpdate,user=Depends(current_user),db:Session=Depends(get_db)):
+def update_case(case_id:int,body:schemas.CaseUpdate,user=Depends(require_paid),db:Session=Depends(get_db)):
     c=owned_case(case_id,user,db)
     changes=body.model_dump(exclude_unset=True)
     for key,value in changes.items(): setattr(c,key,value)
@@ -373,17 +375,17 @@ def update_case(case_id:int,body:schemas.CaseUpdate,user=Depends(current_user),d
     return {'id':c.id,'title':c.title,'case_number':c.case_number,'county':c.county,'case_type':c.case_type,'stage':c.stage,'narrative':c.narrative,'updated_at':c.updated_at}
 
 @app.post('/cases/{case_id}/timeline')
-def add_timeline(case_id:int,body:schemas.TimelineCreate,user=Depends(current_user),db:Session=Depends(get_db)):
+def add_timeline(case_id:int,body:schemas.TimelineCreate,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db); e=models.TimelineEvent(case_id=case_id,**body.model_dump()); db.add(e); db.flush(); audit(db,user.id,'ADD_TIMELINE_EVENT','timeline_event',e.id); db.commit(); db.refresh(e)
     return {'id':e.id,'source_label':e.source_label}
 
 @app.get('/cases/{case_id}/timeline')
-def timeline(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def timeline(case_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db); rows=db.query(models.TimelineEvent).filter_by(case_id=case_id).order_by(models.TimelineEvent.occurred_at).all()
     return [{'id':x.id,'occurred_at':x.occurred_at,'type':x.event_type,'title':x.title,'details':x.details,'source_label':x.source_label,'source_ref':x.source_ref} for x in rows]
 
 @app.post('/cases/{case_id}/evidence')
-def upload_evidence(case_id:int,file:UploadFile=File(...),user=Depends(current_user),db:Session=Depends(get_db)):
+def upload_evidence(case_id:int,file:UploadFile=File(...),user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db); safe=os.path.basename(file.filename or 'evidence'); key=f'{user.id}/{case_id}/{uuid.uuid4().hex}_{safe}'
     try: digest,size=store_stream(file.file,key)
     except ValueError as exc: raise HTTPException(413,str(exc))
@@ -397,12 +399,12 @@ def upload_evidence(case_id:int,file:UploadFile=File(...),user=Depends(current_u
     return {'id':ev.id,'filename':ev.filename,'bytes':size,'sha256':ev.sha256,'original_preserved':True,'jobs_queued':job_types,'owner_email_notice_sent':notice_sent}
 
 @app.get('/cases/{case_id}/evidence')
-def evidence(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def evidence(case_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db); rows=db.query(models.Evidence).filter_by(case_id=case_id).all()
     return [{'id':e.id,'filename':e.filename,'media_type':e.media_type,'bytes':e.size_bytes,'sha256':e.sha256,'uploaded_at':e.uploaded_at,'verified_at':e.verified_at,'original_preserved':e.original_preserved} for e in rows]
 
 @app.get('/cases/{case_id}/evidence/{evidence_id}/download')
-def download_evidence(case_id:int,evidence_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def download_evidence(case_id:int,evidence_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db)
     ev=db.query(models.Evidence).filter_by(id=evidence_id,case_id=case_id).first()
     if not ev: raise HTTPException(404,'Evidence not found')
@@ -426,7 +428,7 @@ def download_evidence(case_id:int,evidence_id:int,user=Depends(current_user),db:
     })
 
 @app.post('/cases/{case_id}/evidence/{evidence_id}/verify')
-def verify_evidence_integrity(case_id:int,evidence_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def verify_evidence_integrity(case_id:int,evidence_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db)
     ev=db.query(models.Evidence).filter_by(id=evidence_id,case_id=case_id).first()
     if not ev: raise HTTPException(404,'Evidence not found')
@@ -439,7 +441,7 @@ def verify_evidence_integrity(case_id:int,evidence_id:int,user=Depends(current_u
 
 
 @app.post('/cases/{case_id}/uploads/init')
-def init_upload(case_id:int, body:schemas.UploadInit, user=Depends(current_user), db:Session=Depends(get_db)):
+def init_upload(case_id:int, body:schemas.UploadInit, user=Depends(require_paid), db:Session=Depends(get_db)):
     owned_case(case_id,user,db)
     if body.total_bytes and body.total_bytes > MAX_EVIDENCE_BYTES: raise HTTPException(413,'evidence exceeds MAX_EVIDENCE_BYTES')
     uid=str(uuid.uuid4())
@@ -448,7 +450,7 @@ def init_upload(case_id:int, body:schemas.UploadInit, user=Depends(current_user)
     return {'upload_id':uid,'chunk_size_recommended':8*1024*1024,'total_chunks':body.total_chunks}
 
 @app.put('/cases/{case_id}/uploads/{upload_id}/chunks/{index}')
-def put_chunk(case_id:int, upload_id:str, index:int, file:UploadFile=File(...), user=Depends(current_user), db:Session=Depends(get_db)):
+def put_chunk(case_id:int, upload_id:str, index:int, file:UploadFile=File(...), user=Depends(require_paid), db:Session=Depends(get_db)):
     owned_case(case_id,user,db)
     row=db.query(models.UploadSession).filter_by(id=upload_id,case_id=case_id,user_id=user.id).first()
     if not row: raise HTTPException(404,'Upload session not found')
@@ -460,7 +462,7 @@ def put_chunk(case_id:int, upload_id:str, index:int, file:UploadFile=File(...), 
     return {'upload_id':upload_id,'chunk':index,'bytes':n,'accepted':True}
 
 @app.post('/cases/{case_id}/uploads/{upload_id}/complete')
-def complete_upload(case_id:int, upload_id:str, user=Depends(current_user), db:Session=Depends(get_db)):
+def complete_upload(case_id:int, upload_id:str, user=Depends(require_paid), db:Session=Depends(get_db)):
     owned_case(case_id,user,db)
     row=db.query(models.UploadSession).filter_by(id=upload_id,case_id=case_id,user_id=user.id).first()
     if not row: raise HTTPException(404,'Upload session not found')
@@ -477,7 +479,7 @@ def complete_upload(case_id:int, upload_id:str, user=Depends(current_user), db:S
     return {'evidence_id':ev.id,'bytes':size,'sha256':digest,'original_preserved':True,'jobs_queued':job_types}
 
 @app.get('/cases/{case_id}/evidence/{evidence_id}/jobs')
-def evidence_jobs(case_id:int,evidence_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def evidence_jobs(case_id:int,evidence_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db)
     ev=db.query(models.Evidence).filter_by(id=evidence_id,case_id=case_id).first()
     if not ev: raise HTTPException(404,'Evidence not found')
@@ -497,7 +499,7 @@ def add_authority_version(authority_id:int,body:schemas.AuthorityVersionCreate,u
     return {'id':row.id,'sha256':digest,'verification_status':row.verification_status}
 
 @app.get('/legal/authorities/search')
-def search_authorities(q:str='',as_of:str|None=None,user=Depends(current_user),db:Session=Depends(get_db)):
+def search_authorities(q:str='',as_of:str|None=None,user=Depends(require_paid),db:Session=Depends(get_db)):
     from datetime import date as D
     query=db.query(models.LegalAuthority); like=f'%{q}%'; query=query.filter((models.LegalAuthority.citation.ilike(like)) | (models.LegalAuthority.title.ilike(like))) if q else query
     target=D.fromisoformat(as_of) if as_of else None; out=[]
@@ -507,7 +509,7 @@ def search_authorities(q:str='',as_of:str|None=None,user=Depends(current_user),d
     return {'as_of':as_of,'results':out,'warning':'Verify authority status and historical applicability against the official source before legal reliance.'}
 
 @app.post('/cases/{case_id}/authorities')
-def link_authority(case_id:int,body:schemas.AuthorityLinkCreate,user=Depends(current_user),db:Session=Depends(get_db)):
+def link_authority(case_id:int,body:schemas.AuthorityLinkCreate,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db)
     authority=db.get(models.LegalAuthority,body.authority_id)
     if not authority: raise HTTPException(404,'Authority not found')
@@ -517,7 +519,7 @@ def link_authority(case_id:int,body:schemas.AuthorityLinkCreate,user=Depends(cur
     row=models.CaseAuthorityLink(case_id=case_id,**body.model_dump()); db.add(row); db.flush(); audit(db,user.id,'LINK_AUTHORITY','case_authority_link',row.id); db.commit(); return {'id':row.id}
 
 @app.get('/cases/{case_id}/why')
-def why(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def why(case_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db); out=[]
     for l in db.query(models.CaseAuthorityLink).filter_by(case_id=case_id).all():
         a=db.get(models.LegalAuthority,l.authority_id); v=db.get(models.AuthorityVersion,l.authority_version_id) if l.authority_version_id else None
@@ -530,14 +532,14 @@ def _issue_payload(x):
             'counterargument':x.counterargument,'facts_needed':x.facts_needed,'confidence':x.confidence}
 
 @app.get('/cases/{case_id}/analysis')
-def get_case_analysis(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def get_case_analysis(case_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db)
     rows=db.query(models.IssueAnalysis).filter_by(case_id=case_id).order_by(models.IssueAnalysis.id.desc()).all()
     return {'case_id':case_id,'findings':[_issue_payload(x) for x in rows],
             'notice':'Screening findings are research leads, not legal conclusions. Verify facts, deadlines, authority status, and procedural posture.'}
 
 @app.post('/cases/{case_id}/analysis/run')
-def run_case_analysis(case_id:int,body:schemas.CaseAnalysisRequest,user=Depends(current_user),db:Session=Depends(get_db)):
+def run_case_analysis(case_id:int,body:schemas.CaseAnalysisRequest,user=Depends(require_paid),db:Session=Depends(get_db)):
     c=owned_case(case_id,user,db)
     # v0.9 deliberately creates issue-screening leads from case posture/narrative. It does not invent case law.
     text=((c.stage or '')+' '+(c.narrative or '')).lower()
@@ -562,14 +564,14 @@ def run_case_analysis(case_id:int,body:schemas.CaseAnalysisRequest,user=Depends(
             'authority_rule':'No citation is treated as supporting authority unless it is separately linked to the case and verified against a source.'}
 
 @app.get('/cases/{case_id}/red-team')
-def case_red_team(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def case_red_team(case_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     owned_case(case_id,user,db)
     rows=db.query(models.IssueAnalysis).filter_by(case_id=case_id).all()
     return {'case_id':case_id,'items':[{'issue':x.issue,'user_position':x.analysis,'counterargument':x.counterargument,
         'facts_needed':x.facts_needed,'risk':'Needs source and record verification before reliance.'} for x in rows]}
 
 @app.get('/cases/{case_id}/second-look')
-def second_look(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+def second_look(case_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
     c=owned_case(case_id,user,db)
     rows=db.query(models.IssueAnalysis).filter_by(case_id=case_id).all()
     categories=['sentencing','plea','post_conviction','constitutional']
