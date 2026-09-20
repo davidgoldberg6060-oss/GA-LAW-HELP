@@ -87,7 +87,7 @@ function suggestedReply(text:string,scenario:ScenarioKey){
 }
 
 
-type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string;sha256?:string};
+type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string;sha256?:string;interrupted?:boolean};
 type TrustedContact={name:string;phone:string};
 type IncidentDraft={startedAt:string;location:string;agency:string;officer:string;badge:string;vehicle:string;notes:string};
 const AUDIO_DB='ga-law-help-local-audio';
@@ -152,7 +152,17 @@ export default function App(){
  useEffect(()=>{const token=localStorage.getItem('ga_access_token');if(!token)return;
   fetch(API+'/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.ok?r.json():Promise.reject()).then(setUser).catch(()=>{localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token')});
  },[]);
- useEffect(()=>{purgeExpiredLocalRecordings().then(setRecordings).catch(()=>setNotice('Local recording storage could not be opened on this device.'))},[]);
+ useEffect(()=>{purgeExpiredLocalRecordings().then(async rows=>{
+  const recovered=rows.filter(row=>row.id.startsWith('recovery-'));
+  if(recovered.length){
+   const normalized=await Promise.all(rows.map(async row=>{
+    if(!row.id.startsWith('recovery-'))return row;
+    const sha256=row.sha256||await sha256Blob(row.blob).catch(()=>undefined);
+    const fixed={...row,sha256,interrupted:true};await saveLocalRecording(fixed).catch(()=>{});return fixed;
+   }));
+   setRecordings(normalized);setNotice('Recovered '+recovered.length+' interrupted encounter recording'+(recovered.length===1?'':'s')+' from this device. The recovered copy has been preserved.');
+  }else setRecordings(rows);
+ }).catch(()=>setNotice('Local recording storage could not be opened on this device.'))},[]);
  useEffect(()=>{localStorage.setItem('ga_incident_draft',JSON.stringify(incident))},[incident]);
  useEffect(()=>{localStorage.setItem('ga_trusted_contact',JSON.stringify(trusted))},[trusted]);
 
@@ -251,7 +261,7 @@ export default function App(){
   );
  }
  function exportIncident(){
-  const lines=['GA.LAW.HELP — INCIDENT SUMMARY','Created: '+new Date().toLocaleString(),'Encounter type: '+scenarios[scenario].label,'Encounter began: '+(incident.startedAt||'Not entered'),'Location: '+(incident.location||'Not entered'),'Agency: '+(incident.agency||'Not entered'),'Officer: '+(incident.officer||'Not entered'),'Badge number: '+(incident.badge||'Not entered'),'Vehicle / unit: '+(incident.vehicle||'Not entered'),'','User notes:',incident.notes||'None entered','','Local recordings listed in this browser: '+recordings.length,...recordings.map(row=>'- '+new Date(row.createdAt).toLocaleString()+' | '+scenarios[row.scenario].label+' | '+formatBytes(row.blob.size)+' | expires '+new Date(row.expiresAt).toLocaleDateString()+(row.sha256?' | SHA-256 '+row.sha256:'')),'','This user-created summary is not legal advice. Preserve original files and provide copies only to people the user authorizes.'];
+  const lines=['GA.LAW.HELP — INCIDENT SUMMARY','Created: '+new Date().toLocaleString(),'Encounter type: '+scenarios[scenario].label,'Encounter began: '+(incident.startedAt||'Not entered'),'Location: '+(incident.location||'Not entered'),'Agency: '+(incident.agency||'Not entered'),'Officer: '+(incident.officer||'Not entered'),'Badge number: '+(incident.badge||'Not entered'),'Vehicle / unit: '+(incident.vehicle||'Not entered'),'','User notes:',incident.notes||'None entered','','Local recordings listed in this browser: '+recordings.length,...recordings.map(row=>'- '+new Date(row.createdAt).toLocaleString()+' | '+scenarios[row.scenario].label+(row.interrupted?' | RECOVERED AFTER INTERRUPTION':'')+' | '+formatBytes(row.blob.size)+' | expires '+new Date(row.expiresAt).toLocaleDateString()+(row.sha256?' | SHA-256 '+row.sha256:'')),'','This user-created summary is not legal advice. Preserve original files and provide copies only to people the user authorizes.'];
   const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='ga-law-help-incident-'+new Date().toISOString().slice(0,10)+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
  function clearIncident(){if(!window.confirm('Clear the local incident report? Download it first if you need a copy.'))return;setIncident({startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''})}
