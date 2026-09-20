@@ -86,6 +86,40 @@ def readiness():
     except Exception:
         raise HTTPException(503,'Database unavailable')
 
+@app.get('/public/research')
+def public_research(q:str=''):
+    query=q.strip()
+    if not query:
+        raise HTTPException(400,'Enter a Georgia legal question')
+    lower=query.lower()
+    resources=[
+        {'title':'Georgia General Assembly — Georgia Code','url':'https://www.legis.ga.gov/legislation/georgia-code','kind':'Statutes','official':True},
+        {'title':'Supreme Court of Georgia — Opinions','url':'https://www.gasupreme.us/opinions/','kind':'Court opinions','official':True},
+        {'title':'Court of Appeals of Georgia — Opinions','url':'https://www.gaappeals.us/opinions/','kind':'Court opinions','official':True},
+    ]
+    topic='Georgia legal research'
+    guidance='Start with the current Georgia Code, then check controlling Georgia appellate decisions and the rule in effect on the relevant date.'
+    if any(x in lower for x in ('criminal','arrest','warrant','search','felony','misdemeanor','sentence','probation')):
+        topic='Georgia criminal law and procedure'
+        guidance='Identify the exact charge or police action, incident date, county, and case stage. Check the statute text, effective date, and later appellate interpretations.'
+    elif any(x in lower for x in ('custody','divorce','child support','family','marriage')):
+        topic='Georgia family law'
+        guidance='Identify the county, existing orders, filing stage, and dates. Court forms and local rules may matter in addition to the Georgia Code.'
+        resources.append({'title':'Georgia Judicial Council — Self-Help Resources','url':'https://georgiacourts.gov/a2j/self-help-resources-highlighted-by-a2j/','kind':'Court resources','official':True})
+    elif any(x in lower for x in ('appeal','habeas','conviction','ineffective','plea')):
+        topic='Georgia appeal or post-conviction research'
+        guidance='Deadlines and procedural history are critical. Gather the docket, judgment, transcripts, motions, appellate decisions, and earlier habeas filings before relying on a remedy.'
+    elif any(x in lower for x in ('tenant','landlord','eviction','rent','lease')):
+        topic='Georgia landlord-tenant law'
+        guidance='Identify the lease terms, notices, filing county, dates, and whether a court case has begun. Verify current statutes and local court procedures.'
+    return {
+        'query':query,
+        'topic':topic,
+        'guidance':guidance,
+        'resources':resources,
+        'notice':'This is a research starting point, not legal advice. Verify the current text, dates, court rules, and case-specific facts before relying on it.'
+    }
+
 @app.post('/auth/register')
 def register(body: schemas.UserCreate, db: Session=Depends(get_db)):
     email=body.email.lower()
