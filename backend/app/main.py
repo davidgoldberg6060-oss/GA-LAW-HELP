@@ -146,6 +146,18 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(current_user),db:Se
     audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit()
     return {'analysis':answer,'notice':'AI-generated legal information, not legal advice. Verify current authority, deadlines, record facts, and local filing requirements before filing.'}
 
+@app.post('/cases/{case_id}/defense-analysis')
+def defense_analysis(case_id:int,body:dict,user=Depends(current_user),db:Session=Depends(get_db)):
+    case=owned_case(case_id,user,db)
+    supplied=str(body.get('facts','')).strip()
+    facts=supplied or ('Case title: '+(case.title or '')+'\nCase number: '+(case.case_number or 'Not entered')+'\nGeorgia county: '+(case.county or 'Not entered')+'\nCase type: '+(case.case_type or 'Not entered')+'\nCurrent stage: '+(case.stage or 'Not entered')+'\nCase narrative: '+(case.narrative or 'Not entered'))
+    if len(facts)>16000: raise HTTPException(400,'Case summary is too long.')
+    prompt='DEFENSE-SIDE GEORGIA CASE ANALYSIS. Ask: What lawful arguments could defense counsel reasonably have investigated or raised? Do not assume innocence or guilt and do not predict an outcome. Separate allegations, established record facts, disputed facts, and unknowns. Screen suppression, admissibility, identification, searches, statements/interrogations, discovery, expert evidence, charging defects, jury instructions, sufficiency, alternative explanations, impeachment, plea/sentencing issues, appeals, and post-conviction remedies when relevant. For each potential strategy explain factual prerequisites, legal authority that must be verified, likely State response, evidence that strengthens or weakens it, and procedural timing. Never invent a case, citation, holding, deadline, fact, or court action. If the record is insufficient say so. End with records to obtain and issues to research in authoritative Georgia sources. CASE INFORMATION:\n'+facts
+    try: answer=ask_openai(prompt)
+    except RuntimeError: raise HTTPException(503,'The defense analysis assistant is temporarily unavailable.')
+    audit(db,user.id,'RUN_DEFENSE_ANALYSIS','case',case_id);db.commit()
+    return {'analysis':answer,'notice':'Defense-side research analysis only. It does not establish innocence or guilt and is not legal advice. Verify the record, current authority, deadlines, and local rules.'}
+
 @app.post('/public/ask')
 def public_ask(body: dict):
     question=str(body.get('question','')).strip()
