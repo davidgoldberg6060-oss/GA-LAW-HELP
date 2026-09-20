@@ -1,5 +1,5 @@
 import React,{FormEvent,useEffect,useRef,useState}from'react';
-import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square}from'lucide-react';
+import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive}from'lucide-react';
 
 const API='https://api-production-60cc.up.railway.app';
 type Resource={title:string;url:string;kind:string;official:boolean};
@@ -81,6 +81,32 @@ function suggestedReply(text:string,scenario:ScenarioKey){
  return scenarios[scenario].phrases[0];
 }
 
+
+type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string};
+const AUDIO_DB='ga-law-help-local-audio';
+function openAudioDb():Promise<IDBDatabase>{
+ return new Promise((resolve,reject)=>{
+  const request=indexedDB.open(AUDIO_DB,1);
+  request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains('recordings')){const store=db.createObjectStore('recordings',{keyPath:'id'});store.createIndex('expiresAt','expiresAt')}};
+  request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+ });
+}
+function idbRequest<T>(request:IDBRequest<T>):Promise<T>{return new Promise((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)})}
+function idbDone(transaction:IDBTransaction):Promise<void>{return new Promise((resolve,reject)=>{transaction.oncomplete=()=>resolve();transaction.onerror=()=>reject(transaction.error);transaction.onabort=()=>reject(transaction.error)})}
+async function saveLocalRecording(row:LocalRecording){
+ const db=await openAudioDb();const transaction=db.transaction('recordings','readwrite');transaction.objectStore('recordings').put(row);await idbDone(transaction);db.close();
+}
+async function purgeExpiredLocalRecordings():Promise<LocalRecording[]>{
+ const db=await openAudioDb();const read=db.transaction('recordings','readonly');const rows=await idbRequest(read.objectStore('recordings').getAll()) as LocalRecording[];await idbDone(read);
+ const expired=rows.filter(row=>row.expiresAt<=Date.now());
+ if(expired.length){const write=db.transaction('recordings','readwrite');for(const row of expired)write.objectStore('recordings').delete(row.id);await idbDone(write)}
+ db.close();return rows.filter(row=>row.expiresAt>Date.now()).sort((a,b)=>b.createdAt-a.createdAt);
+}
+async function deleteLocalRecording(id:string){
+ const db=await openAudioDb();const transaction=db.transaction('recordings','readwrite');transaction.objectStore('recordings').delete(id);await idbDone(transaction);db.close();
+}
+function formatBytes(bytes:number){if(bytes<1024)return bytes+' B';if(bytes<1048576)return(bytes/1024).toFixed(1)+' KB';return(bytes/1048576).toFixed(1)+' MB'}
+
 async function api(path:string,options:RequestInit={}){
  const res=await fetch(API+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
  const data=await res.json().catch(()=>({detail:'The server returned an unreadable response.'}));
@@ -95,10 +121,14 @@ export default function App(){
  const[user,setUser]=useState<User|null>(null);const[notice,setNotice]=useState('');
  const[tool,setTool]=useState<'avoid'|'police'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
  const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);
+ const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
+ const[retentionDays,setRetentionDays]=useState<180|365|400>(()=>{const saved=Number(localStorage.getItem('ga_audio_retention_days'));return saved===180||saved===400?saved:365});
+ const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);
 
  useEffect(()=>{const token=localStorage.getItem('ga_access_token');if(!token)return;
   fetch(API+'/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.ok?r.json():Promise.reject()).then(setUser).catch(()=>{localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token')});
  },[]);
+ useEffect(()=>{purgeExpiredLocalRecordings().then(setRecordings).catch(()=>setNotice('Local recording storage could not be opened on this device.'))},[]);
 
  async function runResearch(e?:FormEvent){e?.preventDefault();if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
   setNotice('');setResearching(true);try{setResearch(await api('/public/research?q='+encodeURIComponent(q.trim())));setTimeout(()=>document.getElementById('research-results')?.scrollIntoView({behavior:'smooth'}),50)}
@@ -113,10 +143,36 @@ export default function App(){
    setUser(profile);setAuthOpen(false);setPassword('');setNotice(mode==='register'?'Account created. You are signed in.':'Welcome back. You are signed in.');
   }catch(err){setAuthError(err instanceof Error?err.message:'Could not sign in.')}finally{setAuthBusy(false)}
  }
+ async function startRecording(){
+  if(recording)return;stopListening();
+  if(!navigator.mediaDevices?.getUserMedia||!('MediaRecorder'in window)){setNotice('Audio recording is not supported in this browser.');return}
+  try{
+   const stream=await navigator.mediaDevices.getUserMedia({audio:true});mediaStreamRef.current=stream;
+   navigator.storage?.persist?.().catch(()=>false);
+   const preferred=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'';
+   const recorder=new MediaRecorder(stream,preferred?{mimeType:preferred}:undefined);mediaRecorderRef.current=recorder;audioChunksRef.current=[];
+   recorder.ondataavailable=event=>{if(event.data.size)audioChunksRef.current.push(event.data)};
+   recorder.onerror=()=>{stream.getTracks().forEach(track=>track.stop());setRecording(false);setNotice('Recording stopped because the browser reported an audio error.')};
+   recorder.onstop=async()=>{
+    try{
+     const mimeType=recorder.mimeType||'audio/webm';const blob=new Blob(audioChunksRef.current,{type:mimeType});
+     if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType});setRecordings(await purgeExpiredLocalRecordings());setNotice('Audio saved locally on this device.')}
+    }catch{setNotice('The recording could not be saved. Your browser storage may be full or unavailable.')}
+    finally{stream.getTracks().forEach(track=>track.stop());mediaRecorderRef.current=null;mediaStreamRef.current=null;audioChunksRef.current=[];setRecording(false)}
+   };
+   recorder.start(1000);setRecording(true);setNotice('Recording started. The red indicator stays visible while the microphone is active.');
+  }catch{setNotice('Microphone permission was not granted. Allow microphone access and try again.')}
+ }
+ function stopRecording(){const recorder=mediaRecorderRef.current;if(recorder&&recorder.state!=='inactive')recorder.stop()}
+ function playRecording(row:LocalRecording){const url=URL.createObjectURL(row.blob);const audio=new Audio(url);audio.onended=()=>URL.revokeObjectURL(url);audio.onerror=()=>URL.revokeObjectURL(url);audio.play().catch(()=>{URL.revokeObjectURL(url);setNotice('This recording could not be played by the browser.')})}
+ function downloadRecording(row:LocalRecording){const url=URL.createObjectURL(row.blob);const link=document.createElement('a');const extension=row.mimeType.includes('ogg')?'ogg':row.mimeType.includes('mp4')?'m4a':'webm';link.href=url;link.download='ga-law-help-'+new Date(row.createdAt).toISOString().replace(/[:.]/g,'-')+'.'+extension;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+ async function removeRecording(row:LocalRecording){if(!window.confirm('Permanently delete this local recording? This cannot be undone.'))return;await deleteLocalRecording(row.id);setRecordings(await purgeExpiredLocalRecordings())}
+ function changeRetention(value:string){const days=Number(value) as 180|365|400;setRetentionDays(days);localStorage.setItem('ga_audio_retention_days',String(days))}
  function stopListening(){recognitionRef.current?.stop();recognitionRef.current=null;setListening(false)}
- function closeTool(){stopListening();window.speechSynthesis?.cancel();setTool(null)}
+ function closeTool(){stopRecording();stopListening();window.speechSynthesis?.cancel();setTool(null)}
  function openPolice(){if(!user){setMode('login');setAuthOpen(true);setNotice('Sign in to use the paid police-encounter assistant.');return}setTool('police')}
  function startListening(){
+  if(recording){setNotice('Stop the local audio recording before starting live transcription.');return}
   const SpeechRecognition=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition;
   if(!SpeechRecognition){setNotice('Live listening is not supported in this browser. You can still tap a prepared response.');return}
   stopListening();const recognition=new SpeechRecognition();recognition.continuous=true;recognition.interimResults=true;recognition.lang='en-US';
@@ -164,6 +220,13 @@ export default function App(){
     <div className="listenBox"><div><b>Live listening</b><small>Your browser processes speech for suggestions. GA.LAW.HELP does not save the audio or transcript in this preview.</small></div>
      <button className={listening?'stopButton':'listenButton'} onClick={listening?stopListening:startListening}>{listening?<><Square size={16}/>Stop</>:<><Mic size={17}/>Start listening</>}</button>
     </div>
+    <section className="recordingBox">
+     <div className="recordingHead"><div><b><HardDrive size={17}/>Save audio on this device</b><small>Choose how long each new recording stays in this browser.</small></div><select value={retentionDays} onChange={e=>changeRetention(e.target.value)} aria-label="Recording retention period"><option value="180">180 days</option><option value="365">365 days</option><option value="400">400 days</option></select></div>
+     <button className={recording?'recordStop':'recordStart'} onClick={recording?stopRecording:startRecording}>{recording?<><Square size={16}/>Stop and save recording</>:<><Circle size={17}/>Start local recording</>}</button>
+     {recording&&<div className="recordingActive"><span/>Recording in progress — keep the phone visible and use it only when safe and permitted.</div>}
+     <p className="recordingWarning">Record only when lawful. Consent and location rules can vary. Files remain in this browser profile, are removed when the app next opens after expiration, and may disappear earlier if the browser or phone clears site data. Download important recordings.</p>
+     {recordings.length>0&&<div className="recordingList"><h3>Saved on this device</h3>{recordings.map(row=><article key={row.id}><div><b>{scenarios[row.scenario].label}</b><span>{new Date(row.createdAt).toLocaleString()} · {formatBytes(row.blob.size)}</span><small>Expires {new Date(row.expiresAt).toLocaleDateString()}</small></div><div><button onClick={()=>playRecording(row)} aria-label="Play recording"><Play size={16}/></button><button onClick={()=>downloadRecording(row)} aria-label="Download recording"><Download size={16}/></button><button className="deleteRecording" onClick={()=>removeRecording(row)} aria-label="Delete recording"><Trash2 size={16}/></button></div></article>)}</div>}
+    </section>
     <label className="transcriptLabel">What was heard<textarea value={transcript} onChange={e=>setTranscript(e.target.value)} placeholder="The live transcript will appear here. You can also type what the officer said."/></label>
     <div className="replyCard"><small>Suggested calm response</small><p>{suggestedReply(transcript,scenario)}</p><button onClick={()=>speak(suggestedReply(transcript,scenario))}><Volume2 size={17}/>Read this aloud</button></div>
     <button className="rightsButton" onClick={()=>speak(rightsStatement)}><ShieldCheck size={18}/><span><b>Read my rights statement aloud</b><small>States silence, no consent to search, request for counsel, and no resistance.</small></span></button>
