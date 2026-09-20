@@ -124,6 +124,16 @@ def public_research(q:str=''):
         'notice':'This is a research starting point, not legal advice. Verify the current text, dates, court rules, and case-specific facts before relying on it.'
     }
 
+@app.post('/public/motion-screen')
+def public_motion_screen(body: dict):
+    facts=str(body.get('facts','')).strip()
+    if not facts: raise HTTPException(400,'Enter the case facts, current case stage, court, charges, and important dates.')
+    if len(facts)>12000: raise HTTPException(400,'Case summary is too long.')
+    prompt="""GEORGIA CRIMINAL CASE MOTION SCREEN. Analyze only from the facts supplied. Do not promise dismissal, release, sentence reduction, or any outcome. Identify potentially applicable motions or post-conviction remedies, including suppression, discovery, dismissal/charging defects, speedy trial, bond, motions in limine, new-trial/appellate procedures, plea or sentence-related remedies, probation issues, and habeas only when factually relevant. For each relevant option state: (1) why it may apply, (2) facts supporting it, (3) missing facts/documents, (4) timing/deadline issues that must be verified, (5) Georgia authority that must be verified before filing, (6) likely prosecution/state counterarguments, and (7) next evidence or record to obtain. Never invent a statute, rule, case citation, deadline, judge, or local filing requirement. Clearly label any authority not independently verified. Distinguish pretrial, trial, direct-review, and post-conviction remedies. End with a short prioritized checklist for attorney/user review, not a prediction of success. CASE INFORMATION:\n"""+facts
+    try: answer=ask_openai(prompt)
+    except RuntimeError: raise HTTPException(503,'The motion screening assistant is temporarily unavailable.')
+    return {'analysis':answer,'notice':'AI-generated legal information, not legal advice. Filing requirements, deadlines, current Georgia authority, and local court rules must be independently verified before filing.'}
+
 @app.post('/public/ask')
 def public_ask(body: dict):
     question=str(body.get('question','')).strip()
