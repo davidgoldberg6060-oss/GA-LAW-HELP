@@ -137,7 +137,7 @@ async function authApi(path:string,options:RequestInit={}){
 
 export default function App(){
  const[q,setQ]=useState('');const[research,setResearch]=useState<Research|null>(null);const[aiAnswer,setAiAnswer]=useState<AIAnswer|null>(null);const[researching,setResearching]=useState(false);
- const[authOpen,setAuthOpen]=useState(false);const[mode,setMode]=useState<'login'|'register'>('login');
+ const[authOpen,setAuthOpen]=useState(false);const[mode,setMode]=useState<'login'|'register'|'forgot'|'reset'>('login');
  const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[showPassword,setShowPassword]=useState(false);const[authError,setAuthError]=useState('');const[authBusy,setAuthBusy]=useState(false);
  const passwordAccepted=password.length>=15&&password.length<=128;
  const[user,setUser]=useState<User|null>(null);const[notice,setNotice]=useState('');
@@ -152,6 +152,16 @@ export default function App(){
 
  useEffect(()=>{const token=localStorage.getItem('ga_access_token');if(!token)return;
   fetch(API+'/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.ok?r.json():Promise.reject()).then(setUser).catch(()=>{localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token')});
+ },[]);
+ useEffect(()=>{
+  const params=new URLSearchParams(window.location.search);const token=params.get('token');
+  if(window.location.pathname==='/reset-password'&&token){setMode('reset');setAuthOpen(true);setAuthError('');return}
+  if(window.location.pathname==='/verify-email'&&token){
+   setAuthOpen(true);setAuthBusy(true);
+   api('/auth/verify-email',{method:'POST',body:JSON.stringify({token})}).then(()=>{
+    window.history.replaceState({},'', '/');setMode('login');setNotice('Email verified. You can sign in now.');
+   }).catch(error=>{setMode('login');setAuthError(error instanceof Error?error.message:'The verification link is invalid or expired.')}).finally(()=>setAuthBusy(false));
+  }
  },[]);
  useEffect(()=>{const sync=()=>{syncRecoveredRecordings().catch(()=>{})};window.addEventListener('online',sync);const timer=window.setTimeout(sync,1200);return()=>{window.removeEventListener('online',sync);window.clearTimeout(timer)}},[user]);
  useEffect(()=>{purgeExpiredLocalRecordings().then(async rows=>{
@@ -211,14 +221,32 @@ export default function App(){
  },[transcript,scenario,tool]);
 
  async function submitAuth(e:FormEvent){e.preventDefault();setAuthError('');
-  if(mode==='register'&&!passwordAccepted){setAuthError('Your password must be between 15 and 128 characters.');return}
+  if((mode==='register'||mode==='reset')&&!passwordAccepted){setAuthError('Your password must be between 15 and 128 characters.');return}
   setAuthBusy(true);
-  try{const data=await api(mode==='login'?'/auth/login':'/auth/register',{method:'POST',body:JSON.stringify({email,password})});
-   if(!data.access_token)throw new Error('Your account was created, but sign-in is waiting for email verification.');
+  try{
+   if(mode==='forgot'){
+    await api('/auth/forgot-password',{method:'POST',body:JSON.stringify({email})});
+    setMode('login');setNotice('If an account exists for that email, a password-reset link has been sent.');return;
+   }
+   if(mode==='reset'){
+    const token=new URLSearchParams(window.location.search).get('token');if(!token)throw new Error('This password-reset link is missing its secure token.');
+    await api('/auth/reset-password',{method:'POST',body:JSON.stringify({token,new_password:password})});
+    window.history.replaceState({},'', '/');setMode('login');setPassword('');setNotice('Password reset. Sign in with your new password.');return;
+   }
+   const data=await api(mode==='login'?'/auth/login':'/auth/register',{method:'POST',body:JSON.stringify({email,password})});
+   if(!data.access_token){
+    setMode('login');setPassword('');setNotice('Account created. Check your email for the verification link, then sign in.');return;
+   }
    localStorage.setItem('ga_access_token',data.access_token);localStorage.setItem('ga_refresh_token',data.refresh_token);
    const profile=await fetch(API+'/me',{headers:{Authorization:'Bearer '+data.access_token}}).then(r=>r.json());
    setUser(profile);setAuthOpen(false);setPassword('');setNotice(mode==='register'?'Account created. You are signed in.':'Welcome back. You are signed in.');
-  }catch(err){setAuthError(err instanceof Error?err.message:'Could not sign in.')}finally{setAuthBusy(false)}
+  }catch(err){setAuthError(err instanceof Error?err.message:'Could not complete account access.')}finally{setAuthBusy(false)}
+ }
+ async function resendVerification(){
+  if(!email.trim()){setAuthError('Enter your email address first.');return}
+  setAuthBusy(true);setAuthError('');
+  try{await api('/auth/resend-verification',{method:'POST',body:JSON.stringify({email})});setNotice('If that account still needs verification, a new link has been sent.')}
+  catch(error){setAuthError(error instanceof Error?error.message:'The verification email could not be requested.')}finally{setAuthBusy(false)}
  }
  async function startRecording(){
   if(recording)return;stopListening();
@@ -346,6 +374,9 @@ export default function App(){
  }
  function logout(){localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token');localStorage.removeItem('ga_encounter_case_id');setUser(null);setNotice('You are signed out.');}
 
+ const authTitle=mode==='login'?'Welcome back':mode==='register'?'Create your private account':mode==='forgot'?'Reset your password':'Choose a new password';
+ const authIntro=mode==='login'?'Sign in to continue to your saved cases and tools.':mode==='register'?'One secure account for your cases, incident notes and evidence.':mode==='forgot'?'Enter your email and we will send a secure reset link if an account exists.':'Use 15–128 characters for your new password.';
+
  return <main>
   <header><div className="brand"><Scale/><div><b>STANDALONE ASSISTANT</b><span>GA.LAW.HELP</span></div></div>
    {user?<div className="account"><span><UserRound size={16}/>{user.email}</span><button onClick={logout} aria-label="Sign out"><LogOut size={17}/> Sign out</button></div>:
@@ -430,23 +461,26 @@ export default function App(){
     <small className="previewNote">Preview access is enabled for testing. A secure subscription checkout must be connected before customers can be charged.</small>
    </>}
   </section></div>}
-  {authOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)setAuthOpen(false)}}><section className={`modal authModal ${mode==='register'?'registerMode':''}`} role="dialog" aria-modal="true" aria-label="Account access">
-   <button className="close" onClick={()=>setAuthOpen(false)} aria-label="Close"><X/></button>
-   <div className="authHeading"><span className="authIcon"><Scale/></span><div><span className="eyebrow">{mode==='login'?'Private workspace':'Secure account setup'}</span><h2>{mode==='login'?'Welcome back':'Create your private account'}</h2><p>{mode==='login'?'Sign in to continue to your saved cases and tools.':'One secure account for your cases, incident notes and evidence.'}</p></div></div>
-   <div className="tabs" aria-label="Choose account action"><button type="button" className={mode==='login'?'active':''} onClick={()=>{setMode('login');setAuthError('');setShowPassword(false)}}>Sign in</button><button type="button" className={mode==='register'?'active':''} onClick={()=>{setMode('register');setAuthError('');setShowPassword(false)}}>Create account</button></div>
+  {authOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget&&mode!=='reset')setAuthOpen(false)}}><section className={`modal authModal ${mode==='register'?'registerMode':''}`} role="dialog" aria-modal="true" aria-label="Account access">
+   <button className="close" onClick={()=>{if(mode==='reset')window.history.replaceState({},'', '/');setAuthOpen(false)}} aria-label="Close"><X/></button>
+   <div className="authHeading"><span className="authIcon"><Scale/></span><div><span className="eyebrow">{mode==='login'?'Private workspace':mode==='register'?'Secure account setup':'Account recovery'}</span><h2>{authTitle}</h2><p>{authIntro}</p></div></div>
+   {(mode==='login'||mode==='register')&&<div className="tabs" aria-label="Choose account action"><button type="button" className={mode==='login'?'active':''} onClick={()=>{setMode('login');setAuthError('');setShowPassword(false)}}>Sign in</button><button type="button" className={mode==='register'?'active':''} onClick={()=>{setMode('register');setAuthError('');setShowPassword(false)}}>Create account</button></div>}
    {mode==='register'&&<div className="accountBenefits" aria-label="Account benefits">
     <div><LockKeyhole size={19}/><span><b>Private workspace</b><small>Keep saved case work behind your sign-in.</small></span></div>
     <div><ShieldCheck size={19}/><span><b>Security starts here</b><small>Use a unique password you do not use elsewhere.</small></span></div>
    </div>}
    <form onSubmit={submitAuth}>
-    <label>Email address<input type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" placeholder="you@example.com" required/></label>
-    <label>Password<div className="passwordInput"><input type={showPassword?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} minLength={mode==='register'?15:1} maxLength={mode==='register'?128:undefined} aria-describedby={mode==='register'?'password-help':undefined} aria-invalid={mode==='register'&&password.length>0&&!passwordAccepted} required/><button type="button" onClick={()=>setShowPassword(value=>!value)} aria-label={showPassword?'Hide password':'Show password'}>{showPassword?<EyeOff size={18}/>:<Eye size={18}/>}</button></div></label>
-    {mode==='register'&&<div className="passwordGuide" id="password-help">
+    {mode!=='reset'&&<label>Email address<input type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" placeholder="you@example.com" required/></label>}
+    {mode!=='forgot'&&<label>{mode==='reset'?'New password':'Password'}<div className="passwordInput"><input type={showPassword?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==='login'?'current-password':'new-password'} minLength={mode==='login'?1:15} maxLength={mode==='login'?undefined:128} aria-describedby={mode==='register'||mode==='reset'?'password-help':undefined} aria-invalid={(mode==='register'||mode==='reset')&&password.length>0&&!passwordAccepted} required/><button type="button" onClick={()=>setShowPassword(value=>!value)} aria-label={showPassword?'Hide password':'Show password'}>{showPassword?<EyeOff size={18}/>:<Eye size={18}/>}</button></div></label>}
+    {(mode==='register'||mode==='reset')&&<div className="passwordGuide" id="password-help">
      <div className={`passwordRule ${passwordAccepted?'met':''}`}><CheckCircle2 size={18}/><span><b>15–128 characters required</b><small>{password.length?password.length+' characters entered':'Spaces count and are allowed.'}</small></span></div>
      <div className="passwordTip"><Fingerprint size={18}/><span><b>Make it memorable and unique</b><small>Try four or more unrelated words, or use a password manager. Capital letters, numbers and symbols are allowed, but not required.</small></span></div>
     </div>}
     {authError&&<div className="error" role="alert">{authError}</div>}
-    <button className="primary accountSubmit" disabled={authBusy||(mode==='register'&&!passwordAccepted)}>{authBusy?<><LoaderCircle className="spin" size={17}/>Please wait</>:mode==='login'?'Sign in securely':'Create secure account'}</button>
+    <button className="primary accountSubmit" disabled={authBusy||((mode==='register'||mode==='reset')&&!passwordAccepted)}>{authBusy?<><LoaderCircle className="spin" size={17}/>Please wait</>:mode==='login'?'Sign in securely':mode==='register'?'Create secure account':mode==='forgot'?'Send reset link':'Save new password'}</button>
+    {mode==='login'&&<button type="button" className="authLink" onClick={()=>{setMode('forgot');setAuthError('');setPassword('')}}>Forgot your password?</button>}
+    {mode==='login'&&authError.toLowerCase().includes('verification')&&<button type="button" className="authLink" onClick={resendVerification}>Send a new verification email</button>}
+    {(mode==='forgot'||mode==='reset')&&<button type="button" className="authLink" onClick={()=>{if(mode==='reset')window.history.replaceState({},'', '/');setMode('login');setAuthError('');setPassword('')}}>Back to sign in</button>}
     {mode==='register'&&<small className="accountFinePrint">Public legal learning remains available without an account.</small>}
    </form></section></div>}
  </main>
