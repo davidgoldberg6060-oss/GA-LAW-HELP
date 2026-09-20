@@ -10,7 +10,7 @@ from . import models, schemas
 from .auth import hash_password, verify_password, create_token, current_user, owned_case, require_admin
 from .token_service import (issue_refresh, rotate_refresh, revoke_refresh, issue_reset, consume_reset,
     issue_email_verification, consume_email_verification, revoke_all_user_refresh_tokens)
-from .email_delivery import deliver_verification, deliver_password_reset
+from .email_delivery import deliver_verification, deliver_password_reset, deliver_encounter_notice
 from .ai_assistant import ask_openai
 
 def validate_production_config():
@@ -263,7 +263,8 @@ def upload_evidence(case_id:int,file:UploadFile=File(...),user=Depends(current_u
     if media_type.startswith('video/'): job_types += ['FRAME_ANALYSIS','REFLECTION_ANALYSIS','OFF_CAMERA_RECONSTRUCTION']
     for jt in job_types: db.add(models.AnalysisJob(evidence_id=ev.id,job_type=jt,status='QUEUED'))
     audit(db,user.id,'UPLOAD_EVIDENCE','evidence',ev.id); db.commit(); db.refresh(ev)
-    return {'id':ev.id,'filename':ev.filename,'bytes':size,'sha256':ev.sha256,'original_preserved':True,'jobs_queued':job_types}
+    notice_sent=deliver_encounter_notice(user.email,ev.filename,ev.sha256,size) if media_type.startswith(('audio/','video/')) else False
+    return {'id':ev.id,'filename':ev.filename,'bytes':size,'sha256':ev.sha256,'original_preserved':True,'jobs_queued':job_types,'owner_email_notice_sent':notice_sent}
 
 @app.get('/cases/{case_id}/evidence')
 def evidence(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
