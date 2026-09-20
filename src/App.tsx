@@ -1,5 +1,5 @@
 import React,{FormEvent,useEffect,useRef,useState}from'react';
-import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive}from'lucide-react';
+import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList}from'lucide-react';
 
 const API='https://api-production-60cc.up.railway.app';
 type Resource={title:string;url:string;kind:string;official:boolean};
@@ -83,6 +83,7 @@ function suggestedReply(text:string,scenario:ScenarioKey){
 
 
 type LocalRecording={id:string;blob:Blob;createdAt:number;expiresAt:number;scenario:ScenarioKey;mimeType:string};
+type IncidentDraft={startedAt:string;location:string;agency:string;officer:string;badge:string;vehicle:string;notes:string};
 const AUDIO_DB='ga-law-help-local-audio';
 function openAudioDb():Promise<IDBDatabase>{
  return new Promise((resolve,reject)=>{
@@ -124,11 +125,13 @@ export default function App(){
  const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
  const[retentionDays,setRetentionDays]=useState<180|365|400>(()=>{const saved=Number(localStorage.getItem('ga_audio_retention_days'));return saved===180||saved===400?saved:365});
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);
+ const[incident,setIncident]=useState<IncidentDraft>(()=>{try{const saved=localStorage.getItem('ga_incident_draft');if(saved)return JSON.parse(saved)}catch{}return{startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''}});
 
  useEffect(()=>{const token=localStorage.getItem('ga_access_token');if(!token)return;
   fetch(API+'/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.ok?r.json():Promise.reject()).then(setUser).catch(()=>{localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token')});
  },[]);
  useEffect(()=>{purgeExpiredLocalRecordings().then(setRecordings).catch(()=>setNotice('Local recording storage could not be opened on this device.'))},[]);
+ useEffect(()=>{localStorage.setItem('ga_incident_draft',JSON.stringify(incident))},[incident]);
 
  async function runResearch(e?:FormEvent){e?.preventDefault();if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
   setNotice('');setResearching(true);try{setResearch(await api('/public/research?q='+encodeURIComponent(q.trim())));setTimeout(()=>document.getElementById('research-results')?.scrollIntoView({behavior:'smooth'}),50)}
@@ -168,6 +171,20 @@ export default function App(){
  function downloadRecording(row:LocalRecording){const url=URL.createObjectURL(row.blob);const link=document.createElement('a');const extension=row.mimeType.includes('ogg')?'ogg':row.mimeType.includes('mp4')?'m4a':'webm';link.href=url;link.download='ga-law-help-'+new Date(row.createdAt).toISOString().replace(/[:.]/g,'-')+'.'+extension;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
  async function removeRecording(row:LocalRecording){if(!window.confirm('Permanently delete this local recording? This cannot be undone.'))return;await deleteLocalRecording(row.id);setRecordings(await purgeExpiredLocalRecordings())}
  function changeRetention(value:string){const days=Number(value) as 180|365|400;setRetentionDays(days);localStorage.setItem('ga_audio_retention_days',String(days))}
+ function updateIncident(field:keyof IncidentDraft,value:string){setIncident(previous=>({...previous,[field]:value}))}
+ function captureLocation(){
+  if(!navigator.geolocation){setNotice('Location is not available in this browser.');return}
+  setNotice('Requesting your location…');navigator.geolocation.getCurrentPosition(
+   position=>{updateIncident('location',position.coords.latitude.toFixed(6)+', '+position.coords.longitude.toFixed(6)+' (accuracy about '+Math.round(position.coords.accuracy)+' m)');setNotice('Location added to the local incident report.')},
+   ()=>setNotice('Location permission was not granted or your position was unavailable.'),
+   {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+  );
+ }
+ function exportIncident(){
+  const lines=['GA.LAW.HELP — INCIDENT SUMMARY','Created: '+new Date().toLocaleString(),'Encounter type: '+scenarios[scenario].label,'Encounter began: '+(incident.startedAt||'Not entered'),'Location: '+(incident.location||'Not entered'),'Agency: '+(incident.agency||'Not entered'),'Officer: '+(incident.officer||'Not entered'),'Badge number: '+(incident.badge||'Not entered'),'Vehicle / unit: '+(incident.vehicle||'Not entered'),'','User notes:',incident.notes||'None entered','','Local recordings listed in this browser: '+recordings.length,...recordings.map(row=>'- '+new Date(row.createdAt).toLocaleString()+' | '+scenarios[row.scenario].label+' | '+formatBytes(row.blob.size)+' | expires '+new Date(row.expiresAt).toLocaleDateString()),'','This user-created summary is not legal advice. Preserve original files and provide copies only to people the user authorizes.'];
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='ga-law-help-incident-'+new Date().toISOString().slice(0,10)+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }
+ function clearIncident(){if(!window.confirm('Clear the local incident report? Download it first if you need a copy.'))return;setIncident({startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''})}
  function stopListening(){recognitionRef.current?.stop();recognitionRef.current=null;setListening(false)}
  function closeTool(){stopRecording();stopListening();window.speechSynthesis?.cancel();setTool(null)}
  function openPolice(){if(!user){setMode('login');setAuthOpen(true);setNotice('Sign in to use the paid police-encounter assistant.');return}setTool('police')}
@@ -208,6 +225,7 @@ export default function App(){
   </section>
   <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse as a guest. Claims should be verified against an official source before being presented as current law.</p></div></div>
    <div className="funGrid">{funFacts.map(x=><article key={x.title}><h3>{x.title}</h3><p>{x.text}</p></article>)}</div></section>
+  <button className="encounterFab" onClick={()=>{setScenario('traffic');openPolice()}}><ShieldAlert size={20}/><span><b>Encounter Help</b><small>Open safety mode</small></span></button>
   {tool&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)closeTool()}}><section className="toolModal" role="dialog" aria-modal="true" aria-label={tool==='avoid'?'Avoid trouble':'Help me talk to police'}>
    <button className="close" onClick={closeTool} aria-label="Close"><X/></button>
    {tool==='avoid'?<><ShieldAlert className="modalLogo"/><h2>Avoid Trouble</h2><p>Choose the situation closest to what is happening. Safety comes first; this is general information, not a substitute for a lawyer.</p>
@@ -227,7 +245,17 @@ export default function App(){
      <p className="recordingWarning">Record only when lawful. Consent and location rules can vary. Files remain in this browser profile, are removed when the app next opens after expiration, and may disappear earlier if the browser or phone clears site data. Download important recordings.</p>
      {recordings.length>0&&<div className="recordingList"><h3>Saved on this device</h3>{recordings.map(row=><article key={row.id}><div><b>{scenarios[row.scenario].label}</b><span>{new Date(row.createdAt).toLocaleString()} · {formatBytes(row.blob.size)}</span><small>Expires {new Date(row.expiresAt).toLocaleDateString()}</small></div><div><button onClick={()=>playRecording(row)} aria-label="Play recording"><Play size={16}/></button><button onClick={()=>downloadRecording(row)} aria-label="Download recording"><Download size={16}/></button><button className="deleteRecording" onClick={()=>removeRecording(row)} aria-label="Delete recording"><Trash2 size={16}/></button></div></article>)}</div>}
     </section>
-    <label className="transcriptLabel">What was heard<textarea value={transcript} onChange={e=>setTranscript(e.target.value)} placeholder="The live transcript will appear here. You can also type what the officer said."/></label>
+    <details className="protectionPanel"><summary><ClipboardList size={18}/><span><b>Build an incident report</b><small>Saved locally as you type</small></span></summary>
+     <div className="incidentGrid"><label>Encounter began<input type="datetime-local" value={incident.startedAt} onChange={e=>updateIncident('startedAt',e.target.value)}/></label><label>Location<input value={incident.location} onChange={e=>updateIncident('location',e.target.value)} placeholder="Address or coordinates"/></label><label>Agency<input value={incident.agency} onChange={e=>updateIncident('agency',e.target.value)} placeholder="Police or sheriff department"/></label><label>Officer name<input value={incident.officer} onChange={e=>updateIncident('officer',e.target.value)} placeholder="If known"/></label><label>Badge number<input value={incident.badge} onChange={e=>updateIncident('badge',e.target.value)} inputMode="numeric" placeholder="If visible"/></label><label>Vehicle / unit<input value={incident.vehicle} onChange={e=>updateIncident('vehicle',e.target.value)} placeholder="Patrol car or unit number"/></label></div>
+     <button className="locationButton" onClick={captureLocation}><MapPin size={16}/>Add my current coordinates</button>
+     <label className="incidentNotes">Timeline and notes<textarea value={incident.notes} onChange={e=>updateIncident('notes',e.target.value)} placeholder="Write only what you remember. Separate what you personally saw or heard from what someone else told you."/></label>
+     <div className="incidentActions"><button onClick={exportIncident}><Download size={16}/>Export report</button><button className="clearReport" onClick={clearIncident}><Trash2 size={16}/>Clear</button></div>
+    </details>
+    <details className="protectionPanel"><summary><Phone size={18}/><span><b>Reach real legal help</b><small>Independent lawyer and legal-aid resources</small></span></summary>
+     <div className="legalHelpLinks"><a href="https://www.glsp.org/" target="_blank" rel="noreferrer"><b>Georgia Legal Services Program</b><span>Statewide civil legal aid outside metro Atlanta</span><ExternalLink size={16}/></a><a href="https://atlantalegalaid.org/" target="_blank" rel="noreferrer"><b>Atlanta Legal Aid</b><span>Civil legal aid in the Atlanta area</span><ExternalLink size={16}/></a><a href="https://www.gabar.org/" target="_blank" rel="noreferrer"><b>State Bar of Georgia</b><span>Find public resources and Georgia lawyers</span><ExternalLink size={16}/></a><a href="https://www.lsc.gov/about-lsc/what-legal-aid/i-need-legal-help" target="_blank" rel="noreferrer"><b>Legal Services Corporation</b><span>Search for funded legal aid by location</span><ExternalLink size={16}/></a></div>
+     <p className="lawyerBoundary">Opening a resource does not create an attorney-client relationship. A lawyer must accept the matter and confirm representation.</p>
+    </details>
+        <label className="transcriptLabel">What was heard<textarea value={transcript} onChange={e=>setTranscript(e.target.value)} placeholder="The live transcript will appear here. You can also type what the officer said."/></label>
     <div className="replyCard"><small>Suggested calm response</small><p>{suggestedReply(transcript,scenario)}</p><button onClick={()=>speak(suggestedReply(transcript,scenario))}><Volume2 size={17}/>Read this aloud</button></div>
     <button className="rightsButton" onClick={()=>speak(rightsStatement)}><ShieldCheck size={18}/><span><b>Read my rights statement aloud</b><small>States silence, no consent to search, request for counsel, and no resistance.</small></span></button>
     <div className="sourceLinks"><span>General constitutional references:</span><a href="https://constitution.congress.gov/constitution/amendment-4/" target="_blank" rel="noreferrer">Fourth Amendment</a><a href="https://constitution.congress.gov/constitution/amendment-5/" target="_blank" rel="noreferrer">Fifth Amendment</a><a href="https://constitution.congress.gov/constitution/amendment-6/" target="_blank" rel="noreferrer">Sixth Amendment</a></div>
