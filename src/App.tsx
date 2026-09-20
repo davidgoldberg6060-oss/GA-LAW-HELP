@@ -133,7 +133,7 @@ export default function App(){
  const passwordAccepted=password.length>=15&&password.length<=128;
  const[user,setUser]=useState<User|null>(null);const[notice,setNotice]=useState('');
  const[tool,setTool]=useState<'avoid'|'police'|'case'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
- const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);const[encounterReply,setEncounterReply]=useState('');const[encounterBusy,setEncounterBusy]=useState(false);const encounterTimerRef=useRef<number|null>(null);
+ const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);const[encounterReply,setEncounterReply]=useState('');const[encounterBusy,setEncounterBusy]=useState(false);const encounterTimerRef=useRef<number|null>(null);const[cameraOn,setCameraOn]=useState(false);const cameraVideoRef=useRef<HTMLVideoElement|null>(null);const cameraStreamRef=useRef<MediaStream|null>(null);
  const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
  const[retentionDays,setRetentionDays]=useState<180|365|400>(()=>{const saved=Number(localStorage.getItem('ga_audio_retention_days'));return saved===180||saved===400?saved:365});
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);
@@ -159,6 +159,19 @@ export default function App(){
   }catch(err){setNotice(err instanceof Error?err.message:'GA.LAW.HELP is temporarily unavailable.')}finally{setResearching(false)}
  }
 
+ async function startCamera(){
+  if(cameraOn)return;
+  if(!navigator.mediaDevices?.getUserMedia){setNotice('Camera access is not supported in this browser.');return}
+  try{
+   const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+   cameraStreamRef.current=stream;setCameraOn(true);
+   setTimeout(()=>{if(cameraVideoRef.current){cameraVideoRef.current.srcObject=stream;cameraVideoRef.current.play().catch(()=>{})}},0);
+  }catch{setNotice('Camera permission was not granted. Encounter help still works without the camera.')}
+ }
+ function stopCamera(){
+  cameraStreamRef.current?.getTracks().forEach(track=>track.stop());cameraStreamRef.current=null;
+  if(cameraVideoRef.current)cameraVideoRef.current.srcObject=null;setCameraOn(false);
+ }
  async function getEncounterAI(text:string){
   const heard=text.trim();if(!heard||encounterBusy)return;
   setEncounterBusy(true);
@@ -320,6 +333,12 @@ export default function App(){
     <div className="listenBox"><div><b>Live listening</b><small>Your browser processes speech for suggestions. GA.LAW.HELP does not save the audio or transcript in this preview.</small></div>
      <button className={listening?'stopButton':'listenButton'} onClick={listening?stopListening:startListening}>{listening?<><Square size={16}/>Stop</>:<><Mic size={17}/>Start listening</>}</button>
     </div>
+    <section className="cameraBox">
+     <div><b>Optional camera</b><small>The camera stays off until you turn it on. Use it only when safe and permitted.</small></div>
+     <button className={cameraOn?'stopButton':'listenButton'} onClick={cameraOn?stopCamera:startCamera}>{cameraOn?<><Square size={16}/>Camera off</>:<>Turn camera on</>}</button>
+     {cameraOn&&<><div className="recordingActive"><span/>CAMERA ON — live preview only</div><video ref={cameraVideoRef} playsInline muted style={{width:'100%',borderRadius:'14px',marginTop:'10px',background:'#000'}}/></>}
+     <small>GA.LAW.HELP does not silently activate the camera. This preview is not uploaded or analyzed by AI yet.</small>
+    </section>
     <section className="recordingBox">
      <div className="recordingHead"><div><b><HardDrive size={17}/>Save audio on this device</b><small>Choose how long each new recording stays in this browser.</small></div><select value={retentionDays} onChange={e=>changeRetention(e.target.value)} aria-label="Recording retention period"><option value="180">180 days</option><option value="365">365 days</option><option value="400">400 days</option></select></div>
      <button className={recording?'recordStop':'recordStart'} onClick={recording?stopRecording:startRecording}>{recording?<><Square size={16}/>Stop and save recording</>:<><Circle size={17}/>Start local recording</>}</button>
