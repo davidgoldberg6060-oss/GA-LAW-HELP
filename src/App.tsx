@@ -289,15 +289,15 @@ export default function App(){
   try{const rows=await authApi('/cases');setCases(rows);if(rows.length)await selectCase(rows[0].id);else startNewCase()}
   catch(error){setNotice(error instanceof Error?error.message:'The case workspace could not be loaded.')}finally{setCaseBusy(false)}
  }
- function startNewCase(){setActiveCaseId(null);setCaseForm(emptyCase());setFindings([])}
+ function startNewCase(){setActiveCaseId(null);localStorage.removeItem('ga_encounter_case_id');setCaseForm(emptyCase());setFindings([]);setCaseMotionResult('')}
  async function selectCase(id:number){
-  setCaseBusy(true);try{const[detail,analysis]=await Promise.all([authApi('/cases/'+id),authApi('/cases/'+id+'/analysis')]);setActiveCaseId(id);setCaseForm({title:detail.title||'',case_number:detail.case_number||'',county:detail.county||'',case_type:detail.case_type||'criminal',stage:detail.stage||'',narrative:detail.narrative||''});setFindings(analysis.findings||[]);setCaseMotionResult('')}
+  setCaseBusy(true);try{const[detail,analysis]=await Promise.all([authApi('/cases/'+id),authApi('/cases/'+id+'/analysis')]);setActiveCaseId(id);localStorage.setItem('ga_encounter_case_id',String(id));setCaseForm({title:detail.title||'',case_number:detail.case_number||'',county:detail.county||'',case_type:detail.case_type||'criminal',stage:detail.stage||'',narrative:detail.narrative||''});setFindings(analysis.findings||[]);setCaseMotionResult('')}
   catch(error){setNotice(error instanceof Error?error.message:'The case could not be opened.')}finally{setCaseBusy(false)}
  }
  function updateCaseForm(field:keyof CaseForm,value:string){setCaseForm(previous=>({...previous,[field]:value}))}
  async function saveCase(event?:FormEvent){
   event?.preventDefault();if(!caseForm.title.trim()){setNotice('Add a short case title first.');return null}setCaseBusy(true);
-  try{const payload={...caseForm,title:caseForm.title.trim(),case_number:caseForm.case_number||null,county:caseForm.county||null,stage:caseForm.stage||null,narrative:caseForm.narrative||null};const saved=activeCaseId?await authApi('/cases/'+activeCaseId,{method:'PATCH',body:JSON.stringify(payload)}):await authApi('/cases',{method:'POST',body:JSON.stringify(payload)});const id=activeCaseId||saved.id;const rows=await authApi('/cases');setCases(rows);setActiveCaseId(id);setNotice(activeCaseId?'Private case updated.':'Private case created.');return id}
+  try{const payload={...caseForm,title:caseForm.title.trim(),case_number:caseForm.case_number||null,county:caseForm.county||null,stage:caseForm.stage||null,narrative:caseForm.narrative||null};const saved=activeCaseId?await authApi('/cases/'+activeCaseId,{method:'PATCH',body:JSON.stringify(payload)}):await authApi('/cases',{method:'POST',body:JSON.stringify(payload)});const id=activeCaseId||saved.id;const rows=await authApi('/cases');setCases(rows);setActiveCaseId(id);localStorage.setItem('ga_encounter_case_id',String(id));setNotice(activeCaseId?'Private case updated.':'Private case created.');return id}
   catch(error){setNotice(error instanceof Error?error.message:'The case could not be saved.');return null}finally{setCaseBusy(false)}
  }
  async function runCaseScreening(){
@@ -329,7 +329,7 @@ export default function App(){
   if(!('speechSynthesis'in window)){setNotice('Read-aloud is not supported in this browser.');return}
   window.speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(text);speech.rate=.9;speech.pitch=1;window.speechSynthesis.speak(speech);
  }
- function logout(){localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token');setUser(null);setNotice('You are signed out.');}
+ function logout(){localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token');localStorage.removeItem('ga_encounter_case_id');setUser(null);setNotice('You are signed out.');}
 
  return <main>
   <header><div className="brand"><Scale/><div><b>STANDALONE ASSISTANT</b><span>GA.LAW.HELP</span></div></div>
