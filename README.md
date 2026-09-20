@@ -4,7 +4,7 @@ Production-oriented starter for a standalone Georgia legal research and case-int
 
 Current layers include owner-scoped authenticated cases, email verification and SMTP password recovery, refresh-token rotation/reuse detection/revocation, evidence integrity and resumable large-media jobs, an encrypted-session Android client, official-source ingestion/provenance, historical legal authority/version handling, Supabase/PostgreSQL migrations, and Case Intelligence: retrieval, Why?, favorable/adverse authority, Red-Team and Second-Look screening.
 
-This remains a development build. Before public release it still requires production hosting and secret configuration, live migration and SMTP verification, complete official-source ingestion, a real search/vector index, model-provider integration, MFA, privacy/retention controls, observability, independent security review, Play Store release engineering, and legal-data QA.
+This remains a development build. The GALAWHELP database migrations are live; before public release it still requires production hosting and secret configuration, SMTP verification, complete official-source ingestion, a real search/vector index, model-provider integration, MFA, privacy/retention controls, observability, independent security review, Play Store release engineering, and legal-data QA.
 
 ## Verification
 

@@ -1,5 +1,14 @@
 # Build Status — v1.3.0 production foundation
 
+## Live foundation deployment — 2026-09-20
+
+- GitHub `main` contains the complete v1.3 production foundation.
+- GitHub Actions backend CI passes.
+- The `GALAWHELP` Supabase project contains all 16 v1.3 public application tables.
+- Every public application table has RLS enabled; `anon` and `authenticated` have no direct table grants.
+- The earlier empty five-table prototype is preserved in the access-restricted `legacy` schema.
+- Repository migration versions match the live Supabase migration history.
+
 Implemented and verified in this increment:
 - Native Android registration and login against the FastAPI backend
 - Android Keystore-backed encrypted access/refresh token storage and refresh rotation
@@ -27,7 +36,7 @@ Implemented and verified in this increment:
 - Idempotency guards for completed resumable uploads
 
 Still required before production release:
-- Production HTTPS domain/backend and application of the prepared GALAWHELP migration
+- Production HTTPS domain/backend configuration and live connectivity verification
 - S3-compatible encrypted object storage instead of local server disk
 - production SMTP/domain configuration and MFA
 - background/resumable uploads for very large video

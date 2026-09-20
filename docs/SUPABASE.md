@@ -1,6 +1,8 @@
 # GALAWHELP Supabase deployment
 
-The canonical database migration is `supabase/migrations/20260919000100_initial.sql`.
+The canonical v1.3 migration chain is the ordered set in `supabase/migrations/`,
+beginning with `20260920040302_preserve_legacy_prototype_schema.sql` and ending
+with `20260920040313_v13_email_verification_security.sql`.
 It creates the application schema, indexes, constraints, private Storage bucket,
 enables RLS, and removes direct `anon`/`authenticated` access. The FastAPI service
 remains the only data-access boundary so owner checks and audit logging cannot be
