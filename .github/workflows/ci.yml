@@ -22,3 +22,15 @@ jobs:
           DATABASE_URL: sqlite:///./ci.db
           EVIDENCE_DIR: ./ci-evidence
       - run: docker build -t ga-law-help-api:ci .
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build
+      - run: docker build -f Dockerfile.web -t ga-law-help-web:ci .
