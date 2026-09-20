@@ -312,6 +312,13 @@ export default function App(){
   try{const data=await authApi('/cases/'+id+'/motion-screen',{method:'POST',body:JSON.stringify({facts})});setCaseMotionResult(data.analysis);setNotice('Motion and relief screening completed. Verify authorities and deadlines before filing.')}
   catch(error){setNotice(error instanceof Error?error.message:'Motion screening could not be completed.')}finally{setCaseBusy(false)}
  }
+ async function checkDefenseStrategy(){
+  let id=activeCaseId;if(!id)id=await saveCase() as number|null;if(!id)return;
+  const facts=['Case title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'Georgia county: '+(caseForm.county||'Not entered'),'Case type: '+caseForm.case_type,'Current stage: '+(caseForm.stage||'Not entered'),'User narrative: '+(caseForm.narrative||'Not entered')].join('\n');
+  setCaseBusy(true);setCaseDefenseResult('');
+  try{const data=await authApi('/cases/'+id+'/defense-analysis',{method:'POST',body:JSON.stringify({facts})});setCaseDefenseResult(data.analysis);setNotice('Defense-side analysis completed. Verify the record and cited authority before relying on it.')}
+  catch(error){setNotice(error instanceof Error?error.message:'Defense analysis could not be completed.')}finally{setCaseBusy(false)}
+ }
  function exportCasePlan(){
   const lines=['GA.LAW.HELP — PRIVATE CASE SCREENING','Created: '+new Date().toLocaleString(),'Title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'County: '+(caseForm.county||'Not entered'),'Type: '+caseForm.case_type,'Stage: '+(caseForm.stage||'Not entered'),'','User narrative:',caseForm.narrative||'None entered','','SCREENING LEADS',...findings.flatMap((item,index)=>['',String(index+1)+'. '+item.issue,'Why it may matter: '+item.analysis,'Possible opposing position: '+item.counterargument,'Records and facts needed: '+item.facts_needed,'Status: '+item.confidence]),'','These are issue-screening leads, not legal conclusions or attorney advice. Verify the full record, deadlines, current law, and procedural posture with a licensed lawyer.'];const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='ga-law-help-case-screening-'+new Date().toISOString().slice(0,10)+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
  }
