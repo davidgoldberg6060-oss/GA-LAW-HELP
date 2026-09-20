@@ -2,6 +2,19 @@ import React,{FormEvent,useEffect,useRef,useState}from'react';
 import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint,Eye,EyeOff,Upload}from'lucide-react';
 
 const API='https://api-production-60cc.up.railway.app';
+const ACCESS_KEY='ga_access_token',REFRESH_KEY='ga_refresh_token';
+class ApiError extends Error{status:number;constructor(status:number,message:string){super(message);this.status=status}}
+function accessToken(){return sessionStorage.getItem(ACCESS_KEY)}
+function refreshToken(){return sessionStorage.getItem(REFRESH_KEY)}
+function saveSession(access:string,refresh:string){sessionStorage.setItem(ACCESS_KEY,access);sessionStorage.setItem(REFRESH_KEY,refresh)}
+function clearSession(){sessionStorage.removeItem(ACCESS_KEY);sessionStorage.removeItem(REFRESH_KEY)}
+function migrateLegacySession(){
+ const access=localStorage.getItem(ACCESS_KEY),refresh=localStorage.getItem(REFRESH_KEY);
+ if(access&&!sessionStorage.getItem(ACCESS_KEY))sessionStorage.setItem(ACCESS_KEY,access);
+ if(refresh&&!sessionStorage.getItem(REFRESH_KEY))sessionStorage.setItem(REFRESH_KEY,refresh);
+ localStorage.removeItem(ACCESS_KEY);localStorage.removeItem(REFRESH_KEY);
+}
+
 type Resource={title:string;url:string;kind:string;official:boolean};
 type Research={query:string;topic:string;guidance:string;resources:Resource[];notice:string};
 type AIAnswer={question:string;answer:string;notice:string};
@@ -117,7 +130,7 @@ async function deleteLocalRecording(id:string){
 function formatBytes(bytes:number){if(bytes<1024)return bytes+' B';if(bytes<1048576)return(bytes/1024).toFixed(1)+' KB';return(bytes/1048576).toFixed(1)+' MB'}
 async function sha256Blob(blob:Blob){const digest=await crypto.subtle.digest('SHA-256',await blob.arrayBuffer());return Array.from(new Uint8Array(digest)).map(byte=>byte.toString(16).padStart(2,'0')).join('')}
 async function uploadEncounterCopy(blob:Blob,scenario:ScenarioKey,recordingCaseId?:number){
- const token=localStorage.getItem('ga_access_token');const caseId=recordingCaseId?String(recordingCaseId):localStorage.getItem('ga_encounter_case_id');
+ const token=accessToken();const caseId=recordingCaseId?String(recordingCaseId):localStorage.getItem('ga_encounter_case_id');
  if(!token||!caseId)return {uploaded:false,reason:'Sign in and select an encounter case to enable protected cloud/email copies.'};
  const ext=blob.type.includes('ogg')?'ogg':blob.type.includes('mp4')?'m4a':'webm';
  const form=new FormData();form.append('file',blob,'encounter-'+scenario+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+ext);
@@ -128,12 +141,19 @@ async function uploadEncounterCopy(blob:Blob,scenario:ScenarioKey,recordingCaseI
 async function api(path:string,options:RequestInit={}){
  const res=await fetch(API+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
  const data=await res.json().catch(()=>({detail:'The server returned an unreadable response.'}));
- if(!res.ok)throw new Error(typeof data.detail==='string'?data.detail:'Request failed');
+ if(!res.ok)throw new ApiError(res.status,typeof data.detail==='string'?data.detail:'Request failed');
  return data;
 }
 async function authApi(path:string,options:RequestInit={}){
- const token=localStorage.getItem('ga_access_token');if(!token)throw new Error('Sign in to use the private case workspace.');
- return api(path,{...options,headers:{...(options.headers||{}),Authorization:'Bearer '+token}});
+ const run=(token:string)=>api(path,{...options,headers:{...(options.headers||{}),Authorization:'Bearer '+token}});
+ const current=accessToken();if(!current)throw new Error('Sign in to use the private case workspace.');
+ try{return await run(current)}
+ catch(error){
+  if(!(error instanceof ApiError)||error.status!==401)throw error;
+  const refresh=refreshToken();if(!refresh){clearSession();throw new Error('Your secure session expired. Sign in again.')}
+  try{const rotated=await api('/auth/refresh',{method:'POST',body:JSON.stringify({refresh_token:refresh})});saveSession(rotated.access_token,rotated.refresh_token);return await run(rotated.access_token)}
+  catch{clearSession();throw new Error('Your secure session expired. Sign in again.')}
+ }
 }
 
 export default function App(){
@@ -151,8 +171,8 @@ export default function App(){
  const[trusted,setTrusted]=useState<TrustedContact>(()=>{try{const saved=localStorage.getItem('ga_trusted_contact');if(saved)return JSON.parse(saved)}catch{}return{name:'',phone:''}});
  const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');const[caseDefenseResult,setCaseDefenseResult]=useState('');const[similarAuthorities,setSimilarAuthorities]=useState<SimilarAuthority[]>([]);const[evidence,setEvidence]=useState<EvidenceItem[]>([]);const[evidenceBusy,setEvidenceBusy]=useState(false);
 
- useEffect(()=>{const token=localStorage.getItem('ga_access_token');if(!token)return;
-  fetch(API+'/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.ok?r.json():Promise.reject()).then(setUser).catch(()=>{localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token')});
+ useEffect(()=>{migrateLegacySession();if(!accessToken())return;
+  authApi('/me').then(setUser).catch(()=>{clearSession();setUser(null)});
  },[]);
  useEffect(()=>{
   const params=new URLSearchParams(window.location.search);const token=params.get('token');
@@ -238,7 +258,7 @@ export default function App(){
    if(!data.access_token){
     setMode('login');setPassword('');setNotice('Account created. Check your email for the verification link, then sign in.');return;
    }
-   localStorage.setItem('ga_access_token',data.access_token);localStorage.setItem('ga_refresh_token',data.refresh_token);
+   saveSession(data.access_token,data.refresh_token);
    const profile=await fetch(API+'/me',{headers:{Authorization:'Bearer '+data.access_token}}).then(r=>r.json());
    setUser(profile);setAuthOpen(false);setPassword('');setNotice(mode==='register'?'Account created. You are signed in.':'Welcome back. You are signed in.');
   }catch(err){setAuthError(err instanceof Error?err.message:'Could not complete account access.')}finally{setAuthBusy(false)}
@@ -367,7 +387,7 @@ export default function App(){
  async function uploadCaseEvidence(event:React.ChangeEvent<HTMLInputElement>){
   const file=event.target.files?.[0];event.target.value='';if(!file)return;
   if(!activeCaseId){setNotice('Save the private case before adding documents or evidence.');return}
-  const token=localStorage.getItem('ga_access_token');if(!token){setNotice('Sign in again to upload evidence.');return}
+  const token=accessToken();if(!token){setNotice('Sign in again to upload evidence.');return}
   setEvidenceBusy(true);
   try{
    const form=new FormData();form.append('file',file);
@@ -382,7 +402,7 @@ export default function App(){
   catch(error){setNotice(error instanceof Error?error.message:'Evidence integrity could not be verified.')}finally{setEvidenceBusy(false)}
  }
  async function downloadCaseEvidence(item:EvidenceItem){
-  if(!activeCaseId)return;const token=localStorage.getItem('ga_access_token');if(!token){setNotice('Sign in again to download evidence.');return}
+  if(!activeCaseId)return;const token=accessToken();if(!token){setNotice('Sign in again to download evidence.');return}
   setEvidenceBusy(true);
   try{
    const response=await fetch(API+'/cases/'+activeCaseId+'/evidence/'+item.id+'/download',{headers:{Authorization:'Bearer '+token}});
@@ -407,7 +427,10 @@ export default function App(){
   if(!('speechSynthesis'in window)){setNotice('Read-aloud is not supported in this browser.');return}
   window.speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(text);speech.rate=.9;speech.pitch=1;window.speechSynthesis.speak(speech);
  }
- function logout(){localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token');localStorage.removeItem('ga_encounter_case_id');setUser(null);setNotice('You are signed out.');}
+ async function logout(){
+  const refresh=refreshToken();clearSession();localStorage.removeItem('ga_encounter_case_id');setUser(null);setNotice('You are signed out.');
+  if(refresh)try{await api('/auth/logout',{method:'POST',body:JSON.stringify({refresh_token:refresh})})}catch{}
+ }
 
  const authTitle=mode==='login'?'Welcome back':mode==='register'?'Create your private account':mode==='forgot'?'Reset your password':'Choose a new password';
  const authIntro=mode==='login'?'Sign in to continue to your saved cases and tools.':mode==='register'?'One secure account for your cases, incident notes and evidence.':mode==='forgot'?'Enter your email and we will send a secure reset link if an account exists.':'Use 15–128 characters for your new password.';
