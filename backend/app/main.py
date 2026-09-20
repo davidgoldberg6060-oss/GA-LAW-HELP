@@ -146,6 +146,25 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(current_user),db:Se
     audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit()
     return {'analysis':answer,'notice':'AI-generated legal information, not legal advice. Verify current authority, deadlines, record facts, and local filing requirements before filing.'}
 
+@app.get('/cases/{case_id}/similar-authorities')
+def similar_authorities(case_id:int,q:str='',user=Depends(current_user),db:Session=Depends(get_db)):
+    case=owned_case(case_id,user,db)
+    terms=[x.strip() for x in (q or ((case.case_type or '')+' '+(case.stage or ''))).split() if len(x.strip())>=3][:8]
+    query=db.query(models.LegalAuthority)
+    if terms:
+        filters=[]
+        for term in terms:
+            like='%'+term+'%'
+            filters.extend([models.LegalAuthority.title.ilike(like),models.LegalAuthority.citation.ilike(like)])
+        from sqlalchemy import or_
+        query=query.filter(or_(*filters))
+    rows=query.limit(25).all(); results=[]
+    for authority in rows:
+        versions=db.query(models.AuthorityVersion).filter_by(authority_id=authority.id).all()
+        verified=[v for v in versions if str(v.verification_status or '').upper() in ('VERIFIED','OFFICIAL','CURRENT')]
+        results.append({'id':authority.id,'citation':authority.citation,'title':authority.title,'status':authority.status,'source_url':authority.source_url,'verified_versions':[{'id':v.id,'source_url':v.source_url,'effective_from':v.effective_from,'effective_to':v.effective_to,'verification_status':v.verification_status} for v in verified]})
+    return {'case_id':case_id,'query_terms':terms,'results':results,'notice':'Similarity is a research lead, not a holding that the authority controls this case. Verify facts, procedural posture, authority status, and current law.'}
+
 @app.post('/cases/{case_id}/defense-analysis')
 def defense_analysis(case_id:int,body:dict,user=Depends(current_user),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db)
