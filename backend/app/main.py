@@ -154,6 +154,18 @@ def bootstrap_georgia_sources(admin=Depends(require_admin),db:Session=Depends(ge
     audit(db,admin.id,'BOOTSTRAP_GEORGIA_SOURCES','legal_source');db.commit()
     return {'created':created,'configured':len(sources),'notice':'Official-source registry configured. This does not claim all opinions have been ingested; coverage stats show actual indexed material.'}
 
+@app.post('/admin/legal/authorities/{authority_id}/versions/import')
+def import_authority_version(authority_id:int,body:schemas.AuthorityVersionCreate,admin=Depends(require_admin),db:Session=Depends(get_db)):
+    authority=db.get(models.LegalAuthority,authority_id)
+    if not authority: raise HTTPException(404,'Authority not found')
+    source=body.source_url.strip()
+    if not source.startswith('https://'): raise HTTPException(400,'Authority source must use HTTPS')
+    digest=hashlib.sha256(body.text.encode('utf-8')).hexdigest()
+    existing=db.query(models.AuthorityVersion).filter_by(authority_id=authority_id,content_sha256=digest).first()
+    if existing: return {'id':existing.id,'created':False,'sha256':digest,'verification_status':existing.verification_status}
+    row=models.AuthorityVersion(authority_id=authority_id,content_sha256=digest,**body.model_dump());db.add(row);db.flush();audit(db,admin.id,'IMPORT_AUTHORITY_VERSION','authority_version',row.id);db.commit();db.refresh(row)
+    return {'id':row.id,'created':True,'sha256':digest,'verification_status':row.verification_status,'source_url':row.source_url}
+
 @app.post('/admin/legal/authorities/import')
 def import_authority(body:schemas.AuthorityCreate,admin=Depends(require_admin),db:Session=Depends(get_db)):
     citation=body.citation.strip(); source=(body.source_url or '').strip()
