@@ -1,6 +1,7 @@
 import pytest
 
 from app.main import validate_production_config
+from app.worker import validate_worker_config
 
 
 def configure_valid_production(monkeypatch):
@@ -44,3 +45,10 @@ def test_production_rejects_local_evidence_storage(monkeypatch):
     monkeypatch.setenv("STORAGE_BACKEND", "local")
     with pytest.raises(RuntimeError, match="STORAGE_BACKEND=s3"):
         validate_production_config()
+
+
+def test_worker_fails_closed_without_production_database(monkeypatch):
+    configure_valid_production(monkeypatch)
+    monkeypatch.delenv("DATABASE_URL")
+    with pytest.raises(RuntimeError, match="PostgreSQL DATABASE_URL"):
+        validate_worker_config()

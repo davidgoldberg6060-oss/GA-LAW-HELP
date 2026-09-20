@@ -11,6 +11,7 @@
 - Production images run as a non-root user with liveness/readiness probes.
 - Production startup validates secrets, SSL, object storage, database reachability, and the complete migration contract.
 - Runtime port and worker count are configurable for container hosting.
+- The API and background worker both fail closed when production database or evidence-storage secrets are missing.
 
 Implemented and verified in this increment:
 - Native Android registration and login against the FastAPI backend
