@@ -127,9 +127,11 @@ def public_research(q:str=''):
 @app.post('/cases/{case_id}/motion-screen')
 def private_motion_screen(case_id:int,body:dict,user=Depends(current_user),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db)
-    supplied=str(body.get('facts','')).strip()
-    if len(supplied)>12000: raise HTTPException(400,'Case summary is too long.')
-    facts=supplied or ('Case title: '+(case.title or '')+'\nCase number: '+(case.case_number or 'Not entered')+'\nGeorgia county: '+(case.county or 'Not entered')+'\nCase type: '+(case.case_type or 'Not entered')+'\nCurrent stage: '+(case.stage or 'Not entered')+'\nCase narrative: '+(case.narrative or 'Not entered'))
+    additional=str(body.get('additional_facts','')).strip()
+    if len(additional)>4000: raise HTTPException(400,'Additional case facts are too long.')
+    facts=('Case title: '+(case.title or '')+'\nCase number: '+(case.case_number or 'Not entered')+'\nGeorgia county: '+(case.county or 'Not entered')+'\nCase type: '+(case.case_type or 'Not entered')+'\nCurrent stage: '+(case.stage or 'Not entered')+'\nCase narrative: '+(case.narrative or 'Not entered'))
+    if additional: facts+='\nAdditional user-supplied facts (not independently verified): '+additional
+    if len(facts)>12000: facts=facts[:12000]+'\n[Case text truncated for analysis]'
     prompt='GEORGIA CRIMINAL CASE MOTION SCREEN. Analyze only supplied case facts. Identify potentially relevant procedural options, motions, or post-conviction remedies without predicting outcomes. For each relevant option explain why it may apply, missing facts or records, timing issues to verify, authority that must be verified before filing, likely State counterarguments, and the next record to obtain. Never invent statutes, cases, deadlines, judges, or local filing rules. Distinguish pretrial, trial, direct review, and post-conviction procedures. End with a prioritized verification checklist. CASE INFORMATION:\n'+facts
     try: answer=ask_openai(prompt)
     except RuntimeError: raise HTTPException(503,'The motion screening assistant is temporarily unavailable.')
@@ -222,16 +224,11 @@ def similar_authorities(case_id:int,q:str='',user=Depends(current_user),db:Sessi
 @app.post('/cases/{case_id}/defense-analysis')
 def defense_analysis(case_id:int,body:dict,user=Depends(current_user),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db)
-    supplied=str(body.get('facts','')).strip()
-    facts=supplied or ('Case title: '+(case.title or '')+'\nCase number: '+(case.case_number or 'Not entered')+'\nGeorgia county: '+(case.county or 'Not entered')+'\nCase type: '+(case.case_type or 'Not entered')+'\nCurrent stage: '+(case.stage or 'Not entered')+'\nCase narrative: '+(case.narrative or 'Not entered'))
-    if len(facts)>16000: raise HTTPException(400,'Case summary is too long.')
-    linked=[]
-    for link in db.query(models.CaseAuthorityLink).filter_by(case_id=case_id).all():
-        authority=db.get(models.LegalAuthority,link.authority_id)
-        version=db.get(models.AuthorityVersion,link.authority_version_id) if link.authority_version_id else None
-        if authority:
-            linked.append({'citation':authority.citation,'title':authority.title,'verified':bool(link.verified),'status':authority.status,'proposition':link.proposition,'relevance':link.relevance,'source_url':(version.source_url if version else authority.source_url)})
-    authority_context='\n'.join([('VERIFIED' if x['verified'] else 'UNVERIFIED')+' | '+str(x['citation'])+' | '+str(x['title'])+' | proposition: '+str(x['proposition'])+' | relevance: '+str(x['relevance']) for x in linked]) or 'No case authorities have been linked and verified yet.'
+    additional=str(body.get('additional_facts','')).strip()
+    if len(additional)>4000: raise HTTPException(400,'Additional case facts are too long.')
+    facts=('Case title: '+(case.title or '')+'\nCase number: '+(case.case_number or 'Not entered')+'\nGeorgia county: '+(case.county or 'Not entered')+'\nCase type: '+(case.case_type or 'Not entered')+'\nCurrent stage: '+(case.stage or 'Not entered')+'\nCase narrative: '+(case.narrative or 'Not entered'))
+    if additional: facts+='\nAdditional user-supplied facts (not independently verified): '+additional
+    if len(facts)>16000: facts=facts[:16000]+'\n[Case text truncated for analysis]'
     prompt='DEFENSE-SIDE GEORGIA CASE ANALYSIS. Ask: What lawful arguments could defense counsel reasonably have investigated or raised? Do not assume innocence or guilt and do not predict an outcome. Separate allegations, established record facts, disputed facts, and unknowns. Screen suppression, admissibility, identification, searches, statements/interrogations, discovery, expert evidence, charging defects, jury instructions, sufficiency, alternative explanations, impeachment, plea/sentencing issues, appeals, and post-conviction remedies when relevant. For each potential strategy explain factual prerequisites, legal authority that must be verified, likely State response, evidence that strengthens or weakens it, and procedural timing. Never invent a case, citation, holding, deadline, fact, or court action. If the record is insufficient say so. End with records to obtain and issues to research in authoritative Georgia sources. You may specifically cite only authorities shown below as VERIFIED; otherwise describe the legal issue without inventing a citation. VERIFIED/LINKED AUTHORITIES:\n'+authority_context+'\nCASE INFORMATION:\n'+facts
     try: answer=ask_openai(prompt)
     except RuntimeError: raise HTTPException(503,'The defense analysis assistant is temporarily unavailable.')
