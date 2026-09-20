@@ -19,7 +19,7 @@ def auth_header(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def test_end_to_end_owner_security_evidence_and_authority():
+def test_end_to_end_owner_security_evidence_and_authority(monkeypatch):
     with TestClient(app) as client:
         assert client.get("/health/live").json() == {"status": "ok"}
         assert client.get("/health/ready").json() == {"status": "ready", "database": "ok"}
@@ -61,12 +61,24 @@ def test_end_to_end_owner_security_evidence_and_authority():
 
         denied = client.post("/legal/authorities", headers=user_headers, json={"authority_type": "case", "citation": "1 Ga. 1"})
         assert denied.status_code == 403
-        authority = client.post("/legal/authorities", headers=admin_headers, json={"authority_type": "case", "citation": "1 Ga. 1", "title": "Verified test authority"})
+        authority = client.post("/legal/authorities", headers=admin_headers, json={"authority_type": "case", "citation": "1 Ga. 1", "title": "Verified test authority", "status": "CURRENT", "source_url": "https://www.gasupreme.us/opinions/"})
         assert authority.status_code == 200
         authority_id = authority.json()["id"]
-        linked = client.post(f"/cases/{case_id}/authorities", headers=user_headers, json={"authority_id": authority_id, "proposition": "Test proposition"})
+        linked = client.post(f"/cases/{case_id}/authorities", headers=user_headers, json={"authority_id": authority_id, "proposition": "Test proposition", "verified": True})
         assert linked.status_code == 200
         assert client.get(f"/cases/{case_id}/why", headers=user_headers).json()["why"][0]["citation"] == "1 Ga. 1"
+
+        captured = {}
+        def fake_ai(prompt: str) -> str:
+            captured["prompt"] = prompt
+            return "Potential defense strategy review"
+        monkeypatch.setattr("app.main.ask_openai", fake_ai)
+        defense = client.post(f"/cases/{case_id}/defense-analysis", headers=user_headers, json={})
+        assert defense.status_code == 200
+        assert defense.json()["analysis"] == "Potential defense strategy review"
+        assert defense.json()["linked_authorities"][0]["citation"] == "1 Ga. 1"
+        assert defense.json()["linked_authorities"][0]["verified_for_prompt"] is True
+        assert "1 Ga. 1" in captured["prompt"]
 
         refreshed = client.post("/auth/refresh", json={"refresh_token": user_json["refresh_token"]})
         assert refreshed.status_code == 200

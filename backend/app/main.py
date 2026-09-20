@@ -229,6 +229,23 @@ def defense_analysis(case_id:int,body:dict,user=Depends(current_user),db:Session
     facts=('Case title: '+(case.title or '')+'\nCase number: '+(case.case_number or 'Not entered')+'\nGeorgia county: '+(case.county or 'Not entered')+'\nCase type: '+(case.case_type or 'Not entered')+'\nCurrent stage: '+(case.stage or 'Not entered')+'\nCase narrative: '+(case.narrative or 'Not entered'))
     if additional: facts+='\nAdditional user-supplied facts (not independently verified): '+additional
     if len(facts)>16000: facts=facts[:16000]+'\n[Case text truncated for analysis]'
+
+    linked=[]; authority_lines=[]
+    for link in db.query(models.CaseAuthorityLink).filter_by(case_id=case_id).all():
+        authority=db.get(models.LegalAuthority,link.authority_id)
+        if not authority: continue
+        version=db.get(models.AuthorityVersion,link.authority_version_id) if link.authority_version_id else None
+        verification=str(version.verification_status if version else authority.status or '').upper()
+        source_url=version.source_url if version else authority.source_url
+        verified=bool(link.verified and verification in ('VERIFIED','OFFICIAL','CURRENT') and source_url and source_url.startswith('https://'))
+        item={'citation':authority.citation,'title':authority.title,'proposition':link.proposition,'pinpoint':link.pinpoint,'source_url':source_url,'verification_status':verification or 'UNVERIFIED','verified_for_prompt':verified}
+        linked.append(item)
+        if verified:
+            effective_from=version.effective_from if version else authority.effective_from
+            effective_to=version.effective_to if version else authority.effective_to
+            authority_lines.append('- '+authority.citation+((' — '+authority.title) if authority.title else '')+' | proposition: '+link.proposition+((' | pinpoint: '+link.pinpoint) if link.pinpoint else '')+' | effective: '+str(effective_from or 'unknown')+' to '+str(effective_to or 'current/unknown')+' | official source: '+source_url)
+    authority_context='\n'.join(authority_lines) if authority_lines else 'No linked authority has passed the case-link, status, and HTTPS-source verification gates. Do not invent or specifically cite cases or statutes.'
+
     prompt='DEFENSE-SIDE GEORGIA CASE ANALYSIS. Ask: What lawful arguments could defense counsel reasonably have investigated or raised? Do not assume innocence or guilt and do not predict an outcome. Separate allegations, established record facts, disputed facts, and unknowns. Screen suppression, admissibility, identification, searches, statements/interrogations, discovery, expert evidence, charging defects, jury instructions, sufficiency, alternative explanations, impeachment, plea/sentencing issues, appeals, and post-conviction remedies when relevant. For each potential strategy explain factual prerequisites, legal authority that must be verified, likely State response, evidence that strengthens or weakens it, and procedural timing. Never invent a case, citation, holding, deadline, fact, or court action. If the record is insufficient say so. End with records to obtain and issues to research in authoritative Georgia sources. You may specifically cite only authorities shown below as VERIFIED; otherwise describe the legal issue without inventing a citation. VERIFIED/LINKED AUTHORITIES:\n'+authority_context+'\nCASE INFORMATION:\n'+facts
     try: answer=ask_openai(prompt)
     except RuntimeError: raise HTTPException(503,'The defense analysis assistant is temporarily unavailable.')
