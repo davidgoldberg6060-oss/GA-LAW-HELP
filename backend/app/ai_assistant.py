@@ -19,12 +19,13 @@ def ask_openai(question: str) -> str:
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("AI service is not configured")
-    model = os.getenv("OPENAI_MODEL", "gpt-5.6").strip() or "gpt-5.6"
+    model = os.getenv("OPENAI_FAST_MODEL", os.getenv("OPENAI_MODEL", "gpt-5.6")).strip() or "gpt-5.6"
     payload = json.dumps({
         "model": model,
         "instructions": SYSTEM_INSTRUCTIONS,
         "input": question,
         "max_output_tokens": 900,
+        "reasoning": {"effort": "none"},
     }).encode("utf-8")
     request = urllib.request.Request(
         OPENAI_URL,
