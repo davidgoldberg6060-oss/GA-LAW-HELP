@@ -335,6 +335,14 @@ export default function App(){
   try{await authApi('/cases/'+id,{method:'PATCH',body:JSON.stringify({...caseForm,case_number:caseForm.case_number||null,county:caseForm.county||null,stage:caseForm.stage||null,narrative:caseForm.narrative||null})});const result=await authApi('/cases/'+id+'/analysis/run',{method:'POST',body:JSON.stringify({focus:'full_case'})});setFindings(result.findings||[]);setNotice('Issue screening completed. Each finding still needs record and source verification.')}
   catch(error){setNotice(error instanceof Error?error.message:'The screening could not be completed.')}finally{setCaseBusy(false)}
  }
+ async function screenMotions(){
+  if(!motionFacts.trim()){setNotice('Enter the case facts, dates, charge, and current stage first.');return}
+  setMotionBusy(true);setMotionResult('');
+  try{
+   const prompt='GEORGIA CRIMINAL CASE MOTION AND RELIEF SCREEN. Analyze only the user-supplied information below. Identify lawful motions, objections, sentencing issues, appeal issues, or post-conviction remedies that counsel could reasonably investigate. Separate known facts from missing facts. For every option state what records are needed, timing or preservation questions to verify, likely State counterarguments, and what current official Georgia authority must be checked. Never invent citations, deadlines, facts, or outcomes. USER-SUPPLIED CASE INFORMATION:\n'+motionFacts.trim();
+   const data=await api('/public/ask',{method:'POST',body:JSON.stringify({question:prompt})});setMotionResult(data.answer);setNotice('Motion screening completed. Verify the record, current authority, and every deadline before relying on it.');
+  }catch(error){setNotice(error instanceof Error?error.message:'Motion screening could not be completed.')}finally{setMotionBusy(false)}
+ }
  async function checkActiveCaseMotions(){
   let id=activeCaseId;if(!id)id=await saveCase() as number|null;if(!id)return;
   const facts=['Case title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'Georgia county: '+(caseForm.county||'Not entered'),'Case type: '+caseForm.case_type,'Current stage: '+(caseForm.stage||'Not entered'),'User narrative: '+(caseForm.narrative||'Not entered')].join('\n');
