@@ -1,7 +1,9 @@
 import hashlib, os, uuid
 from contextlib import asynccontextmanager
-from .storage import MAX_EVIDENCE_BYTES, save_chunk, finalize_chunks, store_stream, hash_stored
+from .storage import MAX_EVIDENCE_BYTES, save_chunk, finalize_chunks, store_stream, hash_stored, open_stored
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, Request
+from fastapi.responses import StreamingResponse
+from urllib.parse import quote
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy.orm import Session
@@ -398,6 +400,30 @@ def upload_evidence(case_id:int,file:UploadFile=File(...),user=Depends(current_u
 def evidence(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
     owned_case(case_id,user,db); rows=db.query(models.Evidence).filter_by(case_id=case_id).all()
     return [{'id':e.id,'filename':e.filename,'media_type':e.media_type,'bytes':e.size_bytes,'sha256':e.sha256,'uploaded_at':e.uploaded_at,'verified_at':e.verified_at,'original_preserved':e.original_preserved} for e in rows]
+
+@app.get('/cases/{case_id}/evidence/{evidence_id}/download')
+def download_evidence(case_id:int,evidence_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+    owned_case(case_id,user,db)
+    ev=db.query(models.Evidence).filter_by(id=evidence_id,case_id=case_id).first()
+    if not ev: raise HTTPException(404,'Evidence not found')
+    try: source=open_stored(ev.storage_key)
+    except Exception: raise HTTPException(409,'Stored original is unavailable')
+    def chunks():
+        try:
+            while True:
+                block=source.read(1024*1024)
+                if not block: break
+                yield block
+        finally:
+            source.close()
+    safe_name=quote(ev.filename,safe='')
+    audit(db,user.id,'DOWNLOAD_EVIDENCE','evidence',ev.id);db.commit()
+    return StreamingResponse(chunks(),media_type=ev.media_type or 'application/octet-stream',headers={
+        'Content-Disposition':"attachment; filename*=UTF-8''"+safe_name,
+        'Content-Length':str(ev.size_bytes),
+        'ETag':'"sha256-'+ev.sha256+'"',
+        'X-Content-SHA256':ev.sha256,
+    })
 
 @app.post('/cases/{case_id}/evidence/{evidence_id}/verify')
 def verify_evidence_integrity(case_id:int,evidence_id:int,user=Depends(current_user),db:Session=Depends(get_db)):

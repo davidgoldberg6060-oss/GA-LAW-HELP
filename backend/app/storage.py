@@ -54,6 +54,11 @@ def store_stream(stream:BinaryIO,key:str):
     put_file(dest,key)
     return h.hexdigest(),size
 
+def open_stored(key:str):
+    if BACKEND=='s3':
+        return _s3().get_object(Bucket=BUCKET,Key=_cloud_key(key))['Body']
+    return open(ROOT/'staging'/key,'rb')
+
 def hash_stored(key:str):
     h=hashlib.sha256(); size=0
     if BACKEND=='s3':

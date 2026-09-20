@@ -1,5 +1,5 @@
 import React,{FormEvent,useEffect,useRef,useState}from'react';
-import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint,Eye,EyeOff}from'lucide-react';
+import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint,Eye,EyeOff,Upload}from'lucide-react';
 
 const API='https://api-production-60cc.up.railway.app';
 type Resource={title:string;url:string;kind:string;official:boolean};
@@ -10,6 +10,7 @@ type CaseSummary={id:number;title:string;case_number:string|null;county:string|n
 type CaseForm={title:string;case_number:string;county:string;case_type:string;stage:string;narrative:string};
 type Finding={id:number;issue:string;category:string;favors:string;analysis:string;counterargument:string;facts_needed:string;confidence:string};
 type SimilarAuthority={id:number;citation:string;title:string|null;status:string;source_url:string|null;match_score:number;verified_versions:Array<{id:number;source_url:string;verification_status:string}>};
+type EvidenceItem={id:number;filename:string;media_type:string;bytes:number;sha256:string;uploaded_at:string;verified_at:string|null;original_preserved:boolean};
 const emptyCase=():CaseForm=>({title:'',case_number:'',county:'',case_type:'criminal',stage:'investigation',narrative:''});
 const funFacts=[
 {title:'Why old laws can sound strange',text:'Georgia law has been revised for generations. Some rules that sound funny online may be outdated, local, misquoted, or missing important context.'},
@@ -148,7 +149,7 @@ export default function App(){
  const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);const recoveryIdRef=useRef<string|null>(null);const recordingCaseIdRef=useRef<number|undefined>(undefined);
  const[incident,setIncident]=useState<IncidentDraft>(()=>{try{const saved=localStorage.getItem('ga_incident_draft');if(saved)return JSON.parse(saved)}catch{}return{startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''}});
  const[trusted,setTrusted]=useState<TrustedContact>(()=>{try{const saved=localStorage.getItem('ga_trusted_contact');if(saved)return JSON.parse(saved)}catch{}return{name:'',phone:''}});
- const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');const[caseDefenseResult,setCaseDefenseResult]=useState('');const[similarAuthorities,setSimilarAuthorities]=useState<SimilarAuthority[]>([]);
+ const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);const[motionFacts,setMotionFacts]=useState('');const[motionResult,setMotionResult]=useState('');const[motionBusy,setMotionBusy]=useState(false);const[caseMotionResult,setCaseMotionResult]=useState('');const[caseDefenseResult,setCaseDefenseResult]=useState('');const[similarAuthorities,setSimilarAuthorities]=useState<SimilarAuthority[]>([]);const[evidence,setEvidence]=useState<EvidenceItem[]>([]);const[evidenceBusy,setEvidenceBusy]=useState(false);
 
  useEffect(()=>{const token=localStorage.getItem('ga_access_token');if(!token)return;
   fetch(API+'/me',{headers:{Authorization:'Bearer '+token}}).then(r=>r.ok?r.json():Promise.reject()).then(setUser).catch(()=>{localStorage.removeItem('ga_access_token');localStorage.removeItem('ga_refresh_token')});
@@ -319,9 +320,9 @@ export default function App(){
   try{const rows=await authApi('/cases');setCases(rows);if(rows.length)await selectCase(rows[0].id);else startNewCase()}
   catch(error){setNotice(error instanceof Error?error.message:'The case workspace could not be loaded.')}finally{setCaseBusy(false)}
  }
- function startNewCase(){setActiveCaseId(null);localStorage.removeItem('ga_encounter_case_id');setCaseForm(emptyCase());setFindings([]);setCaseMotionResult('');setCaseDefenseResult('');setSimilarAuthorities([])}
+ function startNewCase(){setActiveCaseId(null);localStorage.removeItem('ga_encounter_case_id');setCaseForm(emptyCase());setFindings([]);setCaseMotionResult('');setCaseDefenseResult('');setSimilarAuthorities([]);setEvidence([])}
  async function selectCase(id:number){
-  setCaseBusy(true);try{const[detail,analysis]=await Promise.all([authApi('/cases/'+id),authApi('/cases/'+id+'/analysis')]);setActiveCaseId(id);localStorage.setItem('ga_encounter_case_id',String(id));setCaseForm({title:detail.title||'',case_number:detail.case_number||'',county:detail.county||'',case_type:detail.case_type||'criminal',stage:detail.stage||'',narrative:detail.narrative||''});setFindings(analysis.findings||[]);setCaseMotionResult('');setCaseDefenseResult('');setSimilarAuthorities([])}
+  setCaseBusy(true);try{const[detail,analysis,caseEvidence]=await Promise.all([authApi('/cases/'+id),authApi('/cases/'+id+'/analysis'),authApi('/cases/'+id+'/evidence')]);setActiveCaseId(id);localStorage.setItem('ga_encounter_case_id',String(id));setCaseForm({title:detail.title||'',case_number:detail.case_number||'',county:detail.county||'',case_type:detail.case_type||'criminal',stage:detail.stage||'',narrative:detail.narrative||''});setFindings(analysis.findings||[]);setEvidence(caseEvidence||[]);setCaseMotionResult('');setCaseDefenseResult('');setSimilarAuthorities([])}
   catch(error){setNotice(error instanceof Error?error.message:'The case could not be opened.')}finally{setCaseBusy(false)}
  }
  function updateCaseForm(field:keyof CaseForm,value:string){setCaseForm(previous=>({...previous,[field]:value}))}
@@ -362,6 +363,32 @@ export default function App(){
   setCaseBusy(true);setSimilarAuthorities([]);
   try{const data=await authApi('/cases/'+id+'/similar-authorities');setSimilarAuthorities(data.results||[]);setNotice((data.results||[]).length?'Similar Georgia authority research leads found. Verify each before relying on it.':'No matching indexed authority found yet. This does not mean no relevant precedent exists.')}
   catch(error){setNotice(error instanceof Error?error.message:'Similar-case research could not be completed.')}finally{setCaseBusy(false)}
+ }
+ async function uploadCaseEvidence(event:React.ChangeEvent<HTMLInputElement>){
+  const file=event.target.files?.[0];event.target.value='';if(!file)return;
+  if(!activeCaseId){setNotice('Save the private case before adding documents or evidence.');return}
+  const token=localStorage.getItem('ga_access_token');if(!token){setNotice('Sign in again to upload evidence.');return}
+  setEvidenceBusy(true);
+  try{
+   const form=new FormData();form.append('file',file);
+   const response=await fetch(API+'/cases/'+activeCaseId+'/evidence',{method:'POST',headers:{Authorization:'Bearer '+token},body:form});
+   const data=await response.json().catch(()=>({detail:'Upload failed'}));if(!response.ok)throw new Error(data.detail||'Upload failed');
+   setEvidence(await authApi('/cases/'+activeCaseId+'/evidence'));setNotice('Original file preserved with SHA-256 integrity protection.');
+  }catch(error){setNotice(error instanceof Error?error.message:'The file could not be uploaded.')}finally{setEvidenceBusy(false)}
+ }
+ async function verifyCaseEvidence(item:EvidenceItem){
+  if(!activeCaseId)return;setEvidenceBusy(true);
+  try{const result=await authApi('/cases/'+activeCaseId+'/evidence/'+item.id+'/verify',{method:'POST',body:'{}'});setEvidence(await authApi('/cases/'+activeCaseId+'/evidence'));setNotice(result.verified?'Integrity verified. The stored bytes match the original SHA-256 record.':'Integrity warning: the stored bytes did not match the original record.')}
+  catch(error){setNotice(error instanceof Error?error.message:'Evidence integrity could not be verified.')}finally{setEvidenceBusy(false)}
+ }
+ async function downloadCaseEvidence(item:EvidenceItem){
+  if(!activeCaseId)return;const token=localStorage.getItem('ga_access_token');if(!token){setNotice('Sign in again to download evidence.');return}
+  setEvidenceBusy(true);
+  try{
+   const response=await fetch(API+'/cases/'+activeCaseId+'/evidence/'+item.id+'/download',{headers:{Authorization:'Bearer '+token}});
+   if(!response.ok){const data=await response.json().catch(()=>({detail:'Download failed'}));throw new Error(data.detail||'Download failed')}
+   const blob=await response.blob();const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=item.filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setNotice('Downloaded your preserved evidence copy.');
+  }catch(error){setNotice(error instanceof Error?error.message:'Evidence could not be downloaded.')}finally{setEvidenceBusy(false)}
  }
  function exportCasePlan(){
   const lines=['GA.LAW.HELP — PRIVATE CASE SCREENING','Created: '+new Date().toLocaleString(),'Title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'County: '+(caseForm.county||'Not entered'),'Type: '+caseForm.case_type,'Stage: '+(caseForm.stage||'Not entered'),'','User narrative:',caseForm.narrative||'None entered','','SCREENING LEADS',...findings.flatMap((item,index)=>['',String(index+1)+'. '+item.issue,'Why it may matter: '+item.analysis,'Possible opposing position: '+item.counterargument,'Records and facts needed: '+item.facts_needed,'Status: '+item.confidence]),'','These are issue-screening leads, not legal conclusions or attorney advice. Verify the full record, deadlines, current law, and procedural posture with a licensed lawyer.'];const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='ga-law-help-case-screening-'+new Date().toISOString().slice(0,10)+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
@@ -422,6 +449,12 @@ export default function App(){
      <div className="caseActions"><button type="submit" disabled={caseBusy}>{caseBusy?<LoaderCircle className="spin" size={16}/>:<Save size={16}/>}Save private case</button><button type="button" className="screenButton" disabled={caseBusy} onClick={runCaseScreening}><ShieldCheck size={16}/>Run issue screening</button><button type="button" className="screenButton" disabled={caseBusy} onClick={checkActiveCaseMotions}><Scale size={16}/>Check motions & relief</button><button type="button" className="screenButton" disabled={caseBusy} onClick={checkDefenseStrategy}><ShieldCheck size={16}/>Defense-side review</button><button type="button" className="screenButton" disabled={caseBusy} onClick={findSimilarAuthorities}><Search size={16}/>Find similar Georgia cases</button>{findings.length>0&&<button type="button" onClick={exportCasePlan}><Download size={16}/>Export plan</button>}</div>
     </form>
     <div className="screeningNotice">This system identifies issues to investigate. It does not determine guilt, promise an outcome, or replace a licensed attorney.</div>{caseMotionResult&&<div className="replyCard"><small>Case-specific motions & relief review</small><p style={{whiteSpace:'pre-wrap'}}>{caseMotionResult}</p><small>Drafting or filing should happen only after current authority, deadlines, record facts and local court requirements are verified.</small></div>}{caseDefenseResult&&<div className="replyCard"><small>Potential defense strategy</small><p style={{whiteSpace:'pre-wrap'}}>{caseDefenseResult}</p><small>This reviews lawful arguments counsel could investigate. It does not decide guilt or predict an outcome.</small></div>}{similarAuthorities.length>0&&<div className="findings"><h3>Similar Georgia authority leads</h3>{similarAuthorities.map(item=><article key={item.id}><div className="findingHead"><b>{item.citation}</b><span>Match {item.match_score}</span></div><p>{item.title||'Untitled authority'}</p><small>{item.verified_versions.length?item.verified_versions.length+' verified source version(s)':'No verified source version linked yet'}</small>{item.source_url&&<p><a href={item.source_url} target="_blank" rel="noreferrer">Open source <ExternalLink size={14}/></a></p>}</article>)}</div>}
+    <details className="protectionPanel"><summary><HardDrive size={18}/><span><b>Documents & evidence</b><small>Private files linked only to this saved case</small></span></summary>
+     <div className="evidenceWorkspace"><label className="evidenceUpload"><Upload size={17}/><span>{evidenceBusy?'Working…':'Add document, photo, audio or video'}</span><input type="file" disabled={evidenceBusy||!activeCaseId} onChange={uploadCaseEvidence}/></label>
+     {!activeCaseId&&<p>Save this case before adding evidence.</p>}
+     {activeCaseId&&evidence.length===0&&<p>No files have been added to this case.</p>}
+     {evidence.map(item=><article key={item.id}><div><b>{item.filename}</b><small>{item.media_type} · {formatBytes(item.bytes)}</small><small><Fingerprint size={11}/> SHA-256 {item.sha256}</small><small>{item.verified_at?'Integrity verified '+new Date(item.verified_at).toLocaleString():'Integrity not checked yet'}</small></div><div><button type="button" disabled={evidenceBusy} onClick={()=>verifyCaseEvidence(item)}><ShieldCheck size={15}/>Verify</button><button type="button" disabled={evidenceBusy} onClick={()=>downloadCaseEvidence(item)}><Download size={15}/>Download</button></div></article>)}</div>
+    </details>
     {findings.length>0?<div className="findings"><h3>Screening leads</h3>{findings.map(item=><article key={item.id}><div className="findingHead"><b>{item.issue}</b><span>{item.confidence.replaceAll('_',' ')}</span></div><p>{item.analysis}</p><details><summary>Possible opposing position</summary><p>{item.counterargument}</p></details><details><summary>Records and facts needed</summary><p>{item.facts_needed}</p></details></article>)}</div>:activeCaseId&&<div className="emptyFindings">Save the facts, then run issue screening to create a review plan.</div>}
    </>:<><div className="premiumHeading"><Mic className="modalLogo"/><span className="premiumLabel"><LockKeyhole size={13}/> PAID SERVICE PREVIEW</span></div><h2>Help Me Talk to Police</h2>
     <div className="dangerNote"><ShieldAlert/>Only use the phone when it is safe and permitted. Keep your hands visible, follow physical directions, and never let the app argue, resist, or interrupt.</div>

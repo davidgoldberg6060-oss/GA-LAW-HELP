@@ -59,6 +59,15 @@ def test_end_to_end_owner_security_evidence_and_authority(monkeypatch):
         assert verified.status_code == 200
         assert verified.json()["verified"] is True
 
+        listed = client.get(f"/cases/{case_id}/evidence", headers=user_headers)
+        assert listed.status_code == 200
+        assert listed.json()[0]["filename"] == "record.txt"
+        downloaded = client.get(f"/cases/{case_id}/evidence/{evidence_id}/download", headers=user_headers)
+        assert downloaded.status_code == 200
+        assert downloaded.content == b"immutable evidence bytes"
+        assert downloaded.headers["x-content-sha256"] == uploaded.json()["sha256"]
+        assert client.get(f"/cases/{case_id}/evidence/{evidence_id}/download", headers=admin_headers).status_code == 404
+
         denied = client.post("/legal/authorities", headers=user_headers, json={"authority_type": "case", "citation": "1 Ga. 1"})
         assert denied.status_code == 403
         authority = client.post("/legal/authorities", headers=admin_headers, json={"authority_type": "case", "citation": "1 Ga. 1", "title": "Verified test authority", "status": "CURRENT", "source_url": "https://www.gasupreme.us/opinions/"})
