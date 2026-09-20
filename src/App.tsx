@@ -167,7 +167,6 @@ export default function App(){
  useEffect(()=>{localStorage.setItem('ga_incident_draft',JSON.stringify(incident))},[incident]);
  useEffect(()=>{localStorage.setItem('ga_trusted_contact',JSON.stringify(trusted))},[trusted]);
 
- async function screenMotions(){const facts=motionFacts.trim();if(!facts){setNotice('Add the case facts, court, charges, case stage, and important dates first.');return}setMotionBusy(true);setMotionResult('');try{const data=await api('/public/motion-screen',{method:'POST',body:JSON.stringify({facts})});setMotionResult(data.analysis)}catch(err){setNotice(err instanceof Error?err.message:'Motion screening is temporarily unavailable.')}finally{setMotionBusy(false)}}
  async function runResearch(e?:FormEvent){e?.preventDefault();if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
   setNotice('');setResearching(true);setAiAnswer(null);setResearch(null);
   try{
