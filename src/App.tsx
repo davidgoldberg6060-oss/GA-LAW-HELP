@@ -144,7 +144,7 @@ export default function App(){
  const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);const[encounterReply,setEncounterReply]=useState('');const[encounterBusy,setEncounterBusy]=useState(false);const encounterTimerRef=useRef<number|null>(null);const[cameraOn,setCameraOn]=useState(false);const cameraVideoRef=useRef<HTMLVideoElement|null>(null);const cameraStreamRef=useRef<MediaStream|null>(null);
  const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
  const[retentionDays,setRetentionDays]=useState<180|365|400>(()=>{const saved=Number(localStorage.getItem('ga_audio_retention_days'));return saved===180||saved===400?saved:365});
- const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);
+ const mediaRecorderRef=useRef<MediaRecorder|null>(null);const mediaStreamRef=useRef<MediaStream|null>(null);const audioChunksRef=useRef<Blob[]>([]);const recoveryIdRef=useRef<string|null>(null);
  const[incident,setIncident]=useState<IncidentDraft>(()=>{try{const saved=localStorage.getItem('ga_incident_draft');if(saved)return JSON.parse(saved)}catch{}return{startedAt:new Date().toISOString().slice(0,16),location:'',agency:'',officer:'',badge:'',vehicle:'',notes:''}});
  const[trusted,setTrusted]=useState<TrustedContact>(()=>{try{const saved=localStorage.getItem('ga_trusted_contact');if(saved)return JSON.parse(saved)}catch{}return{name:'',phone:''}});
  const[cases,setCases]=useState<CaseSummary[]>([]);const[activeCaseId,setActiveCaseId]=useState<number|null>(null);const[caseForm,setCaseForm]=useState<CaseForm>(emptyCase());const[findings,setFindings]=useState<Finding[]>([]);const[caseBusy,setCaseBusy]=useState(false);
@@ -214,15 +214,15 @@ export default function App(){
    const stream=await navigator.mediaDevices.getUserMedia({audio:true});mediaStreamRef.current=stream;
    navigator.storage?.persist?.().catch(()=>false);
    const preferred=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'';
-   const recorder=new MediaRecorder(stream,preferred?{mimeType:preferred}:undefined);mediaRecorderRef.current=recorder;audioChunksRef.current=[];
-   recorder.ondataavailable=event=>{if(event.data.size)audioChunksRef.current.push(event.data)};
+   const recorder=new MediaRecorder(stream,preferred?{mimeType:preferred}:undefined);mediaRecorderRef.current=recorder;audioChunksRef.current=[];recoveryIdRef.current='recovery-'+(crypto.randomUUID?.()||String(Date.now()));
+   recorder.ondataavailable=event=>{if(event.data.size){audioChunksRef.current.push(event.data);const recoveryId=recoveryIdRef.current;if(recoveryId){const recoveryBlob=new Blob(audioChunksRef.current,{type:recorder.mimeType||'audio/webm'});const now=Date.now();saveLocalRecording({id:recoveryId,blob:recoveryBlob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType:recorder.mimeType||'audio/webm'}).catch(()=>{})}}};
    recorder.onerror=()=>{stream.getTracks().forEach(track=>track.stop());setRecording(false);setNotice('Recording stopped because the browser reported an audio error.')};
    recorder.onstop=async()=>{
     try{
      const mimeType=recorder.mimeType||'audio/webm';const blob=new Blob(audioChunksRef.current,{type:mimeType});
      if(blob.size){const now=Date.now();const id=crypto.randomUUID?.()||String(now);const sha256=await sha256Blob(blob);await saveLocalRecording({id,blob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType,sha256});setRecordings(await purgeExpiredLocalRecordings());try{const copy=await uploadEncounterCopy(blob,scenario);setNotice(copy.uploaded?'Encounter preserved locally and in GA.LAW.HELP. Email confirmation attempted for your account.':'Encounter preserved locally. '+copy.reason)}catch{setNotice('Encounter preserved locally. Protected cloud/email copy could not be completed; keep this device copy.')}}
     }catch{setNotice('The recording could not be saved. Your browser storage may be full or unavailable.')}
-    finally{stream.getTracks().forEach(track=>track.stop());mediaRecorderRef.current=null;mediaStreamRef.current=null;audioChunksRef.current=[];setRecording(false)}
+    finally{const recoveryId=recoveryIdRef.current;recoveryIdRef.current=null;if(recoveryId)deleteLocalRecording(recoveryId).catch(()=>{});stream.getTracks().forEach(track=>track.stop());mediaRecorderRef.current=null;mediaStreamRef.current=null;audioChunksRef.current=[];setRecording(false)}
    };
    recorder.start(1000);setRecording(true);setNotice('Recording started. The red indicator stays visible while the microphone is active.');
   }catch{setNotice('Microphone permission was not granted. Allow microphone access and try again.')}
