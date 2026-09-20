@@ -4,6 +4,7 @@ import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,L
 const API='https://api-production-60cc.up.railway.app';
 type Resource={title:string;url:string;kind:string;official:boolean};
 type Research={query:string;topic:string;guidance:string;resources:Resource[];notice:string};
+type AIAnswer={question:string;answer:string;notice:string};
 type User={id:number;email:string;role:string};
 type CaseSummary={id:number;title:string;case_number:string|null;county:string|null;case_type:string;stage:string|null};
 type CaseForm={title:string;case_number:string;county:string;case_type:string;stage:string;narrative:string};
@@ -126,7 +127,7 @@ async function authApi(path:string,options:RequestInit={}){
 }
 
 export default function App(){
- const[q,setQ]=useState('');const[research,setResearch]=useState<Research|null>(null);const[researching,setResearching]=useState(false);
+ const[q,setQ]=useState('');const[research,setResearch]=useState<Research|null>(null);const[aiAnswer,setAiAnswer]=useState<AIAnswer|null>(null);const[researching,setResearching]=useState(false);
  const[authOpen,setAuthOpen]=useState(false);const[mode,setMode]=useState<'login'|'register'>('login');
  const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[showPassword,setShowPassword]=useState(false);const[authError,setAuthError]=useState('');const[authBusy,setAuthBusy]=useState(false);
  const passwordAccepted=password.length>=15&&password.length<=128;
@@ -148,8 +149,14 @@ export default function App(){
  useEffect(()=>{localStorage.setItem('ga_trusted_contact',JSON.stringify(trusted))},[trusted]);
 
  async function runResearch(e?:FormEvent){e?.preventDefault();if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
-  setNotice('');setResearching(true);try{setResearch(await api('/public/research?q='+encodeURIComponent(q.trim())));setTimeout(()=>document.getElementById('research-results')?.scrollIntoView({behavior:'smooth'}),50)}
-  catch(err){setNotice(err instanceof Error?err.message:'Research is temporarily unavailable.')}finally{setResearching(false)}
+  setNotice('');setResearching(true);setAiAnswer(null);setResearch(null);
+  try{
+   const [answer,researchResult]=await Promise.all([
+    api('/public/ask',{method:'POST',body:JSON.stringify({question:q.trim()})}),
+    api('/public/research?q='+encodeURIComponent(q.trim()))
+   ]);
+   setAiAnswer(answer);setResearch(researchResult);setTimeout(()=>document.getElementById('research-results')?.scrollIntoView({behavior:'smooth'}),50)
+  }catch(err){setNotice(err instanceof Error?err.message:'GA.LAW.HELP is temporarily unavailable.')}finally{setResearching(false)}
  }
 
  async function submitAuth(e:FormEvent){e.preventDefault();setAuthError('');
@@ -264,8 +271,10 @@ export default function App(){
     <button disabled={researching}>{researching?<><LoaderCircle className="spin" size={17}/>Checking</>:'Research'}</button></form>
    <small>Legal information and research assistance — not a substitute for advice from a licensed attorney.</small>
   </section>
-  {research&&<section className="results" id="research-results"><div className="resultHead"><Search/><div><span>Research starting point</span><h2>{research.topic}</h2></div></div>
-   <p className="question">“{research.query}”</p><p>{research.guidance}</p><div className="sources">{research.resources.map(r=><a key={r.url} href={r.url} target="_blank" rel="noreferrer"><div><b>{r.title}</b><span>{r.kind} · Official source</span></div><ExternalLink size={18}/></a>)}</div><small>{research.notice}</small></section>}
+  {(aiAnswer||research)&&<section className="results" id="research-results">
+   {aiAnswer&&<><div className="resultHead"><MessageSquare/><div><span>Ask GA.LAW.HELP</span><h2>AI legal information</h2></div></div><p className="question">“{aiAnswer.question}”</p><div className="aiAnswer" style={{whiteSpace:'pre-wrap'}}>{aiAnswer.answer}</div><small>{aiAnswer.notice}</small></>}
+   {research&&<><div className="resultHead" style={{marginTop:'1.5rem'}}><Search/><div><span>Verify and research</span><h2>{research.topic}</h2></div></div><p>{research.guidance}</p><div className="sources">{research.resources.map(r=><a key={r.url} href={r.url} target="_blank" rel="noreferrer"><div><b>{r.title}</b><span>{r.kind} · Official source</span></div><ExternalLink size={18}/></a>)}</div><small>{research.notice}</small></>}
+  </section>}
   <section className="cards" aria-label="Choose a tool">
    <button className="toolCard" onClick={()=>document.getElementById('law-library')?.scrollIntoView({behavior:'smooth'})}><FileText/><span><h3>Georgia Law Library</h3><p>Explore statutes, opinions and official legal sources.</p></span><ChevronRight/></button>
    <button className="toolCard" onClick={openCaseWorkspace}><MessageSquare/><span><h3>Private Case Assistant</h3><p>Create cases, screen issues, test counterarguments and identify missing records.</p></span><ChevronRight/></button>
