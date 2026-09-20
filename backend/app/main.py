@@ -134,6 +134,18 @@ def public_motion_screen(body: dict):
     except RuntimeError: raise HTTPException(503,'The motion screening assistant is temporarily unavailable.')
     return {'analysis':answer,'notice':'AI-generated legal information, not legal advice. Filing requirements, deadlines, current Georgia authority, and local court rules must be independently verified before filing.'}
 
+@app.post('/cases/{case_id}/motion-screen')
+def private_motion_screen(case_id:int,body:dict,user=Depends(current_user),db:Session=Depends(get_db)):
+    case=owned_case(case_id,user,db)
+    supplied=str(body.get('facts','')).strip()
+    if len(supplied)>12000: raise HTTPException(400,'Case summary is too long.')
+    facts=supplied or ('Case title: '+(case.title or '')+'\nCase number: '+(case.case_number or 'Not entered')+'\nGeorgia county: '+(case.county or 'Not entered')+'\nCase type: '+(case.case_type or 'Not entered')+'\nCurrent stage: '+(case.stage or 'Not entered')+'\nCase narrative: '+(case.narrative or 'Not entered'))
+    prompt='GEORGIA CRIMINAL CASE MOTION SCREEN. Analyze only supplied case facts. Identify potentially relevant procedural options, motions, or post-conviction remedies without predicting outcomes. For each relevant option explain why it may apply, missing facts or records, timing issues to verify, authority that must be verified before filing, likely State counterarguments, and the next record to obtain. Never invent statutes, cases, deadlines, judges, or local filing rules. Distinguish pretrial, trial, direct review, and post-conviction procedures. End with a prioritized verification checklist. CASE INFORMATION:\n'+facts
+    try: answer=ask_openai(prompt)
+    except RuntimeError: raise HTTPException(503,'The motion screening assistant is temporarily unavailable.')
+    audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit()
+    return {'analysis':answer,'notice':'AI-generated legal information, not legal advice. Verify current authority, deadlines, record facts, and local filing requirements before filing.'}
+
 @app.post('/public/ask')
 def public_ask(body: dict):
     question=str(body.get('question','')).strip()
