@@ -211,9 +211,10 @@ export default function App(){
   if(recording)return;stopListening();
   if(!navigator.mediaDevices?.getUserMedia||!('MediaRecorder'in window)){setNotice('Audio recording is not supported in this browser.');return}
   try{
-   const stream=await navigator.mediaDevices.getUserMedia({audio:true});mediaStreamRef.current=stream;
+   const stream=await navigator.mediaDevices.getUserMedia(cameraOn?{audio:true,video:{facingMode:{ideal:'environment'}}}:{audio:true});mediaStreamRef.current=stream;
+   if(cameraOn){cameraStreamRef.current?.getTracks().forEach(track=>track.stop());cameraStreamRef.current=stream;if(cameraVideoRef.current){cameraVideoRef.current.srcObject=stream;cameraVideoRef.current.play().catch(()=>{})}}
    navigator.storage?.persist?.().catch(()=>false);
-   const preferred=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'';
+   const preferred=cameraOn?(MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')?'video/webm;codecs=vp8,opus':MediaRecorder.isTypeSupported('video/webm')?'video/webm':''):(MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'');
    const recorder=new MediaRecorder(stream,preferred?{mimeType:preferred}:undefined);mediaRecorderRef.current=recorder;audioChunksRef.current=[];recoveryIdRef.current='recovery-'+(crypto.randomUUID?.()||String(Date.now()));
    recorder.ondataavailable=event=>{if(event.data.size){audioChunksRef.current.push(event.data);const recoveryId=recoveryIdRef.current;if(recoveryId){const recoveryBlob=new Blob(audioChunksRef.current,{type:recorder.mimeType||'audio/webm'});const now=Date.now();saveLocalRecording({id:recoveryId,blob:recoveryBlob,createdAt:now,expiresAt:now+retentionDays*86400000,scenario,mimeType:recorder.mimeType||'audio/webm'}).catch(()=>{})}}};
    recorder.onerror=()=>{stream.getTracks().forEach(track=>track.stop());setRecording(false);setNotice('Recording stopped because the browser reported an audio error.')};
@@ -224,7 +225,7 @@ export default function App(){
     }catch{setNotice('The recording could not be saved. Your browser storage may be full or unavailable.')}
     finally{const recoveryId=recoveryIdRef.current;recoveryIdRef.current=null;if(recoveryId)deleteLocalRecording(recoveryId).catch(()=>{});stream.getTracks().forEach(track=>track.stop());mediaRecorderRef.current=null;mediaStreamRef.current=null;audioChunksRef.current=[];setRecording(false)}
    };
-   recorder.start(1000);setRecording(true);setNotice('Recording started. The red indicator stays visible while the microphone is active.');
+   recorder.start(1000);setRecording(true);setNotice(cameraOn?'Video + audio encounter recording started. Recovery checkpoints stay on this device while recording.':'Audio recording started. Recovery checkpoints stay on this device while recording.');
   }catch{setNotice('Microphone permission was not granted. Allow microphone access and try again.')}
  }
  function stopRecording(){const recorder=mediaRecorderRef.current;if(recorder&&recorder.state!=='inactive')recorder.stop()}
