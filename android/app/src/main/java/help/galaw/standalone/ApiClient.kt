@@ -13,6 +13,16 @@ import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
+class ApiException(val statusCode: Int, responseBody: String) : RuntimeException(
+    when (statusCode) {
+        401 -> "Please sign in to continue."
+        403 -> "This feature requires an active GA.LAW.HELP membership."
+        422 -> runCatching { JSONObject(responseBody).optString("detail") }.getOrNull().orEmpty().ifBlank { "Check the information and try again." }
+        503 -> "This service is temporarily unavailable. Please try again shortly."
+        else -> runCatching { JSONObject(responseBody).optString("detail") }.getOrNull().orEmpty().ifBlank { "Request failed ($statusCode)." }
+    }
+)
+
 class ApiClient(private val context: Context) {
     private val masterKey = MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
     private val prefs = EncryptedSharedPreferences.create(
@@ -54,7 +64,7 @@ class ApiClient(private val context: Context) {
         }
         val (code, response) = read(c)
         if (code == 401 && retry && refreshAccess()) return execute(path, method, body, false)
-        if (code !in 200..299) throw RuntimeException("$code: $response")
+        if (code !in 200..299) throw ApiException(code, response)
         return response
     }
 
@@ -86,6 +96,9 @@ class ApiClient(private val context: Context) {
     fun verifyEmail(verificationToken: String): JSONObject = JSONObject(execute("/auth/verify-email", "POST", JSONObject().put("token", verificationToken), false))
     fun forgotPassword(email: String): JSONObject = JSONObject(execute("/auth/forgot-password", "POST", JSONObject().put("email", email), false))
     fun resetPassword(resetToken: String, newPassword: String): JSONObject = JSONObject(execute("/auth/reset-password", "POST", JSONObject().put("token", resetToken).put("new_password", newPassword), false))
+
+    fun billingStatus(): JSONObject = JSONObject(execute("/billing/status"))
+    fun createCheckout(): JSONObject = JSONObject(execute("/billing/checkout", "POST", JSONObject()))
 
     fun cases(): JSONArray = JSONArray(execute("/cases"))
     fun createCase(title: String, county: String, stage: String, narrative: String): JSONObject = JSONObject(execute(
@@ -128,7 +141,7 @@ class ApiClient(private val context: Context) {
             out.writeBytes("\r\n--$boundary--\r\n")
         }
         val (code, response) = read(c)
-        if (code !in 200..299) throw RuntimeException("$code: $response")
+        if (code !in 200..299) throw ApiException(code, response)
         return JSONObject(response)
     }
 
@@ -164,7 +177,7 @@ class ApiClient(private val context: Context) {
             out.write(bytes); out.writeBytes("\r\n--$boundary--\r\n")
         }
         val (code, response) = read(c)
-        if (code !in 200..299) throw RuntimeException("$code: $response")
+        if (code !in 200..299) throw ApiException(code, response)
     }
 
     fun logout() {
@@ -173,6 +186,6 @@ class ApiClient(private val context: Context) {
         prefs.edit().clear().apply()
     }
 
-    fun publicAsk(question:String): JSONObject = JSONObject(execute("/public/ask","POST",JSONObject().put("question",question),false))
+    fun publicAsk(question:String): JSONObject = JSONObject(execute("/public/ask","POST",JSONObject().put("question",question)))
     fun searchAuthorities(query:String): JSONArray = JSONObject(execute("/legal/authorities/search?query="+java.net.URLEncoder.encode(query,"UTF-8"))).optJSONArray("items") ?: JSONArray()
 }
