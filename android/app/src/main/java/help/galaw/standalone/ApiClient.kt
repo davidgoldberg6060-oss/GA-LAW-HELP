@@ -173,6 +173,6 @@ class ApiClient(private val context: Context) {
         prefs.edit().clear().apply()
     }
 
-    fun publicAsk(question:String): JSONObject = request("POST","/public/ask",JSONObject().put("question",question),false)
-    fun searchAuthorities(query:String): JSONArray = request("GET","/legal/authorities/search?query="+java.net.URLEncoder.encode(query,"UTF-8"),null,true).optJSONArray("items") ?: JSONArray()
+    fun publicAsk(question:String): JSONObject = JSONObject(execute("/public/ask","POST",JSONObject().put("question",question),false))
+    fun searchAuthorities(query:String): JSONArray = JSONObject(execute("/legal/authorities/search?query="+java.net.URLEncoder.encode(query,"UTF-8"))).optJSONArray("items") ?: JSONArray()
 }
