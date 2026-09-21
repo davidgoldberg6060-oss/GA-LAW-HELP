@@ -3,6 +3,9 @@ package help.galaw.standalone
 import android.app.AlertDialog
 import android.os.Bundle
 import android.widget.*
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
@@ -16,14 +19,36 @@ class MainActivity : AppCompatActivity() {
         busy("Uploading evidence…") { api.upload(id,uri); runOnUiThread { toast("Evidence uploaded and integrity hash created"); showCase(id) } }
     }
     override fun onCreate(savedInstanceState:Bundle?){ super.onCreate(savedInstanceState); api=ApiClient(this); if(api.token==null) showAuth() else showHome() }
-    private fun base(){ root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(40,48,40,30)};setContentView(ScrollView(this).apply{addView(root)}) }
-    private fun label(s:String,z:Float=16f)=TextView(this).apply{text=s;textSize=z;setPadding(0,8,0,8)}
-    private fun field(h:String,pass:Boolean=false)=EditText(this).apply{hint=h;if(pass) inputType=129}
-    private fun button(s:String, f:()->Unit)=Button(this).apply{text=s;setOnClickListener{f()}}
+    private val blue = Color.rgb(40,169,255)
+    private val navy = Color.rgb(4,18,31)
+    private val card = Color.rgb(11,35,54)
+    private fun base(){ root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(28,38,28,34);setBackgroundColor(navy)};setContentView(ScrollView(this).apply{setBackgroundColor(navy);addView(root)}) }
+    private fun label(s:String,z:Float=16f)=TextView(this).apply{text=s;textSize=z;setTextColor(Color.WHITE);setPadding(0,8,0,8)}
+    private fun field(h:String,pass:Boolean=false)=EditText(this).apply{hint=h;setHintTextColor(Color.rgb(155,174,190));setTextColor(Color.WHITE);setPadding(28,20,28,20);background=GradientDrawable().apply{cornerRadius=44f;setColor(Color.rgb(12,39,59));setStroke(2,blue)};if(pass) inputType=129}
+    private fun button(s:String, f:()->Unit)=Button(this).apply{text=s;isAllCaps=false;setTextColor(Color.WHITE);textSize=15f;background=GradientDrawable().apply{cornerRadius=28f;setColor(card);setStroke(1,Color.rgb(29,67,94))};setOnClickListener{f()}}
+    private fun homeCard(title:String,subtitle:String,action:()->Unit)=LinearLayout(this).apply{
+        orientation=LinearLayout.VERTICAL;setPadding(24,22,24,22);background=GradientDrawable().apply{cornerRadius=28f;setColor(card);setStroke(1,Color.rgb(28,64,89))}
+        addView(label(title,18f).apply{setTypeface(typeface,Typeface.BOLD)});addView(label(subtitle,13f).apply{setTextColor(Color.rgb(174,193,207))});setOnClickListener{action()}
+    }
+    private fun addHomeRow(vararg views:View){val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL};views.forEach{row.addView(it,LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f).apply{setMargins(5,6,5,6)})};root.addView(row)}
+
     private fun showAuth(){ base();root.addView(label("STANDALONE ASSISTANT",14f));root.addView(label("GA.LAW.HELP",30f));val e=field("Email");val p=field("Password (10+ characters)",true);root.addView(e);root.addView(p);root.addView(button("Log in"){busy("Signing in…"){api.auth("/auth/login",e.text.toString(),p.text.toString());runOnUiThread{showHome()}}});root.addView(button("Create account"){busy("Creating account…"){val result=api.auth("/auth/register",e.text.toString(),p.text.toString());runOnUiThread{if(result.optBoolean("verification_required")) showVerification(e.text.toString()) else showHome()}}});root.addView(button("Verify email"){showVerification(e.text.toString())});root.addView(button("Forgot password"){showPasswordReset(e.text.toString())}) }
     private fun showVerification(email:String){base();root.addView(label("VERIFY EMAIL",26f));root.addView(label("Open the verification email sent to $email. You can also paste its token below."));val t=field("Verification token");root.addView(t);root.addView(button("Verify"){busy("Verifying…"){api.verifyEmail(t.text.toString());runOnUiThread{toast("Email verified. Log in now.");showAuth()}}});root.addView(button("Resend email"){busy("Sending…"){api.resendVerification(email);runOnUiThread{toast("If the account exists, a new email was sent.")}}});root.addView(button("Back"){showAuth()})}
     private fun showPasswordReset(email:String){base();root.addView(label("RESET PASSWORD",26f));val e=field("Email").apply{setText(email)};val token=field("Reset token");val password=field("New password (12+ characters)",true);root.addView(e);root.addView(button("Send reset email"){busy("Sending…"){api.forgotPassword(e.text.toString());runOnUiThread{toast("If the account exists, a reset email was sent.")}}});root.addView(token);root.addView(password);root.addView(button("Set new password"){busy("Resetting…"){api.resetPassword(token.text.toString(),password.text.toString());runOnUiThread{toast("Password changed. Log in now.");showAuth()}}});root.addView(button("Back"){showAuth()})}
-    private fun showHome(){selectedCase=null;base();root.addView(label("GA.LAW.HELP",30f));root.addView(label("Secure Georgia case workspace"));root.addView(button("＋ New Case"){newCase()});root.addView(button("Refresh My Cases"){showHome()});root.addView(button("Log out"){api.logout();showAuth()});root.addView(label("MY CASES",14f));busy("Loading cases…"){val a=api.cases();runOnUiThread{for(i in 0 until a.length()){val o=a.getJSONObject(i);root.addView(button("${o.optString("title")}  •  ${o.optString("stage","")}"){showCase(o.getInt("id"))})};if(a.length()==0)root.addView(label("No cases yet. Create your first case."))}}}
+    private fun showHome(){selectedCase=null;base()
+        root.addView(label("GA.LAW.HELP",30f).apply{setTypeface(typeface,Typeface.BOLD)})
+        root.addView(label("KNOW YOUR RIGHTS. PROTECT YOUR FUTURE.",12f).apply{setTextColor(Color.rgb(148,166,180))})
+        root.addView(label("LEGAL ANSWERS\nANYTIME.",29f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,30,0,4)})
+        root.addView(label("Understand your rights. Get guidance.\nStay informed. Be prepared.",15f).apply{setTextColor(Color.rgb(190,205,215))})
+        val ask=field("Ask GA.LAW.HELP anything…");root.addView(ask,LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,24,0,12)})
+        addHomeRow(button("🎙 Voice Help"){toast("Voice Help is being prepared")},button("▣ Upload a Document"){newCase()},button("▣ Scan / Take Photo"){toast("Camera workflow is being prepared")})
+        addHomeRow(homeCard("🛡 Know My Rights","Simple answers for real situations"){toast("Know My Rights")},homeCard("🚙 Traffic Stop","What to do and what to say"){toast("Traffic Stop")},homeCard("♟ Questioned by Police","Stay calm. Know your rights."){toast("Questioned by Police")})
+        addHomeRow(homeCard("⛓ Arrested / Detained","Step-by-step help"){toast("Arrested / Detained")},homeCard("⚖ Georgia Laws","Search laws, penalties & more"){toast("Georgia Laws")},homeCard("▤ Funny & Weird Georgia Laws","Learn something new"){toast("Funny & Weird Georgia Laws")})
+        addHomeRow(homeCard("💬 Ask GA.LAW.HELP","Get legal guidance with AI"){ask.requestFocus()},homeCard("📁 My Documents","Store and manage your files"){toast("Documents")},homeCard("▥ My Recordings","Your audio, saved securely"){toast("Recordings")})
+        root.addView(button("⚠  EMERGENCY INFORMATION"){toast("For immediate danger, contact emergency services.")},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,14,0,10)})
+        root.addView(label("Knowledge is power, especially when you need it most.",14f).apply{gravity=android.view.Gravity.CENTER;setTextColor(Color.rgb(157,176,190));setPadding(0,18,0,18)})
+        root.addView(label("Home        ⚖ Laws        💬 AI Help        📁 Documents        ● Account",13f).apply{gravity=android.view.Gravity.CENTER;setTextColor(blue)})
+    }
     private fun newCase(){val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(30,0,30,0)};val t=field("Case title");val c=field("Georgia county/circuit");val s=field("Stage (pretrial, appeal, habeas…)");val n=field("Tell us what happened");listOf(t,c,s,n).forEach{box.addView(it)};AlertDialog.Builder(this).setTitle("New case").setView(box).setPositiveButton("Create"){_,_->busy("Creating case…"){val o=api.createCase(t.text.toString(),c.text.toString(),s.text.toString(),n.text.toString());runOnUiThread{showCase(o.getInt("id"))}}}.setNegativeButton("Cancel",null).show()}
     private fun showCase(id:Int){selectedCase=id;base();root.addView(button("← My Cases"){showHome()});root.addView(label("CASE WORKSPACE",26f));busy("Loading case…"){val c=api.caseDetail(id);val ev=api.evidence(id);val tl=api.timeline(id);runOnUiThread{root.addView(label(c.optString("title","Case #$id"),22f));root.addView(label("${c.optString("county","")} • ${c.optString("stage","")}",13f));root.addView(button("⚖ Analyze Case"){runAnalysis(id)});root.addView(button("Why? — Sources & Authority"){showWhy(id)});root.addView(button("Red-Team My Case"){showRedTeam(id)});root.addView(button("Second-Look / Appeal Review"){showSecondLook(id)});root.addView(button("＋ Add evidence / video / document"){pickEvidence.launch(arrayOf("*/*"))});root.addView(label("EVIDENCE",14f));for(i in 0 until ev.length()){val o=ev.getJSONObject(i);root.addView(label("✓ ${o.optString("filename")}\nSHA-256: ${o.optString("sha256").take(20)}…",13f))};root.addView(label("MASTER TIMELINE",14f));for(i in 0 until tl.length()){val o=tl.getJSONObject(i);root.addView(label("${o.optString("title")} • ${o.optString("source_label")}",14f))}}}}
     private fun runAnalysis(id:Int)=busy("Screening case…"){val o=api.runAnalysis(id);runOnUiThread{showJsonFindings("CASE INTELLIGENCE",o,"findings")}}
