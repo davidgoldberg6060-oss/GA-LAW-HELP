@@ -12,6 +12,11 @@ android {
         val apiBaseUrl = providers.gradleProperty("GALAW_API_BASE_URL").orElse("https://api.example.com").get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
     buildFeatures { buildConfig = true }
 }
 
