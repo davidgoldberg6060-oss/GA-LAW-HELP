@@ -172,4 +172,7 @@ class ApiClient(private val context: Context) {
         if (current != null) runCatching { execute("/auth/logout", "POST", JSONObject().put("refresh_token", current), false) }
         prefs.edit().clear().apply()
     }
+
+    fun publicAsk(question:String): JSONObject = request("POST","/public/ask",JSONObject().put("question",question),false)
+    fun searchAuthorities(query:String): JSONArray = request("GET","/legal/authorities/search?query="+java.net.URLEncoder.encode(query,"UTF-8"),null,true).optJSONArray("items") ?: JSONArray()
 }
