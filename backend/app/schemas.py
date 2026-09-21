@@ -87,3 +87,9 @@ class VerifyEmailRequest(BaseModel):
 
 class ResendVerificationRequest(BaseModel):
     email: EmailStr
+
+class CaseNoteCreate(BaseModel):
+    title: str = Field(default="Saved legal research", min_length=1, max_length=255)
+    content: str = Field(min_length=1, max_length=100_000)
+    note_type: str = Field(default="LEGAL_RESEARCH", max_length=40)
+    language: str = Field(default="en", max_length=12)

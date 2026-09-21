@@ -32,6 +32,18 @@ class Case(Base):
     events = relationship("TimelineEvent", cascade="all, delete-orphan")
     evidence = relationship("Evidence", cascade="all, delete-orphan")
 
+class CaseNote(Base):
+    __tablename__ = "case_notes"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    note_type: Mapped[str] = mapped_column(String(40), default="LEGAL_RESEARCH")
+    title: Mapped[str] = mapped_column(String(255), default="Saved legal research")
+    content: Mapped[str] = mapped_column(Text)
+    language: Mapped[str] = mapped_column(String(12), default="en")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
 class TimelineEvent(Base):
     __tablename__ = "timeline_events"
     id: Mapped[int] = mapped_column(primary_key=True)

@@ -8,7 +8,7 @@ EXPECTED_TABLES = {
     "upload_sessions", "analysis_jobs", "legal_sources", "legal_authorities",
     "authority_versions", "case_authority_links", "issue_analyses",
     "audit_logs", "refresh_tokens", "password_reset_tokens",
-    "email_verification_tokens",
+    "email_verification_tokens", "case_notes",
 }
 
 def engine_options(url: str) -> dict:
