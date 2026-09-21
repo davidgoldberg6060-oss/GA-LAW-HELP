@@ -32,20 +32,20 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x gradlew
 
-      - name: Build installable debug APK
+      - name: Build connected installable APK
         env:
           GALAW_API_BASE_URL: ${{ vars.GALAW_API_BASE_URL }}
         run: |
-          API_URL="${GALAW_API_BASE_URL:-https://api.example.com}"
+          API_URL="${GALAW_API_BASE_URL:-https://api-production-60cc.up.railway.app}"
           ./gradlew assembleDebug -PGALAW_API_BASE_URL="$API_URL" --stacktrace
 
       - name: Name APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/GA-LAW-HELP-test.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/GA-LAW-HELP-connected.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: GA-LAW-HELP-Android-test
-          path: android/app/build/outputs/apk/debug/GA-LAW-HELP-test.apk
+          name: GA-LAW-HELP-Android-connected
+          path: android/app/build/outputs/apk/debug/GA-LAW-HELP-connected.apk
           if-no-files-found: error
           retention-days: 30
