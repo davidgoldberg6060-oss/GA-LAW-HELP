@@ -156,6 +156,28 @@ def public_research(q:str='',user=Depends(require_paid)):
         'notice':'This is a research starting point, not legal advice. Verify the current text, dates, court rules, and case-specific facts before relying on it.'
     }
 
+
+@app.get('/cases/{case_id}/notes')
+def list_case_notes(case_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+    owned_case(case_id,user,db)
+    rows=db.query(models.CaseNote).filter_by(case_id=case_id,owner_id=user.id).order_by(models.CaseNote.created_at.desc()).all()
+    return [{'id':x.id,'title':x.title,'note_type':x.note_type,'content':x.content,'language':x.language,'created_at':x.created_at} for x in rows]
+
+@app.post('/cases/{case_id}/notes')
+def create_case_note(case_id:int,body:schemas.CaseNoteCreate,user=Depends(current_user),db:Session=Depends(get_db)):
+    owned_case(case_id,user,db)
+    row=models.CaseNote(case_id=case_id,owner_id=user.id,title=body.title.strip(),content=body.content,note_type=body.note_type.strip() or 'LEGAL_RESEARCH',language=body.language.strip() or 'en')
+    db.add(row);audit(db,user.id,'SAVE_CASE_NOTE','case',case_id);db.commit();db.refresh(row)
+    return {'id':row.id,'saved':True}
+
+@app.delete('/cases/{case_id}/notes/{note_id}')
+def delete_case_note(case_id:int,note_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+    owned_case(case_id,user,db)
+    row=db.query(models.CaseNote).filter_by(id=note_id,case_id=case_id,owner_id=user.id).first()
+    if not row: raise HTTPException(404,'Saved legal work not found')
+    db.delete(row);audit(db,user.id,'DELETE_CASE_NOTE','case',case_id);db.commit()
+    return {'deleted':True}
+
 @app.post('/cases/{case_id}/motion-screen')
 def private_motion_screen(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db)
