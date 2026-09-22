@@ -97,6 +97,7 @@ class ApiClient(private val context: Context) {
     fun forgotPassword(email: String): JSONObject = JSONObject(execute("/auth/forgot-password", "POST", JSONObject().put("email", email), false))
     fun resetPassword(resetToken: String, newPassword: String): JSONObject = JSONObject(execute("/auth/reset-password", "POST", JSONObject().put("token", resetToken).put("new_password", newPassword), false))
 
+    fun me(): JSONObject = JSONObject(execute("/me"))
     fun billingStatus(): JSONObject = JSONObject(execute("/billing/status"))
     fun createCheckout(): JSONObject = JSONObject(execute("/billing/checkout", "POST", JSONObject()))
 
