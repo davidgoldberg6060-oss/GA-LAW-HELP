@@ -69,6 +69,24 @@ class MainActivity : AppCompatActivity() {
     private fun label(s:String,z:Float=16f)=TextView(this).apply{text=s;textSize=z;setTextColor(Color.WHITE);setPadding(0,8,0,8)}
     private fun field(h:String,pass:Boolean=false)=EditText(this).apply{hint=h;setHintTextColor(Color.rgb(155,174,190));setTextColor(Color.WHITE);setPadding(28,20,28,20);background=GradientDrawable().apply{cornerRadius=44f;setColor(Color.rgb(12,39,59));setStroke(2,blue)};if(pass) inputType=129}
     private fun button(s:String, f:()->Unit)=Button(this).apply{text=s;isAllCaps=false;setTextColor(Color.WHITE);textSize=15f;background=GradientDrawable().apply{cornerRadius=28f;setColor(card);setStroke(1,Color.rgb(29,67,94))};setOnClickListener{f()}}
+    private fun heroPanel():View {
+        val panel=LinearLayout(this).apply{
+            orientation=LinearLayout.HORIZONTAL;gravity=android.view.Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(16),dp(12),dp(16))
+            background=GradientDrawable().apply{cornerRadius=dp(18).toFloat();setColor(Color.rgb(7,28,44));setStroke(dp(1),Color.rgb(39,124,184))}
+        }
+        val copy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+        copy.addView(label("GEORGIA LAWS. REAL HELP. REAL PEOPLE.",11f).apply{setTextColor(Color.rgb(148,166,180));setPadding(0,0,0,dp(4))})
+        copy.addView(label("LEGAL ANSWERS\nANYTIME.",30f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,0,0,dp(4))})
+        copy.addView(label("Understand your rights. Get guidance. Stay informed. Be prepared.",13f).apply{setTextColor(Color.rgb(190,205,215));setPadding(0,0,0,0)})
+        panel.addView(copy,LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f))
+        val justice=ImageView(this).apply{setImageResource(R.drawable.ic_lady_justice);scaleType=ImageView.ScaleType.CENTER_INSIDE;contentDescription="Blindfolded Lady Justice holding balance scales"}
+        panel.addView(justice,LinearLayout.LayoutParams(dp(112),dp(128)))
+        return panel
+    }
+    private fun emergencyButton(action:()->Unit)=TextView(this).apply{
+        text="⚠  EMERGENCY INFORMATION\nImportant contacts and immediate steps";textSize=15f;setTextColor(Color.WHITE);setTypeface(typeface,Typeface.BOLD);gravity=android.view.Gravity.CENTER_VERTICAL
+        setPadding(dp(16),dp(14),dp(16),dp(14));background=GradientDrawable().apply{cornerRadius=dp(16).toFloat();setColor(Color.rgb(82,18,25));setStroke(dp(2),Color.rgb(255,76,86))};setOnClickListener{action()}
+    }
     private fun homeCard(title:String,subtitle:String,action:()->Unit)=LinearLayout(this).apply{
         orientation=LinearLayout.VERTICAL;setPadding(24,22,24,22);background=GradientDrawable().apply{cornerRadius=28f;setColor(card);setStroke(1,Color.rgb(28,64,89))}
         addView(label(title,18f).apply{setTypeface(typeface,Typeface.BOLD)});addView(label(subtitle,13f).apply{setTextColor(Color.rgb(174,193,207))});setOnClickListener{action()}
@@ -81,9 +99,7 @@ class MainActivity : AppCompatActivity() {
     private fun showPasswordReset(email:String){base();root.addView(label("RESET PASSWORD",26f));val e=field("Email").apply{setText(email)};val token=field("Reset token");val password=field("New password (15+ characters)",true);root.addView(e);root.addView(button("Send reset email"){busy("Sending…"){api.forgotPassword(e.text.toString());runOnUiThread{toast("If the account exists, a reset email was sent.")}}});root.addView(token);root.addView(password);root.addView(button("Set new password"){busy("Resetting…"){api.resetPassword(token.text.toString(),password.text.toString());runOnUiThread{toast("Password changed. Log in now.");showAuth()}}});root.addView(button("Back"){showAuth()})}
     private fun showHome(){selectedCase=null;base()
         root.addView(label("KNOW YOUR RIGHTS. PROTECT YOUR FUTURE.",12f).apply{setTextColor(blue);setPadding(0,0,0,22)})
-        root.addView(label("GEORGIA LAWS. REAL HELP. REAL PEOPLE.",12f).apply{setTextColor(Color.rgb(148,166,180))})
-        root.addView(label("LEGAL ANSWERS\nANYTIME.",31f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,5,0,5)})
-        root.addView(label("Understand your rights. Get guidance. Stay informed. Be prepared.",14f).apply{setTextColor(Color.rgb(190,205,215));setPadding(0,0,0,18)})
+        root.addView(heroPanel(),LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,0,0,dp(14))})
         val ask=field("Ask GA.LAW.HELP anything...");root.addView(ask);root.addView(button("➜ Ask GA.LAW.HELP"){val q=ask.text.toString().trim();if(q.isNotEmpty())requirePaid{busy("Asking GA.LAW.HELP…"){val result=api.publicAsk(q);runOnUiThread{showAnswer("GA.LAW.HELP",result.optString("answer",result.toString()))}}}})
         addHomeRow(button("🎙 Voice Help"){requirePaid{showGuide("VOICE HELP","Use this screen to prepare what you want to ask. During a police encounter, stay calm, do not physically resist, and follow lawful safety instructions.")}},button("▣ Upload a Document"){requirePaid{showDocumentIntake()}},button("▣ Scan / Take Photo"){requirePaid{showDocumentIntake(true)}})
         root.addView(homeSectionTitle("RIGHTS & POLICE ENCOUNTERS"))
@@ -92,7 +108,7 @@ class MainActivity : AppCompatActivity() {
         root.addView(homeSectionTitle("YOUR LEGAL WORK"))
         addHomeRow(homeCard("💬 Ask\nGA.LAW.HELP","Get legal guidance\nwith AI"){requirePaid{showTalkToMe()}},homeCard("📁 My Documents","Store and manage\nyour files"){requirePaid{showDocuments()}},homeCard("▥ My Recordings","Your audio, saved\nsecurely"){requirePaid{showRecordings()}})
         root.addView(homeCard("⚖ "+tr("motions"),"Motions, appeals, sentencing and other legal work"){requirePaid{showLegalWorkHub()}},LinearLayout.LayoutParams(-1,-2).apply{setMargins(5,6,5,6)})
-        root.addView(button("⚠  EMERGENCY INFORMATION\nImportant contacts and immediate steps"){showEmergencyInfo()},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,16,0,10)})
+        root.addView(emergencyButton{showEmergencyInfo()},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(16),0,dp(10))})
         root.addView(label("“Knowledge is power, especially when you need it most.”",15f).apply{gravity=android.view.Gravity.CENTER;setTextColor(Color.rgb(157,176,190));setTypeface(typeface,Typeface.ITALIC);setPadding(0,20,0,10)})
         root.addView(label("—  GA.LAW.HELP  —",12f).apply{gravity=android.view.Gravity.CENTER;setTextColor(blue)})
         root.addView(button("🗣 "+tr("talk")){requirePaid{showTalkToMe()}});root.addView(button("⚙ Settings"){showSettings()});root.addView(button("● Profile"){showProfile()});root.addView(button("Payment & Subscription"){showMembership()})
