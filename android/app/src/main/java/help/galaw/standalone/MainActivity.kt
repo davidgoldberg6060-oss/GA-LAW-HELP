@@ -213,8 +213,8 @@ class MainActivity : AppCompatActivity() {
         }else{
             root.addView(label("Choose your membership",20f))
             root.addView(label("Funny & Weird Georgia Laws remains free. AI legal help, Georgia-law search, case work, documents, recordings, and legal-work tools require an active membership.",14f).apply{setTextColor(Color.rgb(190,205,215))})
-            val monthlyLabel=status.optString("monthly_label","$14.99 / month")
-            val annualLabel=status.optString("annual_label","$100 / year")
+            val monthlyLabel=status.optString("monthly_label","\$14.99 / month")
+            val annualLabel=status.optString("annual_label","\$100 / year")
             if(status.optBoolean("monthly_available")) root.addView(homeCard("Monthly — "+monthlyLabel,"Recurring monthly membership"){openCheckout("monthly")})
             if(status.optBoolean("annual_available")) root.addView(homeCard("Annual — "+annualLabel,"One annual payment"){openCheckout("annual")})
             if(!status.optBoolean("checkout_configured")) root.addView(label("Checkout is not available yet. Please try again later.",14f).apply{setTextColor(Color.rgb(255,190,120))})
