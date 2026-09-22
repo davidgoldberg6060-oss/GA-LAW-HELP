@@ -27,7 +27,45 @@ class MainActivity : AppCompatActivity() {
     private val blue = Color.rgb(40,169,255)
     private val navy = Color.rgb(4,18,31)
     private val card = Color.rgb(11,35,54)
-    private fun base(){ root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(28,38,28,34);setBackgroundColor(navy)};setContentView(ScrollView(this).apply{setBackgroundColor(navy);addView(root)}) }
+    private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
+    private fun base(){
+        val signedIn=api.token!=null
+        val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(navy)}
+        root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(18),dp(14),dp(24));setBackgroundColor(navy)}
+        if(signedIn) root.addView(appHeader())
+        val scroll=ScrollView(this).apply{setBackgroundColor(navy);addView(root)}
+        shell.addView(scroll,LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,0,1f))
+        if(signedIn) shell.addView(bottomNav())
+        setContentView(shell)
+    }
+    private fun appHeader():View {
+        val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=android.view.Gravity.CENTER_VERTICAL;setPadding(0,0,0,dp(12))}
+        val justice=ImageButton(this).apply{
+            setImageResource(R.drawable.ic_lady_justice);contentDescription="Open navigation menu";setBackgroundColor(Color.TRANSPARENT);scaleType=ImageView.ScaleType.CENTER_INSIDE;setPadding(0,0,0,0);setOnClickListener{showAppMenu()}
+        }
+        row.addView(justice,LinearLayout.LayoutParams(dp(52),dp(52)))
+        val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(8),0,0,0)}
+        brand.addView(label("GA.LAW.HELP",21f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,0,0,0)})
+        brand.addView(label("KNOW YOUR RIGHTS. PROTECT YOUR FUTURE.",9f).apply{setTextColor(blue);setPadding(0,0,0,0)})
+        row.addView(brand,LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f))
+        val account=TextView(this).apply{text="●";textSize=25f;setTextColor(Color.WHITE);gravity=android.view.Gravity.CENTER;contentDescription="Open profile";setOnClickListener{showProfile()}}
+        row.addView(account,LinearLayout.LayoutParams(dp(44),dp(44)))
+        return row
+    }
+    private fun navItem(icon:String,title:String,action:()->Unit)=TextView(this).apply{
+        text="$icon\n$title";textSize=10f;setTextColor(Color.WHITE);gravity=android.view.Gravity.CENTER;setPadding(dp(3),dp(7),dp(3),dp(7));setOnClickListener{action()}
+    }
+    private fun bottomNav():View {
+        val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(4),dp(3),dp(4),dp(5));background=GradientDrawable().apply{setColor(Color.rgb(7,28,44));setStroke(dp(1),Color.rgb(25,69,98))}}
+        listOf(
+            navItem("⌂","Home"){showHome()},
+            navItem("⚖","Laws"){requirePaid{showLawSearch()}},
+            navItem("💬","AI Help"){requirePaid{showTalkToMe()}},
+            navItem("📁","Documents"){requirePaid{showDocuments()}},
+            navItem("●","Account"){showProfile()}
+        ).forEach{row.addView(it,LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f))}
+        return row
+    }
     private fun label(s:String,z:Float=16f)=TextView(this).apply{text=s;textSize=z;setTextColor(Color.WHITE);setPadding(0,8,0,8)}
     private fun field(h:String,pass:Boolean=false)=EditText(this).apply{hint=h;setHintTextColor(Color.rgb(155,174,190));setTextColor(Color.WHITE);setPadding(28,20,28,20);background=GradientDrawable().apply{cornerRadius=44f;setColor(Color.rgb(12,39,59));setStroke(2,blue)};if(pass) inputType=129}
     private fun button(s:String, f:()->Unit)=Button(this).apply{text=s;isAllCaps=false;setTextColor(Color.WHITE);textSize=15f;background=GradientDrawable().apply{cornerRadius=28f;setColor(card);setStroke(1,Color.rgb(29,67,94))};setOnClickListener{f()}}
@@ -42,7 +80,6 @@ class MainActivity : AppCompatActivity() {
     private fun showVerification(email:String){base();root.addView(label("VERIFY EMAIL",26f));root.addView(label("Open the verification email sent to $email. You can also paste its token below."));val t=field("Verification token");root.addView(t);root.addView(button("Verify"){busy("Verifying…"){api.verifyEmail(t.text.toString());runOnUiThread{toast("Email verified. Log in now.");showAuth()}}});root.addView(button("Resend email"){busy("Sending…"){api.resendVerification(email);runOnUiThread{toast("If the account exists, a new email was sent.")}}});root.addView(button("Back"){showAuth()})}
     private fun showPasswordReset(email:String){base();root.addView(label("RESET PASSWORD",26f));val e=field("Email").apply{setText(email)};val token=field("Reset token");val password=field("New password (15+ characters)",true);root.addView(e);root.addView(button("Send reset email"){busy("Sending…"){api.forgotPassword(e.text.toString());runOnUiThread{toast("If the account exists, a reset email was sent.")}}});root.addView(token);root.addView(password);root.addView(button("Set new password"){busy("Resetting…"){api.resetPassword(token.text.toString(),password.text.toString());runOnUiThread{toast("Password changed. Log in now.");showAuth()}}});root.addView(button("Back"){showAuth()})}
     private fun showHome(){selectedCase=null;base()
-        root.addView(label("⚖     GA.LAW.HELP                                      ●",25f).apply{setTypeface(typeface,Typeface.BOLD);setTextColor(Color.WHITE);setOnClickListener{showMembership()}})
         root.addView(label("KNOW YOUR RIGHTS. PROTECT YOUR FUTURE.",12f).apply{setTextColor(blue);setPadding(0,0,0,22)})
         root.addView(label("GEORGIA LAWS. REAL HELP. REAL PEOPLE.",12f).apply{setTextColor(Color.rgb(148,166,180))})
         root.addView(label("LEGAL ANSWERS\nANYTIME.",31f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,5,0,5)})
@@ -55,11 +92,10 @@ class MainActivity : AppCompatActivity() {
         root.addView(homeSectionTitle("YOUR LEGAL WORK"))
         addHomeRow(homeCard("💬 Ask\nGA.LAW.HELP","Get legal guidance\nwith AI"){requirePaid{showTalkToMe()}},homeCard("📁 My Documents","Store and manage\nyour files"){requirePaid{showDocuments()}},homeCard("▥ My Recordings","Your audio, saved\nsecurely"){requirePaid{showRecordings()}})
         root.addView(homeCard("⚖ "+tr("motions"),"Motions, appeals, sentencing and other legal work"){requirePaid{showLegalWorkHub()}},LinearLayout.LayoutParams(-1,-2).apply{setMargins(5,6,5,6)})
-        root.addView(button("⚠  EMERGENCY INFORMATION\nImportant contacts and immediate steps"){toast("For immediate danger, contact emergency services.")},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,16,0,10)})
+        root.addView(button("⚠  EMERGENCY INFORMATION\nImportant contacts and immediate steps"){showEmergencyInfo()},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,16,0,10)})
         root.addView(label("“Knowledge is power, especially when you need it most.”",15f).apply{gravity=android.view.Gravity.CENTER;setTextColor(Color.rgb(157,176,190));setTypeface(typeface,Typeface.ITALIC);setPadding(0,20,0,10)})
         root.addView(label("—  GA.LAW.HELP  —",12f).apply{gravity=android.view.Gravity.CENTER;setTextColor(blue)})
-        root.addView(button("🗣 "+tr("talk")){requirePaid{showTalkToMe()}});root.addView(button("⚙ "+tr("settings")){showLanguageSettings()});root.addView(button("● Account / Membership"){showMembership()})
-        root.addView(label("⌂ Home        ⚖ Laws        💬 AI Help        📁 Documents        ● Account",13f).apply{gravity=android.view.Gravity.CENTER;setTextColor(blue);setPadding(0,18,0,4)})
+        root.addView(button("🗣 "+tr("talk")){requirePaid{showTalkToMe()}});root.addView(button("⚙ Settings"){showSettings()});root.addView(button("● Profile"){showProfile()});root.addView(button("$ Payment & Subscription"){showMembership()})
     }
     private fun showFreeHome(){base();root.addView(label("GA.LAW.HELP",30f).apply{setTypeface(typeface,Typeface.BOLD)});root.addView(label("FREE ACCESS",13f).apply{setTextColor(blue)});root.addView(label("Explore Georgia legal myths without creating an account. Every other app feature requires an active membership.",15f).apply{setPadding(0,18,0,18)});root.addView(homeCard("▤ Funny & Weird Georgia Laws","Separate internet folklore from verified law"){showFunnyLaws()});root.addView(button("Log in / create account"){showAuth()});root.addView(button("Emergency information"){toast("For immediate danger, contact emergency services.")})}
     private fun showFunnyLaws(){base();root.addView(button(if(api.token==null)"← Free home" else "← Home"){if(api.token==null)showFreeHome() else showHome()});root.addView(label("FUNNY & WEIRD GEORGIA LAWS",26f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,28,0,8)});root.addView(label("MYTH CHECKER — FREE",13f).apply{setTextColor(blue)});root.addView(label("Many viral “weird law” lists repeat local publicity stories or unsourced claims as if they were current statewide crimes. Treat the claims below as folklore until an official, current source verifies them.",15f).apply{setPadding(0,14,0,18)});arrayOf(
