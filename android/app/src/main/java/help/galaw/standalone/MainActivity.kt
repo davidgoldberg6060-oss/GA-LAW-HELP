@@ -45,32 +45,17 @@ class MainActivity : AppCompatActivity() {
         root.addView(label("☰     GA.LAW.HELP                                      ●",25f).apply{setTypeface(typeface,Typeface.BOLD);setTextColor(Color.WHITE)})
         root.addView(label("KNOW YOUR RIGHTS. PROTECT YOUR FUTURE.",12f).apply{setTextColor(blue);setPadding(0,0,0,22)})
         root.addView(label("GEORGIA LAWS. REAL HELP. REAL PEOPLE.",12f).apply{setTextColor(Color.rgb(148,166,180))})
-        root.addView(label("LEGAL ANSWERS
-ANYTIME.",31f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,5,0,5)})
+        root.addView(label("LEGAL ANSWERS\\nANYTIME.",31f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,5,0,5)})
         root.addView(label("Understand your rights. Get guidance. Stay informed. Be prepared.",14f).apply{setTextColor(Color.rgb(190,205,215));setPadding(0,0,0,18)})
         val ask=field("Ask GA.LAW.HELP anything...");root.addView(ask);root.addView(button("➜ Ask GA.LAW.HELP"){val q=ask.text.toString().trim();if(q.isNotEmpty())requirePaid{busy("Asking GA.LAW.HELP…"){val result=api.publicAsk(q);runOnUiThread{showAnswer("GA.LAW.HELP",result.optString("answer",result.toString()))}}}})
         addHomeRow(button("🎙 Voice Help"){requirePaid{showGuide("VOICE HELP","Use this screen to prepare what you want to ask. During a police encounter, stay calm, do not physically resist, and follow lawful safety instructions.")}},button("▣ Upload a Document"){requirePaid{showDocumentIntake()}},button("▣ Scan / Take Photo"){requirePaid{showDocumentIntake(true)}})
         root.addView(homeSectionTitle("RIGHTS & POLICE ENCOUNTERS"))
-        addHomeRow(homeCard("🛡 Know
-My Rights","Simple answers
-for real situations"){requirePaid{showGuide("KNOW MY RIGHTS","Choose the situation you are dealing with and review plain-language legal information before deciding what to do.")}},homeCard("🚙 Traffic Stop","What to do and
-what to say"){requirePaid{showGuide("TRAFFIC STOP","Stay calm. Keep your hands visible. Avoid sudden movements. You can ask whether you are free to leave and clearly state that you do not consent to a search. Do not physically resist.")}},homeCard("♟ Questioned
-by Police","Stay calm.
-Know your rights."){requirePaid{showGuide("QUESTIONED BY POLICE","You can clearly say that you wish to remain silent and want a lawyer. Do not lie, threaten, obstruct, or physically resist.")}})
-        addHomeRow(homeCard("⛓ Arrested /
-Detained","Step-by-step help"){requirePaid{showGuide("ARRESTED / DETAINED","Stay calm and do not physically resist. Ask whether you are free to leave. If you are being questioned while in custody, clearly request a lawyer and state that you wish to remain silent.")}},homeCard("⚖ Georgia Laws","Search laws,
-penalties & more"){requirePaid{showLawSearch()}},homeCard("▤ Funny & Weird
-Georgia Laws","Learn something
-new"){showFunnyLaws()})
+        addHomeRow(homeCard("🛡 Know\\nMy Rights","Simple answers\\nfor real situations"){requirePaid{showGuide("KNOW MY RIGHTS","Choose the situation you are dealing with and review plain-language legal information before deciding what to do.")}},homeCard("🚙 Traffic Stop","What to do and\\nwhat to say"){requirePaid{showGuide("TRAFFIC STOP","Stay calm. Keep your hands visible. Avoid sudden movements. You can ask whether you are free to leave and clearly state that you do not consent to a search. Do not physically resist.")}},homeCard("♟ Questioned\\nby Police","Stay calm.\\nKnow your rights."){requirePaid{showGuide("QUESTIONED BY POLICE","You can clearly say that you wish to remain silent and want a lawyer. Do not lie, threaten, obstruct, or physically resist.")}})
+        addHomeRow(homeCard("⛓ Arrested /\\nDetained","Step-by-step help"){requirePaid{showGuide("ARRESTED / DETAINED","Stay calm and do not physically resist. Ask whether you are free to leave. If you are being questioned while in custody, clearly request a lawyer and state that you wish to remain silent.")}},homeCard("⚖ Georgia Laws","Search laws,\\npenalties & more"){requirePaid{showLawSearch()}},homeCard("▤ Funny & Weird\\nGeorgia Laws","Learn something\\nnew"){showFunnyLaws()})
         root.addView(homeSectionTitle("YOUR LEGAL WORK"))
-        addHomeRow(homeCard("💬 Ask
-GA.LAW.HELP","Get legal guidance
-with AI"){requirePaid{showTalkToMe()}},homeCard("📁 My Documents","Store and manage
-your files"){requirePaid{showDocuments()}},homeCard("▥ My Recordings","Your audio, saved
-securely"){requirePaid{showRecordings()}})
+        addHomeRow(homeCard("💬 Ask\\nGA.LAW.HELP","Get legal guidance\\nwith AI"){requirePaid{showTalkToMe()}},homeCard("📁 My Documents","Store and manage\\nyour files"){requirePaid{showDocuments()}},homeCard("▥ My Recordings","Your audio, saved\\nsecurely"){requirePaid{showRecordings()}})
         root.addView(homeCard("⚖ "+tr("motions"),"Motions, appeals, sentencing and other legal work"){requirePaid{showLegalWorkHub()}},LinearLayout.LayoutParams(-1,-2).apply{setMargins(5,6,5,6)})
-        root.addView(button("⚠  EMERGENCY INFORMATION
-Important contacts and immediate steps"){toast("For immediate danger, contact emergency services.")},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,16,0,10)})
+        root.addView(button("⚠  EMERGENCY INFORMATION\\nImportant contacts and immediate steps"){toast("For immediate danger, contact emergency services.")},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,16,0,10)})
         root.addView(label("“Knowledge is power, especially when you need it most.”",15f).apply{gravity=android.view.Gravity.CENTER;setTextColor(Color.rgb(157,176,190));setTypeface(typeface,Typeface.ITALIC);setPadding(0,20,0,10)})
         root.addView(label("—  GA.LAW.HELP  —",12f).apply{gravity=android.view.Gravity.CENTER;setTextColor(blue)})
         root.addView(button("🗣 "+tr("talk")){requirePaid{showTalkToMe()}});root.addView(button("⚙ "+tr("settings")){showLanguageSettings()});root.addView(button("● Account / Membership"){showMembership()})
