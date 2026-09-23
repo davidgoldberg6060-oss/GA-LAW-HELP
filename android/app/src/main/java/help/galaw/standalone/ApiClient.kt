@@ -99,7 +99,7 @@ class ApiClient(private val context: Context) {
 
     fun me(): JSONObject = JSONObject(execute("/me"))
     fun billingStatus(): JSONObject = JSONObject(execute("/billing/status"))
-    fun createCheckout(): JSONObject = JSONObject(execute("/billing/checkout", "POST", JSONObject()))
+    fun createCheckout(plan:String="monthly"): JSONObject = JSONObject(execute("/billing/checkout?plan="+java.net.URLEncoder.encode(plan,"UTF-8"), "POST", JSONObject()))
 
     fun cases(): JSONArray = JSONArray(execute("/cases"))
     fun createCase(title: String, county: String, stage: String, narrative: String): JSONObject = JSONObject(execute(

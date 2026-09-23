@@ -178,7 +178,51 @@ class MainActivity : AppCompatActivity() {
         root.addView(button("Know My Rights"){requirePaid{showGuide("KNOW MY RIGHTS","Review plain-language rights information for the situation you are dealing with. Do not physically resist or obstruct officers.")}})
     }
 
-    private fun showMembership(status:JSONObject?=null){if(api.token==null){showAuth();return};if(status==null){base();root.addView(label("PAYMENT & SUBSCRIPTION",26f));busy("Checking membership…"){val fresh=api.billingStatus();paidAccess=fresh.optBoolean("paid");runOnUiThread{showMembership(fresh)}};return};base();root.addView(button("← Home"){showHome()});root.addView(label("PAYMENT & SUBSCRIPTION",26f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,28,0,10)});val active=status.optBoolean("paid");paidAccess=active;if(active){root.addView(label("✓ Active membership",18f).apply{setTextColor(blue)});root.addView(label("All paid GA.LAW.HELP features are unlocked on this account.",14f))}else{root.addView(label("Membership required",20f));root.addView(label("Funny & Weird Georgia Laws remains free. AI legal help, Georgia-law search, case work, documents, recordings, and legal-work tools require an active membership.",14f).apply{setTextColor(Color.rgb(190,205,215))});if(status.optBoolean("checkout_configured"))root.addView(button("Start secure checkout"){busy("Opening secure checkout…"){val result=api.createCheckout();val url=result.optString("checkout_url");runOnUiThread{if(url.startsWith("https://checkout.stripe.com/"))openUrl(url) else toast("Checkout is unavailable.")}}})else root.addView(label("Checkout is not available yet. Please try again later.",14f).apply{setTextColor(Color.rgb(255,190,120))});root.addView(button("Refresh membership"){paidAccess=null;showMembership()});root.addView(button("Browse the free myth checker"){showFunnyLaws()})};root.addView(button("Log out"){api.logout();paidAccess=null;showAuth()})}
+    private fun openCheckout(plan:String){
+        busy("Opening secure checkout…"){
+            val result=api.createCheckout(plan)
+            val url=result.optString("checkout_url")
+            runOnUiThread{
+                if(url.startsWith("https://checkout.stripe.com/")) openUrl(url)
+                else if(result.optBoolean("already_paid")) { toast("Your membership is already active."); showMembership() }
+                else toast("Checkout is unavailable.")
+            }
+        }
+    }
+
+    private fun showMembership(status:JSONObject?=null){
+        if(api.token==null){showAuth();return}
+        if(status==null){
+            base()
+            root.addView(label("PAYMENT & SUBSCRIPTION",26f).apply{setTypeface(typeface,Typeface.BOLD)})
+            busy("Checking membership…"){
+                val fresh=api.billingStatus()
+                paidAccess=fresh.optBoolean("paid")
+                runOnUiThread{showMembership(fresh)}
+            }
+            return
+        }
+        base()
+        root.addView(button("← Home"){showHome()})
+        root.addView(label("PAYMENT & SUBSCRIPTION",26f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,28,0,10)})
+        val active=status.optBoolean("paid")
+        paidAccess=active
+        if(active){
+            root.addView(label("✓ Active membership",18f).apply{setTextColor(blue)})
+            root.addView(label("All paid GA.LAW.HELP features are unlocked on this account.",14f))
+        }else{
+            root.addView(label("Choose your membership",20f))
+            root.addView(label("Funny & Weird Georgia Laws remains free. AI legal help, Georgia-law search, case work, documents, recordings, and legal-work tools require an active membership.",14f).apply{setTextColor(Color.rgb(190,205,215))})
+            val monthlyLabel=status.optString("monthly_label","\$14.99 / month")
+            val annualLabel=status.optString("annual_label","\$100 / year")
+            if(status.optBoolean("monthly_available")) root.addView(homeCard("Monthly — "+monthlyLabel,"Recurring monthly membership"){openCheckout("monthly")})
+            if(status.optBoolean("annual_available")) root.addView(homeCard("Annual — "+annualLabel,"One annual payment"){openCheckout("annual")})
+            if(!status.optBoolean("checkout_configured")) root.addView(label("Checkout is not available yet. Please try again later.",14f).apply{setTextColor(Color.rgb(255,190,120))})
+            root.addView(button("Refresh membership"){paidAccess=null;showMembership()})
+            root.addView(button("Browse the free myth checker"){showFunnyLaws()})
+        }
+        root.addView(button("Log out"){api.logout();paidAccess=null;showAuth()})
+    }
 
     private fun languageCode():String { val saved=getSharedPreferences("ga_settings",MODE_PRIVATE).getString("language","English")?:"English"; return when { saved.startsWith("Español")->"es"; saved.startsWith("中文")->"zh"; saved.startsWith("Français")->"fr"; saved.startsWith("العربية")->"ar"; saved.startsWith("Tiếng Việt")->"vi"; else->"en" } }
     private fun tr(key:String):String { val id=resources.getIdentifier(when(key){"talk"->"talk_to_me";"settings"->"settings_language";"send"->"send";"language"->"language";"motions"->"motions_legal_work";"back"->"back_home";else->"home"},"string",packageName);return if(id!=0)getString(id) else key }

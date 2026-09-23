@@ -14,7 +14,7 @@ from .token_service import (issue_refresh, rotate_refresh, revoke_refresh, issue
     issue_email_verification, consume_email_verification, revoke_all_user_refresh_tokens)
 from .email_delivery import deliver_verification, deliver_password_reset, deliver_encounter_notice
 from .ai_assistant import ask_openai
-from .billing import checkout_configured, create_checkout, verify_webhook
+from .billing import checkout_configured, checkout_options, create_checkout, verify_webhook
 
 def validate_production_config():
     if os.getenv('ENVIRONMENT','development').lower() == 'production':
@@ -82,12 +82,13 @@ def audit(db, user_id, action, obj, oid=None):
 
 @app.get('/billing/status')
 def billing_status(user=Depends(current_user)):
-    return {'role':user.role,'paid':user.role in ('paid','admin'),'checkout_configured':checkout_configured()}
+    return {'role':user.role,'paid':user.role in ('paid','admin'),**checkout_options()}
 
 @app.post('/billing/checkout')
-def billing_checkout(user=Depends(current_user)):
+def billing_checkout(plan: str='monthly', user=Depends(current_user)):
     if user.role in ('paid','admin'): return {'already_paid':True}
-    try: return create_checkout(user.id,user.email)
+    if plan not in ('monthly','annual'): raise HTTPException(422,'Plan must be monthly or annual')
+    try: return create_checkout(user.id,user.email,plan)
     except RuntimeError as exc: raise HTTPException(503,str(exc))
 
 @app.post('/billing/webhook')
