@@ -13,15 +13,30 @@ import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class ApiException(val statusCode: Int, responseBody: String) : RuntimeException(
-    when (statusCode) {
-        401 -> "Please sign in to continue."
-        403 -> "This feature requires an active GA.LAW.HELP membership."
-        422 -> runCatching { JSONObject(responseBody).optString("detail") }.getOrNull().orEmpty().ifBlank { "Check the information and try again." }
-        503 -> "This service is temporarily unavailable. Please try again shortly."
-        else -> runCatching { JSONObject(responseBody).optString("detail") }.getOrNull().orEmpty().ifBlank { "Request failed ($statusCode)." }
+private fun apiErrorMessage(statusCode: Int, responseBody: String): String {
+    if (statusCode == 401) return "Please sign in to continue."
+    if (statusCode == 403) return "This feature requires an active GA.LAW.HELP membership."
+    if (statusCode == 503) return "This service is temporarily unavailable. Please try again shortly."
+
+    val detail = runCatching { JSONObject(responseBody).opt("detail") }.getOrNull()
+    if (statusCode == 422 && detail is JSONArray && detail.length() > 0) {
+        val first = detail.optJSONObject(0)
+        val field = first?.optJSONArray("loc")?.let { loc ->
+            if (loc.length() > 0) loc.optString(loc.length() - 1) else ""
+        }.orEmpty()
+        val msg = first?.optString("msg").orEmpty()
+        return when {
+            field.equals("email", true) -> "Enter a valid email address."
+            field.contains("password", true) && msg.contains("15", true) -> "Password must be at least 15 characters."
+            msg.isNotBlank() -> msg.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            else -> "Check the information and try again."
+        }
     }
-)
+    if (detail is String && detail.isNotBlank()) return detail
+    return if (statusCode == 422) "Check the information and try again." else "Request failed ($statusCode)."
+}
+
+class ApiException(val statusCode: Int, responseBody: String) : RuntimeException(apiErrorMessage(statusCode, responseBody))
 
 class ApiClient(private val context: Context) {
     private val masterKey = MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
