@@ -32,3 +32,23 @@ def motion_screen_prompt(db, facts: str) -> tuple[str, dict]:
         'VERIFIED MOTION REGISTRY:\n' + verified_context + '\nCASE INFORMATION:\n' + facts
     )
     return prompt, registry['coverage']
+
+
+def motion_screen_response(db, facts: str, ask_fn) -> dict:
+    """Run a motion screen and return the stable API response contract.
+
+    Keeping this orchestration outside the HTTP route makes the verified-authority
+    gate independently testable and ensures clients always receive coverage data.
+    """
+    prompt, coverage = motion_screen_prompt(db, facts)
+    analysis = ask_fn(prompt)
+    return {
+        'analysis': analysis,
+        'authority_coverage': coverage,
+        'verification_mode': 'VERIFIED_REGISTRY_ONLY',
+        'notice': (
+            'AI-generated legal information, not legal advice. Specific citations are '
+            'limited to the verified motion registry; verify current authority, deadlines, '
+            'record facts, and local filing requirements before filing.'
+        ),
+    }
