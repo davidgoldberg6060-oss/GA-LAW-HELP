@@ -100,5 +100,5 @@ class AuthActivity : AppCompatActivity() {
         }
     }
 
-    private fun openApp(){ runOnUiThread { startActivity(Intent(this,MainActivity::class.java)); finish() } }
+    private fun openApp(){ runOnUiThread { startActivity(Intent(this,HomeActivity::class.java)); finish() } }
 }
