@@ -1,4 +1,4 @@
-from app.motion_screen_service import motion_screen_prompt
+from app.motion_screen_service import motion_screen_prompt, motion_screen_response
 
 
 class Query:
@@ -45,3 +45,17 @@ def test_prompt_fails_closed_when_no_authority_is_verified():
     assert 'No motion candidate currently satisfies the verified-current authority gate' in prompt
     assert 'do not invent a citation' in prompt.lower()
     assert coverage['VERIFIED_CURRENT'] == 0
+
+
+def test_response_contract_exposes_coverage_and_verification_mode():
+    seen = {}
+    def ask(prompt):
+        seen['prompt'] = prompt
+        return 'screen result'
+
+    response = motion_screen_response(DB([Authority()], [Version()]), 'Case facts here', ask)
+    assert response['analysis'] == 'screen result'
+    assert response['verification_mode'] == 'VERIFIED_REGISTRY_ONLY'
+    assert response['authority_coverage']['VERIFIED_CURRENT'] >= 1
+    assert 'VERIFIED MOTION REGISTRY' in seen['prompt']
+    assert 'Specific citations are limited to the verified motion registry' in response['notice']
