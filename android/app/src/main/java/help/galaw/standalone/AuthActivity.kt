@@ -41,9 +41,15 @@ class AuthActivity : AppCompatActivity() {
     private fun toast(message:String)=Toast.makeText(this,message,Toast.LENGTH_LONG).show()
 
     private fun validEmail(value:String):Boolean = value.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(value).matches()
-    private fun validateCredentials(email:String,password:String):Boolean {
+    private fun validateLogin(email:String,password:String):Boolean {
+        if(!validEmail(email)) { toast("Enter a valid email address."); return false }
+        if(password.isEmpty()) { toast("Enter your password."); return false }
+        return true
+    }
+    private fun validateRegistration(email:String,password:String):Boolean {
         if(!validEmail(email)) { toast("Enter a valid email address."); return false }
         if(password.length < 15) { toast("Password must be at least 15 characters."); return false }
+        if(password.length > 128) { toast("Password must be no more than 128 characters."); return false }
         return true
     }
 
@@ -60,15 +66,15 @@ class AuthActivity : AppCompatActivity() {
         add(text("KNOW YOUR RIGHTS. PROTECT YOUR FUTURE.",12f).apply { gravity=Gravity.CENTER; setTextColor(blue) },2)
         add(text("Georgia legal help, documents, case tools and AI guidance in one secure place.",15f).apply { gravity=Gravity.CENTER; setTextColor(Color.rgb(190,205,215)) },12)
         val email=field("Email address")
-        val password=field("Password (15+ characters)",true)
+        val password=field("Password",true)
         add(email,22); add(password,10)
         add(button("Log in",true){
             val emailValue=email.text.toString().trim(); val passwordValue=password.text.toString()
-            if(validateCredentials(emailValue,passwordValue)) runTask("Signing in…") { api.auth("/auth/login",emailValue,passwordValue); openApp() }
+            if(validateLogin(emailValue,passwordValue)) runTask("Signing in…") { api.auth("/auth/login",emailValue,passwordValue); openApp() }
         },14)
         add(button("Create account"){
             val emailValue=email.text.toString().trim(); val passwordValue=password.text.toString()
-            if(validateCredentials(emailValue,passwordValue)) runTask("Creating account…") {
+            if(validateRegistration(emailValue,passwordValue)) runTask("Creating account…") {
                 val result=api.auth("/auth/register",emailValue,passwordValue)
                 runOnUiThread { if(result.optBoolean("verification_required")) showVerification(emailValue) else openApp() }
             }
@@ -117,6 +123,7 @@ class AuthActivity : AppCompatActivity() {
             when {
                 tokenValue.isBlank() -> toast("Enter the reset token.")
                 passwordValue.length < 15 -> toast("Password must be at least 15 characters.")
+                passwordValue.length > 128 -> toast("Password must be no more than 128 characters.")
                 else -> runTask("Resetting…"){api.resetPassword(tokenValue,passwordValue);runOnUiThread{toast("Password changed. Log in now.");showAuth()}}
             }
         },10)
