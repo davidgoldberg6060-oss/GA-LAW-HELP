@@ -2,6 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application android:supportsRtl="true" android:theme="@style/Theme.GALaw" android:label="GA.LAW.HELP" android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".HomeActivity" android:exported="false" />
         <activity android:name=".AuthActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
