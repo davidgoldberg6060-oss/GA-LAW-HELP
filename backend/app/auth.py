@@ -34,8 +34,14 @@ def current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)):
     return user
 
 def require_paid(user: models.User = Depends(current_user)):
-    if user.role not in ('paid','admin'):
-        raise HTTPException(403, 'Paid membership required')
+    """Compatibility gate retained for future subscriptions.
+
+    GA.LAW.HELP launches with the paywall disabled, so every authenticated,
+    active account receives access to routes that historically required a paid
+    membership. Keeping this dependency in place preserves the existing route
+    structure and makes a future subscription relaunch a small, centralized
+    change instead of deleting the billing implementation.
+    """
     return user
 
 def require_admin(user: models.User = Depends(current_user)):
