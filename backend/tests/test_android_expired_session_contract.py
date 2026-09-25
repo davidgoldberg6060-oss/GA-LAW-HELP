@@ -7,19 +7,27 @@ HOME = Path('../android/app/src/main/java/help/galaw/standalone/HomeActivity.kt'
 
 def test_failed_refresh_clears_dead_credentials():
     source = API.read_text()
-    assert 'clearSession' in source, 'ApiClient must expose a local session-clear operation.'
-    assert 'code == 401' in source
+    assert 'fun clearSession()' in source
+    assert 'if (code == 401 && retry && refreshAccess())' in source
+    assert 'if (code == 401 && !path.startsWith("/auth/")) expireSession()' in source
 
 
-def test_protected_screen_redirects_unauthorized_user_to_login():
-    source = HOME.read_text()
-    assert 'ApiException' in source
-    assert 'statusCode == 401' in source
+def test_expired_protected_session_redirects_to_login_and_finishes_activity():
+    source = API.read_text()
+    assert 'private fun expireSession()' in source
+    assert 'clearSession()' in source
     assert 'AuthActivity::class.java' in source
-    assert 'finish()' in source
+    assert 'Intent.FLAG_ACTIVITY_CLEAR_TOP' in source
+    assert 'activity.finish()' in source
+
+
+def test_auth_endpoints_do_not_trigger_protected_session_redirect():
+    source = API.read_text()
+    assert '!path.startsWith("/auth/")' in source
 
 
 def test_home_still_guards_missing_token_on_launch():
     source = HOME.read_text()
     assert 'if (api.token == null)' in source
     assert 'startActivity(Intent(this, AuthActivity::class.java))' in source
+    assert 'finish()' in source
