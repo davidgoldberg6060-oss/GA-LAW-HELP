@@ -7,7 +7,8 @@ def test_live_motion_screen_uses_verified_response_service():
     assert "from .motion_screen_service import motion_screen_response" in source
 
     route_start = source.index("def private_motion_screen(")
-    route_end = source.index("\n@app.", route_start)
+    next_route = source.find("\n@app.", route_start)
+    route_end = next_route if next_route != -1 else len(source)
     route = source[route_start:route_end]
 
     assert "motion_screen_response(db, facts, ask_openai)" in route
