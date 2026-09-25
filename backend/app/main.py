@@ -3,9 +3,18 @@
 The historical route set remains in legacy_main while the verified motion-screen
 route is replaced here so the live endpoint cannot bypass the verified registry.
 """
+from . import legacy_main as _legacy_main
 from .legacy_main import *
 from .legacy_main import audit
 from .motion_screen_service import motion_screen_response
+
+# Keep legacy route call sites testable through app.main.ask_openai while the
+# endpoint migration is incremental. The lookup stays dynamic so tests and
+# future dependency injection can replace the provider in one place.
+def _delegated_ask_openai(prompt: str):
+    return ask_openai(prompt)
+
+_legacy_main.ask_openai = _delegated_ask_openai
 
 # Remove the legacy free-form motion-screen route before registering the verified one.
 for _route in list(app.router.routes):
