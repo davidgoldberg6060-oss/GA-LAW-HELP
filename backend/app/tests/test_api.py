@@ -113,14 +113,14 @@ def test_password_reset_revokes_sessions_and_hides_unknown_accounts():
         assert client.post("/auth/login", json={"email": "reset@example.com", "password": "new-correct-horse-battery"}).status_code == 200
 
 
-def test_free_account_cannot_bypass_paid_api():
+def test_free_launch_account_can_use_normal_authenticated_api():
     with TestClient(app) as client:
         free = client.post("/auth/register", json={"email": "free@example.com", "password": "free-account-secure-password"})
         assert free.status_code == 200
         headers = auth_header(free.json()["access_token"])
-        assert client.get("/public/research", params={"q": "Georgia arrest law"}, headers=headers).status_code == 403
-        assert client.post("/public/ask", json={"question": "What are my rights?"}, headers=headers).status_code == 403
-        assert client.get("/cases", headers=headers).status_code == 403
+        assert client.get("/public/research", params={"q": "Georgia arrest law"}, headers=headers).status_code == 200
+        assert client.post("/public/ask", json={"question": "What are my rights?"}, headers=headers).status_code != 403
+        assert client.get("/cases", headers=headers).status_code == 200
         assert client.get("/me", headers=headers).status_code == 200
         assert client.get("/health/live").status_code == 200
 
