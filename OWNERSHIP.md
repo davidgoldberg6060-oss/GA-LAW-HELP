@@ -1,6 +1,6 @@
 # STANDALONE ASSISTANT GA.LAW.HELP — Ownership Record
 
-Copyright © 2026 David Goldberg. All rights reserved.
+Copyright © 2026 Treyvon Pattillo. All rights reserved.
 
 ## Product ownership
 
@@ -10,9 +10,9 @@ No permission is granted to copy, redistribute, sublicense, sell, publish, comme
 
 ## Revenue and commercial rights
 
-Commercial licensing, subscriptions, advertising, sales, publishing arrangements, and other monetization of the proprietary STANDALONE ASSISTANT GA.LAW.HELP product are reserved to the product owner, subject to applicable law and the terms/licenses of third-party services and components.
+Commercial licensing, subscriptions, advertising, sales, publishing arrangements, and other monetization of the proprietary STANDALONE ASSISTANT GA.LAW.HELP product are reserved to Treyvon Pattillo as the stated product owner, subject to applicable law and the terms/licenses of third-party services and components.
 
-This repository notice does not itself alter ownership of any external developer account, payment account, domain, trademark registration, company, or contract. Those assets should be registered and maintained in the owner's or owning company's name.
+This repository notice does not itself alter ownership of any external developer account, payment account, domain, trademark registration, company, or contract. Those assets should be registered and maintained in Treyvon Pattillo's name or in the name of a company that he owns and designates to hold the product rights.
 
 ## Materials not claimed as exclusive property
 
