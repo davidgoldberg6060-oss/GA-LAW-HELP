@@ -34,8 +34,7 @@ def current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)):
     return user
 
 def require_paid(user: models.User = Depends(current_user)):
-    if user.role not in ('paid','admin'):
-        raise HTTPException(403, 'Paid membership required')
+    """Compatibility dependency retained while the launch paywall is disabled."""
     return user
 
 def require_admin(user: models.User = Depends(current_user)):
