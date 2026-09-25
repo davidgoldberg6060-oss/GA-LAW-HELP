@@ -12,6 +12,34 @@ android {
         val apiBaseUrl = providers.gradleProperty("GALAW_API_BASE_URL").orElse("https://api-production-60cc.up.railway.app").get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
+
+    val releaseKeystorePath = providers.gradleProperty("GALAW_RELEASE_KEYSTORE_PATH").orNull
+    val releaseStorePassword = providers.gradleProperty("GALAW_RELEASE_STORE_PASSWORD").orNull
+    val releaseKeyAlias = providers.gradleProperty("GALAW_RELEASE_KEY_ALIAS").orNull
+    val releaseKeyPassword = providers.gradleProperty("GALAW_RELEASE_KEY_PASSWORD").orNull
+    val hasReleaseSigning = listOf(
+        releaseKeystorePath,
+        releaseStorePassword,
+        releaseKeyAlias,
+        releaseKeyPassword,
+    ).all { !it.isNullOrBlank() }
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(releaseKeystorePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+        buildTypes {
+            getByName("release") {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
