@@ -3,6 +3,7 @@ from . import legacy_main as _legacy_main
 from .legacy_main import *
 from .legacy_main import audit
 from .motion_screen_service import motion_screen_response
+from .innocence_analysis_service import innocence_analysis_response
 
 # Keep legacy route call sites testable through app.main.ask_openai while the
 # endpoint migration is incremental.
@@ -33,4 +34,19 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(require_paid),db:Se
     except RuntimeError:
         raise HTTPException(503,'The motion screening assistant is temporarily unavailable.')
     audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit()
+    return response
+
+
+@app.post('/cases/{case_id}/innocence-analysis')
+def private_innocence_analysis(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
+    """Analyze user-supplied case details for innocence/doubt issues and verified procedural avenues."""
+    case=owned_case(case_id,user,db)
+    additional=str(body.get('additional_facts','')).strip()
+    if len(additional)>8000:
+        raise HTTPException(400,'Additional case facts are too long.')
+    try:
+        response=innocence_analysis_response(db, case, additional, ask_openai)
+    except RuntimeError:
+        raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
+    audit(db,user.id,'RUN_INNOCENCE_ANALYSIS','case',case_id);db.commit()
     return response
