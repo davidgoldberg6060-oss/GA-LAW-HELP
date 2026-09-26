@@ -130,6 +130,7 @@ class ApiClient(private val context: Context) {
     fun why(caseId: Int): JSONObject = JSONObject(execute("/cases/$caseId/why"))
     fun redTeam(caseId: Int): JSONObject = JSONObject(execute("/cases/$caseId/red-team"))
     fun secondLook(caseId: Int): JSONObject = JSONObject(execute("/cases/$caseId/second-look"))
+    fun innocenceAnalysis(caseId: Int, additionalFacts: String): JSONObject = JSONObject(execute("/cases/$caseId/innocence-analysis", "POST", JSONObject().put("additional_facts", additionalFacts)))
 
     private fun displayName(uri: Uri): String { var name = uri.lastPathSegment?.substringAfterLast('/') ?: "evidence"; val cursor: Cursor? = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null); cursor?.use { if (it.moveToFirst()) name = it.getString(0) }; return name.replace(Regex("[\\r\\n\\\"]"), "_") }
     private fun size(uri: Uri): Long = context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
