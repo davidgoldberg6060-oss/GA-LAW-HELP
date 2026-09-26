@@ -1,9 +1,11 @@
 import json
+import logging
 import os
 import urllib.error
 import urllib.request
 
 OPENAI_URL = "https://api.openai.com/v1/responses"
+logger = logging.getLogger(__name__)
 
 SYSTEM_INSTRUCTIONS = """You are GA.LAW.HELP, a Georgia-focused legal information and research assistant.
 Give clear, calm, plain-language legal information, not legal representation.
@@ -14,10 +16,27 @@ When dates matter, say that the law in effect on the relevant date must be check
 For police encounters, prioritize physical safety: never encourage resistance, obstruction, evasion, destruction of evidence, or deception.
 If a user describes an emergency or immediate danger, prioritize emergency help.
 Keep answers concise and useful. End with a short reminder that the response is legal information, not legal advice."""
-    
+
+
+def _provider_error_summary(raw: str) -> str:
+    """Return provider error metadata without logging prompts, keys, or response bodies."""
+    try:
+        parsed = json.loads(raw)
+        error = parsed.get("error", {}) if isinstance(parsed, dict) else {}
+        if isinstance(error, dict):
+            error_type = str(error.get("type") or "unknown")[:80]
+            error_code = str(error.get("code") or "unknown")[:80]
+            param = str(error.get("param") or "")[:80]
+            return f"type={error_type} code={error_code}" + (f" param={param}" if param else "")
+    except (TypeError, ValueError):
+        pass
+    return "unparseable_provider_error"
+
+
 def ask_openai(question: str) -> str:
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
+        logger.error("AI provider configuration failure: OPENAI_API_KEY is missing")
         raise RuntimeError("AI service is not configured")
     model = os.getenv("OPENAI_FAST_MODEL", os.getenv("OPENAI_MODEL", "gpt-5.6")).strip() or "gpt-5.6"
     payload = json.dumps({
@@ -41,9 +60,19 @@ def ask_openai(question: str) -> str:
             data = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")
-        raise RuntimeError("AI provider request failed: " + detail[:500]) from exc
+        logger.error("AI provider HTTP failure: status=%s model=%s %s", exc.code, model, _provider_error_summary(detail))
+        raise RuntimeError("AI provider request failed") from exc
     except urllib.error.URLError as exc:
+        reason_type = type(getattr(exc, "reason", None)).__name__
+        logger.error("AI provider network failure: model=%s reason_type=%s", model, reason_type)
         raise RuntimeError("AI provider is temporarily unreachable") from exc
+    except TimeoutError as exc:
+        logger.error("AI provider timeout: model=%s", model)
+        raise RuntimeError("AI provider timed out") from exc
+    except ValueError as exc:
+        logger.error("AI provider returned invalid JSON: model=%s", model)
+        raise RuntimeError("AI provider returned an invalid response") from exc
+
     text = (data.get("output_text") or "").strip()
     if not text:
         parts = []
@@ -53,5 +82,6 @@ def ask_openai(question: str) -> str:
                     parts.append(part["text"])
         text = "\n".join(parts).strip()
     if not text:
+        logger.error("AI provider returned no output text: model=%s response_status=%s", model, data.get("status", "unknown"))
         raise RuntimeError("AI provider returned an empty response")
     return text
