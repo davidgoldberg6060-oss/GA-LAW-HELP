@@ -13,11 +13,13 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.net.URL
 
 private fun apiErrorMessage(statusCode: Int, responseBody: String): String {
     if (statusCode == 401) return "Please sign in to continue."
-    if (statusCode == 403) return "This feature requires an active GA.LAW.HELP membership."
+    if (statusCode == 403) return "This feature is not available for this account."
     if (statusCode == 503) return "This service is temporarily unavailable. Please try again shortly."
     val detail = runCatching { JSONObject(responseBody).opt("detail") }.getOrNull()
     if (statusCode == 422 && detail is JSONArray && detail.length() > 0) {
@@ -36,6 +38,7 @@ private fun apiErrorMessage(statusCode: Int, responseBody: String): String {
 }
 
 class ApiException(val statusCode: Int, responseBody: String) : RuntimeException(apiErrorMessage(statusCode, responseBody))
+class ApiNetworkException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 class ApiClient(private val context: Context) {
     private val masterKey = MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
@@ -62,7 +65,9 @@ class ApiClient(private val context: Context) {
     private fun connection(path: String, method: String): HttpURLConnection {
         require(BuildConfig.API_BASE_URL.startsWith("https://") || BuildConfig.DEBUG) { "Production API URL must use HTTPS" }
         return (URL(BuildConfig.API_BASE_URL.trimEnd('/') + path).openConnection() as HttpURLConnection).apply {
-            requestMethod = method; connectTimeout = 15_000; readTimeout = 60_000
+            requestMethod = method
+            connectTimeout = 8_000
+            readTimeout = 30_000
             setRequestProperty("Accept", "application/json")
             token?.let { setRequestProperty("Authorization", "Bearer $it") }
         }
@@ -74,14 +79,26 @@ class ApiClient(private val context: Context) {
         return code to stream?.bufferedReader()?.use { it.readText() }.orEmpty()
     }
 
+    private fun networkMessage(e: Exception): ApiNetworkException = when (e) {
+        is UnknownHostException -> ApiNetworkException("Can’t reach GA.LAW.HELP right now. Check your internet connection, then tap Retry.", e)
+        is SocketTimeoutException -> ApiNetworkException("GA.LAW.HELP took too long to respond. Check your connection, then tap Retry.", e)
+        else -> ApiNetworkException("Couldn’t connect to GA.LAW.HELP. Check your internet connection, then tap Retry.", e)
+    }
+
     private fun execute(path: String, method: String = "GET", body: JSONObject? = null, retry: Boolean = true): String {
-        val c = connection(path, method)
-        if (body != null) { c.doOutput = true; c.setRequestProperty("Content-Type", "application/json"); c.outputStream.use { it.write(body.toString().toByteArray()) } }
-        val (code, response) = read(c)
-        if (code == 401 && retry && refreshAccess()) return execute(path, method, body, false)
-        if (code == 401 && !path.startsWith("/auth/")) expireSession()
-        if (code !in 200..299) throw ApiException(code, response)
-        return response
+        try {
+            val c = connection(path, method)
+            if (body != null) { c.doOutput = true; c.setRequestProperty("Content-Type", "application/json"); c.outputStream.use { it.write(body.toString().toByteArray()) } }
+            val (code, response) = read(c)
+            if (code == 401 && retry && refreshAccess()) return execute(path, method, body, false)
+            if (code == 401 && !path.startsWith("/auth/")) expireSession()
+            if (code !in 200..299) throw ApiException(code, response)
+            return response
+        } catch (e: ApiException) {
+            throw e
+        } catch (e: Exception) {
+            throw networkMessage(e)
+        }
     }
 
     private fun refreshAccess(): Boolean {
