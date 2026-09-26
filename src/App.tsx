@@ -156,12 +156,14 @@ async function authApi(path:string,options:RequestInit={}){
  }
 }
 
+const FREE_LAUNCH=true;
+
 export default function App(){
  const[q,setQ]=useState('');const[research,setResearch]=useState<Research|null>(null);const[aiAnswer,setAiAnswer]=useState<AIAnswer|null>(null);const[researching,setResearching]=useState(false);
  const[authOpen,setAuthOpen]=useState(false);const[mode,setMode]=useState<'login'|'register'|'forgot'|'reset'>('login');
  const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[showPassword,setShowPassword]=useState(false);const[authError,setAuthError]=useState('');const[authBusy,setAuthBusy]=useState(false);
  const passwordAccepted=password.length>=15&&password.length<=128;
- const[user,setUser]=useState<User|null>(null);const paid=!!user&&(user.role==='paid'||user.role==='admin');const[notice,setNotice]=useState('');
+ const[user,setUser]=useState<User|null>(null);const paid=FREE_LAUNCH||!!user&&(user.role==='paid'||user.role==='admin');const[notice,setNotice]=useState('');
  const[tool,setTool]=useState<'avoid'|'police'|'case'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
  const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);const[encounterReply,setEncounterReply]=useState('');const[encounterBusy,setEncounterBusy]=useState(false);const encounterTimerRef=useRef<number|null>(null);const[cameraOn,setCameraOn]=useState(false);const cameraVideoRef=useRef<HTMLVideoElement|null>(null);const cameraStreamRef=useRef<MediaStream|null>(null);
  const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
@@ -211,7 +213,7 @@ export default function App(){
  useEffect(()=>{localStorage.setItem('ga_incident_draft',JSON.stringify(incident))},[incident]);
  useEffect(()=>{localStorage.setItem('ga_trusted_contact',JSON.stringify(trusted))},[trusted]);
 
- async function runResearch(e?:FormEvent){e?.preventDefault();if(!paid){setPaywallOpen(true);return}if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
+ async function runResearch(e?:FormEvent){e?.preventDefault();if(!user){setMode('register');setAuthOpen(true);setNotice('Create a free account or sign in to use AI legal research.');return}if(!paid){setPaywallOpen(true);return}if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
   setNotice('');setResearching(true);setAiAnswer(null);setResearch(null);
   try{
    const [answer,researchResult]=await Promise.all([
@@ -347,7 +349,7 @@ export default function App(){
  function stopListening(){recognitionRef.current?.stop();recognitionRef.current=null;setListening(false)}
  function closeTool(){stopRecording();stopListening();window.speechSynthesis?.cancel();setTool(null)}
  async function openCaseWorkspace(){
-  if(!user){setPaywallOpen(true);return}
+  if(!user){setMode('register');setAuthOpen(true);setNotice('Create a free account or sign in to use private case tools.');return}
   if(!paid){setPaywallOpen(true);return}
   setTool('case');setCaseBusy(true);
   try{const rows=await authApi('/cases');setCases(rows);if(rows.length)await selectCase(rows[0].id);else startNewCase()}
@@ -426,7 +428,7 @@ export default function App(){
  function exportCasePlan(){
   const lines=['GA.LAW.HELP — PRIVATE CASE SCREENING','Created: '+new Date().toLocaleString(),'Title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'County: '+(caseForm.county||'Not entered'),'Type: '+caseForm.case_type,'Stage: '+(caseForm.stage||'Not entered'),'','User narrative:',caseForm.narrative||'None entered','','SCREENING LEADS',...findings.flatMap((item,index)=>['',String(index+1)+'. '+item.issue,'Why it may matter: '+item.analysis,'Possible opposing position: '+item.counterargument,'Records and facts needed: '+item.facts_needed,'Status: '+item.confidence]),'','These are issue-screening leads, not legal conclusions or attorney advice. Verify the full record, deadlines, current law, and procedural posture with a licensed lawyer.'];const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='ga-law-help-case-screening-'+new Date().toISOString().slice(0,10)+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
  }
- function openPolice(){if(!paid){setPaywallOpen(true);return}setTool('police')}
+ function openPolice(){if(!user){setMode('register');setAuthOpen(true);setNotice('Create a free account or sign in to use AI encounter assistance.');return}if(!paid){setPaywallOpen(true);return}setTool('police')}
  function openRights(next:ScenarioKey=scenario){setScenario(next);if(!paid){setPaywallOpen(true);return}setTool('avoid')}
  function startListening(){
   if(recording){setNotice('Stop the local audio recording before starting live transcription.');return}
@@ -468,7 +470,7 @@ export default function App(){
   <section className="hero"><div className="pill"><ShieldCheck size={16}/> Georgia legal research workspace</div><h1>Georgia law.<br/><em>Clearer answers.</em></h1>
    <p>Learn about Georgia law without creating an account. Sign in only when you want private case tools, saved research, evidence uploads, and syncing.</p>
    <form className="ask" onSubmit={runResearch}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about Georgia law…" aria-label="Georgia legal question"/>
-    <button disabled={researching}><LockKeyhole size={15}/>{researching?<><LoaderCircle className="spin" size={17}/>Checking</>:'Paid research'}</button></form>
+    <button disabled={researching}><Search size={15}/>{researching?<><LoaderCircle className="spin" size={17}/>Checking</>:'Free research'}</button></form>
    <small>Legal information and research assistance — not a substitute for advice from a licensed attorney.</small>
   </section>
   {(aiAnswer||research)&&<section className="results" id="research-results">
@@ -492,7 +494,7 @@ export default function App(){
    <button className="toolCard" onClick={openCaseWorkspace}><HardDrive/><span><h3>My Documents</h3><p>Upload, verify and download case documents and preserved evidence.</p></span><ChevronRight/></button>
    <button className="toolCard" onClick={()=>{setScenario('traffic');openPolice()}}><Play/><span><h3>My Recordings</h3><p>Open legal-encounter recordings stored on this device and protected case copies.</p></span><ChevronRight/></button>
    <button className="toolCard" onClick={()=>openRights()}><ShieldAlert/><span><h3>Know My Rights</h3><p>Choose a situation and see calm, practical safety steps in plain language.</p></span><ChevronRight/></button>
-   <button className="toolCard premiumCard" onClick={openPolice}><Car/><span><b className="premiumLabel"><LockKeyhole size={13}/> PAID SERVICE</b><h3>Help Me Talk to Police</h3><p>Listen, suggest and read respectful responses aloud.</p></span><ChevronRight/></button>
+   <button className="toolCard premiumCard" onClick={openPolice}><Car/><span><b className="premiumLabel"><ShieldCheck size={13}/> FREE WITH ACCOUNT</b><h3>Help Me Talk to Police</h3><p>Listen, suggest and read respectful responses aloud.</p></span><ChevronRight/></button>
   </section>
   <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse as a guest. Claims should be verified against an official source before being presented as current law.</p></div></div>
    <div className="funGrid">{funFacts.map(x=><article key={x.title}><h3>{x.title}</h3><p>{x.text}</p></article>)}</div></section>
@@ -516,7 +518,7 @@ export default function App(){
      {evidence.map(item=><article key={item.id}><div><b>{item.filename}</b><small>{item.media_type} · {formatBytes(item.bytes)}</small><small><Fingerprint size={11}/> SHA-256 {item.sha256}</small><small>{item.verified_at?'Integrity verified '+new Date(item.verified_at).toLocaleString():'Integrity not checked yet'}</small></div><div><button type="button" disabled={evidenceBusy} onClick={()=>verifyCaseEvidence(item)}><ShieldCheck size={15}/>Verify</button><button type="button" disabled={evidenceBusy} onClick={()=>downloadCaseEvidence(item)}><Download size={15}/>Download</button></div></article>)}</div>
     </details>
     {findings.length>0?<div className="findings"><h3>Screening leads</h3>{findings.map(item=><article key={item.id}><div className="findingHead"><b>{item.issue}</b><span>{item.confidence.replaceAll('_',' ')}</span></div><p>{item.analysis}</p><details><summary>Possible opposing position</summary><p>{item.counterargument}</p></details><details><summary>Records and facts needed</summary><p>{item.facts_needed}</p></details></article>)}</div>:activeCaseId&&<div className="emptyFindings">Save the facts, then run issue screening to create a review plan.</div>}
-   </>:<><div className="premiumHeading"><Mic className="modalLogo"/><span className="premiumLabel"><LockKeyhole size={13}/> PAID SERVICE PREVIEW</span></div><h2>Help Me Talk to Police</h2>
+   </>:<><div className="premiumHeading"><Mic className="modalLogo"/><span className="premiumLabel"><ShieldCheck size={13}/> FREE LAUNCH</span></div><h2>Help Me Talk to Police</h2>
     <div className="dangerNote"><ShieldAlert/>Only use the phone when it is safe and permitted. Keep your hands visible, follow physical directions, and never let the app argue, resist, or interrupt.</div>
     <div className="scenarioButtons">{scenarioKeys.slice(0,5).map(key=><button key={key} className={scenario===key?'active':''} onClick={()=>{setScenario(key);setTranscript('')}}>{scenarios[key].label}</button>)}</div>
     <div className="listenBox"><div><b>Live listening</b><small>Your browser processes speech for suggestions. GA.LAW.HELP does not save the audio or transcript in this preview.</small></div>
@@ -562,7 +564,7 @@ export default function App(){
     <small className="previewNote">Preview access is enabled for testing. A secure subscription checkout must be connected before customers can be charged.</small>
    </>}
   </section></div>}
-  {paywallOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)setPaywallOpen(false)}}><section className="modal paywallModal" role="dialog" aria-modal="true" aria-label="Paid membership required">
+  {!FREE_LAUNCH&&paywallOpen&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)setPaywallOpen(false)}}><section className="modal paywallModal" role="dialog" aria-modal="true" aria-label="Paid membership required">
    <button className="close" onClick={()=>setPaywallOpen(false)} aria-label="Close"><X/></button><LockKeyhole className="modalLogo"/><span className="eyebrow">GA.LAW.HELP Membership</span><h2>Paid feature</h2>
    <p>Funny & Myth Checker stays free. Ask GA.LAW.HELP, rights guidance, police-encounter help, emergency guidance, cases, documents, recordings, motion screening and defense analysis require a paid membership.</p>
    {!user?<div className="paywallActions"><button className="primary" onClick={()=>{setPaywallOpen(false);setMode('register');setAuthOpen(true)}}>Create account</button><button onClick={()=>{setPaywallOpen(false);setMode('login');setAuthOpen(true)}}>Sign in</button></div>:<><div className="membershipStatus"><ShieldCheck/><span><b>Signed in — membership inactive</b><small>Your free account remains available for Funny & Myth learning.</small></span></div><button className="primary membershipCheckout" disabled={billingBusy} onClick={startCheckout}>{billingBusy?<><LoaderCircle className="spin" size={16}/>Opening secure checkout…</>:<>Start paid membership</>}</button></>}
