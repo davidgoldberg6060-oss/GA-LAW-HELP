@@ -4,6 +4,7 @@ from pathlib import Path
 MAIN = Path('app/main.py')
 HOME = Path('../android/app/src/main/java/help/galaw/standalone/HomeActivity.kt')
 API = Path('../android/app/src/main/java/help/galaw/standalone/ApiClient.kt')
+WEB = Path('../src/App.tsx')
 
 
 def test_live_motion_screen_uses_verified_service_and_audits():
@@ -30,3 +31,13 @@ def test_expired_session_has_local_cleanup_and_login_redirect():
     assert 'statusCode == 401' in home
     assert 'AuthActivity::class.java' in home
     assert 'finish()' in home
+
+
+def test_free_launch_web_gate_is_disabled_but_billing_code_remains():
+    source = WEB.read_text()
+    assert 'const FREE_LAUNCH=true;' in source
+    assert 'const paid=FREE_LAUNCH||' in source
+    assert "'Free research'" in source
+    assert '!FREE_LAUNCH&&paywallOpen' in source
+    assert 'startCheckout' in source
+    assert 'Create a free account or sign in to use AI legal research.' in source
