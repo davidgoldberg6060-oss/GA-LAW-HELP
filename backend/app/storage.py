@@ -1,7 +1,7 @@
 import os, hashlib, uuid, shutil
 from pathlib import Path
 from typing import BinaryIO
-from .private_case_policy import private_storage_prefix
+from .private_case_policy import private_evidence_key, private_storage_prefix
 
 ROOT=Path(os.getenv('EVIDENCE_DIR','./evidence_store'))
 ROOT.mkdir(parents=True,exist_ok=True)
@@ -79,8 +79,7 @@ def hash_stored(key:str):
 
 def finalize_chunks(user_id,case_id,upload_id,filename,total_chunks,expected_bytes=None):
     src=session_dir(user_id,case_id,upload_id)
-    safe=os.path.basename(filename or 'evidence')
-    key=f'{private_storage_prefix(user_id,case_id)}/{uuid.uuid4().hex}_{safe}'
+    key=private_evidence_key(user_id,case_id,filename)
     dest=ROOT/'staging'/key; dest.parent.mkdir(parents=True,exist_ok=True)
     h=hashlib.sha256(); size=0
     with open(dest,'xb') as out:

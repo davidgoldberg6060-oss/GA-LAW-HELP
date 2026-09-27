@@ -4,6 +4,7 @@ from app.private_case_policy import (
     PRIVATE_CASE_RESOURCE_TYPES,
     PUBLIC_CORPUS_RESOURCE_TYPES,
     assert_private_resources_not_public,
+    private_evidence_key,
     private_storage_prefix,
     require_private_case_owner,
 )
@@ -37,3 +38,19 @@ def test_private_storage_prefix_is_user_and_case_scoped():
         private_storage_prefix(0, 34)
     with pytest.raises(ValueError):
         private_storage_prefix(12, 0)
+
+
+
+def test_private_evidence_key_uses_canonical_namespace_and_safe_filename():
+    key = private_evidence_key(
+        12,
+        34,
+        "../../court/video.mp4",
+        object_id="fixed-object",
+    )
+    assert key == "private/users/12/cases/34/fixed-object_video.mp4"
+
+
+def test_private_evidence_key_rejects_path_like_object_id():
+    with pytest.raises(ValueError):
+        private_evidence_key(12, 34, "evidence.txt", object_id="../escape")

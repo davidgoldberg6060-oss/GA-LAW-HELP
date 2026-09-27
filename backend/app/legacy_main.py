@@ -1,6 +1,7 @@
 import hashlib, os, uuid
 from contextlib import asynccontextmanager
 from .storage import MAX_EVIDENCE_BYTES, save_chunk, finalize_chunks, store_stream, hash_stored, open_stored
+from .private_case_policy import private_evidence_key
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from urllib.parse import quote
@@ -447,7 +448,7 @@ def timeline(case_id:int,user=Depends(require_paid),db:Session=Depends(get_db)):
 
 @app.post('/cases/{case_id}/evidence')
 def upload_evidence(case_id:int,file:UploadFile=File(...),user=Depends(require_paid),db:Session=Depends(get_db)):
-    owned_case(case_id,user,db); safe=os.path.basename(file.filename or 'evidence'); key=f'{user.id}/{case_id}/{uuid.uuid4().hex}_{safe}'
+    owned_case(case_id,user,db); safe=os.path.basename(file.filename or 'evidence'); key=private_evidence_key(user.id,case_id,safe)
     try: digest,size=store_stream(file.file,key)
     except ValueError as exc: raise HTTPException(413,str(exc))
     media_type=file.content_type or 'application/octet-stream'
