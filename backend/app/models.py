@@ -4,7 +4,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 
 def utcnow() -> datetime:
-    """Naive UTC for SQLAlchemy columns declared without timezone=True."""
     return datetime.now(UTC).replace(tzinfo=None)
 
 class User(Base):
@@ -94,6 +93,12 @@ class LegalAuthority(Base):
     status: Mapped[str] = mapped_column(String(40), default="UNVERIFIED")
     source_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     retrieved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    currency_status: Mapped[str] = mapped_column(String(40), default="unknown")
+    precedential_status: Mapped[str] = mapped_column(String(40), default="unknown")
+    status_checked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    status_source_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    superseding_authority: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    negative_treatment: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 class IssueAnalysis(Base):
     __tablename__ = "issue_analyses"
@@ -138,7 +143,6 @@ class AnalysisJob(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-
 
 class LegalSource(Base):
     __tablename__ = "legal_sources"
