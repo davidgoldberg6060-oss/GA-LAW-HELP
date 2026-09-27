@@ -17,12 +17,17 @@ class FakeDB:
         self.rolled_back = True
 
 
+def approved_source():
+    return next(iter(pipeline._source_registry().values()))
+
+
 def item(**overrides):
+    source = approved_source()
     values = dict(
-        source_name=next(iter(pipeline.ADAPTERS)),
+        source_name=source.key,
         document=SimpleNamespace(),
-        jurisdiction="Georgia",
-        authority_type="case",
+        jurisdiction=source.jurisdiction,
+        authority_type=source.authority_type,
         citation="123 Ga. 456",
     )
     values.update(overrides)
@@ -53,6 +58,35 @@ def test_persist_item_rejects_unapproved_source_before_write(monkeypatch):
     with pytest.raises(ValueError, match="Unsupported Georgia ingestion source"):
         pipeline.persist_item(FakeDB(), item(source_name="random-web-scraper"))
     assert called is False
+
+
+def test_persist_item_rejects_source_metadata_mismatch(monkeypatch):
+    called = False
+
+    def fake_upsert(*args, **kwargs):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(pipeline, "upsert_authority_document", fake_upsert)
+    with pytest.raises(ValueError, match="jurisdiction"):
+        pipeline.persist_item(FakeDB(), item(jurisdiction="Florida"))
+    with pytest.raises(ValueError, match="Authority type"):
+        pipeline.persist_item(FakeDB(), item(authority_type="invented_type"))
+    assert called is False
+
+
+def test_persist_item_uses_registry_metadata(monkeypatch):
+    captured = {}
+
+    def fake_upsert(db, **kwargs):
+        captured.update(kwargs)
+        return "saved"
+
+    monkeypatch.setattr(pipeline, "upsert_authority_document", fake_upsert)
+    source = approved_source()
+    assert pipeline.persist_item(FakeDB(), item()) == "saved"
+    assert captured["jurisdiction"] == source.jurisdiction
+    assert captured["authority_type"] == source.authority_type
 
 
 def test_persist_batch_commits_valid_records(monkeypatch):
@@ -87,8 +121,8 @@ def test_persist_batch_rolls_back_everything_on_invalid_record(monkeypatch):
     assert db.rolled_back is True
 
 
-def test_adapter_for_only_returns_registered_adapter():
-    source = next(iter(pipeline.ADAPTERS))
-    assert pipeline.adapter_for(source) is pipeline.ADAPTERS[source]
+def test_source_for_only_returns_registered_source():
+    source = approved_source()
+    assert pipeline.source_for(source.key) == source
     with pytest.raises(ValueError, match="Unsupported Georgia ingestion source"):
-        pipeline.adapter_for("not-approved")
+        pipeline.source_for("not-approved")
