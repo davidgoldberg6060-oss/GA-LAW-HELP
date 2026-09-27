@@ -24,6 +24,9 @@ class DiscoveredProcedure:
     citation: str = ""
     source_url: str = ""
     authority_status: str = "UNVERIFIED"
+    currency_status: str = "unknown"
+    precedential_status: str = "unknown"
+    negative_treatment: str = ""
     occurrence_count: int = 1
 
 
@@ -31,7 +34,7 @@ def _clean(value: str) -> str:
     return " ".join(value.strip(" \t\r\n,.;:()[]").split())
 
 
-def discover_procedures(text: str, *, authority_id: int | None = None, citation: str = "", source_url: str = "", authority_status: str = "UNVERIFIED") -> list[dict]:
+def discover_procedures(text: str, *, authority_id: int | None = None, citation: str = "", source_url: str = "", authority_status: str = "UNVERIFIED", currency_status: str = "unknown", precedential_status: str = "unknown", negative_treatment: str = "") -> list[dict]:
     found: dict[str, DiscoveredProcedure] = {}
     for pattern in _PATTERNS:
         for match in pattern.finditer(text or ""):
@@ -47,6 +50,9 @@ def discover_procedures(text: str, *, authority_id: int | None = None, citation:
                 citation=citation,
                 source_url=source_url,
                 authority_status=authority_status,
+                currency_status=currency_status,
+                precedential_status=precedential_status,
+                negative_treatment=negative_treatment,
                 occurrence_count=(previous.occurrence_count + 1) if previous else 1,
             )
     return [asdict(item) for item in sorted(found.values(), key=lambda item: item.normalized_name)]
@@ -55,6 +61,10 @@ def discover_procedures(text: str, *, authority_id: int | None = None, citation:
 def discover_from_authorities(authorities) -> list[dict]:
     """Aggregate procedure candidates across LegalAuthority-like objects."""
     aggregated: dict[str, dict] = {}
+    ref_fields = (
+        "authority_id", "citation", "source_url", "authority_status",
+        "currency_status", "precedential_status", "negative_treatment",
+    )
     for authority in authorities:
         rows = discover_procedures(
             getattr(authority, "text", "") or "",
@@ -62,14 +72,17 @@ def discover_from_authorities(authorities) -> list[dict]:
             citation=getattr(authority, "citation", "") or "",
             source_url=getattr(authority, "source_url", "") or "",
             authority_status=getattr(authority, "status", "UNVERIFIED") or "UNVERIFIED",
+            currency_status=getattr(authority, "currency_status", "unknown") or "unknown",
+            precedential_status=getattr(authority, "precedential_status", "unknown") or "unknown",
+            negative_treatment=getattr(authority, "negative_treatment", "") or "",
         )
         for row in rows:
             key = row["normalized_name"]
             current = aggregated.get(key)
             if current:
                 current["occurrence_count"] += row["occurrence_count"]
-                current["authority_refs"].append({k: row[k] for k in ("authority_id", "citation", "source_url", "authority_status")})
+                current["authority_refs"].append({k: row[k] for k in ref_fields})
             else:
-                row["authority_refs"] = [{k: row[k] for k in ("authority_id", "citation", "source_url", "authority_status")}]
+                row["authority_refs"] = [{k: row[k] for k in ref_fields}]
                 aggregated[key] = row
     return sorted(aggregated.values(), key=lambda row: (-row["occurrence_count"], row["normalized_name"]))
