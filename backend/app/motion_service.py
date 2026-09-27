@@ -2,6 +2,17 @@
 from .motion_discovery import discover_from_authorities
 from .motion_registry import classify_verification, coverage_summary, seed_catalog, normalize_motion_name
 
+_NEGATIVE_CURRENCY = {"overruled", "vacated", "withdrawn", "superseded", "repealed", "invalid"}
+_NEGATIVE_PRECEDENT = {"overruled", "vacated", "withdrawn", "superseded", "nonprecedential"}
+
+
+def _authority_ref_usable(ref: dict) -> bool:
+    """Never promote an authority with explicit negative legal treatment."""
+    currency = str(ref.get("currency_status") or "unknown").strip().lower()
+    precedent = str(ref.get("precedential_status") or "unknown").strip().lower()
+    negative_treatment = str(ref.get("negative_treatment") or "").strip()
+    return not negative_treatment and currency not in _NEGATIVE_CURRENCY and precedent not in _NEGATIVE_PRECEDENT
+
 
 def build_motion_registry(authorities, versions_by_authority: dict[int, list] | None = None) -> dict:
     versions_by_authority = versions_by_authority or {}
@@ -50,6 +61,9 @@ def build_motion_registry(authorities, versions_by_authority: dict[int, list] | 
         refs = []
         for ref in record["authority_refs"]:
             authority_id = ref.get("authority_id")
+            if not _authority_ref_usable(ref):
+                statuses.append("NEGATIVE_TREATMENT")
+                continue
             statuses.append(ref.get("authority_status", "UNVERIFIED"))
             source = str(ref.get("source_url") or "")
             if source.startswith("https://"):
