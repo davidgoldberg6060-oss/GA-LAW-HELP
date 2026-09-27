@@ -1,5 +1,6 @@
 package help.galaw.standalone
 
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -33,13 +34,15 @@ class InternalLegalSearchActivity : AppCompatActivity() {
         body.addView(search,LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(10),0,dp(12))})
         val results=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
         body.addView(results)
+        val home=Button(this).apply{text="Home";isAllCaps=false;setOnClickListener{startActivity(Intent(this@InternalLegalSearchActivity,HomeActivity::class.java).apply{addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)});finish()}}
+        body.addView(home,LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(12),0,0)})
         shell.addView(ScrollView(this).apply{addView(body)},LinearLayout.LayoutParams(-1,-1));setContentView(shell)
         search.setOnClickListener{
             val q=query.text.toString().trim();if(q.isBlank()){Toast.makeText(this,"Enter details first.",Toast.LENGTH_SHORT).show();return@setOnClickListener}
             search.isEnabled=false;results.removeAllViews();results.addView(text("Searching the internal legal corpus…",muted))
             thread{
                 try{val response=api.internalLegalSearch(q,mode);runOnUiThread{render(results,response);search.isEnabled=true}}
-                catch(e:Exception){runOnUiThread{results.removeAllViews();results.addView(text(e.message?:"Search failed.",Color.rgb(245,150,150)));search.isEnabled=true}}
+                catch(e:Exception){runOnUiThread{results.removeAllViews();results.addView(text(e.message?:"Search failed. You can edit the search and try again.",Color.rgb(245,150,150)));search.isEnabled=true}}
             }
         }
     }
@@ -62,8 +65,8 @@ class InternalLegalSearchActivity : AppCompatActivity() {
     }
     private fun text(value:String,color:Int,size:Float=14f,bold:Boolean=false)=TextView(this).apply{text=value;textSize=size;setTextColor(color);setPadding(0,dp(5),0,dp(5));if(bold)setTypeface(typeface,Typeface.BOLD)}
     private fun rounded(fill:Int,stroke:Int)=GradientDrawable().apply{setColor(fill);cornerRadius=dp(14).toFloat();setStroke(dp(1),stroke)}
-    private fun titleFor(mode:String)=when(mode){"case_analysis"->"Case Analysis";"rights"->"Know Your Rights";"motions"->"Motions & Rules";"talk_to_me"->"Talk to Me";else->"Case & Law Lookup"}
-    private fun descriptionFor(mode:String)=when(mode){"case_analysis"->"Describe what happened. Search verified internal cases, statutes, rules, motions and law-enforcement authority relevant to those facts.";"rights"->"Describe the police encounter or rights question. Results stay inside the app and identify indexed authority.";"motions"->"Describe the case stage and issue to find potentially relevant motion and procedural authority.";"talk_to_me"->"Enter what is happening or what was said. This retrieves legal context from the app's internal corpus; it does not replace emergency services or a lawyer.";else->"Search public Georgia cases and statutes already indexed inside GA.LAW.HELP."}
-    private fun hintFor(mode:String)=when(mode){"case_analysis"->"What happened in the case? Include charge, stage, evidence, search, statements, witnesses…";"rights"->"Example: Police stopped my car and asked to search…";"motions"->"Example: pretrial identification issue, search warrant, withheld evidence…";"talk_to_me"->"Tell GA.LAW.HELP what is happening…";else->"Charge, case name, citation, statute, or legal issue…"}
-    private fun buttonFor(mode:String)=when(mode){"case_analysis"->"Analyze Against Internal Law";"rights"->"Check Rights & Authority";"motions"->"Find Motions & Rules";"talk_to_me"->"Get Legal Context";else->"Search Internal Legal Library"}
+    private fun titleFor(mode:String)=when(mode){"case_analysis"->"Case Analysis";"rights"->"Know Your Rights";"motions"->"Motions & Rules";"talk_to_me"->"Talk to Me";"court_info"->"Georgia Court Info";"legal_forms"->"Georgia Legal Forms";"resources"->"Georgia Legal Resources";else->"Case & Law Lookup"}
+    private fun descriptionFor(mode:String)=when(mode){"case_analysis"->"Describe what happened. Search verified internal cases, statutes, rules, motions and law-enforcement authority relevant to those facts.";"rights"->"Describe the police encounter or rights question. Results stay inside the app and identify indexed authority.";"motions"->"Describe the case stage and issue to find potentially relevant motion and procedural authority.";"talk_to_me"->"Enter what is happening or what was said. This retrieves legal context from the app's internal corpus; it does not replace emergency services or a lawyer.";"court_info"->"Search court procedure, jurisdiction, filing and court-related information already indexed inside GA.LAW.HELP.";"legal_forms"->"Describe the filing or case stage to find indexed form guidance, rules and related authority without leaving the app.";"resources"->"Describe the legal help or service you need. GA.LAW.HELP searches its internal resource and authority index.";else->"Search public Georgia cases and statutes already indexed inside GA.LAW.HELP."}
+    private fun hintFor(mode:String)=when(mode){"case_analysis"->"What happened in the case? Include charge, stage, evidence, search, statements, witnesses…";"rights"->"Example: Police stopped my car and asked to search…";"motions"->"Example: pretrial identification issue, search warrant, withheld evidence…";"talk_to_me"->"Tell GA.LAW.HELP what is happening…";"court_info"->"Court, county, filing rule, deadline, jurisdiction…";"legal_forms"->"Form or filing needed, case type, court and stage…";"resources"->"Public defender, legal aid, court help, appeal assistance…";else->"Charge, case name, citation, statute, or legal issue…"}
+    private fun buttonFor(mode:String)=when(mode){"case_analysis"->"Analyze Against Internal Law";"rights"->"Check Rights & Authority";"motions"->"Find Motions & Rules";"talk_to_me"->"Get Legal Context";"court_info"->"Search Court Information";"legal_forms"->"Search Forms & Filing Guidance";"resources"->"Search Legal Resources";else->"Search Internal Legal Library"}
 }
