@@ -8,6 +8,13 @@ def _write(path, rows):
     path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
 
 
+def _empty_supporting_corpora(tmp_path):
+    _write(tmp_path / "georgia_court_of_appeals.jsonl", [])
+    _write(tmp_path / "georgia_statutes.jsonl", [])
+    _write(tmp_path / "georgia_rules_motions.jsonl", [])
+    _write(tmp_path / "law_enforcement_authorities.jsonl", [])
+
+
 def _fixture_corpus(tmp_path, monkeypatch):
     monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
     _write(tmp_path / "georgia_supreme_opinions.jsonl", [{"title":"Example v. State","citation":"123 Ga. 456","court":"Supreme Court of Georgia","text":"search and seizure warrant probable cause","source_url":"https://example.invalid/case","verification_status":"verified"}])
@@ -22,6 +29,13 @@ def test_empty_query_returns_no_authority(tmp_path, monkeypatch):
     result = legal_search.search_internal("   ")
     assert result["hits"] == []
     assert "Enter facts" in result["coverage_notice"]
+
+
+def test_stop_words_only_query_returns_no_authority(tmp_path, monkeypatch):
+    _fixture_corpus(tmp_path, monkeypatch)
+    result = legal_search.search_internal("what is the law for me", "case_analysis")
+    assert result["hits"] == []
+    assert "specific legal facts" in result["coverage_notice"]
 
 
 def test_case_lookup_routes_only_cases_and_statutes(tmp_path, monkeypatch):
@@ -51,13 +65,44 @@ def test_unknown_terms_do_not_fabricate_results(tmp_path, monkeypatch):
     assert "not invented" in result["coverage_notice"]
 
 
+def test_long_question_rejects_single_weak_token_match(tmp_path, monkeypatch):
+    _fixture_corpus(tmp_path, monkeypatch)
+    result = legal_search.search_internal("burglary probation sentence firearm appeal", "case_analysis")
+    assert result["hits"] == []
+
+
+def test_verified_authority_outranks_equivalent_unverified_authority(tmp_path, monkeypatch):
+    monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
+    _write(tmp_path / "georgia_supreme_opinions.jsonl", [
+        {"title":"Unverified Search Case","text":"probable cause search warrant","citation":"1 Ga. 1"},
+        {"title":"Verified Search Case","text":"probable cause search warrant","citation":"2 Ga. 2","verification_status":"verified"},
+    ])
+    _empty_supporting_corpora(tmp_path)
+    result = legal_search.search_internal("probable cause search warrant", "case_analysis")
+    assert result["hits"][0]["title"] == "Verified Search Case"
+    assert result["hits"][0]["verification_status"] == "verified"
+    assert result["hits"][1]["verification_status"] == "unverified"
+
+
+def test_source_urls_must_be_https(tmp_path, monkeypatch):
+    monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
+    _write(tmp_path / "georgia_supreme_opinions.jsonl", [
+        {"title":"Unsafe URL Case","text":"probable cause","source_url":"http://example.com/case"},
+        {"title":"Script URL Case","text":"probable cause","source_url":"javascript:alert(1)"},
+        {"title":"Safe URL Case","text":"probable cause","source_url":"https://example.com/case"},
+    ])
+    _empty_supporting_corpora(tmp_path)
+    result = legal_search.search_internal("probable cause", "case_analysis")
+    by_title = {hit["title"]: hit for hit in result["hits"]}
+    assert by_title["Unsafe URL Case"]["source_url"] is None
+    assert by_title["Script URL Case"]["source_url"] is None
+    assert by_title["Safe URL Case"]["source_url"] == "https://example.com/case"
+
+
 def test_limit_is_bounded_to_fifty(tmp_path, monkeypatch):
     monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
     rows=[{"title":f"Case {i}","text":"probable cause","citation":f"{i} Ga. 1"} for i in range(80)]
     _write(tmp_path / "georgia_supreme_opinions.jsonl", rows)
-    _write(tmp_path / "georgia_court_of_appeals.jsonl", [])
-    _write(tmp_path / "georgia_statutes.jsonl", [])
-    _write(tmp_path / "georgia_rules_motions.jsonl", [])
-    _write(tmp_path / "law_enforcement_authorities.jsonl", [])
+    _empty_supporting_corpora(tmp_path)
     result=legal_search.search_internal("probable cause", "case_analysis", 500)
     assert len(result["hits"]) == 50
