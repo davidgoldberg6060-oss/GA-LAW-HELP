@@ -21,6 +21,7 @@ ROUTES={
 }
 TOK=re.compile(r'[A-Za-z0-9§.-]+')
 STOP={'a','an','and','are','as','at','be','by','can','do','for','from','how','i','if','in','is','it','me','my','of','on','or','the','to','was','what','when','where','with'}
+NEGATIVE={'overruled','vacated','superseded','withdrawn','repealed'}
 def _tokens(s): return {x.lower() for x in TOK.findall(s or '') if len(x)>1 and x.lower() not in STOP}
 def _rows(path):
  if not path.exists(): return
@@ -39,6 +40,24 @@ def _source_url(value):
 def _verified(r):
  status=str(r.get('verification_status') or r.get('status') or '').strip().lower()
  return status in {'verified','official','validated','confirmed'}
+def _legal_status(r):
+ """Expose only stored status evidence; never infer current/binding law from source provenance."""
+ raw=r.get('legal_status') if isinstance(r.get('legal_status'),dict) else {}
+ def value(name,default='unknown'):
+  return str(raw.get(name) or r.get(name) or default).strip()
+ status_source=_source_url(raw.get('status_source_url') or r.get('status_source_url'))
+ checked=str(raw.get('status_checked_at') or r.get('status_checked_at') or '').strip() or None
+ negative=raw.get('negative_treatment',r.get('negative_treatment',[]))
+ if isinstance(negative,str): negative=[negative]
+ if not isinstance(negative,list): negative=[]
+ return {
+  'currency_status':value('currency_status'),
+  'precedential_status':value('precedential_status'),
+  'status_checked_at':checked,
+  'status_source_url':status_source,
+  'superseded_by':str(raw.get('superseded_by') or r.get('superseded_by') or '').strip() or None,
+  'negative_treatment':[str(x) for x in negative if str(x).strip()],
+ }
 def search_internal(query,mode='case_analysis',limit=12):
  query=(query or '').strip()
  if not query: return {'query':'','mode':mode,'hits':[],'coverage_notice':'Enter facts, a charge, statute, motion, case, or rights question.'}
@@ -51,8 +70,6 @@ def search_internal(query,mode='case_analysis',limit=12):
     body=_body(r); b=_tokens(body); matched=q&b
     if not matched: continue
     coverage=len(matched)/len(q)
-    # Require stronger evidence for multi-term natural-language searches so a
-    # single generic word cannot surface an unrelated legal authority.
     if len(q)>=4 and len(matched)<2 and coverage<0.5: continue
     phrase=1.0 if query.lower() in body.lower() else 0.0
     citation=str(r.get('citation') or r.get('section_number') or '').lower()
@@ -63,6 +80,7 @@ def search_internal(query,mode='case_analysis',limit=12):
     verification_bonus=0.1 if _verified(r) else 0.0
     score=coverage+phrase+citation_match+title_match+verification_bonus
     excerpt=re.sub(r'\s+',' ',body).strip()[:900]
-    hits.append({'corpus':corpus,'score':round(score,4),'title':r.get('title') or r.get('heading') or r.get('name') or r.get('topic') or r.get('citation') or 'Legal authority','citation':r.get('citation'),'source_url':_source_url(r.get('source_url')),'verification_status':r.get('verification_status') or r.get('status') or 'unverified','excerpt':excerpt})
+    legal_status=_legal_status(r)
+    hits.append({'corpus':corpus,'score':round(score,4),'title':r.get('title') or r.get('heading') or r.get('name') or r.get('topic') or r.get('citation') or 'Legal authority','citation':r.get('citation'),'source_url':_source_url(r.get('source_url')),'verification_status':r.get('verification_status') or r.get('status') or 'unverified','excerpt':excerpt,**legal_status})
  hits.sort(key=lambda x:(x['score'],x['verification_status'].lower() in {'verified','official','validated','confirmed'}),reverse=True)
- return {'query':query,'mode':mode,'hits':hits[:max(1,min(int(limit),50))],'coverage_notice':'Results come from GA.LAW.HELP internal indexed public-law records. Missing/unindexed authority is not invented; source links are shown only when stored as valid HTTPS references.'}
+ return {'query':query,'mode':mode,'hits':hits[:max(1,min(int(limit),50))],'coverage_notice':'Results come from GA.LAW.HELP internal indexed public-law records. Missing/unindexed authority is not invented; currency and precedential status remain unknown unless the corpus stores explicit status-check evidence.'}
