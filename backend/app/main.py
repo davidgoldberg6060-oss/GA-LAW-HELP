@@ -1,4 +1,6 @@
 """GA.LAW.HELP API entrypoint with verified motion-screen routing."""
+from fastapi.responses import PlainTextResponse
+
 from . import legacy_main as _legacy_main
 from .legacy_main import *
 from .legacy_main import audit
@@ -12,6 +14,21 @@ def _delegated_ask_openai(prompt: str):
     return ask_openai(prompt)
 
 _legacy_main.ask_openai = _delegated_ask_openai
+
+
+@app.middleware('http')
+async def crawler_policy_headers(request, call_next):
+    """Tell cooperative crawlers not to index or archive API responses."""
+    response = await call_next(request)
+    response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive, nosnippet'
+    return response
+
+
+@app.get('/robots.txt', include_in_schema=False)
+def robots_policy():
+    """Keep cooperative crawlers away from the API surface."""
+    return PlainTextResponse('User-agent: *\nDisallow: /\n')
+
 
 # Remove only the legacy free-form motion-screen route, preserving every other
 # current route and middleware registration from legacy_main.
