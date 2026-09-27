@@ -28,7 +28,7 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
     private val muted = Color.rgb(175, 194, 208)
     private fun dp(v: Int) = (v * activity.resources.displayMetrics.density).toInt()
 
-    /** Open the authenticated native corpus screen instead of sending legal research to a browser. */
+    /** Open authenticated native retrieval instead of sending legal research to a browser. */
     private fun openInternal(mode: String, title: String) {
         activity.startActivity(Intent(activity, InternalLegalSearchActivity::class.java).apply {
             putExtra("mode", mode)
@@ -47,12 +47,12 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
             tile("▤", "Legal Tools", "Motions & rules", gold) { openInternal("motions", "Motions & Court Rules") }))
         body.addView(gridRow(
             tile("⚖", "Georgia Laws", "Statutes & cases", Color.rgb(235, 61, 65)) { openInternal("case_lookup", "Georgia Laws & Cases") },
-            tile("▰", "Court Info", "Find courts & info", Color.rgb(144, 103, 246), actions::openCourtInfo),
-            tile("▤", "Legal Forms", "State forms library", Color.rgb(245, 139, 53), actions::openLegalForms)))
+            tile("▰", "Court Info", "Courts & procedure", Color.rgb(144, 103, 246)) { openInternal("court_info", "Georgia Court Info") },
+            tile("▤", "Legal Forms", "Forms guidance", Color.rgb(245, 139, 53)) { openInternal("legal_forms", "Georgia Legal Forms") }))
         body.addView(gridRow(
             tile("⌕", "Case Analysis", "Analyze & strategy", Color.rgb(45, 195, 206)) { openInternal("case_analysis", "Case Analysis") },
             tile("♦", "Know Your Rights", "Learn your rights", Color.rgb(233, 91, 124)) { openInternal("rights", "Know Your Rights") },
-            tile("♟", "Resources", "Links & support", Color.rgb(155, 176, 191), actions::openResources)))
+            tile("♟", "Resources", "Help & support", Color.rgb(155, 176, 191)) { openInternal("resources", "Georgia Legal Resources") }))
         body.addView(emergencyBanner(), LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(3), dp(7), dp(3), dp(8)) })
         val scroll = ScrollView(activity).apply { isFillViewport = true; addView(body) }
         shell.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f)); shell.addView(bottomNav()); return shell
