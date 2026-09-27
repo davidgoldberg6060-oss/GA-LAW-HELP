@@ -1,8 +1,8 @@
 """End-to-end Georgia legal ingestion pipeline.
 
-Connects approved-source adapters to conservative LegalAuthority persistence.
-Nothing is persisted unless the caller supplies a real citation. The pipeline
-never derives or fabricates a citation from page text.
+Connects approved first-party Georgia source definitions to conservative
+LegalAuthority persistence. Nothing is persisted unless the caller supplies a
+real citation; this module never invents one from page text.
 """
 from __future__ import annotations
 
@@ -11,9 +11,13 @@ from typing import Iterable
 
 from sqlalchemy.orm import Session
 
-from .adapters import ADAPTERS
+from .adapters import AuthoritySource, official_georgia_authority_sources
 from .models import SourceDocument
 from .persistence import upsert_authority_document
+
+
+def _source_registry() -> dict[str, AuthoritySource]:
+    return {source.key: source for source in official_georgia_authority_sources()}
 
 
 @dataclass(frozen=True)
@@ -29,13 +33,20 @@ def persist_item(db: Session, item: IngestionItem):
     citation = (item.citation or "").strip()
     if not citation:
         raise ValueError("A verified citation is required before legal material may enter the authority index.")
-    if item.source_name not in ADAPTERS:
+
+    source = _source_registry().get(item.source_name)
+    if source is None:
         raise ValueError(f"Unsupported Georgia ingestion source: {item.source_name}")
+    if item.jurisdiction.strip().lower() != source.jurisdiction.lower():
+        raise ValueError("Ingestion jurisdiction does not match the approved source registry.")
+    if item.authority_type.strip().lower() != source.authority_type.lower():
+        raise ValueError("Authority type does not match the approved source registry.")
+
     return upsert_authority_document(
         db,
         document=item.document,
-        jurisdiction=item.jurisdiction,
-        authority_type=item.authority_type,
+        jurisdiction=source.jurisdiction,
+        authority_type=source.authority_type,
         citation=citation,
     )
 
@@ -53,9 +64,9 @@ def persist_batch(db: Session, items: Iterable[IngestionItem]) -> list:
     return saved
 
 
-def adapter_for(source_name: str):
-    """Return only an explicitly approved Georgia source adapter."""
+def source_for(source_name: str) -> AuthoritySource:
+    """Return only a registered, revalidated first-party Georgia source."""
     try:
-        return ADAPTERS[source_name]
+        return _source_registry()[source_name]
     except KeyError as exc:
         raise ValueError(f"Unsupported Georgia ingestion source: {source_name}") from exc
