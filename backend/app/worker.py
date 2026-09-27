@@ -7,6 +7,7 @@ files are never uploaded to an unconfigured third party.
 import json
 import logging
 import os
+import sys
 import time
 from datetime import timedelta
 
