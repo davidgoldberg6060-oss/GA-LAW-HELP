@@ -23,6 +23,14 @@ class Authority:
     text = 'The motion to suppress evidence was denied.'
     status = 'UNVERIFIED'
     source_url = 'https://official.example/opinion'
+    currency_status = 'unknown'
+    precedential_status = 'unknown'
+    negative_treatment = None
+
+
+class NegativelyTreatedAuthority(Authority):
+    currency_status = 'overruled'
+    negative_treatment = 'Overruled by later controlling authority.'
 
 
 class Version:
@@ -45,6 +53,13 @@ def test_prompt_fails_closed_when_no_authority_is_verified():
     assert 'No motion candidate currently satisfies the verified-current authority gate' in prompt
     assert 'do not invent a citation' in prompt.lower()
     assert coverage['VERIFIED_CURRENT'] == 0
+
+
+def test_verified_version_cannot_promote_negatively_treated_authority():
+    prompt, coverage = motion_screen_prompt(DB([NegativelyTreatedAuthority()], [Version()]), 'Case facts here')
+    assert coverage['VERIFIED_CURRENT'] == 0
+    assert 'No motion candidate currently satisfies the verified-current authority gate' in prompt
+    assert 'Example Citation' not in prompt
 
 
 def test_response_contract_exposes_coverage_and_verification_mode():
