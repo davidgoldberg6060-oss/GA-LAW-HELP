@@ -57,7 +57,14 @@ class ApiClient(private val context: Context) {
     fun cases()=JSONArray(execute("/cases"));fun createCase(title:String,county:String,stage:String,narrative:String)=JSONObject(execute("/cases","POST",JSONObject().put("title",title).put("county",county.ifBlank{JSONObject.NULL}).put("stage",stage.ifBlank{JSONObject.NULL}).put("narrative",narrative.ifBlank{JSONObject.NULL}).put("case_type","criminal")))
     fun timeline(id:Int)=JSONArray(execute("/cases/$id/timeline"));fun evidence(id:Int)=JSONArray(execute("/cases/$id/evidence"));fun caseDetail(id:Int)=JSONObject(execute("/cases/$id"));fun runAnalysis(id:Int)=JSONObject(execute("/cases/$id/analysis/run","POST",JSONObject().put("focus","full_case")));fun analysis(id:Int)=JSONObject(execute("/cases/$id/analysis"));fun why(id:Int)=JSONObject(execute("/cases/$id/why"));fun redTeam(id:Int)=JSONObject(execute("/cases/$id/red-team"));fun secondLook(id:Int)=JSONObject(execute("/cases/$id/second-look"));fun innocenceAnalysis(id:Int,f:String)=JSONObject(execute("/cases/$id/innocence-analysis","POST",JSONObject().put("additional_facts",f)))
     fun internalLegalSearch(query:String,mode:String="case_analysis",limit:Int=12):JSONObject=JSONObject(execute("/internal/legal-search","POST",JSONObject().put("query",query).put("mode",mode).put("limit",limit)))
-    fun caseLookup(query:String)=internalLegalSearch(query,"case_lookup");fun rightsLookup(query:String)=internalLegalSearch(query,"rights");fun motionsLookup(query:String)=internalLegalSearch(query,"motions");fun talkToMeLegalContext(transcript:String)=internalLegalSearch(transcript,"talk_to_me");fun caseAnalysisContext(facts:String)=internalLegalSearch(facts,"case_analysis")
+    fun groundedLegalAssistant(query:String,mode:String="case_analysis"):JSONObject=JSONObject(execute("/internal/legal-assistant","POST",JSONObject().put("query",query).put("mode",mode)))
+    fun caseLookup(query:String)=internalLegalSearch(query,"case_lookup")
+    fun rightsLookup(query:String)=internalLegalSearch(query,"rights")
+    fun motionsLookup(query:String)=internalLegalSearch(query,"motions")
+    fun caseAnalysisWithVerifiedAuthorities(facts:String)=groundedLegalAssistant(facts,"case_analysis")
+    fun talkToMeAnalysis(transcript:String)=groundedLegalAssistant(transcript,"talk_to_me")
+    fun rightsAnalysis(description:String)=groundedLegalAssistant(description,"rights")
+    fun motionsAnalysis(facts:String)=groundedLegalAssistant(facts,"motions")
     private fun displayName(uri:Uri):String{var name=uri.lastPathSegment?.substringAfterLast('/')?:"evidence";val cursor:Cursor?=context.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null);cursor?.use{if(it.moveToFirst())name=it.getString(0)};return name.replace(Regex("[\\r\\n\\\"]"),"_")}
     private fun size(uri:Uri):Long=context.contentResolver.openAssetFileDescriptor(uri,"r")?.use{it.length}?:-1L
     fun upload(caseId:Int,uri:Uri):JSONObject{val bytes=size(uri);return if(bytes>8L*1024*1024)resumableUpload(caseId,uri,bytes)else directUpload(caseId,uri)}
