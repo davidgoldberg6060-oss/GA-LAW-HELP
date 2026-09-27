@@ -1,5 +1,6 @@
 package help.galaw.standalone
 
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -27,6 +28,14 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
     private val muted = Color.rgb(175, 194, 208)
     private fun dp(v: Int) = (v * activity.resources.displayMetrics.density).toInt()
 
+    /** Open the authenticated native corpus screen instead of sending legal research to a browser. */
+    private fun openInternal(mode: String, title: String) {
+        activity.startActivity(Intent(activity, InternalLegalSearchActivity::class.java).apply {
+            putExtra("mode", mode)
+            putExtra("title", title)
+        })
+    }
+
     fun build(): View {
         val shell = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(navy) }
         val body = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(8), dp(12), dp(14)) }
@@ -34,15 +43,15 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
         body.addView(hero())
         body.addView(gridRow(
             tile("▰", "My Cases", "Track & manage", Color.rgb(34, 159, 255), actions::openCases),
-            tile("●", "AI Help", "Ask legal questions", Color.rgb(43, 201, 112), actions::openTalkToMe),
+            tile("●", "AI Help", "Ask legal questions", Color.rgb(43, 201, 112)) { openInternal("talk_to_me", "Talk to Me") },
             tile("▤", "Legal Tools", "Motions, timelines", gold, actions::openLegalTools)))
         body.addView(gridRow(
-            tile("⚖", "Georgia Laws", "Statutes & cases", Color.rgb(235, 61, 65), actions::openGeorgiaLaws),
+            tile("⚖", "Georgia Laws", "Statutes & cases", Color.rgb(235, 61, 65)) { openInternal("case_lookup", "Georgia Laws & Cases") },
             tile("▰", "Court Info", "Find courts & info", Color.rgb(144, 103, 246), actions::openCourtInfo),
             tile("▤", "Legal Forms", "State forms library", Color.rgb(245, 139, 53), actions::openLegalForms)))
         body.addView(gridRow(
-            tile("⌕", "Case Analysis", "Analyze & strategy", Color.rgb(45, 195, 206), actions::openCaseAnalysis),
-            tile("♦", "Know Your Rights", "Learn your rights", Color.rgb(233, 91, 124), actions::openKnowYourRights),
+            tile("⌕", "Case Analysis", "Analyze & strategy", Color.rgb(45, 195, 206)) { openInternal("case_analysis", "Case Analysis") },
+            tile("♦", "Know Your Rights", "Learn your rights", Color.rgb(233, 91, 124)) { openInternal("rights", "Know Your Rights") },
             tile("♟", "Resources", "Links & support", Color.rgb(155, 176, 191), actions::openResources)))
         body.addView(emergencyBanner(), LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(3), dp(7), dp(3), dp(8)) })
         val scroll = ScrollView(activity).apply { isFillViewport = true; addView(body) }
@@ -53,7 +62,7 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
         orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         addView(text("☰", 25f, false, blue).apply { gravity = Gravity.CENTER; contentDescription = "Open menu"; setOnClickListener { actions.openMenu() } }, LinearLayout.LayoutParams(dp(42), dp(48)))
         addView(text("⚖  GA.LAW.HELP", 19f, true, gold).apply { gravity = Gravity.CENTER_VERTICAL }, LinearLayout.LayoutParams(0, dp(48), 1f))
-        addView(text("⌕", 27f, false, Color.WHITE).apply { gravity = Gravity.CENTER; contentDescription = "Search Georgia laws"; setOnClickListener { actions.openGeorgiaLaws() } }, LinearLayout.LayoutParams(dp(42), dp(48)))
+        addView(text("⌕", 27f, false, Color.WHITE).apply { gravity = Gravity.CENTER; contentDescription = "Search Georgia laws"; setOnClickListener { openInternal("case_lookup", "Georgia Laws & Cases") } }, LinearLayout.LayoutParams(dp(42), dp(48)))
     }
 
     private fun hero() = LinearLayout(activity).apply {
@@ -86,7 +95,7 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
 
     private fun bottomNav() = LinearLayout(activity).apply {
         orientation = LinearLayout.HORIZONTAL; setPadding(dp(3), dp(3), dp(3), dp(4)); setBackgroundColor(Color.rgb(3, 20, 34))
-        listOf(Triple("⌂", "Home", actions::openHome), Triple("⚖", "Laws", actions::openGeorgiaLaws), Triple("●", "AI Help", actions::openTalkToMe), Triple("▰", "Documents", actions::openDocuments), Triple("●", "Account", actions::openAccount)).forEachIndexed { i, item ->
+        listOf(Triple("⌂", "Home", actions::openHome), Triple("⚖", "Laws", { openInternal("case_lookup", "Georgia Laws & Cases") }), Triple("●", "AI Help", { openInternal("talk_to_me", "Talk to Me") }), Triple("▰", "Documents", actions::openDocuments), Triple("●", "Account", actions::openAccount)).forEachIndexed { i, item ->
             addView(text("${item.first}\n${item.second}", 9.5f, false, if (i == 0) blue else muted).apply { gravity = Gravity.CENTER; setPadding(0, dp(5), 0, dp(5)); setOnClickListener { item.third() } }, LinearLayout.LayoutParams(0, -2, 1f))
         }
     }
