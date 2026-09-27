@@ -4,6 +4,7 @@ from .legacy_main import *
 from .legacy_main import audit
 from .motion_screen_service import motion_screen_response
 from .innocence_analysis_service import innocence_analysis_response
+from .internal_legal_search import search_internal
 
 # Keep legacy route call sites testable through app.main.ask_openai while the
 # endpoint migration is incremental.
@@ -36,7 +37,6 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(require_paid),db:Se
     audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit()
     return response
 
-
 @app.post('/cases/{case_id}/innocence-analysis')
 def private_innocence_analysis(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     """Analyze user-supplied case details for innocence/doubt issues and verified procedural avenues."""
@@ -50,3 +50,18 @@ def private_innocence_analysis(case_id:int,body:dict,user=Depends(require_paid),
         raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
     audit(db,user.id,'RUN_INNOCENCE_ANALYSIS','case',case_id);db.commit()
     return response
+
+@app.post('/internal/legal-search')
+def internal_legal_search(body:dict,user=Depends(require_paid)):
+    """Search GA.LAW.HELP's internal indexed public-law corpus without redirecting users."""
+    query=str(body.get('query','')).strip()
+    mode=str(body.get('mode','case_analysis')).strip()
+    if len(query)>12000:
+        raise HTTPException(400,'Search text is too long.')
+    if mode not in {'case_lookup','case_analysis','rights','motions','talk_to_me'}:
+        raise HTTPException(400,'Unsupported legal-search mode.')
+    try:
+        limit=int(body.get('limit',12))
+    except (TypeError,ValueError):
+        raise HTTPException(400,'Invalid result limit.')
+    return search_internal(query,mode,limit)
