@@ -53,7 +53,15 @@ async def lifespan(_app:FastAPI):
         Base.metadata.create_all(bind=engine)
     yield
 
-production_mode = os.getenv('ENVIRONMENT', 'development').lower() == 'production'\napp = FastAPI(\n    title='STANDALONE ASSISTANT GA.LAW.HELP',\n    version='1.3.0',\n    lifespan=lifespan,\n    docs_url=None if production_mode else '/docs',\n    redoc_url=None if production_mode else '/redoc',\n    openapi_url=None if production_mode else '/openapi.json',\n)
+production_mode = os.getenv('ENVIRONMENT', 'development').lower() == 'production'
+app = FastAPI(
+    title='STANDALONE ASSISTANT GA.LAW.HELP',
+    version='1.3.0',
+    lifespan=lifespan,
+    docs_url=None if production_mode else '/docs',
+    redoc_url=None if production_mode else '/redoc',
+    openapi_url=None if production_mode else '/openapi.json',
+)
 EVIDENCE_DIR = os.getenv('EVIDENCE_DIR', './evidence_store'); os.makedirs(EVIDENCE_DIR, exist_ok=True)
 origins=[x.strip() for x in os.getenv('CORS_ALLOWED_ORIGINS','').split(',') if x.strip()]
 # Railway assigns HTTPS subdomains to services. Permit those browser origins by default
