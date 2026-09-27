@@ -4,6 +4,8 @@ Private case records are never part of the public/legal-authority corpus. All ac
 must be authenticated and ownership-scoped. Storage keys are opaque server-side
 identifiers and must never be exposed as public object URLs.
 """
+import os
+import uuid
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -51,7 +53,16 @@ def assert_private_resources_not_public(resource_types: Iterable[str]) -> None:
 
 
 def private_storage_prefix(user_id: int, case_id: int) -> str:
-    """Canonical opaque namespace for private evidence objects."""
+    """Canonical namespace for private evidence objects."""
     if user_id <= 0 or case_id <= 0:
         raise ValueError("user_id and case_id must be positive")
     return f"private/users/{user_id}/cases/{case_id}"
+
+
+def private_evidence_key(user_id: int, case_id: int, filename: str, *, object_id: str | None = None) -> str:
+    """Create a server-side evidence key inside the canonical private namespace."""
+    safe_name = os.path.basename(filename or "evidence")
+    token = object_id or uuid.uuid4().hex
+    if not token or "/" in token or "\\" in token:
+        raise ValueError("object_id must be a single opaque path segment")
+    return f"{private_storage_prefix(user_id, case_id)}/{token}_{safe_name}"
