@@ -1,0 +1,13 @@
+# Project-wide ownership review. This becomes enforceable when the main branch
+# requires Code Owner approval.
+* @davidgoldberg6060-oss
+
+# Extra-sensitive production and ownership surfaces.
+/backend/ @davidgoldberg6060-oss
+/android/ @davidgoldberg6060-oss
+/supabase/ @davidgoldberg6060-oss
+/.github/ @davidgoldberg6060-oss
+/OWNERSHIP.md @davidgoldberg6060-oss
+/LICENSE @davidgoldberg6060-oss
+/CREDITS_AND_REVENUE_SHARE.md @davidgoldberg6060-oss
+/PROJECT_CONTROL.md @davidgoldberg6060-oss
