@@ -12,9 +12,15 @@ class DiscoveredItem:
     url: str
     status_hint: str | None = None
 
-# Status extraction is intentionally conservative. It records only explicit
-# source statements and never treats publication on an official site as proof
-# that an authority is current, binding, or precedential.
+@dataclass(frozen=True)
+class AuthoritySource:
+    key: str
+    title: str
+    url: str
+    authority_type: str
+    jurisdiction: str = "Georgia"
+    official: bool = True
+
 _NEGATIVE_PATTERNS = {
     "overruled": re.compile(r"\boverruled\b", re.I),
     "vacated": re.compile(r"\bvacated\b", re.I),
@@ -29,11 +35,7 @@ _CURRENT_PATTERNS = (
 
 
 def legal_status_from_official_text(text: str, source_url: str, *, checked_at: datetime | None = None) -> LegalStatus:
-    """Capture explicit legal-status evidence from an approved official page.
-
-    This function does not perform citator inference. If an official page does
-    not explicitly establish currency or treatment, those fields remain unknown.
-    """
+    """Capture only explicit legal-status evidence from an approved official page."""
     official_url = assert_public_official_url(source_url)
     checked = checked_at or datetime.now(timezone.utc)
     treatments = tuple(name for name, pattern in _NEGATIVE_PATTERNS.items() if pattern.search(text or ""))
@@ -55,64 +57,68 @@ def legal_status_from_official_text(text: str, source_url: str, *, checked_at: d
 class SupremeCourtOpinionIndexAdapter:
     BASE = "https://www.gasupreme.us/"
     CASE_NO = re.compile(r"\bS\d{2}[A-Z]\d{4}\b")
-
     def year_url(self, year: int) -> str:
-        if year < 1900 or year > 2100:
-            raise ValueError("invalid year")
+        if year < 1900 or year > 2100: raise ValueError("invalid year")
         return assert_public_official_url(urljoin(self.BASE, f"{year}-opinions/"))
-
     def discover_from_html(self, html: str, year: int) -> list[DiscoveredItem]:
         seen, out = set(), []
         for m in self.CASE_NO.finditer(html):
             case_no = m.group(0)
-            if case_no in seen:
-                continue
-            seen.add(case_no)
-            out.append(DiscoveredItem(case_no, case_no, self.year_url(year), "index-discovered"))
+            if case_no not in seen:
+                seen.add(case_no); out.append(DiscoveredItem(case_no, case_no, self.year_url(year), "index-discovered"))
         return out
-
     def status_from_official_page(self, text: str, year: int, checked_at: datetime | None = None) -> LegalStatus:
         return legal_status_from_official_text(text, self.year_url(year), checked_at=checked_at)
 
 class CourtOfAppealsOpinionIndexAdapter:
-    """Conservative discovery for public Georgia Court of Appeals opinion indexes."""
     BASE = "https://www.gaappeals.us/"
     CASE_NO = re.compile(r"\bA\d{2}A\d{4}\b")
-
-    def opinions_url(self) -> str:
-        return assert_public_official_url(urljoin(self.BASE, "opinions/"))
-
+    def opinions_url(self) -> str: return assert_public_official_url(urljoin(self.BASE, "opinions/"))
     def discover_from_html(self, html: str) -> list[DiscoveredItem]:
         seen, out = set(), []
         for m in self.CASE_NO.finditer(html):
             case_no = m.group(0)
-            if case_no in seen:
-                continue
-            seen.add(case_no)
-            out.append(DiscoveredItem(case_no, case_no, self.opinions_url(), "index-discovered"))
+            if case_no not in seen:
+                seen.add(case_no); out.append(DiscoveredItem(case_no, case_no, self.opinions_url(), "index-discovered"))
         return out
-
     def status_from_official_page(self, text: str, checked_at: datetime | None = None) -> LegalStatus:
         return legal_status_from_official_text(text, self.opinions_url(), checked_at=checked_at)
 
 class GeorgiaCourtsAdapter:
     ROOT = "https://georgiacourts.gov/"
-    def rules_index(self) -> str:
-        return assert_public_official_url(urljoin(self.ROOT, "tag/court-rules/"))
-    def supreme_rules(self) -> str:
-        return assert_public_official_url(urljoin(self.ROOT, "georgia-supreme-court-rules/"))
-    def court_directory(self) -> str:
-        return assert_public_official_url(urljoin(self.ROOT, "find-a-court/"))
-    def self_help(self) -> str:
-        return assert_public_official_url(urljoin(self.ROOT, "a2j/"))
+    def rules_index(self) -> str: return assert_public_official_url(urljoin(self.ROOT, "rules/"))
+    def supreme_rules(self) -> str: return assert_public_official_url(urljoin(self.ROOT, "georgia-supreme-court-rules/"))
+    def court_directory(self) -> str: return assert_public_official_url(urljoin(self.ROOT, "find-a-court/"))
+    def self_help(self) -> str: return assert_public_official_url(urljoin(self.ROOT, "a2j/"))
     def status_from_official_page(self, text: str, source_url: str, checked_at: datetime | None = None) -> LegalStatus:
         return legal_status_from_official_text(text, source_url, checked_at=checked_at)
 
 class GeneralAssemblyAdapter:
     ROOT = "https://www.legis.ga.gov/"
-    def code_index(self) -> str:
-        return assert_public_official_url(urljoin(self.ROOT, "legislation/georgia-code"))
-    def validate_document_url(self, url: str) -> str:
-        return assert_public_official_url(url)
+    def code_index(self) -> str: return assert_public_official_url(urljoin(self.ROOT, "legislation/georgia-code"))
+    def legislation_index(self) -> str: return assert_public_official_url(urljoin(self.ROOT, "legislation/all"))
+    def validate_document_url(self, url: str) -> str: return assert_public_official_url(url)
     def status_from_official_page(self, text: str, source_url: str, checked_at: datetime | None = None) -> LegalStatus:
         return legal_status_from_official_text(text, self.validate_document_url(source_url), checked_at=checked_at)
+
+
+def official_georgia_authority_sources() -> tuple[AuthoritySource, ...]:
+    """Canonical first-party entry points used to populate the internal corpus.
+
+    Registry membership establishes provenance only. It never by itself marks an
+    individual statute, rule, or opinion current, binding, or precedential.
+    """
+    supreme = SupremeCourtOpinionIndexAdapter()
+    appeals = CourtOfAppealsOpinionIndexAdapter()
+    courts = GeorgiaCourtsAdapter()
+    assembly = GeneralAssemblyAdapter()
+    sources = (
+        AuthoritySource("ga_code", "Official Code of Georgia", assembly.code_index(), "statute"),
+        AuthoritySource("ga_legislation", "Georgia General Assembly Legislation", assembly.legislation_index(), "legislation"),
+        AuthoritySource("ga_court_rules", "Georgia Court Rules", courts.rules_index(), "court_rule"),
+        AuthoritySource("ga_supreme_rules", "Supreme Court of Georgia Rules", courts.supreme_rules(), "court_rule"),
+        AuthoritySource("ga_supreme_opinions", "Supreme Court of Georgia Opinions", supreme.BASE, "case_law"),
+        AuthoritySource("ga_appeals_opinions", "Georgia Court of Appeals Opinions", appeals.opinions_url(), "case_law"),
+    )
+    # Re-validate every URL here so additions cannot silently bypass the source policy.
+    return tuple(AuthoritySource(s.key, s.title, assert_public_official_url(s.url), s.authority_type, s.jurisdiction, s.official) for s in sources)
