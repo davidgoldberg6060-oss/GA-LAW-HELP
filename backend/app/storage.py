@@ -1,6 +1,7 @@
 import os, hashlib, uuid, shutil
 from pathlib import Path
 from typing import BinaryIO
+from .private_case_policy import private_storage_prefix
 
 ROOT=Path(os.getenv('EVIDENCE_DIR','./evidence_store'))
 ROOT.mkdir(parents=True,exist_ok=True)
@@ -20,7 +21,7 @@ def _s3():
         config=Config(signature_version='s3v4',s3={'addressing_style':'path'}))
 
 def session_dir(user_id:int, case_id:int, upload_id:str)->Path:
-    p=ROOT/'uploads'/str(user_id)/str(case_id)/upload_id
+    p=ROOT/'uploads'/private_storage_prefix(user_id,case_id)/upload_id
     p.mkdir(parents=True,exist_ok=True); return p
 
 def save_chunk(user_id,case_id,upload_id,index,data:bytes):
@@ -34,8 +35,8 @@ def _cloud_key(key:str)->str: return f'{PREFIX}/{key}' if PREFIX else key
 def put_file(local_path:Path,key:str):
     if BACKEND=='s3':
         if not BUCKET: raise RuntimeError('S3_BUCKET is required for STORAGE_BACKEND=s3')
-        # Supabase Storage encrypts managed objects at rest. Its S3 compatibility
-        # layer intentionally rejects x-amz-server-side-encryption headers.
+        # Objects are private and are read only through authenticated API routes.
+        # Do not add public-read ACLs or expose storage URLs to clients.
         _s3().upload_file(str(local_path),BUCKET,_cloud_key(key))
         local_path.unlink(missing_ok=True)
     return key
@@ -79,7 +80,7 @@ def hash_stored(key:str):
 def finalize_chunks(user_id,case_id,upload_id,filename,total_chunks,expected_bytes=None):
     src=session_dir(user_id,case_id,upload_id)
     safe=os.path.basename(filename or 'evidence')
-    key=f'{user_id}/{case_id}/{uuid.uuid4().hex}_{safe}'
+    key=f'{private_storage_prefix(user_id,case_id)}/{uuid.uuid4().hex}_{safe}'
     dest=ROOT/'staging'/key; dest.parent.mkdir(parents=True,exist_ok=True)
     h=hashlib.sha256(); size=0
     with open(dest,'xb') as out:
