@@ -7,6 +7,7 @@ files are never uploaded to an unconfigured third party.
 import json
 import logging
 import os
+import sys
 import time
 from datetime import timedelta
 
@@ -16,7 +17,7 @@ from .storage import hash_stored
 
 
 logger = logging.getLogger("ga_law_help.worker")
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper(), stream=sys.stdout)
 
 LOCAL_JOB_TYPES = {"PROBE_MEDIA"}
 PROVIDER_JOB_TYPES = {
