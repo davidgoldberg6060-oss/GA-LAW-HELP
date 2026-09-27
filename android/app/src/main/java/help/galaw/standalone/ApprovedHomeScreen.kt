@@ -44,7 +44,7 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
         body.addView(gridRow(
             tile("▰", "My Cases", "Track & manage", Color.rgb(34, 159, 255), actions::openCases),
             tile("●", "AI Help", "Ask legal questions", Color.rgb(43, 201, 112)) { openInternal("talk_to_me", "Talk to Me") },
-            tile("▤", "Legal Tools", "Motions, timelines", gold, actions::openLegalTools)))
+            tile("▤", "Legal Tools", "Motions & rules", gold) { openInternal("motions", "Motions & Court Rules") }))
         body.addView(gridRow(
             tile("⚖", "Georgia Laws", "Statutes & cases", Color.rgb(235, 61, 65)) { openInternal("case_lookup", "Georgia Laws & Cases") },
             tile("▰", "Court Info", "Find courts & info", Color.rgb(144, 103, 246), actions::openCourtInfo),
