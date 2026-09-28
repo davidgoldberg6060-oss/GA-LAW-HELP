@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 
 ALLOWED_HOSTS = {
     "www.gasupreme.us", "gasupreme.us",
+    "www.gaappeals.us", "gaappeals.us",
     "georgiacourts.gov", "www.georgiacourts.gov", "assets.georgiacourts.gov",
     "www.legis.ga.gov", "legis.ga.gov",
 }
