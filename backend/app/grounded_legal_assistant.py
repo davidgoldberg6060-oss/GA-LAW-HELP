@@ -21,8 +21,6 @@ def _is_negatively_treated(hit:dict)->bool:
     return currency in NEGATIVE or precedent in NEGATIVE or bool(words & NEGATIVE)
 
 def _verified_hits(result:dict)->list[dict]:
-    # Unknown currency remains usable only as a traceable research authority; an
-    # explicit negative status is never sent to AI as affirmative governing law.
     return [h for h in result.get("hits",[]) if _is_traceable(h) and not _is_negatively_treated(h)]
 
 def _authority_context(hits:list[dict])->str:
@@ -39,6 +37,19 @@ def _authority_context(hits:list[dict])->str:
         )
     return "\n\n".join(blocks)
 
+def _mode_instructions(mode:str)->str:
+    if mode=="talk_to_me":
+        return """Use these exact response sections in this order:
+1. WHAT APPEARS TO BE HAPPENING — summarize the user's account without presenting allegations or speech recognition as established fact.
+2. SAFEST IMMEDIATE STEPS — short, calm actions focused on physical safety and lawful de-escalation. If the facts indicate immediate danger, say to move to a safe place if possible and contact emergency services; do not imply the app itself can summon help.
+3. YOUR RIGHTS — explain only rights supported by the supplied authority and clearly state when the indexed authority is insufficient.
+4. WHAT LAW ENFORCEMENT MAY / MAY NOT DO — separate supported powers or restrictions; do not make categorical claims that the supplied authority does not establish.
+5. WHAT TO SAY OR DO — give lawful, non-confrontational options; never coach resistance, obstruction, flight, deception, evidence destruction, or interference with officers.
+6. VERIFIED GEORGIA AUTHORITY — list only supplied [number] authorities actually relied on, with their stored citations and any unknown currency/precedential limitation.
+7. IMPORTANT LIMITATIONS — identify missing facts, uncertain transcription, unknown legal status, or issues requiring a Georgia lawyer/court record review.
+Keep urgent guidance concise enough to read during a live encounter. Do not tell the user that recording is lawful unless supplied authority establishes it for the described circumstances."""
+    return "Clearly separate user facts, legal issues, authority-backed analysis, counterarguments/limitations, and practical next steps."
+
 def grounded_legal_response(query:str,mode:str,ask_ai)->dict:
     if mode not in SUPPORTED_MODES: raise ValueError("Unsupported grounded legal-assistant mode.")
     retrieval=search_internal(query,mode,12);verified=_verified_hits(retrieval)
@@ -47,7 +58,7 @@ def grounded_legal_response(query:str,mode:str,ask_ai)->dict:
     prompt=f"""GA.LAW.HELP grounded legal analysis request.
 Mode: {mode}
 
-USER-SUPPLIED FACTS OR QUESTION (not independently verified):
+USER-SUPPLIED FACTS OR QUESTION (not independently verified; may include speech-to-text transcription errors):
 {query}
 
 TRACEABLE VERIFIED INDEXED AUTHORITIES AVAILABLE FOR THIS RESPONSE:
@@ -59,9 +70,12 @@ Rules for this response:
 - Cite supplied authorities by [number] and stored citation; never create a citation, case, statute, rule, deadline, sentence, or procedural requirement that is not supplied.
 - Never describe an authority as current, binding, controlling, or precedential unless its supplied status metadata establishes that proposition.
 - If Currency or Precedential status is unknown, explicitly label that limitation; do not fill it from memory.
-- Clearly separate user facts, legal issues, authority-backed analysis, counterarguments/limitations, and practical next steps.
 - Do not predict or guarantee an outcome.
-- For a live police encounter, prioritize physical safety and do not encourage resistance, evasion, obstruction, evidence destruction, or deception.
+- For a live police encounter, prioritize physical safety and do not encourage resistance, evasion, obstruction, evidence destruction, interference, or deception.
+- Never claim to observe, hear, identify, or infer facts that were not actually provided in the user's text/transcript.
+
+MODE-SPECIFIC FORMAT:
+{_mode_instructions(mode)}
 """
     analysis=ask_ai(prompt)
     return {"mode":mode,"analysis":analysis,"authorities":retrieval.get("hits",[]),"grounded_authority_count":len(verified),"coverage_notice":retrieval.get("coverage_notice")}
