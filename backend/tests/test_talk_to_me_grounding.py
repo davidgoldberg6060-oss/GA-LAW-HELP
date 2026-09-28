@@ -45,40 +45,42 @@ def test_talk_to_me_prompt_requires_live_safety_sections(monkeypatch):
     assert "recording is lawful" in prompt
 
 
-def test_talk_to_me_never_calls_ai_without_traceable_authority(monkeypatch):
+def test_talk_to_me_answers_without_traceable_authority_but_forbids_fake_citations(monkeypatch):
     monkeypatch.setattr(gla, "search_internal", lambda *args, **kwargs: {
         "hits": [verified_hit(source_url="", verification_status="unverified")],
         "coverage_notice": "not enough",
     })
-    called = False
+    captured = {}
 
     def fake_ai(prompt):
-        nonlocal called
-        called = True
-        return "should not run"
+        captured["prompt"] = prompt
+        return "WHAT APPEARS TO BE HAPPENING\nGeneral explanation.\nSAFEST IMMEDIATE STEPS\nStay safe.\nYOUR RIGHTS\nNeeds Georgia verification.\nWHAT LAW ENFORCEMENT MAY / MAY NOT DO\nNeeds verification.\nWHAT TO SAY OR DO\nAsk for counsel.\nVERIFIED GEORGIA AUTHORITY\nNone retrieved.\nIMPORTANT LIMITATIONS\nGeneral information only."
 
-    result = gla.grounded_legal_response("Police are at my door.", "talk_to_me", fake_ai)
-    assert called is False
-    assert result["analysis"] is None
+    result = gla.grounded_legal_response("What happens if I am charged with murder?", "talk_to_me", fake_ai)
+    prompt = captured["prompt"]
+    assert result["analysis"] is not None
     assert result["grounded_authority_count"] == 0
-    assert "will not invent authority" in result["coverage_notice"]
+    assert result["sections"]["your_rights"] == "Needs Georgia verification."
+    assert "general legal information" in prompt
+    assert "MUST NOT invent a citation" in prompt
+    assert "will not invent" in result["coverage_notice"]
 
 
-def test_talk_to_me_rejects_negative_authority(monkeypatch):
+def test_talk_to_me_rejects_negative_authority_as_verified_support_but_still_answers(monkeypatch):
     monkeypatch.setattr(gla, "search_internal", lambda *args, **kwargs: {
         "hits": [verified_hit(currency_status="overruled", negative_treatment=["overruled"])],
         "coverage_notice": "indexed",
     })
-    called = False
+    captured = {}
 
     def fake_ai(prompt):
-        nonlocal called
-        called = True
-        return "should not run"
+        captured["prompt"] = prompt
+        return "general answer"
 
     result = gla.grounded_legal_response("Can they search this?", "talk_to_me", fake_ai)
-    assert called is False
+    assert result["analysis"] == "general answer"
     assert result["grounded_authority_count"] == 0
+    assert "Example Citation" not in captured["prompt"]
 
 
 def test_unknown_status_is_exposed_to_ai_not_upgraded(monkeypatch):
