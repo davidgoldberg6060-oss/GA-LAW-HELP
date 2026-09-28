@@ -40,7 +40,8 @@ def _legal_status(r):
  if not isinstance(negative,list):negative=[]
  return {'currency_status':value('currency_status'),'precedential_status':value('precedential_status'),'status_checked_at':checked,'status_source_url':status_source,'superseded_by':str(raw.get('superseded_by') or r.get('superseded_by') or '').strip() or None,'negative_treatment':[str(x) for x in negative if str(x).strip()]}
 def _metadata(r,corpus):
- return {'record_type':{'cases':'case','statutes':'statute','motions_rules':'rule_or_motion','law_enforcement':'law_enforcement_authority'}.get(corpus,corpus),'court':_clean(r,'court'),'docket_number':_clean(r,'docket_number','case_number'),'decision_date':_clean(r,'decision_date','date_decided','opinion_date','filed_date'),'section_number':_clean(r,'section_number','code_section'),'effective_date':_clean(r,'effective_date'),'jurisdiction':_clean(r,'jurisdiction') or 'Georgia'}
+ case_number=_clean(r,'case_number','docket_number') if corpus=='cases' else None
+ return {'record_type':{'cases':'case','statutes':'statute','motions_rules':'rule_or_motion','law_enforcement':'law_enforcement_authority'}.get(corpus,corpus),'court':_clean(r,'court'),'case_number':case_number,'docket_number':_clean(r,'docket_number','case_number'),'decision_date':_clean(r,'decision_date','date_decided','opinion_date','filed_date'),'section_number':_clean(r,'section_number','code_section'),'effective_date':_clean(r,'effective_date'),'jurisdiction':_clean(r,'jurisdiction') or 'Georgia'}
 def _identifier_score(query,r):
  q=_normalize(query)
  if not q:return 0.0
