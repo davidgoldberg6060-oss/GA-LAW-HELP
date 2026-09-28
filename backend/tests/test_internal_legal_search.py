@@ -50,16 +50,7 @@ def test_case_lookup_exact_section_preserves_native_metadata(tmp_path, monkeypat
     monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
     _write(tmp_path / "georgia_supreme_opinions.jsonl", [])
     _write(tmp_path / "georgia_court_of_appeals.jsonl", [])
-    _write(tmp_path / "georgia_statutes.jsonl", [{
-        "heading":"Sample Georgia statute",
-        "section_number":"O.C.G.A. § 16-8-2",
-        "citation":"O.C.G.A. § 16-8-2",
-        "text":"Sample theft statute text for retrieval testing only.",
-        "source_url":"https://example.gov/statute",
-        "verification_status":"verified",
-        "effective_date":"2026-01-01",
-        "jurisdiction":"Georgia",
-    }])
+    _write(tmp_path / "georgia_statutes.jsonl", [{"heading":"Sample Georgia statute","section_number":"O.C.G.A. § 16-8-2","citation":"O.C.G.A. § 16-8-2","text":"Sample theft statute text for retrieval testing only.","source_url":"https://example.gov/statute","verification_status":"verified","effective_date":"2026-01-01","jurisdiction":"Georgia"}])
     _write(tmp_path / "georgia_rules_motions.jsonl", [])
     _write(tmp_path / "law_enforcement_authorities.jsonl", [])
     result=legal_search.search_internal("16-8-2", "case_lookup")
@@ -70,6 +61,40 @@ def test_case_lookup_exact_section_preserves_native_metadata(tmp_path, monkeypat
     assert hit["effective_date"] == "2026-01-01"
     assert hit["jurisdiction"] == "Georgia"
     assert hit["verification_status"] == "verified"
+
+
+def test_ocga_format_variants_resolve_same_statute(tmp_path, monkeypatch):
+    _fixture_corpus(tmp_path, monkeypatch)
+    for query in ("O.C.G.A. § 16-7-1", "OCGA 16-7-1", "16-7-1"):
+        result=legal_search.search_internal(query, "case_lookup")
+        assert result["hits"]
+        assert result["hits"][0]["citation"] == "O.C.G.A. § 16-7-1"
+
+
+def test_case_lookup_exact_docket_number_prioritizes_matching_case(tmp_path, monkeypatch):
+    monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
+    _write(tmp_path / "georgia_supreme_opinions.jsonl", [
+        {"title":"Different v. State","citation":"320 Ga. 10","docket_number":"S26A0001","text":"appeal criminal judgment","verification_status":"verified"},
+        {"title":"Target v. State","citation":"321 Ga. 20","docket_number":"S26A0421","text":"appeal criminal judgment","verification_status":"verified"},
+    ])
+    _empty_supporting_corpora(tmp_path)
+    result=legal_search.search_internal("S26A0421", "case_lookup")
+    assert result["hits"]
+    assert result["hits"][0]["title"] == "Target v. State"
+    assert result["hits"][0]["docket_number"] == "S26A0421"
+
+
+def test_case_lookup_exact_case_number_prioritizes_matching_case(tmp_path, monkeypatch):
+    monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
+    _write(tmp_path / "georgia_supreme_opinions.jsonl", [
+        {"title":"First v. State","citation":"320 Ga. 11","case_number":"A26A0100","text":"criminal appeal","verification_status":"verified"},
+        {"title":"Second v. State","citation":"320 Ga. 12","case_number":"A26A0999","text":"criminal appeal","verification_status":"verified"},
+    ])
+    _empty_supporting_corpora(tmp_path)
+    result=legal_search.search_internal("A26A0999", "case_lookup")
+    assert result["hits"]
+    assert result["hits"][0]["title"] == "Second v. State"
+    assert result["hits"][0]["case_number"] == "A26A0999"
 
 
 def test_missing_legal_status_is_preserved_as_unknown_not_invented(tmp_path, monkeypatch):
@@ -111,10 +136,7 @@ def test_long_question_rejects_single_weak_token_match(tmp_path, monkeypatch):
 
 def test_verified_authority_outranks_equivalent_unverified_authority(tmp_path, monkeypatch):
     monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
-    _write(tmp_path / "georgia_supreme_opinions.jsonl", [
-        {"title":"Unverified Search Case","text":"probable cause search warrant","citation":"1 Ga. 1"},
-        {"title":"Verified Search Case","text":"probable cause search warrant","citation":"2 Ga. 2","verification_status":"verified"},
-    ])
+    _write(tmp_path / "georgia_supreme_opinions.jsonl", [{"title":"Unverified Search Case","text":"probable cause search warrant","citation":"1 Ga. 1"},{"title":"Verified Search Case","text":"probable cause search warrant","citation":"2 Ga. 2","verification_status":"verified"}])
     _empty_supporting_corpora(tmp_path)
     result = legal_search.search_internal("probable cause search warrant", "case_analysis")
     assert result["hits"][0]["title"] == "Verified Search Case"
@@ -124,11 +146,7 @@ def test_verified_authority_outranks_equivalent_unverified_authority(tmp_path, m
 
 def test_source_urls_must_be_https(tmp_path, monkeypatch):
     monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
-    _write(tmp_path / "georgia_supreme_opinions.jsonl", [
-        {"title":"Unsafe URL Case","text":"probable cause","source_url":"http://example.com/case"},
-        {"title":"Script URL Case","text":"probable cause","source_url":"javascript:alert(1)"},
-        {"title":"Safe URL Case","text":"probable cause","source_url":"https://example.com/case"},
-    ])
+    _write(tmp_path / "georgia_supreme_opinions.jsonl", [{"title":"Unsafe URL Case","text":"probable cause","source_url":"http://example.com/case"},{"title":"Script URL Case","text":"probable cause","source_url":"javascript:alert(1)"},{"title":"Safe URL Case","text":"probable cause","source_url":"https://example.com/case"}])
     _empty_supporting_corpora(tmp_path)
     result = legal_search.search_internal("probable cause", "case_analysis")
     by_title = {hit["title"]: hit for hit in result["hits"]}
