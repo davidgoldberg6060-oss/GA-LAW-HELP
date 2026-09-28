@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from backend.app.ingestion.models import LegalStatus
-from backend.app.ingestion.persistence import _merge_status
+from app.ingestion.models import LegalStatus
+from app.ingestion.persistence import _merge_status
 
 
 class AuthorityStub:
