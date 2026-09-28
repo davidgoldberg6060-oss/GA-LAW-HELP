@@ -67,6 +67,19 @@ class OpinionIndex(HTMLParser):
         self.current_text = []
 
 
+def _validated_unique_opinions(opinions: list[Opinion]) -> list[Opinion]:
+    """Deduplicate repeated links but reject conflicting provenance for a docket."""
+    by_url: dict[str, Opinion] = {}
+    docket_urls: dict[str, set[str]] = {}
+    for item in opinions:
+        by_url.setdefault(item.url, item)
+        docket_urls.setdefault(item.docket, set()).add(item.url)
+    conflicts = sorted(docket for docket, urls in docket_urls.items() if len(urls) > 1)
+    if conflicts:
+        raise ValueError("Ambiguous court index: docket appears at multiple PDF URLs: " + ", ".join(conflicts))
+    return list(by_url.values())
+
+
 def discover(year: int, transport=production_transport) -> list[Opinion]:
     if not 2017 <= year <= 2100:
         raise ValueError("Select a year in the court's published online archive")
@@ -83,7 +96,7 @@ def discover(year: int, transport=production_transport) -> list[Opinion]:
     parser.feed(response.body.decode("utf-8", errors="replace"))
     if not parser.opinions:
         raise ValueError("No opinion PDFs discovered; inspect the index layout")
-    return list({item.url: item for item in parser.opinions}.values())
+    return _validated_unique_opinions(parser.opinions)
 
 
 def main(argv: list[str] | None = None) -> int:
