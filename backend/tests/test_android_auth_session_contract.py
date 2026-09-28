@@ -15,13 +15,14 @@ def test_tokens_are_kept_in_encrypted_preferences():
 
 def test_unauthorized_request_refreshes_once_only():
     source = API.read_text()
-    assert 'if (code == 401 && retry && refreshAccess()) return execute(path, method, body, false)' in source
-    assert 'fun me(): JSONObject = JSONObject(execute("/me"))' in source
+    compact = ''.join(source.split())
+    assert 'if(code==401&&retry&&refreshAccess())returnexecute(path,method,body,false)' in compact
+    assert 'funme()=JSONObject(execute("/me"))' in compact
 
 
 def test_logout_revokes_refresh_token_then_clears_local_session():
     source = API.read_text()
-    assert 'execute("/auth/logout", "POST"' in source
+    assert 'execute("/auth/logout","POST"' in ''.join(source.split())
     assert 'prefs.edit().clear().apply()' in source
 
 
