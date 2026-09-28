@@ -26,6 +26,7 @@ def evidence(*, url="https://www.gasupreme.us/opinion", verification="VERIFIED",
         status_source_url="https://www.gasupreme.us/status" if checked else None,
     )
     return SourceDocument(
+        source_key="ga_supreme_opinions",
         url=url,
         title="Official authority",
         body=b"official source text",
