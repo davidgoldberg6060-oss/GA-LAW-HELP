@@ -1,4 +1,4 @@
-"""Grounded Case Analysis / Talk to Me response construction."""
+"""Georgia Case Analysis / Talk to Me response construction."""
 from __future__ import annotations
 import re
 from .internal_legal_search import search_internal
@@ -6,117 +6,85 @@ from .internal_legal_search import search_internal
 VERIFIED={"verified","official","validated","confirmed"}
 NEGATIVE={"overruled","vacated","superseded","withdrawn","repealed"}
 SUPPORTED_MODES={"case_analysis","talk_to_me","rights","motions"}
-TALK_SECTIONS=(
-    ("what_appears_to_be_happening","WHAT APPEARS TO BE HAPPENING"),
-    ("safest_immediate_steps","SAFEST IMMEDIATE STEPS"),
-    ("your_rights","YOUR RIGHTS"),
-    ("law_enforcement_limits","WHAT LAW ENFORCEMENT MAY / MAY NOT DO"),
-    ("lawful_things_to_say_or_do","WHAT TO SAY OR DO"),
-    ("verified_georgia_authority","VERIFIED GEORGIA AUTHORITY"),
-    ("important_limitations","IMPORTANT LIMITATIONS"),
-)
-CASE_ANALYSIS_SECTIONS=(
-    ("facts_to_verify","FACTS TO VERIFY"),
-    ("legal_issues","LEGAL ISSUES"),
-    ("prosecution_arguments","PROSECUTION ARGUMENTS"),
-    ("defense_arguments","DEFENSE ARGUMENTS"),
-    ("possible_motions","POSSIBLE MOTIONS"),
-    ("practical_next_steps","PRACTICAL NEXT STEPS"),
-    ("verified_georgia_authority","VERIFIED GEORGIA AUTHORITY"),
-    ("important_limitations","IMPORTANT LIMITATIONS"),
-)
+TALK_SECTIONS=(("what_appears_to_be_happening","WHAT APPEARS TO BE HAPPENING"),("safest_immediate_steps","SAFEST IMMEDIATE STEPS"),("your_rights","YOUR RIGHTS"),("law_enforcement_limits","WHAT LAW ENFORCEMENT MAY / MAY NOT DO"),("lawful_things_to_say_or_do","WHAT TO SAY OR DO"),("verified_georgia_authority","GEORGIA LAW"),("important_limitations","IMPORTANT LIMITATIONS"))
+CASE_ANALYSIS_SECTIONS=(("facts_to_verify","FACTS TO CHECK"),("legal_issues","LEGAL ISSUES"),("prosecution_arguments","PROSECUTION ARGUMENTS"),("defense_arguments","DEFENSE ARGUMENTS"),("possible_motions","POSSIBLE MOTIONS"),("practical_next_steps","PRACTICAL NEXT STEPS"),("verified_georgia_authority","GEORGIA LAW"),("important_limitations","IMPORTANT LIMITATIONS"))
 
 def _is_traceable(hit:dict)->bool:
     status=str(hit.get("verification_status") or "").strip().lower();citation=str(hit.get("citation") or "").strip();source_url=str(hit.get("source_url") or "").strip()
     return status in VERIFIED and bool(citation) and source_url.startswith("https://")
-
 def _is_negatively_treated(hit:dict)->bool:
     currency=str(hit.get("currency_status") or "unknown").strip().lower();precedent=str(hit.get("precedential_status") or "unknown").strip().lower();treatment=hit.get("negative_treatment") or []
-    if isinstance(treatment,str): treatment=[treatment]
-    words={str(x).strip().lower() for x in treatment};return currency in NEGATIVE or precedent in NEGATIVE or bool(words & NEGATIVE)
-
-def _verified_hits(result:dict)->list[dict]: return [h for h in result.get("hits",[]) if _is_traceable(h) and not _is_negatively_treated(h)]
+    if isinstance(treatment,str):treatment=[treatment]
+    words={str(x).strip().lower() for x in treatment};return currency in NEGATIVE or precedent in NEGATIVE or bool(words&NEGATIVE)
+def _verified_hits(result:dict)->list[dict]:return[h for h in result.get("hits",[]) if _is_traceable(h) and not _is_negatively_treated(h)]
 def _authority_context(hits:list[dict])->str:
-    blocks=[]
-    for index,hit in enumerate(hits,1):
-        blocks.append(f"[{index}] {hit.get('title') or 'Legal authority'}\nCitation: {hit.get('citation')}\nCorpus: {hit.get('corpus') or 'unknown'}\nVerification: {hit.get('verification_status')}\nCurrency: {hit.get('currency_status') or 'unknown'}\nPrecedential status: {hit.get('precedential_status') or 'unknown'}\nStatus checked at: {hit.get('status_checked_at') or 'not recorded'}\nStatus source: {hit.get('status_source_url') or 'not recorded'}\nStored official/source URL: {hit.get('source_url')}\nStored excerpt: {hit.get('excerpt') or ''}")
-    return "\n\n".join(blocks)
+    return "\n\n".join(f"[{i}] {h.get('title') or 'Georgia legal authority'}\nCitation: {h.get('citation')}\nSource: {h.get('source_url')}\nExcerpt: {h.get('excerpt') or ''}" for i,h in enumerate(hits,1))
 
 def _mode_instructions(mode:str)->str:
-    if mode=="talk_to_me": return """Use these exact response sections in this order:
-1. WHAT APPEARS TO BE HAPPENING — summarize the user's account without presenting allegations or speech recognition as established fact.
-2. SAFEST IMMEDIATE STEPS — short, calm actions focused on physical safety and lawful de-escalation. If this is a live police encounter, do not encourage resistance, evasion, obstruction, evidence destruction, interference, or deception.
-3. YOUR RIGHTS — explain supported rights. If no verified indexed authority was supplied, clearly label legal details as general information that still requires Georgia-authority verification.
-4. WHAT LAW ENFORCEMENT MAY / MAY NOT DO — separate supported powers or restrictions and avoid categorical claims when authority is unavailable.
-5. WHAT TO SAY OR DO — lawful, non-confrontational options only.
-6. VERIFIED GEORGIA AUTHORITY — only supplied authorities actually relied on. If none were supplied, say that no matching verified indexed authority was found; never invent one.
-7. IMPORTANT LIMITATIONS — missing facts, uncertain transcription, unknown legal status, or authority that still needs verification.
-Keep urgent guidance concise enough to read during a live encounter. Do not tell the user that recording is lawful unless supplied authority establishes it for the described circumstances."""
-    if mode=="case_analysis": return """Use these exact response sections in this order:
-1. FACTS TO VERIFY — separate the user's allegations from facts/documents that should be confirmed. Do not assume disputed facts are true.
-2. LEGAL ISSUES — identify legal issues reasonably raised by the supplied facts. When verified indexed authority is unavailable, label legal details as general information requiring Georgia-authority verification.
-3. PROSECUTION ARGUMENTS — strongest reasonable prosecution positions; do not invent evidence.
-4. DEFENSE ARGUMENTS — strongest reasonable defense positions; distinguish factual defenses from legal defenses.
-5. POSSIBLE MOTIONS — identify motions that may be relevant to the described facts, but do not say a motion should be filed or is legally supported unless verified authority and the record support it.
-6. PRACTICAL NEXT STEPS — evidence/documents to preserve or obtain, questions for counsel, deadlines/issues to verify, and lawful preparation steps. Never invent a deadline.
-7. VERIFIED GEORGIA AUTHORITY — only supplied [number] authorities actually relied on. If none were supplied, explicitly say so; never invent a citation.
-8. IMPORTANT LIMITATIONS — missing facts, unresolved conflicts, unknown currency/precedential status, and matters requiring Georgia counsel or court-record review.
-Do not promise dismissal, suppression, acquittal, sentence reduction, or any other outcome."""
-    return "Clearly separate user facts, general legal information, verified authority-backed conclusions, counterarguments/limitations, and practical next steps. Never invent a citation or legal authority."
+    if mode=="talk_to_me":return """Use these exact sections in order:
+1. WHAT APPEARS TO BE HAPPENING — briefly explain the situation described by the user.
+2. SAFEST IMMEDIATE STEPS — calm, practical steps that prioritize physical safety and lawful de-escalation. During a live police encounter never encourage resistance, evasion, obstruction, interference, deception, or evidence destruction.
+3. YOUR RIGHTS — explain the rights relevant to the situation in clear language.
+4. WHAT LAW ENFORCEMENT MAY / MAY NOT DO — explain important legal limits and powers relevant to the described interaction. Avoid categorical claims when facts or law materially depend on circumstances.
+5. WHAT TO SAY OR DO — give lawful, non-confrontational options and useful phrases the person can use.
+6. GEORGIA LAW — explain the Georgia law relevant to the question. Use supplied authorities when available. Do not invent a statute, case, citation, deadline, sentence, or rule.
+7. IMPORTANT LIMITATIONS — briefly identify only missing facts or uncertainties that could materially change the answer.
+Keep urgent guidance concise enough to read during an encounter. The purpose is to help the user understand rights, law-enforcement limits, and safe lawful choices—not to refuse ordinary legal questions because the internal library lacks a matching document."""
+    if mode=="case_analysis":return """Use these exact sections in order:
+1. FACTS TO CHECK — identify disputed or missing facts that matter to the legal analysis.
+2. LEGAL ISSUES — explain the legal issues raised by the user's facts in understandable language.
+3. PROSECUTION ARGUMENTS — explain the strongest reasonable prosecution positions without inventing evidence.
+4. DEFENSE ARGUMENTS — explain reasonable factual and legal defenses raised by the facts.
+5. POSSIBLE MOTIONS — explain motions that may be relevant and what each would try to accomplish. Do not promise that a motion will succeed.
+6. PRACTICAL NEXT STEPS — evidence to preserve or obtain, questions for counsel, court preparation, and issues/deadlines to investigate. Never invent a deadline.
+7. GEORGIA LAW — explain applicable Georgia law and cite supplied authority when available. Never invent a case, statute, citation, sentence, deadline, or procedural rule.
+8. IMPORTANT LIMITATIONS — briefly identify missing facts or unresolved issues that could materially change the analysis.
+The purpose is to help the user understand the case and prepare: charges, elements, defenses, motions, evidence issues, constitutional issues, sentencing exposure when known, and useful questions or arguments to discuss with counsel. Do not promise dismissal, suppression, acquittal, or sentence reduction."""
+    return "Answer the user's legal question directly and helpfully. Explain relevant Georgia law, rights, practical next steps, and material uncertainties. Never invent legal authority or guarantee an outcome."
 
 def _extract_sections(analysis:str,spec:tuple)->dict:
-    if not analysis:return {}
+    if not analysis:return{}
     positions=[]
     for key,label in spec:
-        match=re.search(rf"(?im)^\s*(?:\d+[.)]\s*)?{re.escape(label)}\s*(?:[:—-]\s*)?",analysis)
-        if match:positions.append((match.start(),match.end(),key))
+        m=re.search(rf"(?im)^\s*(?:\d+[.)]\s*)?{re.escape(label)}\s*(?:[:—-]\s*)?",analysis)
+        if m:positions.append((m.start(),m.end(),key))
     positions.sort()
-    if len(positions)<2:return {}
-    sections={}
+    if len(positions)<2:return{}
+    out={}
     for i,(_,end,key) in enumerate(positions):
         stop=positions[i+1][0] if i+1<len(positions) else len(analysis);value=analysis[end:stop].strip()
-        if value:sections[key]=value
-    return sections
-
-def _talk_sections(analysis:str)->dict:return _extract_sections(analysis,TALK_SECTIONS)
-def _case_analysis_sections(analysis:str)->dict:return _extract_sections(analysis,CASE_ANALYSIS_SECTIONS)
+        if value:out[key]=value
+    return out
 
 def grounded_legal_response(query:str,mode:str,ask_ai)->dict:
-    if mode not in SUPPORTED_MODES:raise ValueError("Unsupported grounded legal-assistant mode.")
-    retrieval=search_internal(query,mode,12);verified=_verified_hits(retrieval)
-    authority_context=_authority_context(verified) if verified else "No matching traceable verified indexed Georgia authority was retrieved for this question."
-    grounding_rule=(
-        "Base every material Georgia-law conclusion only on the authorities supplied above."
-        if verified else
-        "No verified indexed Georgia authority is available for this response. You may still answer the user's ordinary legal question with useful general legal information, issue-spotting, and practical questions to discuss with counsel, but you MUST NOT present a Georgia-specific legal proposition as verified, MUST NOT invent a citation/case/statute/rule/deadline/sentence, and MUST clearly identify what requires Georgia-authority verification."
-    )
-    prompt=f"""GA.LAW.HELP legal analysis request.
+    if mode not in SUPPORTED_MODES:raise ValueError("Unsupported legal-assistant mode.")
+    retrieval=search_internal(query,mode,12);authorities=_verified_hits(retrieval)
+    authority_context=_authority_context(authorities) if authorities else "No matching source excerpt is supplied. Answer the ordinary legal question from general legal knowledge, but do not fabricate a Georgia citation or exact rule you are unsure of."
+    prompt=f"""GA.LAW.HELP assistant request.
 Mode: {mode}
 
-USER-SUPPLIED FACTS OR QUESTION (not independently verified; may include speech-to-text transcription errors):
+USER'S QUESTION OR DESCRIPTION:
 {query}
 
-TRACEABLE VERIFIED INDEXED AUTHORITIES AVAILABLE FOR THIS RESPONSE:
+GEORGIA LEGAL SOURCE MATERIAL AVAILABLE TO CITE:
 {authority_context}
 
-Rules for this response:
-- Treat the user's narrative as allegations/facts to be verified, not established facts.
-- {grounding_rule}
-- Cite only supplied authorities by [number] and stored citation; never create a citation, case, statute, rule, deadline, sentence, or procedural requirement that is not supplied.
-- Never describe an authority as current, binding, controlling, or precedential unless its supplied status metadata establishes that proposition.
-- If Currency or Precedential status is unknown, explicitly label that limitation; do not fill it from memory.
-- Do not predict or guarantee an outcome.
-- For a live police encounter, prioritize physical safety and do not encourage resistance, evasion, obstruction, evidence destruction, interference, or deception.
-- Never claim to observe, hear, identify, or infer facts that were not actually provided.
+Core role:
+- Help the user understand Georgia law and the legal system in practical, plain language.
+- In case analysis, identify charges/issues, elements when known, defenses, prosecution weaknesses, evidence and constitutional issues, possible motions, court preparation, and useful matters to raise with counsel.
+- During law-enforcement interactions, help the user understand rights, what officers may and may not do, and safe lawful choices.
+- Answer the question directly even when the internal legal library has no matching document. Do not make source availability the focus of the response.
+- Treat disputed factual allegations as the user's account rather than established fact.
+- Use supplied Georgia sources when relevant. Never invent a case, statute, citation, rule, deadline, sentence, or procedural requirement.
+- Do not guarantee legal outcomes.
+- During a live police encounter prioritize physical safety; never encourage resistance, evasion, obstruction, interference, deception, or evidence destruction.
+- Never claim to see, hear, or know facts the user did not provide.
 
-MODE-SPECIFIC FORMAT:
+RESPONSE FORMAT:
 {_mode_instructions(mode)}
 """
     analysis=ask_ai(prompt)
-    coverage_notice=retrieval.get("coverage_notice")
-    if not verified:
-        coverage_notice="No matching traceable verified indexed Georgia authority was found. The AI may provide clearly labeled general legal information and issue-spotting, but GA.LAW.HELP will not invent or present an unverified citation as governing Georgia law."
-    response={"mode":mode,"analysis":analysis,"authorities":retrieval.get("hits",[]),"grounded_authority_count":len(verified),"coverage_notice":coverage_notice}
-    if mode=="talk_to_me":response["sections"]=_talk_sections(analysis)
-    elif mode=="case_analysis":response["sections"]=_case_analysis_sections(analysis)
+    response={"mode":mode,"analysis":analysis,"authorities":retrieval.get("hits",[]),"grounded_authority_count":len(authorities),"coverage_notice":None}
+    if mode=="talk_to_me":response["sections"]=_extract_sections(analysis,TALK_SECTIONS)
+    elif mode=="case_analysis":response["sections"]=_extract_sections(analysis,CASE_ANALYSIS_SECTIONS)
     return response
