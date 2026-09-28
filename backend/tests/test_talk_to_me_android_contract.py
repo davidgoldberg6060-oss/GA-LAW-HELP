@@ -9,8 +9,8 @@ FIELDS = (
     "what_appears_to_be_happening",
     "safest_immediate_steps",
     "your_rights",
-    "law_enforcement_limits",
-    "lawful_things_to_say_or_do",
+    "law_enforcement_may_may_not_do",
+    "what_to_say_or_do",
     "verified_georgia_authority",
     "important_limitations",
 )
