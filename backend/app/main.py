@@ -10,6 +10,7 @@ from .innocence_analysis_service import innocence_analysis_response
 from .internal_legal_search import search_internal
 from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload
+from .ingestion.coverage import corpus_coverage
 
 # Keep legacy route call sites testable through app.main.ask_openai while the
 # endpoint migration is incremental.
@@ -27,6 +28,14 @@ async def crawler_policy_headers(request, call_next):
 @app.get('/robots.txt', include_in_schema=False)
 def robots_policy():
     return PlainTextResponse('User-agent: *\nDisallow: /\n')
+
+@app.get('/internal/corpus/coverage')
+def internal_corpus_coverage(user=Depends(require_paid),db:Session=Depends(get_db)):
+    """Authenticated, auditable inventory of Georgia authority actually stored."""
+    report=corpus_coverage(db,jurisdiction='GA')
+    report['release_ready_for_complete_corpus_claim']=False
+    report['release_note']='Coverage is an inventory, not a completeness certification. Missing authority must never be fabricated.'
+    return report
 
 def _public_georgia_case_query(db: Session):
     return db.query(models.LegalAuthority).filter(
