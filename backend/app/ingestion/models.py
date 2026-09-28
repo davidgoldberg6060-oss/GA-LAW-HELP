@@ -38,6 +38,8 @@ class SourceDocument:
     content_type: Optional[str] = None
     metadata: dict = field(default_factory=dict)
     legal_status: LegalStatus = field(default_factory=LegalStatus)
+    # Searchable text derived from the original body; body retains the source bytes.
+    extracted_text: Optional[str] = None
 
 @dataclass(frozen=True)
 class Snapshot:
