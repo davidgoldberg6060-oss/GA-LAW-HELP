@@ -8,11 +8,12 @@ AUTH = Path('../android/app/src/main/java/help/galaw/standalone/AuthActivity.kt'
 
 def test_home_preserves_approved_screen_and_back_navigation():
     source = HOME.read_text()
-    assert 'ApprovedHomeScreen(this, homeActions).build()' in source
+    compact = ''.join(source.split())
+    assert 'ApprovedHomeScreen(this,homeActions).build()' in compact
     assert 'override fun onBackPressed()' in source
-    assert 'if (!onHome) showHome() else super.onBackPressed()' in source
+    assert 'if(!onHome)showHome()elsesuper.onBackPressed()' in compact
     assert 'contentDescription = "Back to Home"' in source
-    assert 'setOnClickListener { showHome() }' in source
+    assert 'setOnClickListener{showHome()}' in compact
 
 
 def test_visible_home_actions_are_wired():
@@ -30,8 +31,9 @@ def test_visible_home_actions_are_wired():
         'openEmergency() = showEmergency()',
         'openDocuments() = showDocuments()',
     ]
+    compact = ''.join(source.split())
     for action in expected:
-        assert action in source
+        assert ''.join(action.split()) in compact
 
 
 def test_async_errors_have_controlled_recovery():
