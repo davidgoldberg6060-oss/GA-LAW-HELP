@@ -26,31 +26,32 @@ def test_grounded_response_supplies_traceable_verified_authority_to_ai(monkeypat
     assert "current, binding, controlling, or precedential" in prompts[0]
 
 
-def test_unverified_only_results_never_trigger_ai_analysis(monkeypatch):
+def test_unverified_only_results_offer_general_guidance_without_citing_hit(monkeypatch):
     monkeypatch.setattr(service, "search_internal", lambda query, mode, limit: _retrieval("unverified"))
-    called = False
-    def ask_ai(_prompt):
-        nonlocal called
-        called = True
-        return "should not run"
+    prompts = []
+    def ask_ai(prompt):
+        prompts.append(prompt)
+        return "general guidance"
     result = service.grounded_legal_response("Question", "talk_to_me", ask_ai)
-    assert called is False
-    assert result["analysis"] is None
+    assert len(prompts) == 1
+    assert "123 Ga. 456" not in prompts[0]
+    assert "general legal information" in prompts[0]
+    assert result["analysis"] == "general guidance"
     assert result["grounded_authority_count"] == 0
-    assert "will not invent authority" in result["coverage_notice"]
+    assert "will not invent" in result["coverage_notice"]
 
 
 def test_verified_label_without_citation_is_not_grounding_authority(monkeypatch):
     monkeypatch.setattr(service, "search_internal", lambda query, mode, limit: _retrieval(citation=""))
     result = service.grounded_legal_response("Question", "rights", lambda prompt: "should not run")
-    assert result["analysis"] is None
+    assert result["analysis"] == "should not run"
     assert result["grounded_authority_count"] == 0
 
 
 def test_verified_label_without_https_source_is_not_grounding_authority(monkeypatch):
     monkeypatch.setattr(service, "search_internal", lambda query, mode, limit: _retrieval(source_url="http://example.invalid/opinion"))
     result = service.grounded_legal_response("Question", "motions", lambda prompt: "should not run")
-    assert result["analysis"] is None
+    assert result["analysis"] == "should not run"
     assert result["grounded_authority_count"] == 0
 
 
@@ -72,7 +73,7 @@ def test_unsupported_mode_is_rejected_before_ai(monkeypatch):
         raise AssertionError("unsupported grounded mode should fail")
 
 
-def test_overruled_currency_never_reaches_ai(monkeypatch):
+def test_overruled_currency_never_enters_grounding_context(monkeypatch):
     monkeypatch.setattr(service, "search_internal", lambda q, m, l: _retrieval(currency_status="overruled"))
     called = False
     def ask_ai(_prompt):
@@ -80,15 +81,15 @@ def test_overruled_currency_never_reaches_ai(monkeypatch):
         called = True
         return "bad"
     result = service.grounded_legal_response("Question", "case_analysis", ask_ai)
-    assert called is False
+    assert called is True
     assert result["grounded_authority_count"] == 0
-    assert "overruled" in result["coverage_notice"]
+    assert "No matching traceable verified" in result["coverage_notice"]
 
 
 def test_negative_treatment_list_blocks_authority(monkeypatch):
     monkeypatch.setattr(service, "search_internal", lambda q, m, l: _retrieval(negative_treatment=["vacated"]))
     result = service.grounded_legal_response("Question", "rights", lambda prompt: "bad")
-    assert result["analysis"] is None
+    assert result["analysis"] == "bad"
     assert result["grounded_authority_count"] == 0
 
 
