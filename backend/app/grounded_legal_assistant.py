@@ -10,8 +10,8 @@ TALK_SECTIONS=(
     ("what_appears_to_be_happening","WHAT APPEARS TO BE HAPPENING"),
     ("safest_immediate_steps","SAFEST IMMEDIATE STEPS"),
     ("your_rights","YOUR RIGHTS"),
-    ("law_enforcement_may_may_not_do","WHAT LAW ENFORCEMENT MAY / MAY NOT DO"),
-    ("what_to_say_or_do","WHAT TO SAY OR DO"),
+    ("law_enforcement_limits","WHAT LAW ENFORCEMENT MAY / MAY NOT DO"),
+    ("lawful_things_to_say_or_do","WHAT TO SAY OR DO"),
     ("verified_georgia_authority","VERIFIED GEORGIA AUTHORITY"),
     ("important_limitations","IMPORTANT LIMITATIONS"),
 )
