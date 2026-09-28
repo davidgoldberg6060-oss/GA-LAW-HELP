@@ -8,8 +8,9 @@ HOME = Path('../android/app/src/main/java/help/galaw/standalone/HomeActivity.kt'
 def test_failed_refresh_clears_dead_credentials():
     source = API.read_text()
     assert 'fun clearSession()' in source
-    assert 'if (code == 401 && retry && refreshAccess())' in source
-    assert 'if (code == 401 && !path.startsWith("/auth/")) expireSession()' in source
+    compact = ''.join(source.split())
+    assert 'if(code==401&&retry&&refreshAccess())' in compact
+    assert 'if(code==401&&!path.startsWith("/auth/"))expireSession()' in compact
 
 
 def test_expired_protected_session_redirects_to_login_and_finishes_activity():
