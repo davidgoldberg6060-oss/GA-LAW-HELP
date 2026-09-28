@@ -9,6 +9,9 @@ CORPUS=ROOT/'data'/'corpus'
 FILES={'cases':['georgia_supreme_opinions.jsonl','georgia_court_of_appeals.jsonl'],'statutes':['georgia_statutes.jsonl'],'motions_rules':['georgia_rules_motions.jsonl'],'law_enforcement':['law_enforcement_authorities.jsonl']}
 ROUTES={'case_lookup':['cases','statutes'],'case_analysis':['cases','statutes','motions_rules','law_enforcement'],'rights':['law_enforcement','cases','statutes'],'motions':['motions_rules','cases','statutes'],'talk_to_me':['law_enforcement','cases','statutes']}
 TOK=re.compile(r'[A-Za-z0-9§.-]+');STOP={'a','an','and','are','as','at','be','by','can','do','for','from','how','i','if','in','is','it','law','me','my','of','on','or','the','to','was','what','when','where','with'};NEGATIVE={'overruled','vacated','superseded','withdrawn','repealed'}
+def _normalize(s):
+ s=(s or '').lower().replace('§',' ').replace('ocga',' ').replace('o.c.g.a.',' ')
+ return re.sub(r'[^a-z0-9]+',' ',s).strip()
 def _tokens(s):return {x.lower() for x in TOK.findall(s or '') if len(x)>1 and x.lower() not in STOP}
 def _rows(path):
  if not path.exists():return
@@ -16,7 +19,7 @@ def _rows(path):
   for line in f:
    try:yield json.loads(line)
    except (json.JSONDecodeError,UnicodeDecodeError):continue
-def _body(r):return ' '.join(str(r.get(k) or '') for k in ('title','citation','docket_number','heading','text','authority_text','rule_text','name','topic','court','section_number','decision_date','effective_date'))
+def _body(r):return ' '.join(str(r.get(k) or '') for k in ('title','citation','docket_number','case_number','heading','text','authority_text','rule_text','name','topic','court','section_number','code_section','decision_date','effective_date'))
 def _source_url(value):
  value=str(value or '').strip()
  if not value:return None
@@ -38,6 +41,14 @@ def _legal_status(r):
  return {'currency_status':value('currency_status'),'precedential_status':value('precedential_status'),'status_checked_at':checked,'status_source_url':status_source,'superseded_by':str(raw.get('superseded_by') or r.get('superseded_by') or '').strip() or None,'negative_treatment':[str(x) for x in negative if str(x).strip()]}
 def _metadata(r,corpus):
  return {'record_type':{'cases':'case','statutes':'statute','motions_rules':'rule_or_motion','law_enforcement':'law_enforcement_authority'}.get(corpus,corpus),'court':_clean(r,'court'),'docket_number':_clean(r,'docket_number','case_number'),'decision_date':_clean(r,'decision_date','date_decided','opinion_date','filed_date'),'section_number':_clean(r,'section_number','code_section'),'effective_date':_clean(r,'effective_date'),'jurisdiction':_clean(r,'jurisdiction') or 'Georgia'}
+def _identifier_score(query,r):
+ q=_normalize(query)
+ if not q:return 0.0
+ fields=[r.get('citation'),r.get('section_number'),r.get('code_section'),r.get('docket_number'),r.get('case_number')]
+ normalized=[_normalize(str(v or '')) for v in fields if v]
+ if q in normalized:return 1.35
+ if any(q and q in value for value in normalized):return 0.8
+ return 0.0
 def search_internal(query,mode='case_analysis',limit=12):
  query=(query or '').strip()
  if not query:return {'query':'','mode':mode,'hits':[],'coverage_notice':'Enter facts, a charge, statute, motion, case, or rights question.'}
@@ -47,13 +58,13 @@ def search_internal(query,mode='case_analysis',limit=12):
  for corpus in ROUTES.get(mode,ROUTES['case_analysis']):
   for fn in FILES[corpus]:
    for r in _rows(CORPUS/fn):
-    body=_body(r);b=_tokens(body);matched=q&b
-    if not matched:continue
+    body=_body(r);b=_tokens(body);matched=q&b;identifier_score=_identifier_score(query,r)
+    if not matched and not identifier_score:continue
     coverage=len(matched)/len(q)
-    if len(q)>=4 and len(matched)<2 and coverage<0.5:continue
-    phrase=1.0 if query.lower() in body.lower() else 0.0;citation=str(r.get('citation') or r.get('section_number') or '').lower();citation_match=0.45 if citation and any(t in citation for t in q) else 0.0;title=' '.join(str(r.get(k) or '') for k in ('title','heading','name','topic')).lower();title_tokens=_tokens(title);title_match=(len(q&title_tokens)/len(q))*0.35 if title_tokens else 0.0;verification_bonus=0.1 if _verified(r) else 0.0;score=coverage+phrase+citation_match+title_match+verification_bonus;excerpt=re.sub(r'\s+',' ',body).strip()[:900]
+    if len(q)>=4 and len(matched)<2 and coverage<0.5 and not identifier_score:continue
+    normalized_query=_normalize(query);normalized_body=_normalize(body);phrase=1.0 if normalized_query and normalized_query in normalized_body else 0.0;citation=str(r.get('citation') or r.get('section_number') or '').lower();citation_match=0.45 if citation and any(t in citation for t in q) else 0.0;title=' '.join(str(r.get(k) or '') for k in ('title','heading','name','topic')).lower();title_tokens=_tokens(title);title_match=(len(q&title_tokens)/len(q))*0.35 if title_tokens else 0.0;verification_bonus=0.1 if _verified(r) else 0.0;score=coverage+phrase+citation_match+title_match+identifier_score+verification_bonus;excerpt=re.sub(r'\s+',' ',body).strip()[:900]
     hits.append({'corpus':corpus,'score':round(score,4),'title':r.get('title') or r.get('heading') or r.get('name') or r.get('topic') or r.get('citation') or 'Legal authority','citation':r.get('citation') or r.get('section_number'),'source_url':_source_url(r.get('source_url')),'verification_status':r.get('verification_status') or r.get('status') or 'unverified','excerpt':excerpt,**_metadata(r,corpus),**_legal_status(r)})
  hits.sort(key=lambda x:(x['score'],x['verification_status'].lower() in {'verified','official','validated','confirmed'}),reverse=True)
  notice='Results come from GA.LAW.HELP internal indexed public-law records. Missing/unindexed authority is not invented; currency and precedential status remain unknown unless the corpus stores explicit status-check evidence.'
- if not hits:notice='No matching indexed authority was found. Add specific legal facts, a charge, statute, motion, case name, or rights issue. Missing/unindexed authority is not invented.'
+ if not hits:notice='No matching indexed authority was found. Add specific legal facts, a charge, statute, motion, case name, citation, docket number, or rights issue. Missing/unindexed authority is not invented.'
  return {'query':query,'mode':mode,'hits':hits[:max(1,min(int(limit),50))],'coverage_notice':notice}
