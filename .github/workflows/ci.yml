@@ -28,7 +28,7 @@ jobs:
           EVIDENCE_DIR: ./ci-evidence
       - name: Build API image
         working-directory: .
-        run: docker build -t ga-law-help-api:ci ..
+        run: docker build -t ga-law-help-api:ci .
 
   frontend:
     runs-on: ubuntu-latest

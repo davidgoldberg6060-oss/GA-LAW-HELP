@@ -11,8 +11,11 @@ import argparse
 from dataclasses import replace
 from hashlib import sha256
 from html.parser import HTMLParser
+from io import BytesIO
 import json
 import os
+
+from pypdf import PdfReader
 from urllib.parse import urlparse
 
 from .acquisition import acquire_official_document
@@ -41,6 +44,29 @@ class _VisibleText(HTMLParser):
 
 
 def _visible_text(body: bytes, content_type: str) -> str:
+    if content_type == "application/pdf":
+        if not body.startswith(b"%PDF-") or len(body) > 8 * 1024 * 1024:
+            raise ValueError("Unsupported or oversized PDF")
+        try:
+            reader = PdfReader(BytesIO(body), strict=True)
+            if reader.is_encrypted or not 0 < len(reader.pages) <= 300:
+                raise ValueError("Encrypted, empty, or oversized PDF")
+            parts = []
+            total = 0
+            for page in reader.pages:
+                page_text = page.extract_text() or ""
+                total += len(page_text)
+                if total > 2_000_000:
+                    raise ValueError("Extracted PDF text exceeds size limit")
+                parts.append(page_text)
+        except ValueError:
+            raise
+        except Exception as exc:
+            raise ValueError("Unable to extract official PDF text") from exc
+        text = "\n".join(parts).strip()
+        if len(text) < 50:
+            raise ValueError("PDF has no usable searchable text; manual OCR review required")
+        return text
     text = body.decode("utf-8", errors="replace")
     if content_type in {"text/html", "application/xhtml+xml"}:
         parser = _VisibleText()
@@ -55,7 +81,10 @@ def prepare(source_key: str, url: str, title: str, citation: str):
         raise ValueError("A source verified citation is required")
     # A registered host alone does not establish the document's source type.
     expected_host = urlparse(source.url).hostname
-    if urlparse(url).hostname != expected_host:
+    allowed_hosts = {expected_host}
+    if source_key in {"ga_court_rules", "ga_supreme_rules"}:
+        allowed_hosts.add("assets.georgiacourts.gov")
+    if urlparse(url).hostname not in allowed_hosts:
         raise ValueError("Document host does not match the selected source")
     if url.rstrip("/") == source.url.rstrip("/"):
         raise ValueError("Select an individual authority document, not a source index")
@@ -64,10 +93,10 @@ def prepare(source_key: str, url: str, title: str, citation: str):
         source_key=source_key, url=url, title=title,
         transport=production_transport,
     )
-    if urlparse(document.url).hostname != expected_host:
+    if urlparse(document.url).hostname not in allowed_hosts:
         raise ValueError("Redirect changed the selected source host")
-    if document.content_type not in {"text/html", "text/plain", "application/xhtml+xml"}:
-        raise ValueError("Textual authority required; PDF extraction has not been reviewed")
+    if document.content_type not in {"text/html", "text/plain", "application/xhtml+xml", "application/pdf"}:
+        raise ValueError("Unsupported authority document format")
     normalized_text = " ".join(_visible_text(document.body, document.content_type).split())
     normalized_citation = " ".join(citation.split())
     if normalized_citation.casefold() not in normalized_text.casefold():
@@ -76,6 +105,7 @@ def prepare(source_key: str, url: str, title: str, citation: str):
     # current or repealed. Preserve provenance but defer status adjudication.
     document = replace(
         document,
+        extracted_text=normalized_text,
         legal_status=replace(
             document.legal_status,
             currency_status="unknown",

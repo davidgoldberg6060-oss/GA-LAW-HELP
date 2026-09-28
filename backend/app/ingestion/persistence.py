@@ -95,7 +95,7 @@ def upsert_authority_document(
         .filter(LegalAuthority.jurisdiction == jurisdiction, LegalAuthority.citation == citation)
         .one_or_none()
     )
-    text = document.body.decode("utf-8", errors="replace")
+    text = document.extracted_text if document.extracted_text is not None else document.body.decode("utf-8", errors="replace")
     digest = sha256(document.body).hexdigest()
 
     if authority is None:

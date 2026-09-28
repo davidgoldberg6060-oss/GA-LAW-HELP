@@ -19,16 +19,16 @@ def test_live_motion_screen_uses_verified_service_and_audits():
 
 def test_approved_home_shell_and_back_navigation_remain_present():
     source = HOME.read_text()
-    assert 'ApprovedHomeScreen(this, homeActions).build()' in source
+    assert 'ApprovedHomeScreen(this,homeActions).build()' in ''.join(source.split())
     assert 'override fun onBackPressed()' in source
-    assert 'if (!onHome) showHome() else super.onBackPressed()' in source
+    assert 'if(!onHome)showHome()elsesuper.onBackPressed()' in ''.join(source.split())
 
 
 def test_expired_session_has_local_cleanup_and_login_redirect():
     api = API.read_text()
     home = HOME.read_text()
     assert 'clearSession' in api
-    assert 'statusCode == 401' in home
+    assert 'if(code==401&&!path.startsWith("/auth/"))expireSession()' in ''.join(api.split())
     assert 'AuthActivity::class.java' in home
     assert 'finish()' in home
 

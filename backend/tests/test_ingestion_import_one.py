@@ -1,5 +1,9 @@
 from datetime import datetime, timezone
 import json
+from io import BytesIO
+
+from pypdf import PdfWriter
+from pypdf.generic import DictionaryObject, NameObject, DecodedStreamObject
 
 import pytest
 
@@ -54,10 +58,41 @@ def test_rejects_index_and_cross_source_documents(monkeypatch):
         import_one.prepare("ga_code", "https://georgiacourts.gov/rules/example", "Rule", CITATION)
 
 
-def test_rejects_pdf_until_text_extraction_is_reviewed(monkeypatch):
+def test_rejects_malformed_pdf(monkeypatch):
     monkeypatch.setattr(
         import_one, "production_transport",
         lambda _: fake_response(body=b"%PDF-1.7", content_type="application/pdf"),
     )
-    with pytest.raises(ValueError, match="Textual authority required"):
+    with pytest.raises(ValueError, match="Unable to extract official PDF text"):
         import_one.prepare("ga_code", URL, "Statute", CITATION)
+
+
+def test_extracts_official_pdf_and_preserves_original_hash(monkeypatch):
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=612, height=792)
+    font = DictionaryObject({
+        NameObject("/Type"): NameObject("/Font"),
+        NameObject("/Subtype"): NameObject("/Type1"),
+        NameObject("/BaseFont"): NameObject("/Helvetica"),
+    })
+    page[NameObject("/Resources")] = DictionaryObject({
+        NameObject("/Font"): DictionaryObject({NameObject("/F1"): writer._add_object(font)})
+    })
+    stream = DecodedStreamObject()
+    stream.set_data(b"BT /F1 12 Tf 72 720 Td (Uniform Superior Court Rules Rule 1 Preamble official Georgia rule text.) Tj ET")
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    output = BytesIO()
+    writer.write(output)
+    pdf = output.getvalue()
+    pdf_url = "https://assets.georgiacourts.gov/rules.pdf"
+    monkeypatch.setattr(
+        import_one, "production_transport",
+        lambda _: fake_response(url=pdf_url, body=pdf, content_type="application/pdf"),
+    )
+    item = import_one.prepare(
+        "ga_court_rules", pdf_url, "Uniform Superior Court Rules",
+        "Uniform Superior Court Rules",
+    )
+    assert item.document.body == pdf
+    assert item.document.extracted_text.startswith("Uniform Superior Court Rules")
+    assert item.document.legal_status.currency_status == "unknown"
