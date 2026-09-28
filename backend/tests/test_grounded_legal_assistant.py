@@ -28,14 +28,15 @@ def test_grounded_response_supplies_traceable_verified_authority_to_ai(monkeypat
 
 def test_unverified_only_results_offer_general_guidance_without_citing_hit(monkeypatch):
     monkeypatch.setattr(service, "search_internal", lambda query, mode, limit: _retrieval("unverified"))
-    called = False
-    def ask_ai(_prompt):
-        nonlocal called
-        called = True
-        return "should not run"
+    prompts = []
+    def ask_ai(prompt):
+        prompts.append(prompt)
+        return "general guidance"
     result = service.grounded_legal_response("Question", "talk_to_me", ask_ai)
-    assert called is True
-    assert result["analysis"] == "should not run"
+    assert len(prompts) == 1
+    assert "123 Ga. 456" not in prompts[0]
+    assert "general legal information" in prompts[0]
+    assert result["analysis"] == "general guidance"
     assert result["grounded_authority_count"] == 0
     assert "will not invent" in result["coverage_notice"]
 
