@@ -90,15 +90,17 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--year", type=int, required=True)
     parser.add_argument("--limit", type=int, default=25, help="Maximum PDFs per run (1-100)")
+    parser.add_argument("--offset", type=int, default=0, help="Skip this many index entries for a later batch")
     parser.add_argument("--pause", type=float, default=2.0, help="Seconds between court requests")
     parser.add_argument("--commit", action="store_true", help="Persist each validated document")
     args = parser.parse_args(argv)
-    if not 1 <= args.limit <= 100 or not 0.5 <= args.pause <= 30:
-        parser.error("Limit must be 1-100 and pause must be 0.5-30 seconds")
+    if not 1 <= args.limit <= 100 or args.offset < 0 or not 0.5 <= args.pause <= 30:
+        parser.error("Limit must be 1-100, offset nonnegative, and pause 0.5-30 seconds")
     opinions = discover(args.year)
     success = 0
     errors = 0
-    for opinion in opinions[:args.limit]:
+    batch = opinions[args.offset:args.offset + args.limit]
+    for opinion in batch:
         try:
             item = prepare("ga_supreme_opinions", opinion.url, opinion.title, opinion.docket)
             if args.commit:
@@ -121,8 +123,8 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"mode": "error", "year": args.year, "docket": opinion.docket,
                               "error_type": type(exc).__name__}), flush=True)
         time.sleep(args.pause)
-    print(json.dumps({"year": args.year, "discovered": len(opinions),
-                      "attempted": min(len(opinions), args.limit), "succeeded": success,
+    print(json.dumps({"year": args.year, "discovered": len(opinions), "offset": args.offset,
+                      "attempted": len(batch), "succeeded": success,
                       "failed": errors, "committed": args.commit}), flush=True)
     return 1 if errors else 0
 
