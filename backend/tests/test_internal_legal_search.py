@@ -46,6 +46,44 @@ def test_case_lookup_routes_only_cases_and_statutes(tmp_path, monkeypatch):
     assert any(hit["citation"] == "O.C.G.A. § 16-7-1" for hit in result["hits"])
 
 
+def test_case_lookup_exact_section_preserves_native_metadata(tmp_path, monkeypatch):
+    monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
+    _write(tmp_path / "georgia_supreme_opinions.jsonl", [])
+    _write(tmp_path / "georgia_court_of_appeals.jsonl", [])
+    _write(tmp_path / "georgia_statutes.jsonl", [{
+        "heading":"Sample Georgia statute",
+        "section_number":"O.C.G.A. § 16-8-2",
+        "citation":"O.C.G.A. § 16-8-2",
+        "text":"Sample theft statute text for retrieval testing only.",
+        "source_url":"https://example.gov/statute",
+        "verification_status":"verified",
+        "effective_date":"2026-01-01",
+        "jurisdiction":"Georgia",
+    }])
+    _write(tmp_path / "georgia_rules_motions.jsonl", [])
+    _write(tmp_path / "law_enforcement_authorities.jsonl", [])
+    result=legal_search.search_internal("16-8-2", "case_lookup")
+    assert result["hits"]
+    hit=result["hits"][0]
+    assert hit["record_type"] == "statute"
+    assert hit["section_number"] == "O.C.G.A. § 16-8-2"
+    assert hit["effective_date"] == "2026-01-01"
+    assert hit["jurisdiction"] == "Georgia"
+    assert hit["verification_status"] == "verified"
+
+
+def test_missing_legal_status_is_preserved_as_unknown_not_invented(tmp_path, monkeypatch):
+    monkeypatch.setattr(legal_search, "CORPUS", tmp_path)
+    _write(tmp_path / "georgia_supreme_opinions.jsonl", [{"title":"Status Test v. State","citation":"321 Ga. 1","text":"probable cause","source_url":"https://example.gov/case","verification_status":"verified"}])
+    _empty_supporting_corpora(tmp_path)
+    hit=legal_search.search_internal("probable cause", "case_lookup")["hits"][0]
+    assert hit["currency_status"] == "unknown"
+    assert hit["precedential_status"] == "unknown"
+    assert hit["status_checked_at"] is None
+    assert hit["status_source_url"] is None
+    assert hit["negative_treatment"] == []
+
+
 def test_rights_mode_can_retrieve_law_enforcement_authority(tmp_path, monkeypatch):
     _fixture_corpus(tmp_path, monkeypatch)
     result = legal_search.search_internal("traffic stop reasonable suspicion", "rights")
