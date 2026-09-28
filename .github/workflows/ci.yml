@@ -8,20 +8,27 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -r backend/requirements.txt pytest httpx
-      - run: python -m compileall -q backend/app
-      - run: pytest -q
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt pytest httpx
+      - run: python -m compileall -q app
+      - name: Run backend test suite
+        run: pytest -q
         env:
           JWT_SECRET: test-only-secret-at-least-32-characters
           DATABASE_URL: sqlite:///./ci.db
           EVIDENCE_DIR: ./ci-evidence
-      - run: docker build -t ga-law-help-api:ci .
+      - name: Build API image
+        working-directory: .
+        run: docker build -t ga-law-help-api:ci ..
 
   frontend:
     runs-on: ubuntu-latest
