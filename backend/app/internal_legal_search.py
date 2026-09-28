@@ -20,7 +20,7 @@ ROUTES={
  'talk_to_me':['law_enforcement','cases','statutes'],
 }
 TOK=re.compile(r'[A-Za-z0-9§.-]+')
-STOP={'a','an','and','are','as','at','be','by','can','do','for','from','how','i','if','in','is','it','me','my','of','on','or','the','to','was','what','when','where','with'}
+STOP={'a','an','and','are','as','at','be','by','can','do','for','from','how','i','if','in','is','it','law','me','my','of','on','or','the','to','was','what','when','where','with'}
 NEGATIVE={'overruled','vacated','superseded','withdrawn','repealed'}
 def _tokens(s): return {x.lower() for x in TOK.findall(s or '') if len(x)>1 and x.lower() not in STOP}
 def _rows(path):
@@ -83,4 +83,6 @@ def search_internal(query,mode='case_analysis',limit=12):
     legal_status=_legal_status(r)
     hits.append({'corpus':corpus,'score':round(score,4),'title':r.get('title') or r.get('heading') or r.get('name') or r.get('topic') or r.get('citation') or 'Legal authority','citation':r.get('citation'),'source_url':_source_url(r.get('source_url')),'verification_status':r.get('verification_status') or r.get('status') or 'unverified','excerpt':excerpt,**legal_status})
  hits.sort(key=lambda x:(x['score'],x['verification_status'].lower() in {'verified','official','validated','confirmed'}),reverse=True)
- return {'query':query,'mode':mode,'hits':hits[:max(1,min(int(limit),50))],'coverage_notice':'Results come from GA.LAW.HELP internal indexed public-law records. Missing/unindexed authority is not invented; currency and precedential status remain unknown unless the corpus stores explicit status-check evidence.'}
+ notice='Results come from GA.LAW.HELP internal indexed public-law records. Missing/unindexed authority is not invented; currency and precedential status remain unknown unless the corpus stores explicit status-check evidence.'
+ if not hits: notice='No matching indexed authority was found. Add specific legal facts, a charge, statute, motion, case name, or rights issue. Missing/unindexed authority is not invented.'
+ return {'query':query,'mode':mode,'hits':hits[:max(1,min(int(limit),50))],'coverage_notice':notice}
