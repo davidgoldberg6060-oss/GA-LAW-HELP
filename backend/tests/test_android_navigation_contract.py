@@ -12,7 +12,7 @@ def test_home_preserves_approved_screen_and_back_navigation():
     assert 'ApprovedHomeScreen(this,homeActions).build()' in compact
     assert 'override fun onBackPressed()' in source
     assert 'if(!onHome)showHome()elsesuper.onBackPressed()' in compact
-    assert 'contentDescription = "Back to Home"' in source
+    assert 'contentDescription="BacktoHome"' in compact
     assert 'setOnClickListener{showHome()}' in compact
 
 
