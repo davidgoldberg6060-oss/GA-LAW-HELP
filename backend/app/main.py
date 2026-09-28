@@ -52,6 +52,9 @@ def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):
     if not row: raise HTTPException(404,'Public Georgia case not found.')
     return {'case':public_case_payload(row,include_text=True),'coverage_notice':'Verify the opinion and current precedential status against the linked official source before legal reliance.'}
 
+# Remove only the legacy motion-screen registration before installing the
+# verified private implementation below. Public Georgia-case routes above are
+# deliberately self-contained and never read user-owned Case rows.
 for _route in list(app.router.routes):
     if getattr(_route,'path',None)=='/cases/{case_id}/motion-screen' and 'POST' in getattr(_route,'methods',set()): app.router.routes.remove(_route)
 
@@ -62,7 +65,8 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(require_paid),db:Se
     facts=('Case title: '+(case.title or '')+'\nCase number: '+(case.case_number or 'Not entered')+'\nGeorgia county: '+(case.county or 'Not entered')+'\nCase type: '+(case.case_type or 'Not entered')+'\nCurrent stage: '+(case.stage or 'Not entered')+'\nCase narrative: '+(case.narrative or 'Not entered'))
     if additional:facts+='\nAdditional user-supplied facts (not independently verified): '+additional
     if len(facts)>12000:facts=facts[:12000]+'\n[Case text truncated for analysis]'
-    try: response=motion_screen_response(db,facts,ask_openai)
+    try:
+        response=motion_screen_response(db, facts, ask_openai)
     except RuntimeError: raise HTTPException(503,'The motion screening assistant is temporarily unavailable.')
     audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit();return response
 
