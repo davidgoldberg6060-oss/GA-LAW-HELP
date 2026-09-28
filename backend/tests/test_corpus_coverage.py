@@ -49,3 +49,20 @@ def test_coverage_tracks_status_checks_and_negative_treatment():
     ]))
     assert report["verified_with_status_check"] == 1
     assert report["negative_treatment_records"] == 1
+
+
+def test_coverage_reports_actionable_stored_record_quality_gaps_without_estimating_missing_law():
+    report = corpus_coverage(DB([
+        authority(),
+        authority(status="UNVERIFIED", citation="", source_url="http://example.test/source"),
+        authority(currency_status="current", precedential_status="binding", status_checked_at="2026-09-28", status_source_url="https://www.gasupreme.us/status"),
+    ]))
+    gaps = report["quality_gaps"]
+    assert gaps["records_missing_citation"] == 1
+    assert gaps["records_missing_https_source"] == 1
+    assert gaps["records_not_verified"] == 1
+    assert gaps["verified_missing_status_check"] == 1
+    assert gaps["verified_unknown_currency"] == 1
+    assert gaps["verified_unknown_precedential_status"] == 1
+    assert report["completeness_claimed"] is False
+    assert "must not be interpreted as an estimate" in report["coverage_notice"]
