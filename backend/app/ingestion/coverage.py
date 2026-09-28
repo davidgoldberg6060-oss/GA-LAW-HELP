@@ -41,6 +41,34 @@ def _gap_summary(rows: list[LegalAuthority], verified: list[LegalAuthority]) -> 
     }
 
 
+def _remediation_queue(gaps: dict) -> list[dict]:
+    """Turn measured stored-record defects into a deterministic repair queue.
+
+    This prioritizes provenance before legal-status enrichment. It does not infer
+    that any record is valid law and does not estimate authorities absent from the
+    corpus.
+    """
+    plan = (
+        ("records_missing_https_source", "source_provenance", 10,
+         "Attach an HTTPS source URL from the stored source record before the authority can be treated as traceable."),
+        ("records_missing_citation", "citation_provenance", 20,
+         "Recover the citation from the source record; never synthesize or guess a citation."),
+        ("records_not_verified", "verification", 30,
+         "Verify against an authoritative stored source before allowing the record to support Georgia-law conclusions."),
+        ("verified_missing_status_check", "status_check", 40,
+         "Record a dated HTTPS status source before describing current treatment."),
+        ("verified_unknown_currency", "currency_status", 50,
+         "Determine currency from an authoritative status source; leave unknown when evidence is unavailable."),
+        ("verified_unknown_precedential_status", "precedential_status", 60,
+         "Determine precedential status from an authoritative source; leave unknown when evidence is unavailable."),
+    )
+    return [
+        {"priority": priority, "kind": kind, "records": int(gaps.get(key, 0)), "action": action}
+        for key, kind, priority, action in plan
+        if int(gaps.get(key, 0)) > 0
+    ]
+
+
 def corpus_coverage(db: Session, *, jurisdiction: str = "GA") -> dict:
     """Return auditable corpus counts and concrete quality gaps without claiming completeness."""
     rows = db.query(LegalAuthority).filter(LegalAuthority.jurisdiction == jurisdiction).all()
@@ -61,6 +89,7 @@ def corpus_coverage(db: Session, *, jurisdiction: str = "GA") -> dict:
         row for row in verified
         if row.status_checked_at is not None and str(row.status_source_url or "").startswith("https://")
     ]
+    gaps = _gap_summary(rows, verified)
     return {
         "jurisdiction": jurisdiction,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -71,11 +100,12 @@ def corpus_coverage(db: Session, *, jurisdiction: str = "GA") -> dict:
         "negative_treatment_records": len(negative),
         "by_authority_type": dict(sorted(by_type.items())),
         "by_verification_status": dict(sorted(by_status.items())),
-        "quality_gaps": _gap_summary(rows, verified),
+        "quality_gaps": gaps,
+        "remediation_queue": _remediation_queue(gaps),
         "completeness_claimed": False,
         "coverage_notice": (
             "Counts describe records currently stored in GA.LAW.HELP. They do not prove that "
             "every Georgia statute, rule, opinion, historical case, or later treatment is present. "
-            "Quality gaps describe stored-record metadata only and must not be interpreted as an estimate of missing Georgia law."
+            "Quality gaps and remediation priorities describe stored-record metadata only and must not be interpreted as an estimate of missing Georgia law."
         ),
     }
