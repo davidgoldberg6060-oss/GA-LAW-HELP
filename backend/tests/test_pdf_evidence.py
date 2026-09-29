@@ -7,11 +7,11 @@ from app.ingestion.models import LegalStatus, SourceDocument
 from app.ingestion.pdf_evidence import extract_official_pdf_text, resolve_official_pdf_georgia_citation
 
 
-def _document(body: bytes, *, verified: bool = True, content_type: str = "application/pdf"):
+def _document(body: bytes, *, verified: bool = True, content_type: str = "application/pdf", title: str = "Example"):
     return SourceDocument(
         source_key="georgia_supreme_court",
         url="https://www.gasupreme.us/wp-content/uploads/2026/01/example.pdf",
-        title="Example",
+        title=title,
         body=body,
         retrieved_at=datetime(2026, 9, 29, tzinfo=timezone.utc),
         content_type=content_type,
@@ -51,6 +51,5 @@ def test_blank_official_pdf_does_not_create_citation():
 
 
 def test_pdf_filename_or_title_never_becomes_citation():
-    document=_document(_blank_pdf())
-    document.title="321 Ga. 123"
+    document=_document(_blank_pdf(), title="321 Ga. 123")
     assert resolve_official_pdf_georgia_citation(document) is None
