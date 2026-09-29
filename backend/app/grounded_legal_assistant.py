@@ -2,6 +2,7 @@
 from __future__ import annotations
 import re
 from .internal_legal_search import search_internal
+from .authority_search_service import persisted_authority_hits
 
 VERIFIED={"verified","official","validated","confirmed"}
 NEGATIVE={"overruled","vacated","superseded","withdrawn","repealed"}
@@ -20,6 +21,17 @@ def _is_negatively_treated(hit:dict)->bool:
 def _verified_hits(result):return [h for h in result.get("hits",[]) if _is_traceable(h) and not _is_negatively_treated(h)]
 def _authority_context(hits):
  return "\n\n".join(f"[{i}] {h.get('title') or 'Legal authority'}\nCitation: {h.get('citation')}\nVerification: {h.get('verification_status')}\nCurrency: {h.get('currency_status') or 'unknown'}\nPrecedential status: {h.get('precedential_status') or 'unknown'}\nStatus checked at: {h.get('status_checked_at') or 'not recorded'}\nStatus source: {h.get('status_source_url') or 'not recorded'}\nStored official/source URL: {h.get('source_url')}\nStored excerpt: {h.get('excerpt') or ''}" for i,h in enumerate(hits,1))
+
+def _hybrid_retrieval(query,mode,db=None,limit=12):
+ result=search_internal(query,mode,limit)
+ if db is None:return result
+ persisted=persisted_authority_hits(db,query,limit=limit)
+ if not persisted:return result
+ seen={(str(h.get('citation') or '').lower(),str(h.get('source_url') or '')) for h in persisted}
+ file_hits=[h for h in result.get('hits',[]) if (str(h.get('citation') or '').lower(),str(h.get('source_url') or '')) not in seen]
+ result['hits']=(persisted+file_hits)[:limit]
+ result['coverage_notice']='Grounding includes verified authorities persisted by the internal Georgia ingestion pipeline plus indexed corpus records. Missing authority is not invented; unknown currency or precedential status remains explicitly unknown.'
+ return result
 
 def _mode_instructions(mode):
  if mode=="talk_to_me":return """Use exact headings: WHAT APPEARS TO BE HAPPENING; SAFEST IMMEDIATE STEPS; YOUR RIGHTS; WHAT LAW ENFORCEMENT MAY / MAY NOT DO; WHAT TO SAY OR DO; VERIFIED GEORGIA AUTHORITY; IMPORTANT LIMITATIONS. Prioritize safety. For a live police encounter, do not encourage resistance, evasion, obstruction, evidence destruction, interference, or deception. Treat speech-to-text transcription errors as possible and never claim to have heard facts not supplied. Do not claim recording is lawful unless supplied authority establishes it."""
@@ -42,9 +54,9 @@ def _extract_sections(analysis,spec):
   if value:out[key]=value
  return out
 
-def grounded_legal_response(query:str,mode:str,ask_ai)->dict:
+def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  if mode not in SUPPORTED_MODES:raise ValueError("Unsupported grounded legal-assistant mode.")
- retrieval=search_internal(query,mode,12);verified=_verified_hits(retrieval);context=_authority_context(verified) if verified else "No matching traceable verified indexed Georgia authority was retrieved for this question."
+ retrieval=_hybrid_retrieval(query,mode,db,12);verified=_verified_hits(retrieval);context=_authority_context(verified) if verified else "No matching traceable verified indexed Georgia authority was retrieved for this question."
  grounding="Base every material Georgia-law conclusion only on supplied authorities." if verified else "No verified indexed Georgia authority is available. You may give clearly labeled general legal information and issue-spotting, but MUST NOT present a Georgia-specific proposition as verified and MUST NOT invent a citation, case, statute, rule, deadline, sentence, or procedure."
  prompt=f"""GA.LAW.HELP legal analysis request.\nMode: {mode}\n\nUSER-SUPPLIED FACTS OR QUESTION (not independently verified; may include speech-to-text transcription errors):\n{query}\n\nTRACEABLE VERIFIED INDEXED AUTHORITIES:\n{context}\n\nRules:\n- Treat the user's narrative as allegations/facts to be verified, not established facts.\n- {grounding}\n- Cite only supplied authorities; never create a citation, case, statute, rule, deadline, sentence, or procedural requirement.\n- Never call authority current, binding, controlling, or precedential unless supplied status metadata establishes it.\n- If Currency or Precedential status is unknown, explicitly label that limitation; do not fill it from memory.\n- Do not predict or guarantee outcomes.\n- Never claim to observe or hear facts not provided.\n\nFORMAT:\n{_mode_instructions(mode)}"""
  analysis=ask_ai(prompt);notice=retrieval.get("coverage_notice")
