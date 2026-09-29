@@ -1,10 +1,26 @@
+from dataclasses import replace
 from datetime import datetime, timezone
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
+from app.database import Base
 from app.ingestion.models import LegalStatus, SourceDocument
 from app.ingestion.remediation_batch import run_remediation_batch
 from app.models import LegalAuthority
+
+
+@pytest.fixture
+def db():
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine)()
+    try:
+        yield session
+    finally:
+        session.close()
+        engine.dispose()
 
 
 def _evidence(*, citation_status="verified"):
@@ -53,7 +69,7 @@ def test_batch_isolates_bad_evidence_and_keeps_other_repairs(db):
 
     def loader(item):
         if item["authority_id"] == first.id:
-            bad = _evidence(); bad.url = "http://insecure.example/authority"
+            bad = replace(_evidence(), url="http://insecure.example/authority")
             return bad, "100 Ga. 1"
         if item["authority_id"] == second.id:
             return _evidence(), "100 Ga. 2"
