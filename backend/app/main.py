@@ -13,8 +13,6 @@ from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload
 from .ingestion.coverage import corpus_coverage
 
-# Keep legacy route call sites testable through app.main.ask_openai while the
-# endpoint migration is incremental.
 def _delegated_ask_openai(prompt: str):
     return ask_openai(prompt)
 
@@ -32,7 +30,6 @@ def robots_policy():
 
 @app.get('/internal/corpus/coverage')
 def internal_corpus_coverage(user=Depends(require_paid),db:Session=Depends(get_db)):
-    """Authenticated, auditable inventory of Georgia authority actually stored."""
     report=corpus_coverage(db,jurisdiction='GA')
     report['release_ready_for_complete_corpus_claim']=False
     report['release_note']='Coverage is an inventory, not a completeness certification. Missing authority must never be fabricated.'
@@ -62,9 +59,6 @@ def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):
     if not row: raise HTTPException(404,'Public Georgia case not found.')
     return {'case':public_case_payload(row,include_text=True),'coverage_notice':'Verify the opinion and current precedential status against the linked official source before legal reliance.'}
 
-# Remove only the legacy motion-screen registration before installing the
-# verified private implementation below. Public Georgia-case routes above are
-# deliberately self-contained and never read user-owned Case rows.
 for _route in list(app.router.routes):
     if getattr(_route,'path',None)=='/cases/{case_id}/motion-screen' and 'POST' in getattr(_route,'methods',set()): app.router.routes.remove(_route)
 
@@ -105,11 +99,11 @@ def internal_legal_search(body:dict,user=Depends(require_paid),db:Session=Depend
     return result
 
 @app.post('/internal/legal-assistant')
-def internal_grounded_legal_assistant(body:dict,user=Depends(require_paid)):
+def internal_grounded_legal_assistant(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     """AI analysis grounded only in verified records from the internal legal corpus."""
     query=str(body.get('query','')).strip();mode=str(body.get('mode','case_analysis')).strip()
     if not query: raise HTTPException(400,'Enter case facts, an encounter description, or a legal question.')
     if len(query)>12000: raise HTTPException(400,'Analysis text is too long.')
     if mode not in {'case_analysis','rights','motions','talk_to_me'}: raise HTTPException(400,'Unsupported grounded legal-assistant mode.')
-    try: return grounded_legal_response(query,mode,ask_openai)
+    try: return grounded_legal_response(query,mode,ask_openai,db=db)
     except RuntimeError: raise HTTPException(503,'The grounded legal assistant is temporarily unavailable.')
