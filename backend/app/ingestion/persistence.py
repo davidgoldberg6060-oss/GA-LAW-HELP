@@ -7,6 +7,7 @@ authority affirmatively after the official source identifies adverse status.
 """
 from __future__ import annotations
 
+from datetime import timezone
 from hashlib import sha256
 
 from sqlalchemy.orm import Session
@@ -29,6 +30,15 @@ def _negative(status: LegalStatus) -> set[str]:
     if status.precedential_status.lower() in _NEGATIVE:
         values.add(status.precedential_status.lower())
     return values
+
+
+def _utc_comparable(value):
+    """Normalize database/source datetimes before ordering status checks."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
 
 
 def _merge_status(authority: LegalAuthority, incoming: LegalStatus) -> None:
@@ -66,10 +76,12 @@ def _merge_status(authority: LegalAuthority, incoming: LegalStatus) -> None:
     if incoming.negative_treatment:
         authority.negative_treatment = ", ".join(incoming.negative_treatment)
 
-    # Preserve the strongest traceable check. A verified incoming check may
-    # replace an older check, but an undated/untraceable one may not.
+    # Preserve the strongest traceable check. Normalize old DB timestamps and
+    # timezone-aware source timestamps to UTC before comparing them.
     if incoming.status_checked_at and incoming.status_source_url and incoming.status_source_url.startswith("https://"):
-        if not authority.status_checked_at or incoming.status_checked_at >= authority.status_checked_at:
+        stored_checked = _utc_comparable(authority.status_checked_at)
+        incoming_checked = _utc_comparable(incoming.status_checked_at)
+        if stored_checked is None or incoming_checked >= stored_checked:
             authority.status_checked_at = incoming.status_checked_at
             authority.status_source_url = incoming.status_source_url
     if not stored_verified or incoming_verified:
