@@ -77,3 +77,40 @@ def search_georgia_authorities(db: Session, query: str, *, limit: int = 8) -> li
         )
         for row in rows
     ]
+
+
+def persisted_authority_hits(db: Session, query: str, *, limit: int = 12) -> list[dict]:
+    """Adapt persisted authorities to the same shape used by grounded retrieval.
+
+    This is the bridge between the ingestion database and Case Analysis/Rights/
+    Motions/Talk to Me.  Records remain visible for lookup, but only records
+    passing ``usable_as_support`` can become grounded legal support.
+    """
+    hits = []
+    for row in search_georgia_authorities(db, query, limit=limit):
+        hits.append({
+            "corpus": "persisted_authorities",
+            "score": 2.0 if row.usable_as_support else 1.0,
+            "title": row.title or row.citation,
+            "citation": row.citation,
+            "source_url": row.source_url,
+            "verification_status": row.status,
+            "excerpt": row.text[:900],
+            "record_type": row.authority_type,
+            "court": None,
+            "case_number": None,
+            "docket_number": None,
+            "decision_date": None,
+            "section_number": None,
+            "effective_date": None,
+            "jurisdiction": "Georgia",
+            "currency_status": row.currency_status,
+            "precedential_status": row.precedential_status,
+            "status_checked_at": None,
+            "status_source_url": None,
+            "superseded_by": None,
+            "negative_treatment": [],
+            "usable_as_support": row.usable_as_support,
+            "authority_id": row.id,
+        })
+    return hits
