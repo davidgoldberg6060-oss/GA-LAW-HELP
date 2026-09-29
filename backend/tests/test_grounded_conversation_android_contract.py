@@ -11,7 +11,8 @@ def test_talk_to_me_adapter_uses_dedicated_grounded_endpoint():
     api = API.read_text(encoding="utf-8")
     assert "api.talkToMeAnalysis(request)" in conversation
     assert "fun talkToMeAnalysis" in api
-    assert 'legalAssistant(query,"talk_to_me")' in api
+    assert 'groundedLegalAssistant(transcript,"talk_to_me")' in api
+    assert 'execute("/internal/legal-assistant"' in api
 
 
 def test_conversation_context_is_bounded_and_requires_a_message():
@@ -32,5 +33,5 @@ def test_conversation_renders_backend_authority_metadata_without_upgrading_it():
     renderer = RENDERER.read_text(encoding="utf-8")
     assert "GroundedLegalResult.answer(result)" in conversation
     assert "GroundedLegalResult.authoritySummary(result)" in conversation
-    assert 'optBoolean("usable_as_support",false)' in renderer
-    assert "RESEARCH ONLY — not usable as supporting authority" in renderer
+    assert 'optBoolean("usable_as_support", true).not()' in renderer
+    assert "Research only — not used as supporting authority." in renderer
