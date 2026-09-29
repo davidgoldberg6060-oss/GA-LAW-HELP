@@ -49,7 +49,7 @@ def test_public_case_routes_do_not_require_ownership_or_read_private_case_tables
         "@app.get('/public/georgia-cases/{authority_id}')", 1
     )[0]
     detail_route = source.split("@app.get('/public/georgia-cases/{authority_id}')", 1)[1].split(
-        "# Remove only the legacy", 1
+        "@app.post('/cases/{case_id}/", 1
     )[0]
     routes = list_route + detail_route
 
