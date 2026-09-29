@@ -13,6 +13,7 @@ RIGHTS_SECTIONS=(("situation","SITUATION"),("rights_that_may_apply","RIGHTS THAT
 MOTIONS_SECTIONS=(("case_issue","CASE ISSUE"),("potential_motions","POTENTIAL MOTIONS"),("required_facts_or_evidence","REQUIRED FACTS OR EVIDENCE"),("opposing_arguments","OPPOSING ARGUMENTS"),("procedural_questions_to_verify","PROCEDURAL QUESTIONS TO VERIFY"),("verified_georgia_authority","VERIFIED GEORGIA AUTHORITY"),("important_limitations","IMPORTANT LIMITATIONS"))
 
 def _is_traceable(hit:dict)->bool:
+ if hit.get("usable_as_support") is False:return False
  status=str(hit.get("verification_status") or "").strip().lower();citation=str(hit.get("citation") or "").strip();url=str(hit.get("source_url") or "").strip();return status in VERIFIED and bool(citation) and url.startswith("https://")
 def _is_negatively_treated(hit:dict)->bool:
  currency=str(hit.get("currency_status") or "unknown").strip().lower();precedent=str(hit.get("precedential_status") or "unknown").strip().lower();treatment=hit.get("negative_treatment") or []
