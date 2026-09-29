@@ -1,9 +1,9 @@
 """Operator-run, resumable import of Supreme Court of Georgia opinion PDFs.
 
-The court's annual opinion pages are the discovery source. A successful
-container or index fetch is never counted as a committed authority. Run in
-preview mode first, then explicitly pass --commit after reviewing the output.
-This importer covers the court's online opinion archive, not all Georgia cases.
+The court's annual opinion pages are the discovery source. Docket numbers are
+identifiers, never reporter citations. An opinion is eligible for persistence
+only when trusted extraction finds one unambiguous Georgia Reports citation in
+the verified official PDF. Preview remains the default.
 """
 from __future__ import annotations
 
@@ -16,8 +16,9 @@ import time
 from urllib.parse import urljoin, urlparse
 
 from .http_transport import production_transport
-from .import_one import prepare
+from .pdf_evidence import resolve_official_pdf_georgia_citation
 from .security import assert_public_official_url
+from .source_acquisition import OfficialDocumentRequest, acquire_ingestion_item
 from ..database import SessionLocal
 from .pipeline import persist_item
 
@@ -99,6 +100,21 @@ def discover(year: int, transport=production_transport) -> list[Opinion]:
     return _validated_unique_opinions(parser.opinions)
 
 
+def prepare_opinion(opinion: Opinion, *, transport=production_transport):
+    """Acquire one opinion without ever promoting its docket to a citation."""
+    request = OfficialDocumentRequest(
+        source_key="ga_supreme_opinions",
+        url=opinion.url,
+        title=opinion.title,
+        external_id=opinion.docket,
+    )
+    return acquire_ingestion_item(
+        request,
+        transport=transport,
+        citation_resolver=resolve_official_pdf_georgia_citation,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--year", type=int, required=True)
@@ -115,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
     batch = opinions[args.offset:args.offset + args.limit]
     for opinion in batch:
         try:
-            item = prepare("ga_supreme_opinions", opinion.url, opinion.title, opinion.docket)
+            item = prepare_opinion(opinion)
             if args.commit:
                 with SessionLocal() as db:
                     try:
@@ -129,8 +145,8 @@ def main(argv: list[str] | None = None) -> int:
                 authority_id = None
             success += 1
             print(json.dumps({"mode": "committed" if args.commit else "preview", "year": args.year,
-                              "docket": opinion.docket, "authority_id": authority_id,
-                              "source_url": opinion.url}), flush=True)
+                              "docket": opinion.docket, "citation": item.citation,
+                              "authority_id": authority_id, "source_url": opinion.url}), flush=True)
         except Exception as exc:
             errors += 1
             print(json.dumps({"mode": "error", "year": args.year, "docket": opinion.docket,
