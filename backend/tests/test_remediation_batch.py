@@ -28,7 +28,9 @@ def _evidence(*, citation_status="verified"):
         source_key="test-authoritative-source",
         url="https://example.ga.gov/authority",
         title="Authoritative source",
-        text="source text",
+        body=b"source text",
+        extracted_text="source text",
+        content_type="text/plain",
         retrieved_at=datetime.now(timezone.utc),
         legal_status=LegalStatus(verification_status=citation_status),
     )
