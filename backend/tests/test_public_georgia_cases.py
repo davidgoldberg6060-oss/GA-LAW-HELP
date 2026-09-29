@@ -16,6 +16,10 @@ def _authority(**changes):
         "authority_type": "Georgia appellate case opinion",
         "jurisdiction": "Georgia",
         "status": "VERIFIED",
+        "currency_status": "unknown",
+        "precedential_status": "unknown",
+        "status_checked_at": None,
+        "status_source_url": "https://www.gasupreme.us/example",
         "source_url": "https://www.gasupreme.us/example",
         "effective_from": None,
         "effective_to": None,
@@ -41,6 +45,14 @@ def test_public_case_payload_never_emits_unsafe_source_urls():
     assert safe_public_source_url("http://example.com") is None
     assert safe_public_source_url("javascript:alert(1)") is None
     assert public_case_payload(_authority())["source_url"].startswith("https://")
+
+
+def test_public_case_payload_discloses_unknown_legal_status_and_safe_provenance():
+    result = public_case_payload(_authority())
+    assert result["currency_status"] == "unknown"
+    assert result["precedential_status"] == "unknown"
+    assert result["status_source_url"] == "https://www.gasupreme.us/example"
+    assert public_case_payload(_authority(status_source_url="javascript:alert(1)"))["status_source_url"] is None
 
 
 def test_public_case_routes_do_not_require_ownership_or_read_private_case_tables():
