@@ -118,6 +118,9 @@ def official_georgia_authority_sources() -> tuple[AuthoritySource, ...]:
         AuthoritySource("ga_court_rules", "Georgia Court Rules", courts.rules_index(), "court_rule"),
         AuthoritySource("ga_supreme_rules", "Supreme Court of Georgia Rules", courts.supreme_rules(), "court_rule"),
         AuthoritySource("ga_supreme_opinions", "Supreme Court of Georgia Opinions", supreme.BASE, "case_law"),
+        # Compatibility key used by the acquisition/evidence pipeline. Keep it
+        # mapped to the same first-party source rather than weakening provenance.
+        AuthoritySource("georgia_supreme_court", "Supreme Court of Georgia Opinions", supreme.BASE, "case_law"),
         AuthoritySource("ga_appeals_opinions", "Georgia Court of Appeals Opinions", appeals.opinions_url(), "case_law"),
     )
     # Re-validate every URL here so additions cannot silently bypass the source policy.
