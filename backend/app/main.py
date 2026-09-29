@@ -8,6 +8,7 @@ from .legacy_main import audit
 from .motion_screen_service import motion_screen_response
 from .innocence_analysis_service import innocence_analysis_response
 from .internal_legal_search import search_internal
+from .authority_search_service import persisted_authority_hits
 from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload
 from .ingestion.coverage import corpus_coverage
@@ -88,13 +89,20 @@ def private_innocence_analysis(case_id:int,body:dict,user=Depends(require_paid),
     audit(db,user.id,'RUN_INNOCENCE_ANALYSIS','case',case_id);db.commit();return response
 
 @app.post('/internal/legal-search')
-def internal_legal_search(body:dict,user=Depends(require_paid)):
+def internal_legal_search(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     query=str(body.get('query','')).strip();mode=str(body.get('mode','case_analysis')).strip()
     if len(query)>12000: raise HTTPException(400,'Search text is too long.')
     if mode not in {'case_lookup','case_analysis','rights','motions','talk_to_me'}: raise HTTPException(400,'Unsupported legal-search mode.')
     try: limit=int(body.get('limit',12))
     except (TypeError,ValueError): raise HTTPException(400,'Invalid result limit.')
-    return search_internal(query,mode,limit)
+    result=search_internal(query,mode,limit)
+    persisted=persisted_authority_hits(db,query,limit=max(1,min(limit,25)))
+    if persisted:
+        seen={(str(h.get('citation') or '').lower(),str(h.get('source_url') or '')) for h in persisted}
+        file_hits=[h for h in result.get('hits',[]) if (str(h.get('citation') or '').lower(),str(h.get('source_url') or '')) not in seen]
+        result['hits']=(persisted+file_hits)[:max(1,min(limit,50))]
+        result['coverage_notice']='Results include verified authorities persisted by the internal Georgia ingestion pipeline plus indexed corpus records. Missing authority is not invented; unknown currency or precedential status remains explicitly unknown.'
+    return result
 
 @app.post('/internal/legal-assistant')
 def internal_grounded_legal_assistant(body:dict,user=Depends(require_paid)):
