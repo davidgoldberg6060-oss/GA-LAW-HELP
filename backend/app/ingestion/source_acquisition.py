@@ -1,8 +1,10 @@
 """Authoritative-source acquisition adapters for Georgia corpus ingestion.
 
-These adapters deliberately stop before persistence when a source does not
-publish a citation or other required evidence. They never synthesize legal
-citations from titles, docket numbers, URLs, or model output.
+Verified authority ingestion still requires source-backed citation evidence.
+For corpus-expansion jobs, callers may explicitly retain an official public
+source document under a clearly labeled docket/document identifier when a
+reporter citation is not yet available. That fallback is searchable data, not
+a representation that the identifier is a legal citation or current authority.
 """
 from __future__ import annotations
 
@@ -33,12 +35,16 @@ def acquire_ingestion_item(
     transport: Transport,
     citation_resolver: CitationResolver | None = None,
     retrieved_at: datetime | None = None,
+    allow_unverified_identifier: bool = False,
 ) -> IngestionItem:
-    """Acquire one approved official document and require source-backed citation evidence.
+    """Acquire one approved official document.
 
-    A citation may be supplied by a source listing/parser that already extracted
-    the source-published citation, or by a deterministic resolver operating on
-    the acquired official document. Missing evidence is a hard stop.
+    Normal authority ingestion requires a source-published citation. Bulk corpus
+    jobs may opt in to ``allow_unverified_identifier``. In that mode, an
+    official document with no reporter citation is retained using its source
+    identifier, explicitly labeled as an unverified document identifier. The
+    underlying LegalStatus remains unverified/unknown, so grounded analysis can
+    distinguish it from verified/current authority.
     """
     source = source_for(request.source_key)
     document = acquire_official_document(
@@ -52,6 +58,14 @@ def acquire_ingestion_item(
     citation=(request.citation or "").strip()
     if not citation and citation_resolver is not None:
         citation=(citation_resolver(document) or "").strip()
+    if not citation and allow_unverified_identifier:
+        identifier=(request.external_id or "").strip()
+        if not identifier:
+            raise ValueError(
+                "Official document acquired without citation or stable source identifier; "
+                "record cannot be indexed safely."
+            )
+        citation=f"{identifier} [UNVERIFIED DOCUMENT ID]"
     if not citation:
         raise ValueError(
             "Official document acquired, but no source-published citation was available; "
@@ -71,6 +85,7 @@ def acquire_many(
     *,
     transport: Transport,
     citation_resolver: CitationResolver | None = None,
+    allow_unverified_identifier: bool = False,
 ) -> tuple[list[IngestionItem], list[dict]]:
     """Acquire a bounded source batch while isolating bad/unverifiable records."""
     items: list[IngestionItem]=[]
@@ -82,6 +97,7 @@ def acquire_many(
                     request,
                     transport=transport,
                     citation_resolver=citation_resolver,
+                    allow_unverified_identifier=allow_unverified_identifier,
                 )
             )
         except (ValueError, UnicodeError) as exc:
