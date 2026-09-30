@@ -8,6 +8,9 @@ package help.galaw.standalone
  * analysis is delegated to the grounded mode-specific screen models.
  */
 object NativeLegalScreenRouter {
+    fun caseAnalysis(api: ApiClient, facts: String): CaseAnalysisScreenModel.ViewState =
+        CaseAnalysisScreenModel.analyze(api, facts)
+
     fun caseLookup(api: ApiClient, query: String): CaseLookupScreenModel.ViewState =
         CaseLookupScreenModel.search(api, query)
 
