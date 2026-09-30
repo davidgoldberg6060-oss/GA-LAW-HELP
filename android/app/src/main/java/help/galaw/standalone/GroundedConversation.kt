@@ -5,7 +5,7 @@ import org.json.JSONObject
 /**
  * Keeps the native Talk to Me conversation on the grounded legal-assistant contract.
  * This adapter deliberately does not invent or upgrade authority metadata; rendering is
- * delegated to GroundedLegalResult, which preserves the backend's verification decisions.
+ * delegated to the shared GroundedLegalMode boundary.
  */
 object GroundedConversation {
     private const val MAX_CONTEXT_CHARS = 12_000
@@ -41,17 +41,19 @@ object GroundedConversation {
 
     fun analyze(api: ApiClient, history: CharSequence, message: String, languageInstruction: String): Turn {
         val request = request(history, message, languageInstruction)
-        val result = api.talkToMeAnalysis(request)
-        val answer = GroundedLegalResult.answer(result).ifBlank {
-            "No grounded legal analysis was returned. Try adding specific facts, the charge, court, case stage, or legal issue."
-        }
-        val authoritySummary = GroundedLegalResult.authoritySummary(result)
+        val grounded = GroundedLegalMode.analyze(api, GroundedLegalMode.Mode.TALK_TO_ME, request)
         val transcriptEntry = buildString {
             append("User: ").append(message.trim()).append('\n')
-            append("GA.LAW.HELP: ").append(answer)
-            if (authoritySummary.isNotBlank()) append("\n\n").append(authoritySummary)
+            append("GA.LAW.HELP: ").append(grounded.answer)
+            if (grounded.authoritySummary.isNotBlank()) append("\n\n").append(grounded.authoritySummary)
             append("\n\n")
         }
-        return Turn(request, result, answer, authoritySummary, transcriptEntry)
+        return Turn(
+            request = request,
+            result = grounded.raw,
+            answer = grounded.answer,
+            authoritySummary = grounded.authoritySummary,
+            transcriptEntry = transcriptEntry
+        )
     }
 }
