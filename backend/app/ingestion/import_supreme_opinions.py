@@ -1,9 +1,10 @@
 """Operator-run, resumable import of Supreme Court of Georgia opinion PDFs.
 
-The court's annual opinion pages are the discovery source. Docket numbers are
-identifiers, never reporter citations. An opinion is eligible for persistence
-only when trusted extraction finds one unambiguous Georgia Reports citation in
-the verified official PDF. Preview remains the default.
+The court's annual opinion pages are the discovery source. Reporter citations
+are used when deterministically found in the official PDF. For corpus expansion,
+an opinion without a reporter citation is still retained under a clearly marked
+UNVERIFIED DOCUMENT ID based on the court docket; it must not be represented as
+verified/current authority until later evidence upgrades it.
 """
 from __future__ import annotations
 
@@ -101,7 +102,7 @@ def discover(year: int, transport=production_transport) -> list[Opinion]:
 
 
 def prepare_opinion(opinion: Opinion, *, transport=production_transport):
-    """Acquire one opinion without ever promoting its docket to a citation."""
+    """Acquire one opinion; retain docket-labeled data if reporter citation is absent."""
     request = OfficialDocumentRequest(
         source_key="ga_supreme_opinions",
         url=opinion.url,
@@ -112,26 +113,31 @@ def prepare_opinion(opinion: Opinion, *, transport=production_transport):
         request,
         transport=transport,
         citation_resolver=resolve_official_pdf_georgia_citation,
+        allow_unverified_identifier=True,
     )
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--year", type=int, required=True)
-    parser.add_argument("--limit", type=int, default=25, help="Maximum PDFs per run (1-100)")
+    parser.add_argument("--limit", type=int, default=100, help="Maximum PDFs per run (1-500)")
     parser.add_argument("--offset", type=int, default=0, help="Skip this many index entries for a later batch")
-    parser.add_argument("--pause", type=float, default=2.0, help="Seconds between court requests")
-    parser.add_argument("--commit", action="store_true", help="Persist each validated document")
+    parser.add_argument("--pause", type=float, default=1.0, help="Seconds between court requests")
+    parser.add_argument("--commit", action="store_true", help="Persist each acquired document")
     args = parser.parse_args(argv)
-    if not 1 <= args.limit <= 100 or args.offset < 0 or not 0.5 <= args.pause <= 30:
-        parser.error("Limit must be 1-100, offset nonnegative, and pause 0.5-30 seconds")
+    if not 1 <= args.limit <= 500 or args.offset < 0 or not 0.5 <= args.pause <= 30:
+        parser.error("Limit must be 1-500, offset nonnegative, and pause 0.5-30 seconds")
     opinions = discover(args.year)
     success = 0
     errors = 0
+    unverified = 0
     batch = opinions[args.offset:args.offset + args.limit]
     for opinion in batch:
         try:
             item = prepare_opinion(opinion)
+            is_unverified_id = item.citation.endswith("[UNVERIFIED DOCUMENT ID]")
+            if is_unverified_id:
+                unverified += 1
             if args.commit:
                 with SessionLocal() as db:
                     try:
@@ -146,6 +152,7 @@ def main(argv: list[str] | None = None) -> int:
             success += 1
             print(json.dumps({"mode": "committed" if args.commit else "preview", "year": args.year,
                               "docket": opinion.docket, "citation": item.citation,
+                              "unverified_identifier": is_unverified_id,
                               "authority_id": authority_id, "source_url": opinion.url}), flush=True)
         except Exception as exc:
             errors += 1
@@ -153,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
                               "error_type": type(exc).__name__}), flush=True)
         time.sleep(args.pause)
     print(json.dumps({"year": args.year, "discovered": len(opinions), "offset": args.offset,
-                      "attempted": len(batch), "succeeded": success,
+                      "attempted": len(batch), "succeeded": success, "unverified": unverified,
                       "failed": errors, "committed": args.commit}), flush=True)
     return 1 if errors else 0
 
