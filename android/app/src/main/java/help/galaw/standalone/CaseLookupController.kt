@@ -34,7 +34,9 @@ object CaseLookupController {
         require(query.length <= MAX_QUERY_CHARS) { "Case lookup query is too long." }
         val safeLimit = limit.coerceIn(1, 50)
         val payload = api.internalLegalSearch(query, "case_lookup", safeLimit)
-        return Result(query, parseHits(payload), payload.optInt("total", parseHits(payload).size))
+        val hits = parseHits(payload)
+        val reportedTotal = payload.optInt("total", hits.size)
+        return Result(query, hits, reportedTotal.coerceAtLeast(hits.size))
     }
 
     private fun parseHits(payload: JSONObject): List<CaseHit> {
