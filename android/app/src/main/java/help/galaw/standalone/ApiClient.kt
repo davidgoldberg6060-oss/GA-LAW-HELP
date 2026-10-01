@@ -74,13 +74,10 @@ class ApiClient(private val context: Context) {
     fun logout(){val current=refreshToken;if(current!=null)runCatching{execute("/auth/logout","POST",JSONObject().put("refresh_token",current),false)};clearSession()}
     fun caseNotes(id:Int)=JSONArray(execute("/cases/$id/notes"));fun saveCaseNote(id:Int,title:String,content:String,language:String)=JSONObject(execute("/cases/$id/notes","POST",JSONObject().put("title",title).put("content",content).put("note_type","LEGAL_RESEARCH").put("language",language)));fun deleteCaseNote(id:Int,noteId:Long)=JSONObject(execute("/cases/$id/notes/$noteId","DELETE"))
     fun publicAsk(question:String):JSONObject {
-        val result = groundedLegalAssistant(question, "talk_to_me")
-        val answer = GroundedLegalResult.answer(result)
-        val authorities = GroundedLegalResult.authoritySummary(result)
-        result.put("answer", buildString {
-            append(answer)
-            if (authorities.isNotBlank()) append("\n\n").append(authorities)
-        })
+        GuestPublicApi.encounter(BuildConfig.API_BASE_URL, question)
+        val result = GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, question, "rights")
+        val answer = GroundedLegalResult.answer(result).ifBlank { result.optString("answer") }
+        result.put("answer", answer.ifBlank { "No grounded guest rights answer was returned. This is general information, not a citation of current Georgia law." })
         return result
     }
     fun searchAuthorities(query:String)=JSONObject(execute("/legal/authorities/search?query="+java.net.URLEncoder.encode(query,"UTF-8"))).optJSONArray("items")?:JSONArray()
