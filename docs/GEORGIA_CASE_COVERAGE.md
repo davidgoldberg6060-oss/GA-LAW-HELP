@@ -1,23 +1,27 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
-Last production check: 2026-10-01 (second automation pass, same day).
-`DATABASE_URL` was still unset, so
-`import_supreme_opinions --year 2025 --limit 25 --commit` was not run.
-No corpus was faked. Prior live-database check on 2026-09-28 reported
+Last production check: 2026-10-01 19:00 UTC (third automation pass).
+`DATABASE_URL` was unset in the automation environment, so
+`python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit`
+was not run. No corpus was faked and no row counts were invented.
+Prior live-database check on 2026-09-28 reported
 `legal_sources = 0`, `legal_authorities = 0`, `authority_versions = 0`.
-Stored counts were not updated and remain unverified as zero from that check.
+Those stored counts were not rechecked and remain unverified.
 Issue 88 is not treated as ingested until a real import records discovered,
 attempted, succeeded, and failed counts against a live database.
+
 Guest rights and encounter help already call `POST /public/rights-assistant`
-and `GET /public/encounter` without login. Private case and motion-screen
-routes stay login-only.
+and `GET /public/encounter` without login on web Free research and Android
+Know your rights. Private cases and `POST /cases/{id}/motion-screen` stay
+login-only. The README still describes a development build because official-source
+ingestion is not complete.
 
 | Court / source | Discovered online range | Stored | Gap |
 | --- | --- | ---: | --- |
-| Supreme Court of Georgia annual opinion pages | 2017–2026 pages linked from the court's 2026 page | 0 | Index, import, count and check each year; earlier final reporters and revisions require separate sources. |
-| Court of Appeals of Georgia | Official source registered; complete archive not inventoried | 0 | Discover official individual opinions and establish dates/counts. |
-| Georgia trial courts and other public rulings | No unified archive inventoried | 0 | Inventory county and court access, document availability, restrictions and older paper records. |
+| Supreme Court of Georgia annual opinion pages | 2017–2026 pages linked from the court's 2026 page | unverified | Index, import, count and check each year; earlier final reporters and revisions require separate sources. Do not treat the prior zero check as a fresh count. |
+| Court of Appeals of Georgia | Official source registered; complete archive not inventoried | unverified | Discover official individual opinions and establish dates/counts. |
+| Georgia trial courts and other public rulings | No unified archive inventoried | unverified | Inventory county and court access, document availability, restrictions and older paper records. Do not dump private trial dockets. |
 
 Official annual index: https://www.gasupreme.us/2026-opinions/
 
@@ -38,3 +42,4 @@ restore sealed, restricted, expunged, or otherwise private material simply
 because it was once accessible. Public case histories, docket metadata,
 published opinions and full trial-court filings are distinct coverage goals.
 Do not copy the Official Code of Georgia Annotated. Do not dump private trial dockets.
+Do not present unverified citations as current Georgia law.
