@@ -1,7 +1,9 @@
 """Search persisted Georgia legal authorities for grounded AI analysis."""
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -9,6 +11,17 @@ from .models import LegalAuthority
 
 _NEGATIVE = {"overruled", "vacated", "superseded", "withdrawn", "repealed"}
 _VERIFIED = {"verified", "official", "validated", "confirmed"}
+_STOP = {
+    "about", "after", "also", "and", "are", "because", "been", "but", "can", "could",
+    "does", "for", "from", "had", "has", "have", "how", "into", "not", "that", "the",
+    "this", "was", "were", "what", "when", "who", "why", "with", "you", "your", "happens",
+    "if", "charged", "charge", "being", "does", "will", "would", "should", "than", "then",
+}
+_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9.-]*")
+
+
+@dataclass(frozen=True)
+default_authority = None
 
 
 @dataclass(frozen=True)
@@ -23,6 +36,19 @@ class AuthoritySearchResult:
     precedential_status: str
     text: str
     usable_as_support: bool
+
+
+def search_terms(query: str, *, limit: int = 8) -> list[str]:
+    """Keywords from a natural-language question. Does not invent citations."""
+    terms: list[str] = []
+    for token in _TOKEN.findall(query or ""):
+        low = token.lower().strip(".-")
+        if len(low) < 4 or low in _STOP or low in terms:
+            continue
+        terms.append(low)
+        if len(terms) >= limit:
+            break
+    return terms
 
 
 def _negative(authority: LegalAuthority) -> bool:
@@ -42,26 +68,29 @@ def _usable(authority: LegalAuthority) -> bool:
     )
 
 
+def _term_filters(columns, terms: list[str]):
+    clauses = []
+    for term in terms:
+        needle = f"%{term}%"
+        clauses.extend(column.ilike(needle) for column in columns)
+    return or_(*clauses)
+
+
 def search_georgia_authorities(db: Session, query: str, *, limit: int = 8) -> list[AuthoritySearchResult]:
-    term = (query or "").strip()
-    if not term:
+    terms = search_terms(query)
+    if not terms:
         return []
     limit = max(1, min(limit, 25))
-    needle = f"%{term}%"
+    columns = (LegalAuthority.citation, LegalAuthority.title, LegalAuthority.text)
     rows = (
         db.query(LegalAuthority)
-        .filter(LegalAuthority.jurisdiction.ilike("Georgia"))
-        .filter(
-            or_(
-                LegalAuthority.citation.ilike(needle),
-                LegalAuthority.title.ilike(needle),
-                LegalAuthority.text.ilike(needle),
-            )
-        )
+        .filter(LegalAuthority.jurisdiction.ilike("%Georgia%"))
+        .filter(_term_filters(columns, terms))
         .order_by(LegalAuthority.citation.asc())
-        .limit(limit)
+        .limit(limit * 4)
         .all()
     )
+    ranked = sorted(rows, key=lambda row: (_match_score(row, terms), row.citation or ""), reverse=True)
     return [
         AuthoritySearchResult(
             id=row.id,
@@ -75,8 +104,13 @@ def search_georgia_authorities(db: Session, query: str, *, limit: int = 8) -> li
             text=(row.text or "")[:12000],
             usable_as_support=_usable(row),
         )
-        for row in rows
+        for row in ranked[:limit]
     ]
+
+
+def _match_score(row: LegalAuthority, terms: list[str]) -> int:
+    blob = " ".join([row.citation or "", row.title or "", row.text or ""]).lower()
+    return sum(1 for term in terms if term in blob)
 
 
 def persisted_authority_hits(db: Session, query: str, *, limit: int = 12) -> list[dict]:
@@ -85,6 +119,7 @@ def persisted_authority_hits(db: Session, query: str, *, limit: int = 12) -> lis
     This is the bridge between the ingestion database and Case Analysis/Rights/
     Motions/Talk to Me.  Records remain visible for lookup, but only records
     passing ``usable_as_support`` can become grounded legal support.
+    A keyword miss is an empty list, not a fabricated authority.
     """
     hits = []
     for row in search_georgia_authorities(db, query, limit=limit):
