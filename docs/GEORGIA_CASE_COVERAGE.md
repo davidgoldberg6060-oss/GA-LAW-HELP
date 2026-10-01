@@ -1,14 +1,17 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
-Last production check: 2026-10-01. Automation had no `DATABASE_URL` in this
-environment, so `import_supreme_opinions --year 2025 --limit 25 --commit` was
-not run. No corpus was faked. Prior live-database check on 2026-09-28 reported
+Last production check: 2026-10-01 (second automation pass, same day).
+`DATABASE_URL` was still unset, so
+`import_supreme_opinions --year 2025 --limit 25 --commit` was not run.
+No corpus was faked. Prior live-database check on 2026-09-28 reported
 `legal_sources = 0`, `legal_authorities = 0`, `authority_versions = 0`.
-A later check on 2026-10-01 again found no `DATABASE_URL`, so stored counts
-were not updated and remain unverified as zero from the 2026-09-28 check.
+Stored counts were not updated and remain unverified as zero from that check.
 Issue 88 is not treated as ingested until a real import records discovered,
 attempted, succeeded, and failed counts against a live database.
+Guest rights and encounter help already call `POST /public/rights-assistant`
+and `GET /public/encounter` without login. Private case and motion-screen
+routes stay login-only.
 
 | Court / source | Discovered online range | Stored | Gap |
 | --- | --- | ---: | --- |
