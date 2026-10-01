@@ -1,6 +1,7 @@
 """GA.LAW.HELP API entrypoint with verified motion-screen routing."""
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import func, or_
+from sqlalchemy.exc import SQLAlchemyError
 
 from . import legacy_main as _legacy_main
 from .legacy_main import *
@@ -12,7 +13,8 @@ from .authority_search_service import persisted_authority_hits
 from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload
 from .ingestion.coverage import corpus_coverage
-from .public_rights import router as public_rights_router
+from .encounter_prompt import encounter_prompt_block
+from .public_rights import official_indexes, router as public_rights_router
 
 def _delegated_ask_openai(prompt: str):
     return ask_openai(prompt)
@@ -61,14 +63,45 @@ def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):
     if not row: raise HTTPException(404,'Public Georgia case not found.')
     return {'case':public_case_payload(row,include_text=True),'coverage_notice':'Verify the opinion and current precedential status against the linked official source before legal reliance.'}
 
+def _guest_rights_without_corpus(query:str, mode:str) -> dict:
+    """Encounter-pack fallback. Does not invent citations or claim current Georgia law."""
+    guidance = encounter_prompt_block(mode, query)
+    notice = (
+        'No indexed Georgia authority was available for this guest request. '
+        'This is general encounter information, not a verified citation and not a claim that any rule is current Georgia law. '
+        'Stay calm. Do not resist, lie, or destroy evidence.'
+    )
+    return {
+        'guest': True,
+        'mode': mode,
+        'analysis': guidance,
+        'answer': guidance,
+        'authorities': [],
+        'grounded_authority_count': 0,
+        'coverage_notice': notice,
+        'official_indexes': official_indexes(),
+        'login_required': False,
+    }
+
 @app.post('/public/rights-assistant')
 def public_rights_assistant(body:dict,db:Session=Depends(get_db)):
     query=str(body.get('query','')).strip();mode=str(body.get('mode','rights')).strip()
     if not query: raise HTTPException(400,'Describe the encounter or rights question.')
     if len(query)>4000: raise HTTPException(400,'Question is too long.')
     if mode not in {'rights','talk_to_me'}: raise HTTPException(400,'Guest mode is limited to rights and live-encounter help.')
-    try: return grounded_legal_response(query,mode,ask_openai,db=db)
-    except RuntimeError: raise HTTPException(503,'The rights assistant is temporarily unavailable.')
+    try:
+        response = grounded_legal_response(query, mode, ask_openai, db=db)
+    except RuntimeError:
+        raise HTTPException(503,'The rights assistant is temporarily unavailable.')
+    except SQLAlchemyError:
+        db.rollback()
+        return _guest_rights_without_corpus(query, mode)
+    response['guest'] = True
+    response['login_required'] = False
+    response.setdefault('official_indexes', official_indexes())
+    if not response.get('answer') and response.get('analysis'):
+        response['answer'] = response['analysis']
+    return response
 
 for _route in list(app.router.routes):
     if getattr(_route,'path',None)=='/cases/{case_id}/motion-screen' and 'POST' in getattr(_route,'methods',set()): app.router.routes.remove(_route)
