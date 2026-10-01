@@ -5,8 +5,10 @@ Last production check: 2026-10-01. Automation had no `DATABASE_URL` in this
 environment, so `import_supreme_opinions --year 2025 --limit 25 --commit` was
 not run. No corpus was faked. Prior live-database check on 2026-09-28 reported
 `legal_sources = 0`, `legal_authorities = 0`, `authority_versions = 0`.
-A second check on 2026-10-01 again found no `DATABASE_URL`, so stored counts
+A later check on 2026-10-01 again found no `DATABASE_URL`, so stored counts
 were not updated and remain unverified as zero from the 2026-09-28 check.
+Issue 88 is not treated as ingested until a real import records discovered,
+attempted, succeeded, and failed counts against a live database.
 
 | Court / source | Discovered online range | Stored | Gap |
 | --- | --- | ---: | --- |
