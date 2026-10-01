@@ -25,6 +25,24 @@ class InternalLegalSearchActivity : AppCompatActivity() {
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
     private fun grounded(mode:String)=mode in setOf("case_analysis","rights","motions","talk_to_me")
 
+    private fun guest(mode:String)=mode in setOf("rights","talk_to_me")
+    private fun statusFor(mode:String)=when{
+        guest(mode)->"Looking up free guest rights help. This does not require a login and is not a claim of current Georgia law."
+        grounded(mode)->"AI is analyzing the facts and checking verified internal authority…"
+        else->"Searching the internal legal corpus…"
+    }
+    private fun lookup(mode:String, q:String): org.json.JSONObject {
+        if (mode == "rights" || mode == "talk_to_me") {
+            GuestPublicApi.encounter(BuildConfig.API_BASE_URL, q)
+            val raw = GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, q, if (mode == "talk_to_me") "talk_to_me" else "rights")
+            if (!raw.has("answer") && raw.has("analysis")) raw.put("answer", raw.optString("analysis"))
+            raw.put("login_required", false)
+            return raw
+        }
+        return if (grounded(mode)) api.groundedLegalAssistant(q, mode) else api.internalLegalSearch(q, mode)
+    }
+
+
     private val speechLauncher=registerForActivityResult(ActivityResultContracts.StartActivityForResult()){result->if(result.resultCode==RESULT_OK){val heard=result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim().orEmpty();if(heard.isNotBlank()){speechTarget?.let{target->val existing=target.text.toString().trim();target.setText(listOf(existing,heard).filter{it.isNotBlank()}.joinToString("\n"));target.setSelection(target.text.length)}}}}
     private val microphonePermission=registerForActivityResult(ActivityResultContracts.RequestPermission()){granted->if(granted)startSpeechCapture()else Toast.makeText(this,"Microphone permission is needed only when you choose Listen.",Toast.LENGTH_LONG).show()}
 
@@ -37,7 +55,7 @@ class InternalLegalSearchActivity : AppCompatActivity() {
         val search=Button(this).apply{text=buttonFor(mode);isAllCaps=false;setTextColor(Color.WHITE);background=rounded(Color.rgb(10,39,62),Color.rgb(32,100,146))};body.addView(search,LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(10),0,dp(12))})
         val results=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};body.addView(results);body.addView(Button(this).apply{text="Home";isAllCaps=false;setOnClickListener{startActivity(Intent(this@InternalLegalSearchActivity,HomeActivity::class.java).apply{addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)});finish()}},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(12),0,0)})
         shell.addView(ScrollView(this).apply{addView(body)},LinearLayout.LayoutParams(-1,-1));setContentView(shell)
-        search.setOnClickListener{val q=query.text.toString().trim();if(q.isBlank()){Toast.makeText(this,"Enter details first.",Toast.LENGTH_SHORT).show();return@setOnClickListener};search.isEnabled=false;results.removeAllViews();results.addView(text(if(grounded(mode))"AI is analyzing the facts and checking verified internal authority…"else"Searching the internal legal corpus…",muted));thread{try{val response=if(grounded(mode))api.groundedLegalAssistant(q,mode)else api.internalLegalSearch(q,mode);runOnUiThread{render(results,response,grounded(mode));search.isEnabled=true}}catch(e:Exception){runOnUiThread{results.removeAllViews();results.addView(text(e.message?:"Request failed. Edit the details and try again.",Color.rgb(245,150,150)));search.isEnabled=true}}}}
+        search.setOnClickListener{val q=query.text.toString().trim();if(q.isBlank()){Toast.makeText(this,"Enter details first.",Toast.LENGTH_SHORT).show();return@setOnClickListener};search.isEnabled=false;results.removeAllViews();results.addView(text(statusFor(mode),muted));thread{try{val response=lookup(mode,q);runOnUiThread{render(results,response,grounded(mode)||guest(mode));search.isEnabled=true}}catch(e:Exception){runOnUiThread{results.removeAllViews();results.addView(text(e.message?:"Request failed. Edit the details and try again.",Color.rgb(245,150,150)));search.isEnabled=true}}}}
     }
 
     private fun requestSpeechCapture(){if(ContextCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)startSpeechCapture()else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)}
