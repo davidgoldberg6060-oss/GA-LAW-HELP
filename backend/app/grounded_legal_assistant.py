@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from .internal_legal_search import search_internal
 from .authority_search_service import persisted_authority_hits
+from .encounter_prompt import encounter_prompt_block
 
 VERIFIED={"verified","official","validated","confirmed"}
 NEGATIVE={"overruled","vacated","superseded","withdrawn","repealed"}
@@ -35,9 +36,9 @@ def _hybrid_retrieval(query,mode,db=None,limit=12):
  return result
 
 def _mode_instructions(mode):
- if mode=="talk_to_me":return """Use exact headings: WHAT APPEARS TO BE HAPPENING; SAFEST IMMEDIATE STEPS; YOUR RIGHTS; WHAT LAW ENFORCEMENT MAY / MAY NOT DO; WHAT TO SAY OR DO; VERIFIED GEORGIA AUTHORITY; IMPORTANT LIMITATIONS. Prioritize safety. For a live police encounter, do not encourage resistance, evasion, obstruction, evidence destruction, interference, or deception. Treat speech-to-text transcription errors as possible and never claim to have heard facts not supplied. Do not claim recording is lawful unless supplied authority establishes it."""
+ if mode=="talk_to_me":return """Use exact headings: WHAT APPEARS TO BE HAPPENING; SAFEST IMMEDIATE STEPS; YOUR RIGHTS; WHAT LAW ENFORCEMENT MAY / MAY NOT DO; WHAT TO SAY OR DO; VERIFIED GEORGIA AUTHORITY; IMPORTANT LIMITATIONS. Prioritize safety. For a live police encounter, do not encourage resistance, evasion, obstruction, evidence destruction, interference, or deception. Treat speech-to-text transcription errors as possible and never claim to have heard facts not supplied. Do not claim recording is lawful unless supplied authority establishes it. Use the in-app encounter pack scripts when the situation matches."""
  if mode=="case_analysis":return """Use exact headings: FACTS TO VERIFY; LEGAL ISSUES; PROSECUTION ARGUMENTS; DEFENSE ARGUMENTS; POSSIBLE MOTIONS; PRACTICAL NEXT STEPS; VERIFIED GEORGIA AUTHORITY; IMPORTANT LIMITATIONS. Do not invent evidence or deadlines and do not promise an outcome."""
- if mode=="rights":return """Use these exact headings in order: SITUATION; RIGHTS THAT MAY APPLY; LAW ENFORCEMENT AUTHORITY; LAW ENFORCEMENT LIMITS; LAWFUL OPTIONS; VERIFIED GEORGIA AUTHORITY; IMPORTANT LIMITATIONS. Separate what officers may lawfully do from what the user may lawfully decline or request. Do not encourage physical resistance, flight, obstruction, deception, interference, or evidence destruction. Do not state a Georgia-specific right as verified unless supplied authority supports it."""
+ if mode=="rights":return """Use these exact headings in order: SITUATION; RIGHTS THAT MAY APPLY; LAW ENFORCEMENT AUTHORITY; LAW ENFORCEMENT LIMITS; LAWFUL OPTIONS; VERIFIED GEORGIA AUTHORITY; IMPORTANT LIMITATIONS. Separate what officers may lawfully do from what the user may lawfully decline or request. Do not encourage physical resistance, flight, obstruction, deception, interference, or evidence destruction. Start from the matching in-app encounter script. Do not state a Georgia-specific right as verified unless supplied authority supports it."""
  if mode=="motions":return """Use these exact headings in order: CASE ISSUE; POTENTIAL MOTIONS; REQUIRED FACTS OR EVIDENCE; OPPOSING ARGUMENTS; PROCEDURAL QUESTIONS TO VERIFY; VERIFIED GEORGIA AUTHORITY; IMPORTANT LIMITATIONS. A motion is only potentially relevant unless the facts and supplied authority support it. Never invent filing deadlines, procedural prerequisites, standards, citations, or likely outcomes. Identify what must be checked in the actual record and current Georgia rules."""
  return "Separate facts, legal issues, verified authority, limitations, and practical next steps."
 
@@ -45,7 +46,7 @@ def _extract_sections(analysis,spec):
  if not analysis:return {}
  positions=[]
  for key,label in spec:
-  m=re.search(rf"(?im)^\s*(?:\d+[.)]\s*)?{re.escape(label)}\s*(?:[:—-]\s*)?",analysis)
+  m=re.search(rf"(?im)^\s*(?:\d+[.)]\s*)?{re.escape(label)}\s*(?:[:\u2014-]\s*)?",analysis)
   if m:positions.append((m.start(),m.end(),key))
  positions.sort()
  if len(positions)<2:return {}
@@ -59,10 +60,11 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  if mode not in SUPPORTED_MODES:raise ValueError("Unsupported grounded legal-assistant mode.")
  retrieval=_hybrid_retrieval(query,mode,db,12);verified=_verified_hits(retrieval);context=_authority_context(verified) if verified else "No matching traceable verified indexed Georgia authority was retrieved for this question."
  grounding="Base every material Georgia-law conclusion only on supplied authorities." if verified else "No verified indexed Georgia authority is available. You may give clearly labeled general legal information and issue-spotting, but MUST NOT present a Georgia-specific proposition as verified and MUST NOT invent a citation, case, statute, rule, deadline, sentence, or procedure."
- prompt=f"""GA.LAW.HELP legal analysis request.\nMode: {mode}\n\nUSER-SUPPLIED FACTS OR QUESTION (not independently verified; may include speech-to-text transcription errors):\n{query}\n\nTRACEABLE VERIFIED INDEXED AUTHORITIES:\n{context}\n\nRules:\n- Treat the user's narrative as allegations/facts to be verified, not established facts.\n- {grounding}\n- Cite only supplied authorities; never create a citation, case, statute, rule, deadline, sentence, or procedural requirement.\n- Never call authority current, binding, controlling, or precedential unless supplied status metadata establishes it.\n- If Currency or Precedential status is unknown, explicitly label that limitation; do not fill it from memory.\n- Do not predict or guarantee outcomes.\n- Never claim to observe or hear facts not provided.\n\nFORMAT:\n{_mode_instructions(mode)}"""
+ pack=encounter_prompt_block(mode, query)
+ prompt=f"""GA.LAW.HELP legal analysis request.\nMode: {mode}\n\nUSER-SUPPLIED FACTS OR QUESTION (not independently verified; may include speech-to-text transcription errors):\n{query}\n\n{pack}\n\nTRACEABLE VERIFIED INDEXED AUTHORITIES:\n{context}\n\nRules:\n- Treat the user's narrative as allegations/facts to be verified, not established facts.\n- {grounding}\n- Cite only supplied authorities; never create a citation, case, statute, rule, deadline, sentence, or procedural requirement.\n- Never call authority current, binding, controlling, or precedential unless supplied status metadata establishes it.\n- If Currency or Precedential status is unknown, explicitly label that limitation; do not fill it from memory.\n- Do not predict or guarantee outcomes.\n- Never claim to observe or hear facts not provided.\n\nFORMAT:\n{_mode_instructions(mode)}"""
  analysis=ask_ai(prompt);notice=retrieval.get("coverage_notice")
  if not verified:notice="No matching traceable verified indexed Georgia authority was found. General legal information may be shown, but GA.LAW.HELP will not invent or present an unverified citation as governing Georgia law."
- response={"mode":mode,"analysis":analysis,"authorities":retrieval.get("hits",[]),"grounded_authority_count":len(verified),"coverage_notice":notice}
+ response={"mode":mode,"analysis":analysis,"authorities":retrieval.get("hits",[]),"grounded_authority_count":len(verified),"coverage_notice":notice,"used_encounter_pack":bool(pack)}
  specs={"talk_to_me":TALK_SECTIONS,"case_analysis":CASE_ANALYSIS_SECTIONS,"rights":RIGHTS_SECTIONS,"motions":MOTIONS_SECTIONS}
  response["sections"]=_extract_sections(analysis,specs[mode])
  return response
