@@ -73,6 +73,9 @@ class AuthActivity : AppCompatActivity() {
                 runOnUiThread { if(result.optBoolean("verification_required")) showVerification(emailValue) else openApp() }
             }
         },8)
+        add(button("Know your rights without signing in"){
+            startActivity(Intent(this, GuestRightsActivity::class.java))
+        },8)
         add(button("Browse Funny & Weird Georgia Laws free"){ showFreeLaws() },8)
         val links=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
         links.addView(button("Verify email"){
@@ -84,7 +87,7 @@ class AuthActivity : AppCompatActivity() {
             if(validEmail(emailValue)) showReset(emailValue) else toast("Enter a valid email address first.")
         },LinearLayout.LayoutParams(0,-2,1f).apply{setMargins(dp(8),0,0,0)})
         add(links,8)
-        add(text("GA.LAW.HELP provides legal information and assistance tools, not a substitute for a licensed attorney.",11f).apply { gravity=Gravity.CENTER; setTextColor(Color.rgb(135,158,176)) },18)
+        add(text("Guest rights use public research only. Sign in to store a private case. This is legal information, not a substitute for a licensed attorney. Stay calm. Do not resist, lie, or destroy evidence.",11f).apply { gravity=Gravity.CENTER; setTextColor(Color.rgb(135,158,176)) },18)
     }
 
     private fun showVerification(email:String){
