@@ -1,5 +1,6 @@
 import React,{FormEvent,useEffect,useRef,useState}from'react';
 import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint,Eye,EyeOff,Upload}from'lucide-react';
+import{guestEncounterReply,guestRightsAndEncounter}from'./guestPublic';
 
 const API='https://api-production-60cc.up.railway.app';
 const ACCESS_KEY='ga_access_token',REFRESH_KEY='ga_refresh_token';
@@ -213,14 +214,11 @@ export default function App(){
  useEffect(()=>{localStorage.setItem('ga_incident_draft',JSON.stringify(incident))},[incident]);
  useEffect(()=>{localStorage.setItem('ga_trusted_contact',JSON.stringify(trusted))},[trusted]);
 
- async function runResearch(e?:FormEvent){e?.preventDefault();if(!user){setMode('register');setAuthOpen(true);setNotice('Create a free account or sign in to use AI legal research.');return}if(!paid){setPaywallOpen(true);return}if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
+ async function runResearch(e?:FormEvent){e?.preventDefault();if(!q.trim()){setNotice('Enter a Georgia legal question first.');return}
   setNotice('');setResearching(true);setAiAnswer(null);setResearch(null);
   try{
-   const [answer,researchResult]=await Promise.all([
-    authApi('/public/ask',{method:'POST',body:JSON.stringify({question:q.trim()})}),
-    authApi('/public/research?q='+encodeURIComponent(q.trim()))
-   ]);
-   setAiAnswer(answer);setResearch(researchResult);setTimeout(()=>document.getElementById('research-results')?.scrollIntoView({behavior:'smooth'}),50)
+   const {answer,research}=await guestRightsAndEncounter(API,api,q.trim());
+   setAiAnswer(answer);setResearch(research);setTimeout(()=>document.getElementById('research-results')?.scrollIntoView({behavior:'smooth'}),50)
   }catch(err){setNotice(err instanceof Error?err.message:'GA.LAW.HELP is temporarily unavailable.')}finally{setResearching(false)}
  }
 
@@ -243,7 +241,7 @@ export default function App(){
   setEncounterBusy(true);
   try{
    const prompt='LIVE POLICE ENCOUNTER. Scenario: '+scenarios[scenario].label+'. The officer/person said: "'+heard+'". Give ONE short, calm sentence the user can safely say aloud now. Prioritize physical compliance and safety. Do not argue, threaten, evade, resist, lie, or give a long legal explanation.';
-   const data=await authApi('/public/ask',{method:'POST',body:JSON.stringify({question:prompt})});
+   const data=await guestEncounterReply(api,prompt);
    setEncounterReply(data.answer||suggestedReply(heard,scenario));
   }catch{setEncounterReply(suggestedReply(heard,scenario))}
   finally{setEncounterBusy(false)}
@@ -428,8 +426,8 @@ export default function App(){
  function exportCasePlan(){
   const lines=['GA.LAW.HELP — PRIVATE CASE SCREENING','Created: '+new Date().toLocaleString(),'Title: '+caseForm.title,'Case number: '+(caseForm.case_number||'Not entered'),'County: '+(caseForm.county||'Not entered'),'Type: '+caseForm.case_type,'Stage: '+(caseForm.stage||'Not entered'),'','User narrative:',caseForm.narrative||'None entered','','SCREENING LEADS',...findings.flatMap((item,index)=>['',String(index+1)+'. '+item.issue,'Why it may matter: '+item.analysis,'Possible opposing position: '+item.counterargument,'Records and facts needed: '+item.facts_needed,'Status: '+item.confidence]),'','These are issue-screening leads, not legal conclusions or attorney advice. Verify the full record, deadlines, current law, and procedural posture with a licensed lawyer.'];const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='ga-law-help-case-screening-'+new Date().toISOString().slice(0,10)+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
  }
- function openPolice(){if(!user){setMode('register');setAuthOpen(true);setNotice('Create a free account or sign in to use AI encounter assistance.');return}if(!paid){setPaywallOpen(true);return}setTool('police')}
- function openRights(next:ScenarioKey=scenario){setScenario(next);if(!paid){setPaywallOpen(true);return}setTool('avoid')}
+ function openPolice(){setTool('police')}
+ function openRights(next:ScenarioKey=scenario){setScenario(next);setTool('avoid')}
  function startListening(){
   if(recording){setNotice('Stop the local audio recording before starting live transcription.');return}
   const SpeechRecognition=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition;
