@@ -37,6 +37,11 @@ def safe_public_source_url(value):
     return value if parsed.scheme == "https" and bool(parsed.netloc) else None
 
 
+def _unknown_if_blank(value):
+    text = str(value or "").strip()
+    return text or "unknown"
+
+
 def public_case_payload(authority, *, include_text: bool = False):
     payload = {
         "id": authority.id,
@@ -45,6 +50,10 @@ def public_case_payload(authority, *, include_text: bool = False):
         "court_or_type": authority.authority_type,
         "jurisdiction": authority.jurisdiction,
         "status": authority.status,
+        "currency_status": _unknown_if_blank(getattr(authority, "currency_status", None)),
+        "precedential_status": _unknown_if_blank(getattr(authority, "precedential_status", None)),
+        "status_checked_at": getattr(authority, "status_checked_at", None),
+        "status_source_url": safe_public_source_url(getattr(authority, "status_source_url", None)),
         "source_url": safe_public_source_url(authority.source_url),
         "effective_from": authority.effective_from,
         "effective_to": authority.effective_to,
