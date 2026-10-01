@@ -15,13 +15,9 @@ _STOP = {
     "about", "after", "also", "and", "are", "because", "been", "but", "can", "could",
     "does", "for", "from", "had", "has", "have", "how", "into", "not", "that", "the",
     "this", "was", "were", "what", "when", "who", "why", "with", "you", "your", "happens",
-    "if", "charged", "charge", "being", "does", "will", "would", "should", "than", "then",
+    "being", "will", "would", "should", "than", "then",
 }
 _TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9.-]*")
-
-
-@dataclass(frozen=True)
-default_authority = None
 
 
 @dataclass(frozen=True)
