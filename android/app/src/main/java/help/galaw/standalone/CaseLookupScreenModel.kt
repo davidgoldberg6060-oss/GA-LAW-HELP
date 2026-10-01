@@ -8,16 +8,19 @@ package help.galaw.standalone
  * internal Georgia corpus through CaseLookupController and are labeled by CaseLookupRenderer.
  */
 object CaseLookupScreenModel {
-    data class State(
+    data class ViewState(
         val query: String,
         val title: String,
         val body: String,
         val resultCount: Int
     )
 
-    fun search(api: ApiClient, rawQuery: String): State {
+    /** Older call sites used State; keep that name as an alias of ViewState. */
+    typealias State = ViewState
+
+    fun search(api: ApiClient, rawQuery: String): ViewState {
         val result = CaseLookupController.lookup(api, rawQuery)
-        return State(
+        return ViewState(
             query = result.query,
             title = "GEORGIA CASE LOOKUP",
             body = CaseLookupRenderer.render(result),
