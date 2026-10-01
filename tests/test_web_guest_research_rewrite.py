@@ -11,6 +11,9 @@ def test_guest_free_research_uses_public_rights_endpoints():
     assert "guestEncounterReply" in app
     assert "/public/rights-assistant" in guest
     assert "/public/encounter" in guest
+    assert "guestOfficialIndexes" in guest
+    assert "gasupreme.us" in guest
+    assert "not a claim that any citation is current" in guest
     assert "Authorization" not in guest
     assert "Create a free account or sign in to use AI legal research." not in app
     assert "authApi('/public/ask'" not in app
