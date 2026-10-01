@@ -1,8 +1,10 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
-Last production check: 2026-09-28. `legal_sources = 0`,
-`legal_authorities = 0`, `authority_versions = 0` in the active database.
+Last production check: 2026-10-01. Automation had no `DATABASE_URL` in this
+environment, so `import_supreme_opinions --year 2025 --limit 25 --commit` was
+not run. No corpus was faked. Prior live-database check on 2026-09-28 reported
+`legal_sources = 0`, `legal_authorities = 0`, `authority_versions = 0`.
 
 | Court / source | Discovered online range | Stored | Gap |
 | --- | --- | ---: | --- |
@@ -14,7 +16,7 @@ Official annual index: https://www.gasupreme.us/2026-opinions/
 
 The Supreme Court annual importer can be run in preview batches, for example:
 
-`python -m app.ingestion.import_supreme_opinions --year 2026 --offset 0 --limit 25`
+`python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25`
 
 After validating links, metadata, database connectivity, and permissions, an
 operator may explicitly add `--commit`. Repeat with increasing `--offset` for
@@ -28,3 +30,4 @@ accessible public copy and record its provenance and limitations. Do not
 restore sealed, restricted, expunged, or otherwise private material simply
 because it was once accessible. Public case histories, docket metadata,
 published opinions and full trial-court filings are distinct coverage goals.
+Do not copy the Official Code of Georgia Annotated. Do not dump private trial dockets.
