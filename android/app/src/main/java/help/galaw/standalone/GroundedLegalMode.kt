@@ -6,6 +6,9 @@ import org.json.JSONObject
  * Single native boundary for legal AI modes. All substantive legal answers pass through
  * the grounded backend and the same authority renderer so the UI cannot silently upgrade
  * research-only material into supporting authority.
+ *
+ * Guest rights and talk-to-me use unauthenticated public endpoints. Private case and
+ * motion analysis remain on login-only internal endpoints.
  */
 object GroundedLegalMode {
     enum class Mode(val wireName: String) {
@@ -30,9 +33,9 @@ object GroundedLegalMode {
 
         val raw = when (mode) {
             Mode.CASE_ANALYSIS -> api.caseAnalysisWithVerifiedAuthorities(clean)
-            Mode.RIGHTS -> api.rightsAnalysis(clean)
+            Mode.RIGHTS -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "rights")
             Mode.MOTIONS -> api.motionsAnalysis(clean)
-            Mode.TALK_TO_ME -> api.talkToMeAnalysis(clean)
+            Mode.TALK_TO_ME -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "talk_to_me")
         }
         val answer = GroundedLegalResult.answer(raw).ifBlank {
             "No grounded legal analysis was returned. Add specific facts, the court, case stage, charge, or legal issue and try again."
