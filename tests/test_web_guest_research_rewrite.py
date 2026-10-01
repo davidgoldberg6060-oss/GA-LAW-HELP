@@ -23,6 +23,16 @@ def test_guest_free_research_uses_public_rights_endpoints():
     assert "authApi('/cases'" in app or "/cases/" in app
 
 
+def test_motion_screen_uses_private_verified_endpoint():
+    app = (ROOT / "src" / "App.tsx").read_text()
+    assert "async function screenMotions()" in app
+    assert "/motion-screen" in app
+    assert "additional_facts" in app
+    assert "verification_mode" in app
+    assert "authApi('/public/ask'" not in app
+    assert "Sign in to use the private case workspace." in app
+
+
 def test_android_public_ask_does_not_use_login_only_assistant():
     client = (ROOT / "android/app/src/main/java/help/galaw/standalone/ApiClient.kt").read_text()
     assert "GuestPublicApi.rightsAssistant" in client

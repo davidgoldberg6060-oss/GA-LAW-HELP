@@ -371,10 +371,19 @@ export default function App(){
  }
  async function screenMotions(){
   if(!motionFacts.trim()){setNotice('Enter the case facts, dates, charge, and current stage first.');return}
+  if(!user){setMode('register');setAuthOpen(true);setNotice('Sign in to use the private case workspace.');return}
   setMotionBusy(true);setMotionResult('');
   try{
-   const prompt='GEORGIA CRIMINAL CASE MOTION AND RELIEF SCREEN. Analyze only the user-supplied information below. Identify lawful motions, objections, sentencing issues, appeal issues, or post-conviction remedies that counsel could reasonably investigate. Separate known facts from missing facts. For every option state what records are needed, timing or preservation questions to verify, likely State counterarguments, and what current official Georgia authority must be checked. Never invent citations, deadlines, facts, or outcomes. USER-SUPPLIED CASE INFORMATION:\n'+motionFacts.trim();
-   const data=await authApi('/public/ask',{method:'POST',body:JSON.stringify({question:prompt})});setMotionResult(data.answer);setNotice('Motion screening completed. Verify the record, current authority, and every deadline before relying on it.');
+   let id=activeCaseId;
+   if(!id){
+    const title=motionFacts.trim().split('\n')[0].slice(0,120)||'Private motion screen';
+    const created=await authApi('/cases',{method:'POST',body:JSON.stringify({title,case_type:'criminal',stage:'investigation',narrative:motionFacts.trim()})});
+    id=created.id;setActiveCaseId(id);localStorage.setItem('ga_encounter_case_id',String(id));
+   }
+   const data=await authApi('/cases/'+id+'/motion-screen',{method:'POST',body:JSON.stringify({additional_facts:motionFacts.trim()})});
+   const coverage=data.authority_coverage?('\n\nVerification mode: '+(data.verification_mode||'VERIFIED_REGISTRY_ONLY')+'\n'+JSON.stringify(data.authority_coverage)):('\n\nVerification mode: '+(data.verification_mode||'VERIFIED_REGISTRY_ONLY'));
+   setMotionResult((data.analysis||'No motion screen was returned.')+coverage+(data.notice?'\n\n'+data.notice:''));
+   setNotice('Private motion screening completed. Specific citations are limited to the verified registry. Verify current authority, deadlines, and local rules before filing.');
   }catch(error){setNotice(error instanceof Error?error.message:'Motion screening could not be completed.')}finally{setMotionBusy(false)}
  }
  async function checkActiveCaseMotions(){
@@ -535,7 +544,7 @@ export default function App(){
      <p className="recordingWarning">Record only when lawful. Consent and location rules can vary. Files remain in this browser profile, are removed when the app next opens after expiration, and may disappear earlier if the browser or phone clears site data. Download important recordings.</p>
      {recordings.length>0&&<div className="recordingList"><h3>Legal Encounter Evidence</h3><p className="recordingWarning">Your device copy stays separate from any protected GA.LAW.HELP copy. Download important evidence before clearing browser or phone data.</p>{recordings.map(row=><article key={row.id}><div><b>{scenarios[row.scenario].label}</b><span>{new Date(row.createdAt).toLocaleString()} · {formatBytes(row.blob.size)}</span>{row.interrupted&&<small><b>RECOVERED AFTER INTERRUPTION</b></small>}<small>{row.mimeType.startsWith('video/')?'Video + audio':'Audio'} · Expires {new Date(row.expiresAt).toLocaleDateString()}</small><small>{row.cloudCopiedAt?'Protected GA.LAW.HELP copy saved '+new Date(row.cloudCopiedAt).toLocaleString():'Device copy'}</small>{row.sha256&&<small className="hashLine"><Fingerprint size={11}/>SHA-256 {row.sha256}</small>}</div><div><button onClick={()=>playRecording(row)} aria-label="Play recording"><Play size={16}/></button><button onClick={()=>downloadRecording(row)} aria-label="Download your copy"><Download size={16}/></button><button className="deleteRecording" onClick={()=>removeRecording(row)} aria-label="Delete device copy"><Trash2 size={16}/></button></div></article>)}</div>}
     </section>
-    <details className="protectionPanel"><summary><Scale size={18}/><span><b>Check My Case for Motions</b><small>Screen for potentially relevant Georgia criminal filings and relief</small></span></summary>
+    <details className="protectionPanel"><summary><Scale size={18}/><span><b>Check My Case for Motions</b><small>Private case tool. Uses the verified motion registry and requires sign-in.</small></span></summary>
 <label className="incidentNotes">Case information<textarea value={motionFacts} onChange={e=>setMotionFacts(e.target.value)} placeholder="Court/county, charges, case stage, arrest/indictment/plea/trial/sentencing dates, sentence, searches/statements, evidence issues, appeal history, and documents available."/></label>
 <button className="primary" disabled={motionBusy} onClick={screenMotions}>{motionBusy?<><LoaderCircle className="spin" size={17}/>Checking case…</>:<><Scale size={17}/>Check My Case for Motions</>}</button>
 {motionResult&&<div className="replyCard"><small>Motion & relief screening</small><p style={{whiteSpace:'pre-wrap'}}>{motionResult}</p><small>Legal information, not legal advice. Verify current authority, deadlines, local rules and filing requirements before filing.</small></div>}
