@@ -36,4 +36,13 @@ class GuestPublicRightsContractTest {
         assertTrue(mode.contains("api.caseAnalysisWithVerifiedAuthorities"))
         assertTrue(mode.contains("api.motionsAnalysis"))
     }
+
+    @Test
+    fun homeRightsSearchUsesPublicGuestEndpoints() {
+        val screen = source("app/src/main/java/help/galaw/standalone/InternalLegalSearchActivity.kt")
+        assertTrue(screen.contains("GuestPublicApi.rightsAssistant"))
+        assertTrue(screen.contains("GuestPublicApi.encounter"))
+        assertTrue(screen.contains("api.groundedLegalAssistant"))
+        assertTrue(screen.contains("login_required"))
+    }
 }
