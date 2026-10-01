@@ -6,6 +6,9 @@ def test_guest_can_load_encounter_pack_without_login():
     with TestClient(app) as client:
         response = client.get("/public/encounter", params={"situation": "traffic stop"})
         assert response.status_code == 200
+        body = response.json()
+        indexes = body.get("official_indexes") or []
+        assert indexes and all(item["url"].startswith("https://") for item in indexes)
         payload = response.json()
         assert payload["guest"] is True
         assert "disclaimer" in payload

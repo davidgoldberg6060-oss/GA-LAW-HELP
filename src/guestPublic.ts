@@ -32,8 +32,10 @@ export async function guestRightsAndEncounter(apiBase: string, requestJson: type
     query: q,
     topic: 'Georgia rights and encounter information',
     guidance: pack.prompt || pack.disclaimer || '',
-    resources: [],
-    notice: pack.disclaimer || assistant.coverage_notice || '',
+    resources: guestOfficialIndexes(pack),
+    notice: [pack.disclaimer, pack.coverage_limit, assistant.coverage_notice, 'Index links are official court pages, not a complete code and not a claim that any citation is current.']
+      .filter((part) => typeof part === 'string' && part.trim())
+      .join(' '),
   };
   return {answer, research};
 }
@@ -45,4 +47,21 @@ export async function guestEncounterReply(requestJson: typeof fetch, prompt: str
   });
   if (!data.answer && data.analysis) data.answer = data.analysis;
   return data;
+}
+
+const FALLBACK_INDEXES = [
+  {title: 'Supreme Court of Georgia opinion index', url: 'https://www.gasupreme.us/2026-opinions/', kind: 'court index', official: true},
+  {title: 'Court of Appeals of Georgia', url: 'https://www.gaappeals.us/', kind: 'court index', official: true},
+];
+
+export function guestOfficialIndexes(pack: {official_indexes?: Array<{title?: string; url?: string; kind?: string; official?: boolean}>}) {
+  const rows = Array.isArray(pack.official_indexes) && pack.official_indexes.length ? pack.official_indexes : FALLBACK_INDEXES;
+  return rows
+    .filter((row) => row && typeof row.url === 'string' && row.url.startsWith('https://'))
+    .map((row) => ({
+      title: row.title || row.url,
+      url: row.url as string,
+      kind: row.kind || 'court index',
+      official: row.official !== false,
+    }));
 }
