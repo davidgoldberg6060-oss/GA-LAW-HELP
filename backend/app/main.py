@@ -12,11 +12,13 @@ from .authority_search_service import persisted_authority_hits
 from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload
 from .ingestion.coverage import corpus_coverage
+from .public_rights import router as public_rights_router
 
 def _delegated_ask_openai(prompt: str):
     return ask_openai(prompt)
 
 _legacy_main.ask_openai = _delegated_ask_openai
+app.include_router(public_rights_router)
 
 @app.middleware('http')
 async def crawler_policy_headers(request, call_next):
@@ -58,6 +60,15 @@ def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):
     row=_public_georgia_case_query(db).filter(models.LegalAuthority.id==authority_id).first()
     if not row: raise HTTPException(404,'Public Georgia case not found.')
     return {'case':public_case_payload(row,include_text=True),'coverage_notice':'Verify the opinion and current precedential status against the linked official source before legal reliance.'}
+
+@app.post('/public/rights-assistant')
+def public_rights_assistant(body:dict,db:Session=Depends(get_db)):
+    query=str(body.get('query','')).strip();mode=str(body.get('mode','rights')).strip()
+    if not query: raise HTTPException(400,'Describe the encounter or rights question.')
+    if len(query)>4000: raise HTTPException(400,'Question is too long.')
+    if mode not in {'rights','talk_to_me'}: raise HTTPException(400,'Guest mode is limited to rights and live-encounter help.')
+    try: return grounded_legal_response(query,mode,ask_openai,db=db)
+    except RuntimeError: raise HTTPException(503,'The rights assistant is temporarily unavailable.')
 
 for _route in list(app.router.routes):
     if getattr(_route,'path',None)=='/cases/{case_id}/motion-screen' and 'POST' in getattr(_route,'methods',set()): app.router.routes.remove(_route)
