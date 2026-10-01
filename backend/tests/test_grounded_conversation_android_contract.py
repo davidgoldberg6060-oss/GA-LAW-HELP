@@ -2,14 +2,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONVERSATION = ROOT / "android/app/src/main/java/help/galaw/standalone/GroundedConversation.kt"
+MODE = ROOT / "android/app/src/main/java/help/galaw/standalone/GroundedLegalMode.kt"
 API = ROOT / "android/app/src/main/java/help/galaw/standalone/ApiClient.kt"
 RENDERER = ROOT / "android/app/src/main/java/help/galaw/standalone/GroundedLegalResult.kt"
 
 
 def test_talk_to_me_adapter_uses_dedicated_grounded_endpoint():
     conversation = CONVERSATION.read_text(encoding="utf-8")
+    mode = MODE.read_text(encoding="utf-8")
     api = API.read_text(encoding="utf-8")
-    assert "api.talkToMeAnalysis(request)" in conversation
+    assert "GroundedLegalMode.analyze(api, GroundedLegalMode.Mode.TALK_TO_ME, request)" in conversation
+    assert "Mode.TALK_TO_ME -> api.talkToMeAnalysis(clean)" in mode
     assert "fun talkToMeAnalysis" in api
     assert 'groundedLegalAssistant(transcript,"talk_to_me")' in api
     assert 'execute("/internal/legal-assistant"' in api
@@ -30,8 +33,10 @@ def test_conversation_explicitly_blocks_fabricated_authority():
 
 def test_conversation_renders_backend_authority_metadata_without_upgrading_it():
     conversation = CONVERSATION.read_text(encoding="utf-8")
+    mode = MODE.read_text(encoding="utf-8")
     renderer = RENDERER.read_text(encoding="utf-8")
-    assert "GroundedLegalResult.answer(result)" in conversation
-    assert "GroundedLegalResult.authoritySummary(result)" in conversation
+    assert "GroundedLegalMode.analyze(" in conversation
+    assert "GroundedLegalResult.answer(raw)" in mode
+    assert "GroundedLegalResult.authoritySummary(raw)" in mode
     assert 'optBoolean("usable_as_support", true).not()' in renderer
     assert "Research only — not used as supporting authority." in renderer

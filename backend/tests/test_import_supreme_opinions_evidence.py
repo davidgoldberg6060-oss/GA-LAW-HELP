@@ -19,8 +19,11 @@ def test_docket_is_never_used_as_reporter_citation():
             body=b"%PDF-1.4\nS26A0123 Example v. State\n%%EOF",
         )
 
-    with pytest.raises(ValueError):
-        prepare_opinion(opinion, transport=transport)
+    item = prepare_opinion(opinion, transport=transport)
+    assert item.citation == "S26A0123 [UNVERIFIED DOCUMENT ID]"
+    assert item.citation != opinion.docket
+    assert "Ga." not in item.citation
+    assert item.document.external_id == opinion.docket
 
 
 def test_external_id_remains_docket_when_citation_evidence_is_resolved(monkeypatch):
