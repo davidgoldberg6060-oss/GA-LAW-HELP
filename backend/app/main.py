@@ -9,7 +9,7 @@ from .legacy_main import audit
 from .motion_screen_service import motion_screen_response
 from .innocence_analysis_service import innocence_analysis_response
 from .internal_legal_search import search_internal
-from .authority_search_service import persisted_authority_hits
+from .authority_search_service import persisted_authority_hits, search_terms
 from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload
 from .ingestion.coverage import corpus_coverage
@@ -53,9 +53,12 @@ def public_georgia_cases(q:str='',page:int=1,page_size:int=25,db:Session=Depends
     if page<1 or page_size<1 or page_size>50: raise HTTPException(400,'page must be at least 1 and page_size must be between 1 and 50.')
     query=_public_georgia_case_query(db)
     if q:
-        like=f'%{q}%';query=query.filter(or_(models.LegalAuthority.title.ilike(like),models.LegalAuthority.citation.ilike(like),models.LegalAuthority.text.ilike(like)))
+        terms=search_terms(q)
+        if not terms:
+            return {'query':q,'page':page,'page_size':page_size,'total':0,'cases':[],'coverage_notice':'No searchable legal keyword was found. Private user workspaces are never searched. Missing cases are not invented.'}
+        query=query.filter(or_(*[or_(models.LegalAuthority.title.ilike(f'%{term}%'),models.LegalAuthority.citation.ilike(f'%{term}%'),models.LegalAuthority.text.ilike(f'%{term}%')) for term in terms]))
     total=query.count();rows=query.order_by(models.LegalAuthority.retrieved_at.desc(),models.LegalAuthority.id.desc()).offset((page-1)*page_size).limit(page_size).all()
-    return {'query':q,'page':page,'page_size':page_size,'total':total,'cases':[public_case_payload(row) for row in rows],'coverage_notice':'These are indexed public Georgia case-law records. Private user workspaces are never searched. Sealed, juvenile, expunged, restricted, private, and unavailable records are excluded. A missing case means it has not yet been indexed or cannot lawfully be displayed.'}
+    return {'query':q,'page':page,'page_size':page_size,'total':total,'cases':[public_case_payload(row) for row in rows],'coverage_notice':'These are indexed public Georgia case-law records. Private user workspaces are never searched. Sealed, juvenile, expunged, restricted, private, and unavailable records are excluded. A missing case means it has not yet been indexed or cannot lawfully be displayed. Keyword matches are not a claim that any citation is current Georgia law.'}
 
 @app.get('/public/georgia-cases/{authority_id}')
 def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):
