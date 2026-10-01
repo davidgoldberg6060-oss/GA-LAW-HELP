@@ -21,6 +21,16 @@ class GuestPublicRightsContractTest {
     }
 
     @Test
+    fun signInScreenOpensGuestRightsWithoutAccount() {
+        val auth = source("app/src/main/java/help/galaw/standalone/AuthActivity.kt")
+        assertTrue(auth.contains("GuestRightsActivity"))
+        assertTrue(auth.contains("Know your rights without signing in"))
+        val guestScreen = source("app/src/main/java/help/galaw/standalone/GuestRightsActivity.kt")
+        assertTrue(guestScreen.contains("GuestPublicApi.rightsAssistant"))
+        assertTrue(guestScreen.contains("GuestPublicApi.encounter"))
+    }
+
+    @Test
     fun privateCaseAnalysisStaysOnAuthenticatedClient() {
         val mode = source("app/src/main/java/help/galaw/standalone/GroundedLegalMode.kt")
         assertTrue(mode.contains("api.caseAnalysisWithVerifiedAuthorities"))
