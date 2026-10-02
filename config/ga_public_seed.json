@@ -1,0 +1,30 @@
+{
+  "name": "Georgia public-law seed",
+  "status": "starter_not_complete_code",
+  "copyright_rule": "Store official unannotated statute text and court opinions acquired from official hosts. Do not copy OCGA annotations, headnotes, or commercial reporter notes.",
+  "official_sources": [
+    {"id": "statutes", "host": "legis.ga.gov", "what": "Unannotated Georgia code and session laws"},
+    {"id": "supreme", "host": "gasupreme.us", "what": "Supreme Court of Georgia opinion PDFs"},
+    {"id": "appeals", "host": "gaappeals.us", "what": "Court of Appeals opinion PDFs"},
+    {"id": "rules", "host": "georgiacourts.gov", "what": "Uniform rules and court rules"}
+  ],
+  "titles": [
+    {"title": 9, "name": "Civil Practice"},
+    {"title": 15, "name": "Courts"},
+    {"title": 16, "name": "Crimes and Offenses"},
+    {"title": 17, "name": "Criminal Procedure"},
+    {"title": 19, "name": "Domestic Relations"},
+    {"title": 24, "name": "Evidence"},
+    {"title": 40, "name": "Motor Vehicles and Traffic"}
+  ],
+  "encounter_sections": [
+    {"citation": "OCGA 17-4-20", "topic": "Arrest without a warrant"},
+    {"citation": "OCGA 17-5-30", "topic": "Motion to suppress"},
+    {"citation": "OCGA 16-10-24", "topic": "Obstruction"},
+    {"citation": "OCGA 16-10-20", "topic": "False statements"},
+    {"citation": "OCGA 40-5-55", "topic": "Implied consent after a DUI arrest"},
+    {"citation": "OCGA 40-6-395", "topic": "Fleeing or attempting to elude"},
+    {"citation": "OCGA 24-5-501", "topic": "Privileges"}
+  ],
+  "annotated_code_legal_path": "License the Official Code of Georgia Annotated from the state publisher or Lexis. Do not scrape it."
+}
