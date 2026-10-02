@@ -1,7 +1,7 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
-Last automation check: 2026-10-02 00:03 UTC. DATABASE_URL was still unset in the automation environment.
+Last automation check: 2026-10-02 03:00 UTC. DATABASE_URL was still unset in the automation environment.
 `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run.
 No corpus was faked and no row counts were invented.
 Prior live-database check on 2026-09-28 reported `legal_sources = 0`, `legal_authorities = 0`, `authority_versions = 0`.
@@ -9,8 +9,7 @@ Those stored counts were not rechecked and remain unverified.
 Issue 88 is not treated as ingested until a real import records discovered, attempted, succeeded, and failed counts against a live database.
 
 Guest rights and encounter help already call `POST /public/rights-assistant` and `GET /public/encounter` without login on web Free research and Android Know your rights. Private cases and `POST /cases/{id}/motion-screen` stay login-only.
-Conflicting paywall branches #54 and #56 were closed on 2026-10-02 because they were dirty against current main and superseded: `require_paid` already authenticates without a membership block. They were not rebased.
-Other older branches (including #38, #39, #58, #59, #70, #71, #72, #77, #83, #85, and #87) remain open because they change legal-answer behavior and were not verified safe to close or rebase in this run.
+Dirty branches #38, #54, and #56 were closed on 2026-10-02 as superseded by current main and were not rebased. Main already wires `POST /cases/{id}/motion-screen` and `require_paid` authenticates without a membership block. Other older branches (including #39, #58, #59, #70, #71, #72, #77, #83, #85, and #87) remain open because they change legal-answer behavior and were not verified safe to close or rebase in this run.
 The README still describes a development build because official-source ingestion is not complete.
 
 | Court / source | Discovered online range | Stored | Gap |
