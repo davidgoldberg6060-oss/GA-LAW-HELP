@@ -15,6 +15,8 @@ class GuestPublicRightsContractTest {
     fun rightsAndTalkToMeUsePublicGuestEndpoints() {
         val mode = source("app/src/main/java/help/galaw/standalone/GroundedLegalMode.kt")
         assertTrue(mode.contains("GuestPublicApi.rightsAssistant"))
+        assertTrue(mode.contains("GuestPublicApi.encounter"))
+        assertTrue(mode.contains("/public/encounter") || source("app/src/main/java/help/galaw/standalone/GuestPublicApi.kt").contains("/public/encounter"))
         val guest = source("app/src/main/java/help/galaw/standalone/GuestPublicApi.kt")
         assertTrue(guest.contains("/public/encounter"))
         assertTrue(guest.contains("/public/rights-assistant"))
@@ -35,6 +37,7 @@ class GuestPublicRightsContractTest {
         val mode = source("app/src/main/java/help/galaw/standalone/GroundedLegalMode.kt")
         assertTrue(mode.contains("api.caseAnalysisWithVerifiedAuthorities"))
         assertTrue(mode.contains("api.motionsAnalysis"))
+        assertTrue(!mode.contains("GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, \"case_analysis\""))
     }
 
     @Test
@@ -45,7 +48,6 @@ class GuestPublicRightsContractTest {
         assertTrue(screen.contains("api.groundedLegalAssistant"))
         assertTrue(screen.contains("login_required"))
     }
-}
 
     @Test
     fun homeEncounterCardsUseGuestRightsWithoutMembership() {
@@ -57,3 +59,4 @@ class GuestPublicRightsContractTest {
         assertTrue(cases.contains("requirePaid{showDocuments()}"))
         assertTrue(cases.contains("requirePaid{showLegalWorkHub()}"))
     }
+}
