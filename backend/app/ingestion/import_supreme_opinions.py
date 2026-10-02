@@ -9,6 +9,7 @@ verified/current authority until later evidence upgrades it.
 from __future__ import annotations
 
 import argparse
+import os
 from dataclasses import dataclass
 from html.parser import HTMLParser
 import json
@@ -127,6 +128,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if not 1 <= args.limit <= 500 or args.offset < 0 or not 0.5 <= args.pause <= 30:
         parser.error("Limit must be 1-500, offset nonnegative, and pause 0.5-30 seconds")
+    if args.commit and not os.environ.get("DATABASE_URL"):
+        print(json.dumps({
+            "year": args.year,
+            "limit": args.limit,
+            "discovered": None,
+            "attempted": 0,
+            "succeeded": 0,
+            "failed": 0,
+            "committed": False,
+            "skipped_reason": "DATABASE_URL is not set; no corpus rows were written or invented",
+        }), flush=True)
+        return 2
     opinions = discover(args.year)
     success = 0
     errors = 0
