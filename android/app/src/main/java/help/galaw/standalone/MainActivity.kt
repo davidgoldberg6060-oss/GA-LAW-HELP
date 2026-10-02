@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
         val id=selectedCase ?: return@registerForActivityResult toast("Open a case first")
         busy("Uploading evidence…") { api.upload(id,uri); runOnUiThread { toast("Evidence uploaded and integrity hash created"); showCase(id) } }
     }
-    override fun onCreate(savedInstanceState:Bundle?){ super.onCreate(savedInstanceState); api=ApiClient(this); if(api.token==null) showAuth() else showHome() }
+    override fun onCreate(savedInstanceState:Bundle?){ super.onCreate(savedInstanceState); api=ApiClient(this); showHome() }
     private val blue = Color.rgb(40,169,255)
     private val navy = Color.rgb(4,18,31)
     private val card = Color.rgb(11,35,54)
@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
         listOf(
             navItem("⌂","Home"){showHome()},
             navItem("⚖","Laws"){requirePaid{showLawSearch()}},
-            navItem("💬","AI Help"){requirePaid{showTalkToMe()}},
+            navItem("💬","AI Help"){showTalkToMe()},
             navItem("📁","Documents"){requirePaid{showDocuments()}},
             navItem("●","Account"){showProfile()}
         ).forEach{row.addView(it,LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1f))}
@@ -99,6 +99,7 @@ class MainActivity : AppCompatActivity() {
     private fun showPasswordReset(email:String){base();root.addView(label("RESET PASSWORD",26f));val e=field("Email").apply{setText(email)};val token=field("Reset token");val password=field("New password (15+ characters)",true);root.addView(e);root.addView(button("Send reset email"){busy("Sending…"){api.forgotPassword(e.text.toString());runOnUiThread{toast("If the account exists, a reset email was sent.")}}});root.addView(token);root.addView(password);root.addView(button("Set new password"){busy("Resetting…"){api.resetPassword(token.text.toString(),password.text.toString());runOnUiThread{toast("Password changed. Log in now.");showAuth()}}});root.addView(button("Back"){showAuth()})}
     private fun showHome(){selectedCase=null;base()
         root.addView(label("KNOW YOUR RIGHTS. PROTECT YOUR FUTURE.",12f).apply{setTextColor(blue);setPadding(0,0,0,22)})
+        if(api.token==null) root.addView(button("Sign in for private cases"){showAuth()})
         root.addView(heroPanel(),LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,0,0,dp(14))})
         val ask=field("Ask GA.LAW.HELP anything...");root.addView(ask);root.addView(button("➜ Ask GA.LAW.HELP"){val q=ask.text.toString().trim();if(q.isNotEmpty())openGuestRights(q)})
         addHomeRow(button("🎙 Voice Help"){requirePaid{showGuide("VOICE HELP","Use this screen to prepare what you want to ask. During a police encounter, stay calm, do not physically resist, and follow lawful safety instructions.")}},button("▣ Upload a Document"){requirePaid{showDocumentIntake()}},button("▣ Scan / Take Photo"){requirePaid{showDocumentIntake(true)}})
@@ -106,12 +107,12 @@ class MainActivity : AppCompatActivity() {
         addHomeRow(homeCard("🛡 Know\nMy Rights","Simple answers\nfor real situations"){openGuestRights("Know my rights during a Georgia police encounter")},homeCard("🚙 Traffic Stop","What to do and\nwhat to say"){openGuestRights("Traffic stop: what to do and what to say without resisting")},homeCard("♟ Questioned\nby Police","Stay calm.\nKnow your rights."){openGuestRights("Questioned by police")})
         addHomeRow(homeCard("⛓ Arrested /\nDetained","Step-by-step help"){openGuestRights("Arrested or detained")},homeCard("⚖ Georgia Laws","Search laws,\npenalties & more"){requirePaid{showLawSearch()}},homeCard("▤ Funny & Weird\nGeorgia Laws","Learn something\nnew"){showFunnyLaws()})
         root.addView(homeSectionTitle("YOUR LEGAL WORK"))
-        addHomeRow(homeCard("💬 Ask\nGA.LAW.HELP","Get legal guidance\nwith AI"){requirePaid{showTalkToMe()}},homeCard("📁 My Documents","Store and manage\nyour files"){requirePaid{showDocuments()}},homeCard("▥ My Recordings","Your audio, saved\nsecurely"){requirePaid{showRecordings()}})
+        addHomeRow(homeCard("💬 Ask\nGA.LAW.HELP","Get legal guidance\nwith AI"){showTalkToMe()},homeCard("📁 My Documents","Store and manage\nyour files"){requirePaid{showDocuments()}},homeCard("▥ My Recordings","Your audio, saved\nsecurely"){requirePaid{showRecordings()}})
         root.addView(homeCard("⚖ "+tr("motions"),"Motions, appeals, sentencing and other legal work"){requirePaid{showLegalWorkHub()}},LinearLayout.LayoutParams(-1,-2).apply{setMargins(5,6,5,6)})
         root.addView(emergencyButton{showEmergencyInfo()},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(16),0,dp(10))})
         root.addView(label("“Knowledge is power, especially when you need it most.”",15f).apply{gravity=android.view.Gravity.CENTER;setTextColor(Color.rgb(157,176,190));setTypeface(typeface,Typeface.ITALIC);setPadding(0,20,0,10)})
         root.addView(label("—  GA.LAW.HELP  —",12f).apply{gravity=android.view.Gravity.CENTER;setTextColor(blue)})
-        root.addView(button("🗣 "+tr("talk")){requirePaid{showTalkToMe()}});root.addView(button("⚙ Settings"){showSettings()});root.addView(button("● Profile"){showProfile()});root.addView(button("Payment & Subscription"){showMembership()})
+        root.addView(button("🗣 "+tr("talk")){showTalkToMe()});root.addView(button("⚙ Settings"){showSettings()});root.addView(button("● Profile"){showProfile()});root.addView(button("Payment & Subscription"){showMembership()})
     }
     private fun showFreeHome(){base();root.addView(label("GA.LAW.HELP",30f).apply{setTypeface(typeface,Typeface.BOLD)});root.addView(label("FREE ACCESS",13f).apply{setTextColor(blue)});root.addView(label("Explore Georgia legal myths without creating an account. Every other app feature requires an active membership.",15f).apply{setPadding(0,18,0,18)});root.addView(homeCard("▤ Funny & Weird Georgia Laws","Separate internet folklore from verified law"){showFunnyLaws()});root.addView(button("Log in / create account"){showAuth()});root.addView(button("Emergency information"){toast("For immediate danger, contact emergency services.")})}
     private fun showFunnyLaws(){base();root.addView(button(if(api.token==null)"← Free home" else "← Home"){if(api.token==null)showFreeHome() else showHome()});root.addView(label("FUNNY & WEIRD GEORGIA LAWS",26f).apply{setTypeface(typeface,Typeface.BOLD);setPadding(0,28,0,8)});root.addView(label("MYTH CHECKER — FREE",13f).apply{setTextColor(blue)});root.addView(label("Many viral “weird law” lists repeat local publicity stories or unsourced claims as if they were current statewide crimes. Treat the claims below as folklore until an official, current source verifies them.",15f).apply{setPadding(0,14,0,18)});arrayOf(
@@ -130,7 +131,7 @@ class MainActivity : AppCompatActivity() {
         root.addView(label("GA.LAW.HELP",28f).apply{setTypeface(typeface,Typeface.BOLD)})
         root.addView(label("Choose where you want to go.",14f).apply{setTextColor(Color.rgb(174,193,207));setPadding(0,0,0,dp(10))})
         root.addView(homeCard("⌂ Home","Return to your dashboard"){showHome()})
-        root.addView(homeCard("💬 Talk to Me","Georgia-focused AI legal information"){requirePaid{showTalkToMe()}})
+        root.addView(homeCard("💬 Talk to Me","Georgia-focused AI legal information"){showTalkToMe()})
         root.addView(homeCard("⚖ Georgia Laws","Search indexed Georgia authorities"){requirePaid{showLawSearch()}})
         root.addView(homeCard("📁 My Documents","Cases, documents and evidence"){requirePaid{showDocuments()}})
         root.addView(homeCard("⚖ Motions & Legal Work","Research, motions, appeals and post-conviction work"){requirePaid{showLegalWorkHub()}})
@@ -178,7 +179,7 @@ class MainActivity : AppCompatActivity() {
         root.addView(label("If there is immediate danger or a medical emergency, call 911 or your local emergency service.",16f))
         root.addView(label("For a police encounter, stay calm, keep your hands visible, avoid sudden movements, and do not physically resist. You can ask whether you are free to leave. If you are being questioned while in custody, you can clearly request a lawyer and state that you wish to remain silent.",15f).apply{setTextColor(Color.rgb(205,218,227));setPadding(0,dp(14),0,dp(10))})
         root.addView(label("GA.LAW.HELP provides legal information, not emergency dispatch or attorney representation.",13f).apply{setTextColor(Color.rgb(148,166,180))})
-        root.addView(button("Know My Rights"){requirePaid{showGuide("KNOW MY RIGHTS","Review plain-language rights information for the situation you are dealing with. Do not physically resist or obstruct officers.")}})
+        root.addView(button("Know My Rights"){openGuestRights("Know my rights during a Georgia police encounter. Stay calm. Do not resist, lie, or destroy evidence.")})
     }
 
     private fun openCheckout(plan:String){
