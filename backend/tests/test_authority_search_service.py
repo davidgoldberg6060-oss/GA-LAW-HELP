@@ -49,3 +49,16 @@ def test_unverified_authority_is_not_marked_usable_support():
 def test_blank_query_returns_nothing_and_limit_is_bounded():
     db = session()
     assert search_georgia_authorities(db, "   ") == []
+
+def test_natural_question_matches_shared_legal_terms_not_the_whole_phrase():
+    db = session()
+    add(db, "S25A0101", "The opinion discusses murder and malice aforethought.")
+    add(db, "S25A0102", "This opinion discusses a traffic citation only.")
+    result = search_georgia_authorities(db, "what happens if you are charged for murder")
+    assert [row.citation for row in result] == ["S25A0101"]
+
+
+def test_unrelated_question_does_not_invent_a_hit():
+    db = session(); add(db, "S25A0101", "The opinion discusses murder and malice aforethought.")
+    assert search_georgia_authorities(db, "what is the filing fee for a name change") == []
+

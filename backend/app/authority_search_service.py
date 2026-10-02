@@ -1,11 +1,24 @@
 """Search persisted Georgia legal authorities for grounded AI analysis."""
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .models import LegalAuthority
+
+# Question words are not authority identifiers. Matching the whole question as one
+# ILIKE phrase hides stored opinions that only share the legal terms.
+_STOP = {
+    "what", "when", "where", "which", "who", "whom", "whose", "why", "how",
+    "does", "doing", "happen", "happens", "happened", "this", "that", "these",
+    "those", "with", "from", "into", "about", "after", "before", "during",
+    "your", "youre", "have", "been", "being", "were", "will", "would", "could",
+    "should", "there", "their", "they", "them", "then", "than", "just", "only",
+    "also", "some", "such", "under", "over", "against", "between", "without",
+    "please", "tell", "explain", "georgia", "charged", "charge",
+}
 
 _NEGATIVE = {"overruled", "vacated", "superseded", "withdrawn", "repealed"}
 _VERIFIED = {"verified", "official", "validated", "confirmed"}
@@ -42,26 +55,58 @@ def _usable(authority: LegalAuthority) -> bool:
     )
 
 
+def _search_terms(query: str) -> list[str]:
+    raw = re.findall(r"[A-Za-z0-9]+", query or "")
+    terms: list[str] = []
+    seen: set[str] = set()
+    for token in raw:
+        key = token.lower()
+        if key in seen or key in _STOP or len(key) < 4:
+            continue
+        seen.add(key)
+        terms.append(token)
+        if len(terms) == 8:
+            break
+    if terms:
+        return terms
+    phrase = (query or "").strip()
+    return [phrase] if phrase else []
+
+
+def _term_hits(row: LegalAuthority, terms: list[str]) -> int:
+    haystack = " ".join(
+        part.lower() for part in (row.citation or "", row.title or "", row.text or "")
+    )
+    return sum(1 for term in terms if term.lower() in haystack)
+
+
 def search_georgia_authorities(db: Session, query: str, *, limit: int = 8) -> list[AuthoritySearchResult]:
-    term = (query or "").strip()
-    if not term:
+    terms = _search_terms(query)
+    if not terms:
         return []
     limit = max(1, min(limit, 25))
-    needle = f"%{term}%"
-    rows = (
-        db.query(LegalAuthority)
-        .filter(LegalAuthority.jurisdiction.ilike("Georgia"))
-        .filter(
-            or_(
+    clauses = []
+    for term in terms:
+        needle = f"%{term}%"
+        clauses.extend(
+            [
                 LegalAuthority.citation.ilike(needle),
                 LegalAuthority.title.ilike(needle),
                 LegalAuthority.text.ilike(needle),
-            )
+            ]
         )
-        .order_by(LegalAuthority.citation.asc())
-        .limit(limit)
+    rows = (
+        db.query(LegalAuthority)
+        .filter(LegalAuthority.jurisdiction.ilike("Georgia"))
+        .filter(or_(*clauses))
+        .limit(200)
         .all()
     )
+    ranked = sorted(
+        (( _term_hits(row, terms), row) for row in rows),
+        key=lambda item: (-item[0], item[1].citation or ""),
+    )
+    ranked = [(hits, row) for hits, row in ranked if hits]
     return [
         AuthoritySearchResult(
             id=row.id,
@@ -75,7 +120,7 @@ def search_georgia_authorities(db: Session, query: str, *, limit: int = 8) -> li
             text=(row.text or "")[:12000],
             usable_as_support=_usable(row),
         )
-        for row in rows
+        for _, row in ranked[:limit]
     ]
 
 
