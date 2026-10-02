@@ -1,7 +1,7 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
-Last production check: 2026-10-01 20:00 UTC. DATABASE_URL was still unset.
+Last production check: 2026-10-02 02:05 UTC. DATABASE_URL was still unset.
 `DATABASE_URL` was unset in the automation environment, so
 `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit`
 was not run. No corpus was faked and no row counts were invented.
@@ -13,8 +13,12 @@ attempted, succeeded, and failed counts against a live database.
 
 Guest rights and encounter help already call `POST /public/rights-assistant`
 and `GET /public/encounter` without login on web Free research and Android
-Know your rights. Private cases and `POST /cases/{id}/motion-screen` stay
-login-only. Draft PR #46 (wire verified motion screen) was closed as superseded: main already calls POST /cases/{id}/motion-screen and the branch conflicted with current guest-rights routing. The README still describes a development build because official-source
+Know your rights. A contract test now locks the web Free research and encounter
+replies to those public routes. Private cases and `POST /cases/{id}/motion-screen`
+stay login-only. Conflicting PRs #54 and #56 (disable paywall) and #38 (motion
+registry wiring) were closed as superseded: main already disables the launch
+paywall inside `require_paid` and already posts to the authenticated motion
+screen. The README still describes a development build because official-source
 ingestion is not complete.
 
 | Court / source | Discovered online range | Stored | Gap |
