@@ -46,3 +46,14 @@ class GuestPublicRightsContractTest {
         assertTrue(screen.contains("login_required"))
     }
 }
+
+    @Test
+    fun homeEncounterCardsUseGuestRightsWithoutMembership() {
+        val home = source("app/src/main/java/help/galaw/standalone/MainActivity.kt")
+        assertTrue(home.contains("openGuestRights(\"Know my rights during a Georgia police encounter\")"))
+        assertTrue(home.contains("GuestRightsActivity.EXTRA_SITUATION"))
+        assertTrue(!home.contains("requirePaid{showGuide(\"KNOW MY RIGHTS\""))
+        val cases = home.substringAfter("YOUR LEGAL WORK")
+        assertTrue(cases.contains("requirePaid{showDocuments()}"))
+        assertTrue(cases.contains("requirePaid{showLegalWorkHub()}"))
+    }
