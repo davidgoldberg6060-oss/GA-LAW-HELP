@@ -20,7 +20,6 @@ def test_web_free_research_uses_public_guest_endpoints():
     assert "authApi" not in encounter
     assert "'/public/rights-assistant'" in guest
     assert "'/public/encounter?situation='" in guest
-    assert "Do not resist, lie, or destroy evidence" not in guest or True
     assert "not a claim that any citation is current" in guest
 
 
