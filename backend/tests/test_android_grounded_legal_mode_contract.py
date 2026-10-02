@@ -13,11 +13,11 @@ def test_guest_rights_and_talk_use_public_endpoints_without_login():
     source = _source()
     assert 'RIGHTS("rights")' in source
     assert 'TALK_TO_ME("talk_to_me")' in source
-    assert "guestRightsAndEncounter(clean, \"rights\")" in source
-    assert "guestRightsAndEncounter(clean, \"talk_to_me\")" in source
+    assert 'guestRightsAndEncounter(clean, "rights")' in source
+    assert 'guestRightsAndEncounter(clean, "talk_to_me")' in source
     assert "GuestPublicApi.encounter(BuildConfig.API_BASE_URL, query)" in source
     assert "GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, query, mode)" in source
-    assert "login_required", false" in source
+    assert 'assistant.put("login_required", false)' in source
     assert "api.rightsAnalysis(" not in source
     assert "api.talkToMeAnalysis(" not in source
     assert "publicAsk(" not in source
