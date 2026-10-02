@@ -33,9 +33,9 @@ object GroundedLegalMode {
 
         val raw = when (mode) {
             Mode.CASE_ANALYSIS -> api.caseAnalysisWithVerifiedAuthorities(clean)
-            Mode.RIGHTS -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "rights")
+            Mode.RIGHTS -> guestRightsAndEncounter(clean, "rights")
             Mode.MOTIONS -> api.motionsAnalysis(clean)
-            Mode.TALK_TO_ME -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "talk_to_me")
+            Mode.TALK_TO_ME -> guestRightsAndEncounter(clean, "talk_to_me")
         }
         val answer = GroundedLegalResult.answer(raw).ifBlank {
             "No grounded legal analysis was returned. Add specific facts, the court, case stage, charge, or legal issue and try again."
@@ -46,5 +46,17 @@ object GroundedLegalMode {
             if (authoritySummary.isNotBlank()) append("\n\n").append(authoritySummary)
         }
         return Result(mode, raw, answer, authoritySummary, displayText)
+    }
+
+    /** Free research. Does not send a session and does not invent citations. */
+    private fun guestRightsAndEncounter(query: String, mode: String): JSONObject {
+        val encounter = GuestPublicApi.encounter(BuildConfig.API_BASE_URL, query)
+        val assistant = GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, query, mode)
+        if (assistant.optString("coverage_notice").isBlank()) {
+            val notice = encounter.optString("disclaimer").ifBlank { encounter.optString("coverage_limit") }
+            if (notice.isNotBlank()) assistant.put("coverage_notice", notice)
+        }
+        assistant.put("login_required", false)
+        return assistant
     }
 }
