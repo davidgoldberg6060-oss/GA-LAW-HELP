@@ -45,7 +45,6 @@ class GuestPublicRightsContractTest {
         assertTrue(screen.contains("api.groundedLegalAssistant"))
         assertTrue(screen.contains("login_required"))
     }
-}
 
     @Test
     fun homeEncounterCardsUseGuestRightsWithoutMembership() {
@@ -53,7 +52,9 @@ class GuestPublicRightsContractTest {
         assertTrue(home.contains("openGuestRights(\"Know my rights during a Georgia police encounter\")"))
         assertTrue(home.contains("GuestRightsActivity.EXTRA_SITUATION"))
         assertTrue(!home.contains("requirePaid{showGuide(\"KNOW MY RIGHTS\""))
+        assertTrue(home.contains("Guest encounter help. No sign-in."))
         val cases = home.substringAfter("YOUR LEGAL WORK")
         assertTrue(cases.contains("requirePaid{showDocuments()}"))
         assertTrue(cases.contains("requirePaid{showLegalWorkHub()}"))
     }
+}
