@@ -16,6 +16,8 @@ def test_guest_free_research_uses_public_rights_endpoints():
     assert "not a claim that any citation is current" in guest
     assert "Authorization" not in guest
     assert "Create a free account or sign in to use AI legal research." not in app
+    assert "rights guidance, police-encounter help, emergency guidance, cases, documents, recordings, motion screening and defense analysis require a paid membership." not in app
+    assert "Free research, rights guidance, and police-encounter help stay available without an account." in app
     assert "authApi('/public/ask'" not in app
     assert "function openPolice(){setTool('police')}" in app
     assert "function openRights(next:ScenarioKey=scenario){setScenario(next);setTool('avoid')}" in app
