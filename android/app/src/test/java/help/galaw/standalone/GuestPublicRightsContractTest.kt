@@ -3,6 +3,7 @@ package help.galaw.standalone
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 class GuestPublicRightsContractTest {
     private fun source(path: String): String {
@@ -45,15 +46,17 @@ class GuestPublicRightsContractTest {
         assertTrue(screen.contains("api.groundedLegalAssistant"))
         assertTrue(screen.contains("login_required"))
     }
-}
 
     @Test
     fun homeEncounterCardsUseGuestRightsWithoutMembership() {
         val home = source("app/src/main/java/help/galaw/standalone/MainActivity.kt")
         assertTrue(home.contains("openGuestRights(\"Know my rights during a Georgia police encounter\")"))
         assertTrue(home.contains("GuestRightsActivity.EXTRA_SITUATION"))
-        assertTrue(!home.contains("requirePaid{showGuide(\"KNOW MY RIGHTS\""))
+        assertFalse(home.contains("requirePaid{showGuide(\"KNOW MY RIGHTS\""))
+        assertTrue(home.contains("if(q.isNotEmpty())openGuestRights(q)"))
+        assertFalse(home.contains("requirePaid{busy(\"Asking GA.LAW.HELP"))
         val cases = home.substringAfter("YOUR LEGAL WORK")
         assertTrue(cases.contains("requirePaid{showDocuments()}"))
         assertTrue(cases.contains("requirePaid{showLegalWorkHub()}"))
     }
+}
