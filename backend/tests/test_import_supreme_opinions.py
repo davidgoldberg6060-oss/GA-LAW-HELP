@@ -55,3 +55,26 @@ def test_fails_closed_when_index_has_no_opinion_documents():
         assert "No opinion PDFs" in str(exc)
     else:
         raise AssertionError("An empty index must not look like a complete import")
+
+
+def test_commit_refuses_without_explicit_database(monkeypatch, capsys):
+    from app.ingestion.import_supreme_opinions import main
+
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    code = main(["--year", "2025", "--limit", "25", "--commit"])
+    captured = capsys.readouterr()
+    assert code == 2
+    assert "DATABASE_URL" in captured.out
+    assert '"committed": false' in captured.out
+    assert '"attempted": 0' in captured.out
+
+
+def test_commit_refuses_sqlite_fallback(monkeypatch, capsys):
+    from app.ingestion.import_supreme_opinions import main
+
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///./ga_law_help.db")
+    code = main(["--year", "2025", "--limit", "25", "--commit"])
+    captured = capsys.readouterr()
+    assert code == 2
+    assert "sqlite" in captured.out
+    assert '"succeeded": 0' in captured.out
