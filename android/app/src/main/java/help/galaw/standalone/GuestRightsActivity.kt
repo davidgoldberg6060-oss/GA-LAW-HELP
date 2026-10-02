@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlin.concurrent.thread
 
 class GuestRightsActivity : AppCompatActivity() {
+    companion object { const val EXTRA_SITUATION = "situation" }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val navy = Color.rgb(4, 18, 31)
@@ -36,6 +37,7 @@ class GuestRightsActivity : AppCompatActivity() {
         }
         val question = EditText(this).apply {
             hint = "Describe the encounter or rights question"
+            setText(intent.getStringExtra(EXTRA_SITUATION).orEmpty())
             setHintTextColor(Color.rgb(150, 172, 190))
             setTextColor(Color.WHITE)
             minLines = 4
