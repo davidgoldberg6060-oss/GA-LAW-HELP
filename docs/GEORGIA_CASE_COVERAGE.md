@@ -1,21 +1,17 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
-Last production check: 2026-10-01 20:00 UTC. DATABASE_URL was still unset.
-`DATABASE_URL` was unset in the automation environment, so
-`python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit`
-was not run. No corpus was faked and no row counts were invented.
-Prior live-database check on 2026-09-28 reported
-`legal_sources = 0`, `legal_authorities = 0`, `authority_versions = 0`.
+Last automation check: 2026-10-02 00:03 UTC. DATABASE_URL was still unset in the automation environment.
+`python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run.
+No corpus was faked and no row counts were invented.
+Prior live-database check on 2026-09-28 reported `legal_sources = 0`, `legal_authorities = 0`, `authority_versions = 0`.
 Those stored counts were not rechecked and remain unverified.
-Issue 88 is not treated as ingested until a real import records discovered,
-attempted, succeeded, and failed counts against a live database.
+Issue 88 is not treated as ingested until a real import records discovered, attempted, succeeded, and failed counts against a live database.
 
-Guest rights and encounter help already call `POST /public/rights-assistant`
-and `GET /public/encounter` without login on web Free research and Android
-Know your rights. Private cases and `POST /cases/{id}/motion-screen` stay
-login-only. Draft PR #46 (wire verified motion screen) was closed as superseded: main already calls POST /cases/{id}/motion-screen and the branch conflicted with current guest-rights routing. The README still describes a development build because official-source
-ingestion is not complete.
+Guest rights and encounter help already call `POST /public/rights-assistant` and `GET /public/encounter` without login on web Free research and Android Know your rights. Private cases and `POST /cases/{id}/motion-screen` stay login-only.
+Conflicting paywall branches #54 and #56 were closed on 2026-10-02 because they were dirty against current main and superseded: `require_paid` already authenticates without a membership block. They were not rebased.
+Other older branches (including #38, #39, #58, #59, #70, #71, #72, #77, #83, #85, and #87) remain open because they change legal-answer behavior and were not verified safe to close or rebase in this run.
+The README still describes a development build because official-source ingestion is not complete.
 
 | Court / source | Discovered online range | Stored | Gap |
 | --- | --- | ---: | --- |
@@ -29,17 +25,8 @@ The Supreme Court annual importer can be run in preview batches, for example:
 
 `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25`
 
-After validating links, metadata, database connectivity, and permissions, an
-operator may explicitly add `--commit`. Repeat with increasing `--offset` for
-each year. A run must log `discovered`, `attempted`, `succeeded` and `failed`;
-compare committed row/version counts in the database. Index pages can change
-between batches: audit duplicates, skipped URLs and final copies, and repeat
-yearly checks. Do not interpret an HTTP 200 or a preview as persisted coverage.
+After validating links, metadata, database connectivity, and permissions, an operator may explicitly add `--commit`. Repeat with increasing `--offset` for each year. A run must log `discovered`, `attempted`, `succeeded` and `failed`; compare committed row/version counts in the database. Index pages can change between batches: audit duplicates, skipped URLs and final copies, and repeat yearly checks. Do not interpret an HTTP 200 or a preview as persisted coverage.
 
-For documents no longer available from an official source, seek a lawfully
-accessible public copy and record its provenance and limitations. Do not
-restore sealed, restricted, expunged, or otherwise private material simply
-because it was once accessible. Public case histories, docket metadata,
-published opinions and full trial-court filings are distinct coverage goals.
+For documents no longer available from an official source, seek a lawfully accessible public copy and record its provenance and limitations. Do not restore sealed, restricted, expunged, or otherwise private material simply because it was once accessible. Public case histories, docket metadata, published opinions and full trial-court filings are distinct coverage goals.
 Do not copy the Official Code of Georgia Annotated. Do not dump private trial dockets.
 Do not present unverified citations as current Georgia law.
