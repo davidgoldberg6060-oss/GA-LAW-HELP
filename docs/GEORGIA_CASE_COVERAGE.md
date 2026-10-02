@@ -1,7 +1,7 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
-Last production check: 2026-10-02 12:00 UTC. DATABASE_URL was still unset.
+Last production check: 2026-10-02 21:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
 On 2026-10-02 12:00 UTC the automation environment still had no DATABASE_URL, so the 2025 Supreme Court import was not run and no corpus rows were invented.
 `DATABASE_URL` was unset in the automation environment, so
 `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit`
