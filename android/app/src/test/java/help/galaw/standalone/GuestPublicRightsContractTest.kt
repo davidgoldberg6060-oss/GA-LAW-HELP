@@ -45,7 +45,6 @@ class GuestPublicRightsContractTest {
         assertTrue(screen.contains("api.groundedLegalAssistant"))
         assertTrue(screen.contains("login_required"))
     }
-}
 
     @Test
     fun homeEncounterCardsUseGuestRightsWithoutMembership() {
@@ -57,3 +56,4 @@ class GuestPublicRightsContractTest {
         assertTrue(cases.contains("requirePaid{showDocuments()}"))
         assertTrue(cases.contains("requirePaid{showLegalWorkHub()}"))
     }
+}

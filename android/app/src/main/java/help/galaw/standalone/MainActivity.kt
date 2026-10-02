@@ -134,7 +134,7 @@ class MainActivity : AppCompatActivity() {
         root.addView(homeCard("⚖ Georgia Laws","Search indexed Georgia authorities"){requirePaid{showLawSearch()}})
         root.addView(homeCard("📁 My Documents","Cases, documents and evidence"){requirePaid{showDocuments()}})
         root.addView(homeCard("⚖ Motions & Legal Work","Research, motions, appeals and post-conviction work"){requirePaid{showLegalWorkHub()}})
-        root.addView(homeCard("🛡 Know My Rights","Plain-language rights information"){requirePaid{showGuide("KNOW MY RIGHTS","Choose the situation you are dealing with and review plain-language legal information before deciding what to do.")}})
+        root.addView(homeCard("🛡 Know My Rights","Plain-language rights information, no account required"){openGuestRights("Know my rights during a Georgia police encounter")})
         root.addView(homeCard("⚠ Emergency Information","Immediate safety information"){showEmergencyInfo()})
         root.addView(homeCard("● Profile","Account details and sign-out"){showProfile()})
         root.addView(homeCard("Payment & Subscription","Membership status and secure checkout"){showMembership()})
@@ -178,7 +178,7 @@ class MainActivity : AppCompatActivity() {
         root.addView(label("If there is immediate danger or a medical emergency, call 911 or your local emergency service.",16f))
         root.addView(label("For a police encounter, stay calm, keep your hands visible, avoid sudden movements, and do not physically resist. You can ask whether you are free to leave. If you are being questioned while in custody, you can clearly request a lawyer and state that you wish to remain silent.",15f).apply{setTextColor(Color.rgb(205,218,227));setPadding(0,dp(14),0,dp(10))})
         root.addView(label("GA.LAW.HELP provides legal information, not emergency dispatch or attorney representation.",13f).apply{setTextColor(Color.rgb(148,166,180))})
-        root.addView(button("Know My Rights"){requirePaid{showGuide("KNOW MY RIGHTS","Review plain-language rights information for the situation you are dealing with. Do not physically resist or obstruct officers.")}})
+        root.addView(button("Know My Rights"){openGuestRights("Know my rights during a Georgia police encounter")})
     }
 
     private fun openCheckout(plan:String){
