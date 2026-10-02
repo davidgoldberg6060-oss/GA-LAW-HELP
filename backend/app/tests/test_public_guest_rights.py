@@ -38,3 +38,22 @@ def test_guest_rights_assistant_does_not_require_login(monkeypatch):
 def test_private_cases_still_require_login():
     with TestClient(app) as client:
         assert client.get("/cases").status_code in {401, 403}
+
+def test_guest_rights_falls_back_when_database_is_unavailable(monkeypatch):
+    from sqlalchemy.exc import OperationalError
+
+    def boom(*args, **kwargs):
+        raise OperationalError("select", {}, Exception("database unavailable"))
+
+    monkeypatch.setattr("app.main.grounded_legal_response", boom)
+    with TestClient(app) as client:
+        response = client.post("/public/rights-assistant", json={"query": "traffic stop rights", "mode": "rights"})
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["guest"] is True
+        assert payload["login_required"] is False
+        assert payload["authorities"] == []
+        notice = payload["coverage_notice"].lower()
+        assert "not a claim that any rule is current georgia law" in notice
+        assert "do not resist" in notice
+
