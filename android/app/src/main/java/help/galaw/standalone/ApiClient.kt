@@ -63,8 +63,8 @@ class ApiClient(private val context: Context) {
     fun rightsLookup(query:String)=internalLegalSearch(query,"rights")
     fun motionsLookup(query:String)=internalLegalSearch(query,"motions")
     fun caseAnalysisWithVerifiedAuthorities(facts:String)=groundedLegalAssistant(facts,"case_analysis")
-    fun talkToMeAnalysis(transcript:String)=groundedLegalAssistant(transcript,"talk_to_me")
-    fun rightsAnalysis(description:String)=groundedLegalAssistant(description,"rights")
+    fun talkToMeAnalysis(transcript:String)=guestRights(transcript, "talk_to_me")
+    fun rightsAnalysis(description:String)=guestRights(description, "rights")
     fun motionsAnalysis(facts:String)=groundedLegalAssistant(facts,"motions")
     private fun displayName(uri:Uri):String{var name=uri.lastPathSegment?.substringAfterLast('/')?:"evidence";val cursor:Cursor?=context.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null);cursor?.use{if(it.moveToFirst())name=it.getString(0)};return name.replace(Regex("[\\r\\n\\\"]"),"_")}
     private fun size(uri:Uri):Long=context.contentResolver.openAssetFileDescriptor(uri,"r")?.use{it.length}?:-1L
@@ -74,12 +74,16 @@ class ApiClient(private val context: Context) {
     private fun uploadChunk(caseId:Int,uploadId:String,index:Int,bytes:ByteArray){val boundary="GAChunk${System.nanoTime()}";val c=connection("/cases/$caseId/uploads/$uploadId/chunks/$index","PUT");c.doOutput=true;c.setRequestProperty("Content-Type","multipart/form-data; boundary=$boundary");DataOutputStream(c.outputStream).use{out->out.writeBytes("--$boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"chunk-$index\"\r\nContent-Type: application/octet-stream\r\n\r\n");out.write(bytes);out.writeBytes("\r\n--$boundary--\r\n")};val(code,response)=read(c);if(code==401)expireSession();if(code !in 200..299)throw ApiException(code,response)}
     fun logout(){val current=refreshToken;if(current!=null)runCatching{execute("/auth/logout","POST",JSONObject().put("refresh_token",current),false)};clearSession()}
     fun caseNotes(id:Int)=JSONArray(execute("/cases/$id/notes"));fun saveCaseNote(id:Int,title:String,content:String,language:String)=JSONObject(execute("/cases/$id/notes","POST",JSONObject().put("title",title).put("content",content).put("note_type","LEGAL_RESEARCH").put("language",language)));fun deleteCaseNote(id:Int,noteId:Long)=JSONObject(execute("/cases/$id/notes/$noteId","DELETE"))
-    fun publicAsk(question:String):JSONObject {
-        GuestPublicApi.encounter(BuildConfig.API_BASE_URL, question)
-        val result = GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, question, "rights")
+    /** Guest rights and talk-to-me. Does not attach a bearer token or open login. */
+    fun guestRights(query:String, mode:String="rights"):JSONObject {
+        GuestPublicApi.encounter(BuildConfig.API_BASE_URL, query)
+        val result = GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, query, mode)
+        if (!result.has("answer") && result.has("analysis")) result.put("answer", result.optString("analysis"))
+        result.put("login_required", false)
         val answer = GroundedLegalResult.answer(result).ifBlank { result.optString("answer") }
         result.put("answer", answer.ifBlank { "No grounded guest rights answer was returned. This is general information, not a citation of current Georgia law." })
         return result
     }
+    fun publicAsk(question:String):JSONObject = guestRights(question, "rights")
     fun searchAuthorities(query:String)=JSONObject(execute("/legal/authorities/search?query="+java.net.URLEncoder.encode(query,"UTF-8"))).optJSONArray("items")?:JSONArray()
 }

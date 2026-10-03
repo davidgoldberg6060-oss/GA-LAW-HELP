@@ -1,7 +1,8 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
-Last production check: 2026-10-02 21:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
+Last production check: 2026-10-03 03:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
+On 2026-10-02 21:00 UTC the automation environment still had no DATABASE_URL, so the 2025 Supreme Court import was not run and no corpus rows were invented.
 On 2026-10-02 12:00 UTC the automation environment still had no DATABASE_URL, so the 2025 Supreme Court import was not run and no corpus rows were invented.
 `DATABASE_URL` was unset in the automation environment, so
 `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit`
@@ -15,7 +16,8 @@ On 2026-10-02 the automation environment still had no DATABASE_URL, so the 2025 
 
 Guest rights and encounter help already call `POST /public/rights-assistant`
 and `GET /public/encounter` without login on web Free research and Android
-Know your rights. Private cases and `POST /cases/{id}/motion-screen` stay
+Know your rights. Leftover Android `rightsAnalysis` and `talkToMeAnalysis`
+helpers now use the same public guest path. Private cases and `POST /cases/{id}/motion-screen` stay
 login-only. Draft PR #46 (wire verified motion screen) was closed as superseded: main already calls POST /cases/{id}/motion-screen and the branch conflicted with current guest-rights routing. The README still describes a development build because official-source
 ingestion is not complete.
 

@@ -36,6 +36,11 @@ class GuestPublicRightsContractTest {
         val mode = source("app/src/main/java/help/galaw/standalone/GroundedLegalMode.kt")
         assertTrue(mode.contains("api.caseAnalysisWithVerifiedAuthorities"))
         assertTrue(mode.contains("api.motionsAnalysis"))
+        val api = source("app/src/main/java/help/galaw/standalone/ApiClient.kt")
+        assertTrue(api.contains("fun motionsAnalysis(facts:String)=groundedLegalAssistant(facts,\"motions\")"))
+        assertTrue(api.contains("fun caseAnalysisWithVerifiedAuthorities(facts:String)=groundedLegalAssistant(facts,\"case_analysis\")"))
+        assertFalse(api.contains("fun rightsAnalysis(description:String)=groundedLegalAssistant"))
+        assertFalse(api.contains("fun talkToMeAnalysis(transcript:String)=groundedLegalAssistant"))
     }
 
     @Test
@@ -57,10 +62,10 @@ class GuestPublicRightsContractTest {
         assertFalse(home.contains("requirePaid{busy(\"Asking GA.LAW.HELP"))
         assertTrue(home.contains("showHome()"))
         assertFalse(home.contains("if(api.token==null) showAuth() else showHome()"))
-        assertTrue(home.contains("navItem(\"💬\",\"AI Help\"){showTalkToMe()}"))
+        assertTrue(home.contains("navItem(\"\ud83d\udcac\",\"AI Help\"){showTalkToMe()}"))
         assertFalse(home.contains("requirePaid{showTalkToMe()}"))
         assertFalse(home.contains("requirePaid{showLawSearch()}"))
-        assertTrue(home.contains("navItem(\"⚖\",\"Laws\"){openGuestRights(\"Georgia laws and rights\")}"))
+        assertTrue(home.contains("navItem(\"\u2696\",\"Laws\"){openGuestRights(\"Georgia laws and rights\")}"))
         assertTrue(home.contains("openGuestRights(\"Georgia laws and rights\")"))
         val cases = home.substringAfter("YOUR LEGAL WORK")
         assertTrue(cases.contains("requirePaid{showDocuments()}"))
@@ -77,7 +82,11 @@ class GuestPublicRightsContractTest {
         assertTrue(home.contains("if(!requireSignedIn())return; val root=page(\"My Cases\""))
         assertTrue(home.contains("if(!requireSignedIn())return; val root=page(\"Documents\""))
         val api = source("app/src/main/java/help/galaw/standalone/ApiClient.kt")
+        assertTrue(api.contains("fun guestRights"))
         assertTrue(api.contains("GuestPublicApi.rightsAssistant"))
         assertTrue(api.contains("GuestPublicApi.encounter"))
+        assertTrue(api.contains("fun rightsAnalysis(description:String)=guestRights(description, \"rights\")"))
+        assertTrue(api.contains("fun talkToMeAnalysis(transcript:String)=guestRights(transcript, \"talk_to_me\")"))
+        assertTrue(api.contains("fun publicAsk(question:String):JSONObject = guestRights(question, \"rights\")"))
     }
 }
