@@ -8,6 +8,9 @@ def test_guest_free_research_uses_public_rights_endpoints():
     guest = (ROOT / "src" / "guestPublic.ts").read_text()
     docker = (ROOT / "Dockerfile.web").read_text()
     assert "guestRightsAndEncounter" in app
+    assert "do not require sign-in" in app
+    assert "motion screening, and defense analysis stay login-only" in app
+    assert "rights guidance, police-encounter help, emergency guidance, cases, documents, recordings, motion screening and defense analysis require a paid membership" not in app
     assert "guestEncounterReply" in app
     assert "/public/rights-assistant" in guest
     assert "/public/encounter" in guest
