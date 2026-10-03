@@ -14,3 +14,4 @@ Free research and encounter help must not require an account.
 - Regression: `tests/test_guest_free_research_browser_path.py`.
 
 - Signed-in shell `HomeActivity` also opens without a session. Georgia Laws and Talk to Me call `api.publicAsk`, which uses `POST /public/rights-assistant` and `GET /public/encounter`. My Cases, Documents, Legal Tools, and Account stay behind `requireSignedIn`.
+- Guest research lists official court indexes plus any https source links returned by `POST /public/rights-assistant`. Those indexed links are labeled not verified as current Georgia law. Missing links are not invented.

@@ -32,7 +32,7 @@ export async function guestRightsAndEncounter(apiBase: string, requestJson: type
     query: q,
     topic: 'Georgia rights and encounter information',
     guidance: pack.prompt || pack.disclaimer || '',
-    resources: guestOfficialIndexes(pack),
+    resources: [...guestOfficialIndexes(pack), ...indexedAuthorityLinks(assistant)],
     notice: [pack.disclaimer, pack.coverage_limit, assistant.coverage_notice, 'Index links are official court pages, not a complete code and not a claim that any citation is current.']
       .filter((part) => typeof part === 'string' && part.trim())
       .join(' '),
@@ -64,4 +64,22 @@ export function guestOfficialIndexes(pack: {official_indexes?: Array<{title?: st
       kind: row.kind || 'court index',
       official: row.official !== false,
     }));
+}
+
+export function indexedAuthorityLinks(assistant: {authorities?: Array<{title?: string; citation?: string; source_url?: string; url?: string}>}) {
+  const rows = Array.isArray(assistant.authorities) ? assistant.authorities : [];
+  return rows
+    .map((row) => {
+      const url = typeof row.source_url === 'string' ? row.source_url : row.url;
+      if (!url || !url.startsWith('https://')) return null;
+      const title = (row.citation || row.title || url).trim();
+      if (!title) return null;
+      return {
+        title,
+        url,
+        kind: 'indexed authority · not verified as current Georgia law',
+        official: false,
+      };
+    })
+    .filter((row): row is {title: string; url: string; kind: string; official: boolean} => row !== null);
 }
