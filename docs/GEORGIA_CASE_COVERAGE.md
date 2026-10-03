@@ -1,17 +1,4 @@
-# Georgia public ruling coverage
-
-This is a coverage ledger, not a claim that all Georgia cases are available.
-Last production check: 2026-10-02 21:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
-On 2026-10-02 12:00 UTC the automation environment still had no DATABASE_URL, so the 2025 Supreme Court import was not run and no corpus rows were invented.
-`DATABASE_URL` was unset in the automation environment, so
-`python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit`
-was not run. No corpus was faked and no row counts were invented.
-Prior live-database check on 2026-09-28 reported
-`legal_sources = 0`, `legal_authorities = 0`, `authority_versions = 0`.
-Those stored counts were not rechecked and remain unverified.
-Issue 88 is not treated as ingested until a real import records discovered,
-attempted, succeeded, and failed counts against a live database.
-On 2026-10-02 the automation environment still had no DATABASE_URL, so the 2025 Supreme Court import was not run and no corpus rows were invented.
+# Georgia case coverage
 
 Guest rights and encounter help already call `POST /public/rights-assistant`
 and `GET /public/encounter` without login on web Free research and Android
@@ -37,6 +24,13 @@ each year. A run must log `discovered`, `attempted`, `succeeded` and `failed`;
 compare committed row/version counts in the database. Index pages can change
 between batches: audit duplicates, skipped URLs and final copies, and repeat
 yearly checks. Do not interpret an HTTP 200 or a preview as persisted coverage.
+
+## 2026-10-02 automation attempt
+
+`python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit`
+was not run. `DATABASE_URL` was not available. No rows were committed and no
+coverage count was invented. See `docs/corpus_runs/2026-10-02-supreme-2025-limit-25.md`.
+Issue 88 stays open until a real database records committed rows.
 
 For documents no longer available from an official source, seek a lawfully
 accessible public copy and record its provenance and limitations. Do not
