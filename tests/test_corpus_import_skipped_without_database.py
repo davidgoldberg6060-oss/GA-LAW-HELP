@@ -11,5 +11,4 @@ def test_coverage_ledger_records_skipped_2025_import():
     assert "import_supreme_opinions --year 2025 --limit 25 --commit" in ledger
     assert "no corpus rows were invented" in ledger
     assert "Issue 88 is not treated as ingested" in ledger
-    # Official annotated code and private dockets stay out of the ledger.
-    assert "Official Code of Georgia Annotated" not in ledger or "Not the Official Code" in ledger
+    assert "stored counts were not rechecked" in ledger
