@@ -66,4 +66,18 @@ class GuestPublicRightsContractTest {
         assertTrue(cases.contains("requirePaid{showDocuments()}"))
         assertTrue(cases.contains("requirePaid{showLegalWorkHub()}"))
     }
+
+    @Test
+    fun homeActivityGeorgiaLawsUsesPublicAskWithoutLoginGate() {
+        val home = source("app/src/main/java/help/galaw/standalone/HomeActivity.kt")
+        assertFalse(home.contains("if (api.token == null) { startActivity(Intent(this, AuthActivity::class.java)); finish(); return }"))
+        assertTrue(home.contains("api = ApiClient(this); showHome()"))
+        assertTrue(home.contains("val result=api.publicAsk(q)"))
+        assertFalse(home.contains("api.searchAuthorities(q)"))
+        assertTrue(home.contains("if(!requireSignedIn())return; val root=page(\"My Cases\""))
+        assertTrue(home.contains("if(!requireSignedIn())return; val root=page(\"Documents\""))
+        val api = source("app/src/main/java/help/galaw/standalone/ApiClient.kt")
+        assertTrue(api.contains("GuestPublicApi.rightsAssistant"))
+        assertTrue(api.contains("GuestPublicApi.encounter"))
+    }
 }
