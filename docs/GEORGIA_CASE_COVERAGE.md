@@ -1,6 +1,7 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
+Last production check: 2026-10-03 21:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
 Last production check: 2026-10-03 08:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
 Last production check: 2026-10-03 04:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
 Last production check: 2026-10-02 21:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
@@ -18,7 +19,8 @@ On 2026-10-02 the automation environment still had no DATABASE_URL, so the 2025 
 Guest rights and encounter help already call `POST /public/rights-assistant`
 and `GET /public/encounter` without login on web Free research and Android
 Know your rights. Private cases and `POST /cases/{id}/motion-screen` stay
-login-only. Draft PR #46 (wire verified motion screen) was closed as superseded: main already calls POST /cases/{id}/motion-screen and the branch conflicted with current guest-rights routing. The README still describes a development build because official-source
+login-only. Conflicting PR #38 (verified motion registry) was closed as superseded: main already builds the motion registry from indexed authorities in `motion_screen_service.py` and routes `POST /cases/{id}/motion-screen` through it. The branch was merge-conflicting and was not rebased.
+Draft PR #46 (wire verified motion screen) was closed as superseded: main already calls POST /cases/{id}/motion-screen and the branch conflicted with current guest-rights routing. The README still describes a development build because official-source
 ingestion is not complete.
 
 | Court / source | Discovered online range | Stored | Gap |
