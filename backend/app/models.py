@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, date
-from sqlalchemy import String, Text, DateTime, Date, ForeignKey, Integer, BigInteger, Boolean, CheckConstraint
+from sqlalchemy import String, Text, DateTime, Date, ForeignKey, Integer, BigInteger, Boolean, CheckConstraint, Index, text as sql_text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 from .legal_status_vocabulary import CURRENCY_STATUSES, PRECEDENTIAL_STATUSES, sql_in_list
@@ -86,6 +86,13 @@ class LegalAuthority(Base):
     __table_args__ = (
         CheckConstraint(f"lower(currency_status) IN ({sql_in_list(CURRENCY_STATUSES)})", name="ck_legal_authorities_currency_status"),
         CheckConstraint(f"lower(precedential_status) IN ({sql_in_list(PRECEDENTIAL_STATUSES)})", name="ck_legal_authorities_precedential_status"),
+        # Full-text search (Postgres only); keep in sync with authority_search_service and
+        # backend/migrations/20261004_authority_fulltext_search.sql.
+        Index(
+            "ix_legal_authorities_fulltext",
+            sql_text("to_tsvector('english'::regconfig, ((COALESCE(citation, '') || ' ') || COALESCE(title, '') || ' ') || COALESCE(text, ''))"),
+            postgresql_using="gin",
+        ).ddl_if(dialect="postgresql"),
     )
     id: Mapped[int] = mapped_column(primary_key=True)
     jurisdiction: Mapped[str] = mapped_column(String(100), index=True)
