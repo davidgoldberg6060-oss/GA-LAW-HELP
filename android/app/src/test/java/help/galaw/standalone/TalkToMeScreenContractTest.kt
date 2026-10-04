@@ -24,7 +24,7 @@ class TalkToMeScreenContractTest {
     @Test
     fun talkToMeBoundsContextAndPreservesAuthorityStatus() {
         val text = source("app/src/main/java/help/galaw/standalone/TalkToMeScreenModel.kt")
-        assertTrue(text.contains("takeLast(MAX_CONTEXT_CHARS)"))
+        assertTrue(text.contains("takeLast(contextBudget)"))
         assertTrue(text.contains("result.authoritySummary"))
         assertTrue(text.contains("result.displayText"))
     }
