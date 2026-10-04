@@ -12,11 +12,12 @@ from hashlib import sha256
 
 from sqlalchemy.orm import Session
 
+from ..legal_status_vocabulary import NEGATIVE_TREATMENTS, UNKNOWN, normalize_currency_status, normalize_precedential_status
 from ..models import AuthorityVersion, LegalAuthority
 from .models import LegalStatus, SourceDocument
 
 _VERIFIED = {"verified", "official", "validated", "confirmed"}
-_NEGATIVE = {"overruled", "vacated", "superseded", "withdrawn", "repealed"}
+_NEGATIVE = NEGATIVE_TREATMENTS
 
 
 def _verified(value: str | None) -> bool:
@@ -53,8 +54,8 @@ def _merge_status(authority: LegalAuthority, incoming: LegalStatus) -> None:
         authority.currency_status = treatment[0]
         authority.negative_treatment = ", ".join(treatment)
         authority.precedential_status = (
-            incoming.precedential_status
-            if incoming.precedential_status.lower() in _NEGATIVE
+            incoming.precedential_status.strip().lower()
+            if incoming.precedential_status.strip().lower() in _NEGATIVE
             else authority.precedential_status
         )
         authority.superseding_authority = incoming.superseded_by or authority.superseding_authority
@@ -66,11 +67,13 @@ def _merge_status(authority: LegalAuthority, incoming: LegalStatus) -> None:
     if not incoming_verified:
         return
 
-    # Unknown incoming fields never erase known stored determinations.
-    if incoming.currency_status.lower() != "unknown":
-        authority.currency_status = incoming.currency_status
-    if incoming.precedential_status.lower() != "unknown":
-        authority.precedential_status = incoming.precedential_status
+    # Unknown (or unrecognized) incoming fields never erase known stored determinations.
+    incoming_currency = normalize_currency_status(incoming.currency_status)
+    incoming_precedent = normalize_precedential_status(incoming.precedential_status)
+    if incoming_currency != UNKNOWN:
+        authority.currency_status = incoming_currency
+    if incoming_precedent != UNKNOWN:
+        authority.precedential_status = incoming_precedent
     if incoming.superseded_by:
         authority.superseding_authority = incoming.superseded_by
     if incoming.negative_treatment:
