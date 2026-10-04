@@ -87,7 +87,7 @@ def _guest_rights_without_corpus(query:str, mode:str) -> dict:
 def public_rights_assistant(body:dict,db:Session=Depends(get_db)):
     query=str(body.get('query','')).strip();mode=str(body.get('mode','rights')).strip()
     if not query: raise HTTPException(400,'Describe the encounter or rights question.')
-    if len(query)>4000: raise HTTPException(400,'Question is too long.')
+    if len(query)>12000: raise HTTPException(400,'Question is too long.')
     if mode not in {'rights','talk_to_me'}: raise HTTPException(400,'Guest mode is limited to rights and live-encounter help.')
     try:
         response = grounded_legal_response(query, mode, ask_openai, db=db)
