@@ -17,13 +17,14 @@ on:
           - courtlistener
           - appeals
           - regulations
+          - court_rules
       scope:
-        description: "ocga: titles ('16', '16,17' or 'all'); courtlistener: 'ga', 'gactapp' or 'ga,gactapp'; appeals: 'YYYY-MM-DD..YYYY-MM-DD'; regulations: department numbers ('40', '40,111') or 'all'"
+        description: "ocga: titles ('16', '16,17' or 'all'); courtlistener: 'ga', 'gactapp' or 'ga,gactapp'; appeals: 'YYYY-MM-DD..YYYY-MM-DD'; regulations: department numbers ('40', '40,111') or 'all'; court_rules: sets ('coa', 'coa,superior') or 'all'"
         required: false
         default: ""
         type: string
       limit:
-        description: "Maximum records this run (ocga sections / courtlistener opinions / appeals PDFs / regulation rules)"
+        description: "Maximum records this run (ocga sections / courtlistener opinions / appeals PDFs / regulation or court rules)"
         required: true
         default: "100"
         type: string
