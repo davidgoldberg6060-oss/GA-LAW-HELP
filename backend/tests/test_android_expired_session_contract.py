@@ -27,8 +27,18 @@ def test_auth_endpoints_do_not_trigger_protected_session_redirect():
     assert '!path.startsWith("/auth/")' in source
 
 
-def test_home_still_guards_missing_token_on_launch():
+def test_home_guards_private_screens_when_token_is_missing():
+    """HomeActivity opens without a session so free guest rights research is reachable
+    (PR #119, docs/GUEST_PUBLIC_RIGHTS.md). The launch-time missing-token redirect was
+    replaced by requireSignedIn(), which must still send token-less users to login before
+    any private screen (cases, documents, legal tools, case analysis, account) loads.
+    """
     source = HOME.read_text()
-    assert 'if (api.token == null)' in source
-    assert 'startActivity(Intent(this, AuthActivity::class.java))' in source
+    compact = ''.join(source.split())
+    assert 'privatefunrequireSignedIn():Boolean{if(api.token!=null)returntrue;' in compact
+    assert 'startActivity(Intent(this,AuthActivity::class.java));returnfalse}' in compact
+    for screen in ('showCases', 'showDocuments', 'showLegalTools', 'showCaseAnalysis', 'showAccount'):
+        assert f'privatefun{screen}(){{if(!requireSignedIn())return;' in compact, screen
+    for index, screen in ((1, 'showCases'), (4, 'showDocuments'), (5, 'showLegalTools'), (7, 'showAccount')):
+        assert f'{index}->if(requireSignedIn()){screen}()' in compact, screen
     assert 'finish()' in source

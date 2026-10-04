@@ -15,9 +15,6 @@ object CaseLookupScreenModel {
         val resultCount: Int
     )
 
-    /** Older call sites used State; keep that name as an alias of ViewState. */
-    typealias State = ViewState
-
     fun search(api: ApiClient, rawQuery: String): ViewState {
         val result = CaseLookupController.lookup(api, rawQuery)
         return ViewState(
