@@ -12,7 +12,7 @@ from .case_chat_service import analyze_case_conversation, case_summary_from_case
 from .internal_legal_search import search_internal
 from .authority_search_service import persisted_authority_hits
 from .grounded_legal_assistant import grounded_legal_response
-from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload
+from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_keyword_clause, public_case_payload
 from .ingestion.coverage import corpus_coverage
 from .encounter_prompt import encounter_prompt_block
 from .public_rights import official_indexes, router as public_rights_router
@@ -54,9 +54,11 @@ def public_georgia_cases(q:str='',page:int=1,page_size:int=25,db:Session=Depends
     if page<1 or page_size<1 or page_size>50: raise HTTPException(400,'page must be at least 1 and page_size must be between 1 and 50.')
     query=_public_georgia_case_query(db)
     if q:
-        like=f'%{q}%';query=query.filter(or_(models.LegalAuthority.title.ilike(like),models.LegalAuthority.citation.ilike(like),models.LegalAuthority.text.ilike(like)))
+        clause=public_case_keyword_clause(q)
+        if clause is not None:
+            query=query.filter(clause)
     total=query.count();rows=query.order_by(models.LegalAuthority.retrieved_at.desc(),models.LegalAuthority.id.desc()).offset((page-1)*page_size).limit(page_size).all()
-    return {'query':q,'page':page,'page_size':page_size,'total':total,'cases':[public_case_payload(row) for row in rows],'coverage_notice':'These are indexed public Georgia case-law records. Private user workspaces are never searched. Sealed, juvenile, expunged, restricted, private, and unavailable records are excluded. A missing case means it has not yet been indexed or cannot lawfully be displayed.'}
+    return {'query':q,'page':page,'page_size':page_size,'total':total,'cases':[public_case_payload(row) for row in rows],'coverage_notice':'These are indexed public Georgia case-law records. Private user workspaces are never searched. Sealed, juvenile, expunged, restricted, private, and unavailable records are excluded. A missing case means it has not yet been indexed or cannot lawfully be displayed. A keyword match is not a claim that the citation is current Georgia law.'}
 
 @app.get('/public/georgia-cases/{authority_id}')
 def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):

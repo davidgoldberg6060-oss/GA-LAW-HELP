@@ -64,3 +64,42 @@ def public_case_payload(authority, *, include_text: bool = False):
     else:
         payload["excerpt"] = " ".join(str(authority.text or "").split())[:700]
     return payload
+
+
+def _safe_like_token(value: str) -> str:
+    return str(value or "").replace("%", "").replace("_", "").strip()
+
+
+def public_case_keyword_clause(query_text: str):
+    """Match indexed public cases by keywords, not the entire natural-language question.
+
+    A whole-question ILIKE misses opinions that contain only some of the words.
+    A hit is an index match only. It is not a claim that the citation is current Georgia law.
+    Private user cases are never part of this clause.
+    """
+    from sqlalchemy import or_
+
+    from .authority_search_service import search_keywords
+    from .models import LegalAuthority
+
+    term = (query_text or "").strip()
+    if not term:
+        return None
+    keywords = search_keywords(term)
+    needles = keywords or [_safe_like_token(term[:80])]
+    clauses = []
+    for word in needles[:12]:
+        token = _safe_like_token(word)
+        if len(token) < 2:
+            continue
+        like = f"%{token}%"
+        clauses.extend(
+            [
+                LegalAuthority.citation.ilike(like),
+                LegalAuthority.title.ilike(like),
+                LegalAuthority.text.ilike(like),
+            ]
+        )
+    if not clauses:
+        return None
+    return or_(*clauses)
