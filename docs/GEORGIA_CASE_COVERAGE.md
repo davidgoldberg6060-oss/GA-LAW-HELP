@@ -1,6 +1,7 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
+Last index inventory: 2026-10-04 16:00 UTC. The official 2025 Supreme Court opinion page (https://www.gasupreme.us/2025-opinions/) returned HTTP 200 HTML. That page listed 274 opinion PDF hrefs, 271 unique PDF URLs, and 296 unique docket tokens. These are discovery counts only. `DATABASE_URL` was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run. Attempted, succeeded, failed, and stored counts are not recorded. No corpus rows were invented. Slip opinions on that page are subject to reconsideration and Reporter revisions; they are not treated as current Georgia Reports text.
 Last production check: 2026-10-03 21:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
 Last production check: 2026-10-03 08:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
 Last production check: 2026-10-03 04:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
@@ -25,7 +26,7 @@ ingestion is not complete.
 
 | Court / source | Discovered online range | Stored | Gap |
 | --- | --- | ---: | --- |
-| Supreme Court of Georgia annual opinion pages | 2017–2026 pages linked from the court's 2026 page | unverified | Index, import, count and check each year; earlier final reporters and revisions require separate sources. Do not treat the prior zero check as a fresh count. |
+| Supreme Court of Georgia annual opinion pages | 2017–2026 pages linked from the court's 2026 page. 2025 index inventoried 2026-10-04: 271 unique PDF URLs, 296 unique docket tokens. | unverified (import not run) | Index, import, count and check each year; earlier final reporters and revisions require separate sources. Do not treat the prior zero check as a fresh count. |
 | Court of Appeals of Georgia | Official source registered; complete archive not inventoried | unverified | Discover official individual opinions and establish dates/counts. |
 | Georgia trial courts and other public rulings | No unified archive inventoried | unverified | Inventory county and court access, document availability, restrictions and older paper records. Do not dump private trial dockets. |
 
