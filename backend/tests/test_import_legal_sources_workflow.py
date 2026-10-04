@@ -15,7 +15,7 @@ def test_workflow_is_manual_preview_by_default_and_guards_commit():
     for trigger in ("push:", "pull_request:", "schedule:", "workflow_run:"):
         assert trigger not in on_block
     options = on_block.split("options:", 1)[1].split("scope:", 1)[0]
-    assert [line.strip("- ").strip() for line in options.strip().splitlines()] == ["ocga", "courtlistener", "appeals"]
+    assert [line.strip("- ").strip() for line in options.strip().splitlines()] == ["ocga", "courtlistener", "appeals", "regulations"]
     commit_input = on_block.split("      commit:\n", 1)[1]
     assert "default: false" in commit_input and "type: boolean" in commit_input
     preview = text.split("- name: Preview import (no database writes)", 1)[1].split("- name:", 1)[0]

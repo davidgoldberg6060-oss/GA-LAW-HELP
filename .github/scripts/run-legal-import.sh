@@ -24,6 +24,10 @@ case "$SOURCE" in
     fi
     args=(-m app.ingestion.import_appeals_opinions --start "${SCOPE%%..*}" --end "${SCOPE##*..}"
           --limit "$LIMIT" --offset "$OFFSET") ;;
+  regulations)
+    # SCOPE: rules.sos.ga.gov department numbers ("40", "40,111") or "all"
+    args=(-m app.ingestion.import_ga_regulations --department "${SCOPE:-all}"
+          --limit "$LIMIT" --offset "$OFFSET" --quiet) ;;
   *)
     echo "::error::unknown source: $SOURCE"; exit 1 ;;
 esac
