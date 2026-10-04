@@ -1,3 +1,7 @@
+## Automation attempt 2026-10-04 07:00 UTC
+
+`python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run. `DATABASE_URL` was not set in the automation environment. `--commit` now exits 2 unless `DATABASE_URL` is set and is not sqlite, and prints `committed: false` and `coverage_recorded: false`. No corpus rows were invented. Guest rights already call `POST /public/rights-assistant` and `GET /public/encounter` without login. Private case routes remain login-only. README still describes a development build because issue 88 has no committed coverage.
+
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
@@ -36,7 +40,7 @@ The Supreme Court annual importer can be run in preview batches, for example:
 `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25`
 
 After validating links, metadata, database connectivity, and permissions, an
-operator may explicitly add `--commit`. Repeat with increasing `--offset` for
+operator may explicitly add `--commit`. `--commit` requires an explicit non-sqlite `DATABASE_URL`; otherwise it exits 2 and records no coverage. Repeat with increasing `--offset` for
 each year. A run must log `discovered`, `attempted`, `succeeded` and `failed`;
 compare committed row/version counts in the database. Index pages can change
 between batches: audit duplicates, skipped URLs and final copies, and repeat
