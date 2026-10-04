@@ -3,6 +3,9 @@ from urllib.parse import urlparse
 ALLOWED_HOSTS = {
     "www.gasupreme.us", "gasupreme.us",
     "www.gaappeals.us", "gaappeals.us",
+    # Court of Appeals moved to .gov; efast hosts the official opinion PDFs linked from its
+    # public opinion search.
+    "www.gaappeals.gov", "gaappeals.gov", "efast.gaappeals.gov",
     "georgiacourts.gov", "www.georgiacourts.gov", "assets.georgiacourts.gov",
     "www.legis.ga.gov", "legis.ga.gov",
 }
