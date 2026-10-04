@@ -135,13 +135,25 @@ def test_state_file_resumes_and_preview_never_advances_it(files, capsys):
         cl.main(args + ["--offset", "1", "--state-file", str(state)])
 
 
-def test_index_cache_round_trips(files, tmp_path):
+def test_index_cache_round_trips_and_is_tied_to_the_snapshot(files, tmp_path):
     args, _ = files
-    cache = tmp_path / "index.json"
+    cache = tmp_path / "cache" / "index.json"
     index = cl.build_index(args[1], args[3], args[5], courts=["ga"])
-    cl.save_index(index, str(cache))
-    loaded = cl.load_index(str(cache))
+    cl.save_index(index, str(cache), "2026-09-30")
+    loaded = cl.load_index(str(cache), "2026-09-30")
     assert set(loaded) == {"10", "12"} and loaded["10"].citations == ["318 Ga. 5"]
+    assert cl.load_index(str(cache), "2026-12-31") is None
+    assert cl.load_index(str(tmp_path / "missing.json"), "2026-09-30") is None
+
+
+def test_main_reuses_the_index_cache(files, tmp_path, capsys, monkeypatch):
+    args, _ = files
+    cache = str(tmp_path / "index.json")
+    cl.main(args + ["--index-cache", cache], session_factory=no_db)
+    monkeypatch.setattr(cl, "build_index", lambda *a, **k: (_ for _ in ()).throw(AssertionError("rebuilt")))
+    capsys.readouterr()
+    cl.main(args + ["--index-cache", cache, "--court", "gactapp"], session_factory=no_db)
+    assert [l["cluster_id"] for l in _lines(capsys) if l.get("mode") == "preview"] == ["11"]
 
 
 def test_only_courtlistener_hosts_and_complete_snapshots_are_used():

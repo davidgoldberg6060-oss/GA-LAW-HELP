@@ -1,0 +1,97 @@
+name: Import legal sources
+
+# Manual only, sibling of import-supreme-opinions.yml. Preview (default) downloads and parses the
+# selected source without touching any database. Commit mode writes to the database in the
+# DATABASE_URL repository secret and fails fast if that secret is missing or points at SQLite.
+# Nothing here runs on push or on a schedule.
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Source to import"
+        required: true
+        default: ocga
+        type: choice
+        options:
+          - ocga
+          - courtlistener
+          - appeals
+      scope:
+        description: "ocga: titles ('16', '16,17' or 'all'); courtlistener: 'ga', 'gactapp' or 'ga,gactapp'; appeals: 'YYYY-MM-DD..YYYY-MM-DD'"
+        required: false
+        default: ""
+        type: string
+      limit:
+        description: "Maximum records this run (ocga sections / courtlistener opinions / appeals PDFs)"
+        required: true
+        default: "100"
+        type: string
+      offset:
+        description: "Skip this many records first (resume a later batch)"
+        required: true
+        default: "0"
+        type: string
+      commit:
+        description: "Persist to the database in secrets.DATABASE_URL (leave unchecked for preview)"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-legal-sources
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    # The CourtListener opinions bulk file is ~55 GB compressed and is streamed, not stored.
+    timeout-minutes: 350
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+
+      - name: Restore CourtListener Georgia index cache
+        if: ${{ inputs.source == 'courtlistener' }}
+        uses: actions/cache@v4
+        with:
+          path: backend/.import-cache
+          key: courtlistener-index-${{ github.run_id }}
+          restore-keys: courtlistener-index-
+
+      - name: Preview import (no database writes)
+        if: ${{ !inputs.commit }}
+        env:
+          SOURCE: ${{ inputs.source }}
+          SCOPE: ${{ inputs.scope }}
+          LIMIT: ${{ inputs.limit }}
+          OFFSET: ${{ inputs.offset }}
+        run: bash ../.github/scripts/run-legal-import.sh
+
+      - name: Commit import to DATABASE_URL
+        if: ${{ inputs.commit }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SOURCE: ${{ inputs.source }}
+          SCOPE: ${{ inputs.scope }}
+          LIMIT: ${{ inputs.limit }}
+          OFFSET: ${{ inputs.offset }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Repository secret DATABASE_URL is not configured. Add it (Settings > Secrets and variables > Actions) before running with commit enabled."
+            exit 1
+          fi
+          case "$DATABASE_URL" in
+            sqlite*) echo "::error::DATABASE_URL points at SQLite; refusing to commit an import to a throwaway runner database."; exit 1 ;;
+          esac
+          bash ../.github/scripts/run-legal-import.sh --commit

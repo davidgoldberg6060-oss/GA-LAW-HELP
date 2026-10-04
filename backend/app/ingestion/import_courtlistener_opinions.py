@@ -245,12 +245,20 @@ def build_index(dockets: str, clusters: str, citations: str, courts: Iterable[st
     return index
 
 
-def save_index(index: dict[str, ClusterMeta], path: str) -> None:
-    Path(path).write_text(json.dumps({k: vars(v) for k, v in index.items()}), encoding="utf-8")
+def save_index(index: dict[str, ClusterMeta], path: str, bulk_date: str = "") -> None:
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    payload = {"bulk_date": bulk_date, "clusters": {k: vars(v) for k, v in index.items()}}
+    Path(path).write_text(json.dumps(payload), encoding="utf-8")
 
 
-def load_index(path: str) -> dict[str, ClusterMeta]:
-    return {k: ClusterMeta(**v) for k, v in json.loads(Path(path).read_text(encoding="utf-8")).items()}
+def load_index(path: str, bulk_date: str = "") -> dict[str, ClusterMeta] | None:
+    """Cached index for the same snapshot, or None (missing/other snapshot -> rebuild)."""
+    if not Path(path).exists():
+        return None
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if payload.get("bulk_date", "") != bulk_date:
+        return None
+    return {k: ClusterMeta(**v) for k, v in payload["clusters"].items()}
 
 
 def stream_bulk_opinions(opinions: str, index: dict[str, ClusterMeta], state: dict, snapshot: str) -> Iterator[OpinionRecord | None]:
@@ -400,12 +408,12 @@ def main(argv: list[str] | None = None, *, session_factory=None) -> int:
         if state.get("bulk_date") not in (None, bulk_date):
             parser.error(f"state file is for bulk snapshot {state['bulk_date']}, not {bulk_date}")
         state["bulk_date"] = bulk_date
-        if args.index_cache and Path(args.index_cache).exists():
-            index = load_index(args.index_cache)
-        else:
-            index = build_index(files["dockets"], files["clusters"], files["citations"], courts)
+        index = load_index(args.index_cache, bulk_date) if args.index_cache else None
+        if index is None:
+            # The cache always covers both Georgia courts so a later --court run can reuse it.
+            index = build_index(files["dockets"], files["clusters"], files["citations"])
             if args.index_cache:
-                save_index(index, args.index_cache)
+                save_index(index, args.index_cache, bulk_date)
         index = {k: v for k, v in index.items() if v.court in courts}
         records = stream_bulk_opinions(files["opinions"], index, state, f"bulk-{bulk_date}")
         header = {"source": "courtlistener-bulk", "bulk_date": bulk_date, "files": files, "georgia_clusters": len(index)}
