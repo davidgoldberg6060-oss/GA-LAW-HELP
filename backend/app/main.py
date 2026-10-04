@@ -8,6 +8,7 @@ from .legacy_main import *
 from .legacy_main import audit
 from .motion_screen_service import motion_screen_response
 from .innocence_analysis_service import innocence_analysis_response
+from .case_chat_service import analyze_case_conversation, case_summary_from_case, parse_history
 from .internal_legal_search import search_internal
 from .authority_search_service import persisted_authority_hits
 from .grounded_legal_assistant import grounded_legal_response
@@ -125,6 +126,16 @@ def private_innocence_analysis(case_id:int,body:dict,user=Depends(require_paid),
     try: response=innocence_analysis_response(db,case,additional,ask_openai)
     except RuntimeError: raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
     audit(db,user.id,'RUN_INNOCENCE_ANALYSIS','case',case_id);db.commit();return response
+
+@app.post('/cases/{case_id}/chat')
+def private_case_chat(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
+    """Conversational grounded Case Analysis: case file + recent turns + current message."""
+    case=owned_case(case_id,user,db)
+    try:
+        response=analyze_case_conversation(user_message=str(body.get('message','')),history=parse_history(body.get('history')),case_summary=case_summary_from_case(case),ask_ai=ask_openai,db=db)
+    except ValueError as error: raise HTTPException(400,str(error))
+    except RuntimeError: raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
+    audit(db,user.id,'RUN_CASE_CHAT','case',case_id);db.commit();return response
 
 @app.post('/internal/legal-search')
 def internal_legal_search(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
