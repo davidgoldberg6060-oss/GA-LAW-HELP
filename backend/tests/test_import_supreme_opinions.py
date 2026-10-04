@@ -55,3 +55,32 @@ def test_fails_closed_when_index_has_no_opinion_documents():
         assert "No opinion PDFs" in str(exc)
     else:
         raise AssertionError("An empty index must not look like a complete import")
+
+
+def test_discover_only_lists_index_without_downloading_or_committing(monkeypatch, capsys):
+    from app.ingestion.import_supreme_opinions import Opinion, main
+
+    def fake_discover(year, transport=None):
+        assert year == 2025
+        return [Opinion("S25A0001", "S25A0001. EXAMPLE v. THE STATE", "https://www.gasupreme.us/files/s25a0001.pdf")]
+
+    monkeypatch.setattr("app.ingestion.import_supreme_opinions.discover", fake_discover)
+    code = main(["--year", "2025", "--limit", "25", "--discover-only"])
+    assert code == 0
+    payload = __import__("json").loads(capsys.readouterr().out)
+    assert payload["mode"] == "discover-only"
+    assert payload["discovered"] == 1
+    assert payload["stored"] == 0
+    assert payload["committed"] is False
+    assert payload["dockets"][0]["docket"] == "S25A0001"
+
+
+def test_discover_only_refuses_commit():
+    from app.ingestion.import_supreme_opinions import main
+
+    try:
+        main(["--year", "2025", "--discover-only", "--commit"])
+    except SystemExit as exc:
+        assert exc.code != 0
+    else:
+        raise AssertionError("discover-only must not persist")

@@ -124,10 +124,31 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--offset", type=int, default=0, help="Skip this many index entries for a later batch")
     parser.add_argument("--pause", type=float, default=1.0, help="Seconds between court requests")
     parser.add_argument("--commit", action="store_true", help="Persist each acquired document")
+    parser.add_argument(
+        "--discover-only",
+        action="store_true",
+        help="List official index PDFs only. Does not download opinions or write the database.",
+    )
     args = parser.parse_args(argv)
     if not 1 <= args.limit <= 500 or args.offset < 0 or not 0.5 <= args.pause <= 30:
         parser.error("Limit must be 1-500, offset nonnegative, and pause 0.5-30 seconds")
+    if args.commit and args.discover_only:
+        parser.error("--discover-only cannot be combined with --commit")
     opinions = discover(args.year)
+    if args.discover_only:
+        batch = opinions[args.offset:args.offset + args.limit]
+        print(json.dumps({
+            "mode": "discover-only",
+            "year": args.year,
+            "discovered": len(opinions),
+            "offset": args.offset,
+            "listed": len(batch),
+            "committed": False,
+            "stored": 0,
+            "note": "Index listing only. Not ingested and not verified as current Georgia law.",
+            "dockets": [{"docket": opinion.docket, "source_url": opinion.url} for opinion in batch],
+        }), flush=True)
+        return 0
     success = 0
     errors = 0
     unverified = 0

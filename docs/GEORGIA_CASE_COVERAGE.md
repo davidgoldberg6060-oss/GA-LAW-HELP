@@ -1,5 +1,7 @@
 # Georgia public ruling coverage
 
+Last index-only check: 2026-10-04 21:00 UTC. DATABASE_URL was unset, so `--commit` was not run and no rows were stored. `GET https://www.gasupreme.us/2025-opinions/` returned HTTP 200 HTML. The official index listed 250 unique Supreme Court PDF links with docket labels (no conflicting PDF URLs for the same docket in that parse). That is a discovery count only, not ingestion, not a currency check, and not a claim that those opinions are current Georgia law. The first 25 were not downloaded.
+
 This is a coverage ledger, not a claim that all Georgia cases are available.
 Last production check: 2026-10-03 21:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
 Last production check: 2026-10-03 08:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
