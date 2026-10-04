@@ -10,8 +10,12 @@ import java.net.URLEncoder
  * These calls do not require a session and must not send the user to login.
  */
 object GuestPublicApi {
+    /** Matches GET /public/encounter situation max_length. */
+    const val ENCOUNTER_SITUATION_MAX = 400
+
     fun encounter(baseUrl: String, situation: String = ""): JSONObject {
-        val path = "/public/encounter?situation=" + URLEncoder.encode(situation, "UTF-8")
+        val clipped = situation.trim().take(ENCOUNTER_SITUATION_MAX)
+        val path = "/public/encounter?situation=" + URLEncoder.encode(clipped, "UTF-8")
         return JSONObject(get(baseUrl, path))
     }
 

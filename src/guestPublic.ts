@@ -44,6 +44,14 @@ export type PublicEncounterResponse = {
   official_indexes?: OfficialIndexRow[];
 };
 
+/** GET /public/encounter rejects situation values over 400 characters. */
+export const ENCOUNTER_SITUATION_MAX = 400;
+
+export function encounterSituation(query: string): string {
+  const trimmed = query.trim();
+  return trimmed.length > ENCOUNTER_SITUATION_MAX ? trimmed.slice(0, ENCOUNTER_SITUATION_MAX) : trimmed;
+}
+
 export async function guestRightsAndEncounter(
   apiBase: string,
   requestJson: GuestRequestJson,
@@ -52,7 +60,7 @@ export async function guestRightsAndEncounter(
   const q = query.trim();
   const [assistant, pack] = await Promise.all([
     requestJson<PublicRightsAssistantResponse>('/public/rights-assistant', {method: 'POST', body: JSON.stringify({query: q, mode: 'rights'})}),
-    requestJson<PublicEncounterResponse>('/public/encounter?situation=' + encodeURIComponent(q)),
+    requestJson<PublicEncounterResponse>('/public/encounter?situation=' + encodeURIComponent(encounterSituation(q))),
   ]);
   const answerText =
     typeof assistant.analysis === 'string' && assistant.analysis.trim()
