@@ -8,6 +8,8 @@ ALLOWED_HOSTS = {
     "www.gaappeals.gov", "gaappeals.gov", "efast.gaappeals.gov",
     "georgiacourts.gov", "www.georgiacourts.gov", "assets.georgiacourts.gov",
     "www.legis.ga.gov", "legis.ga.gov",
+    # Secretary of State's official Rules and Regulations of the State of Georgia portal.
+    "rules.sos.ga.gov",
 }
 
 def assert_public_official_url(url: str) -> str:
