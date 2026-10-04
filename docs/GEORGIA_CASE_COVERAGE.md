@@ -1,6 +1,7 @@
 # Georgia public ruling coverage
 
 This is a coverage ledger, not a claim that all Georgia cases are available.
+Last production check: 2026-10-04 11:00 UTC. DATABASE_URL was still unset in the automation environment, and no repository Actions secret named DATABASE_URL was available to this runner, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented. The manual workflow `.github/workflows/import-supreme-opinions.yml` remains preview-by-default and was not dispatched. Stored counts from 2026-09-28 (`legal_sources=0`, `legal_authorities=0`, `authority_versions=0`) were not rechecked. Issue 88 is not ingested.
 Last production check: 2026-10-03 21:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
 Last production check: 2026-10-03 08:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
 Last production check: 2026-10-03 04:00 UTC. DATABASE_URL was still unset in the automation environment, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were invented.
