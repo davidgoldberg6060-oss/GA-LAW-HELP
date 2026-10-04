@@ -9,6 +9,7 @@ verified/current authority until later evidence upgrades it.
 from __future__ import annotations
 
 import argparse
+import os
 from dataclasses import dataclass
 from html.parser import HTMLParser
 import json
@@ -117,6 +118,20 @@ def prepare_opinion(opinion: Opinion, *, transport=production_transport):
     )
 
 
+def commit_database_ready() -> str | None:
+    """Return a refusal reason when --commit must not run.
+
+    A missing DATABASE_URL falls back to a local sqlite file in database.py.
+    That is not the production corpus and must not be recorded as ingested coverage.
+    """
+    url = os.getenv("DATABASE_URL", "").strip()
+    if not url:
+        return "DATABASE_URL is not set; refusing to commit so a local sqlite file is not treated as the Georgia corpus."
+    if url.startswith("sqlite"):
+        return "DATABASE_URL is sqlite; refusing to commit a local file as production coverage."
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--year", type=int, required=True)
@@ -127,6 +142,20 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if not 1 <= args.limit <= 500 or args.offset < 0 or not 0.5 <= args.pause <= 30:
         parser.error("Limit must be 1-500, offset nonnegative, and pause 0.5-30 seconds")
+    if args.commit:
+        refusal = commit_database_ready()
+        if refusal:
+            print(json.dumps({
+                "year": args.year,
+                "discovered": None,
+                "attempted": 0,
+                "succeeded": 0,
+                "failed": 0,
+                "committed": False,
+                "coverage_recorded": False,
+                "reason": refusal,
+            }), flush=True)
+            return 2
     opinions = discover(args.year)
     success = 0
     errors = 0
