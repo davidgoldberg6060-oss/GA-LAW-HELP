@@ -28,6 +28,11 @@ case "$SOURCE" in
     # SCOPE: rules.sos.ga.gov department numbers ("40", "40,111") or "all"
     args=(-m app.ingestion.import_ga_regulations --department "${SCOPE:-all}"
           --limit "$LIMIT" --offset "$OFFSET" --quiet) ;;
+  court_rules)
+    # SCOPE: coa, supreme, superior, state, juvenile, probate, magistrate (comma list) or "all".
+    # PDFs that robots.txt disallows are reported as blocked_by_robots, never fetched.
+    args=(-m app.ingestion.import_court_rules --set "${SCOPE:-all}"
+          --limit "$LIMIT" --offset "$OFFSET" --quiet) ;;
   *)
     echo "::error::unknown source: $SOURCE"; exit 1 ;;
 esac
