@@ -118,7 +118,7 @@ def upsert_authority_document(
             jurisdiction=jurisdiction,
             authority_type=authority_type,
             citation=citation,
-            title=document.title,
+            title=(document.title or "")[:500] or None,
             text=text,
             status="UNVERIFIED",
             source_url=document.url,
@@ -129,7 +129,7 @@ def upsert_authority_document(
         db.add(authority)
         db.flush()
     else:
-        authority.title = document.title or authority.title
+        authority.title = (document.title or "")[:500] or authority.title
         authority.text = text
         authority.source_url = document.url
         authority.retrieved_at = document.retrieved_at

@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, date
-from sqlalchemy import String, Text, DateTime, Date, ForeignKey, Integer, BigInteger, Boolean, CheckConstraint, Index, text as sql_text
+from sqlalchemy import String, Text, DateTime, Date, ForeignKey, Integer, BigInteger, Boolean, CheckConstraint, Index, UniqueConstraint, text as sql_text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 from .legal_status_vocabulary import CURRENCY_STATUSES, PRECEDENTIAL_STATUSES, sql_in_list
@@ -178,6 +178,25 @@ class AuthorityVersion(Base):
     content_sha256: Mapped[str] = mapped_column(String(64), index=True)
     verification_status: Mapped[str] = mapped_column(String(40), default="UNVERIFIED")
     retrieved_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class AuthorityAnnotation(Base):
+    """Editorial annotations + source hierarchy for one stored authority version.
+
+    Kept out of legal_authorities.text on purpose: annotations (history line, Code Commission
+    and editor's notes, cross references, case notes) are not enacted law. A separate table also
+    means nothing in the serving path depends on it.
+    """
+    __tablename__ = "authority_annotations"
+    __table_args__ = (UniqueConstraint("authority_id", "content_sha256", name="uq_authority_annotations_version"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    authority_id: Mapped[int] = mapped_column(ForeignKey("legal_authorities.id"), index=True)
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    release: Mapped[str] = mapped_column(String(100))
+    hierarchy: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    annotations: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_url: Mapped[str] = mapped_column(String(1000))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 class CaseAuthorityLink(Base):
     __tablename__ = "case_authority_links"
