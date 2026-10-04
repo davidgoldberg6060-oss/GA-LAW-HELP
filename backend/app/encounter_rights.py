@@ -110,7 +110,7 @@ def encounter_pack():
         "courts": COURTS,
         "coverage_limit": (
             "Stored here: encounter scripts, core statutes, and leading public holdings. "
-            "Not stored here: the full Official Code of Georgia Annotated, or every public trial-court file. "
+            "Not yet complete here: the full Official Code of Georgia Annotated (public domain since Georgia v. Public.Resource.Org, 2020; imported in batches with release-date provenance) and every public trial-court file. "
             "Trial dockets are fragmented and often contain private facts. Appellate opinions are the right reference layer to ingest next."
         ),
     }
