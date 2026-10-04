@@ -4,7 +4,9 @@ This file is the app contract for all Georgia law and all motions.
 
 ## Law
 
-The app can index official public materials. It must not copy the Official Code of Georgia Annotated. Unannotated statutes, session laws, court rules, and opinions are the lawful corpus.
+The app can index official public materials, including the full Official Code of Georgia Annotated (OCGA). In *Georgia v. Public.Resource.Org, Inc.*, 590 U.S. 255 (2020), the U.S. Supreme Court held that the OCGA, including its annotations, is not copyrightable under the government edicts doctrine. Statutes, annotations, session laws, court rules, agency rules, and opinions are therefore all part of the lawful corpus. See `docs/LEGAL_SOURCES_AND_PROVENANCE.md`.
+
+Every stored statute must keep provenance: the source (e.g. the Public.Resource.Org release or legis.ga.gov), the release identifier and release/as-of date, the file URL, and a content hash. Annotations (history, editor's notes, cross references, case notes) are stored separately from the statutory text: they are editorial material, not enacted law, and must never be presented as the text of a Code section. A release's as-of date is not an effective date, and a bulk release is not evidence that a section is still current; currency stays `unknown` until checked against a newer official source.
 
 Official entry points already in config/sources.yaml:
 

@@ -47,5 +47,5 @@ accessible public copy and record its provenance and limitations. Do not
 restore sealed, restricted, expunged, or otherwise private material simply
 because it was once accessible. Public case histories, docket metadata,
 published opinions and full trial-court filings are distinct coverage goals.
-Do not copy the Official Code of Georgia Annotated. Do not dump private trial dockets.
+The OCGA, including annotations, may be stored (Georgia v. Public.Resource.Org, 2020) with source and release-date provenance; keep annotations separate from statutory text. Do not dump private trial dockets.
 Do not present unverified citations as current Georgia law.
