@@ -40,4 +40,5 @@ def test_free_launch_web_gate_is_disabled_but_billing_code_remains():
     assert "'Free research'" in source
     assert '!FREE_LAUNCH&&paywallOpen' in source
     assert 'startCheckout' in source
-    assert 'Create a free account or sign in to use AI legal research.' in source
+    # Free research no longer needs an account; the register prompt now only guards private case tools.
+    assert 'Create a free account or sign in to use private case tools.' in source

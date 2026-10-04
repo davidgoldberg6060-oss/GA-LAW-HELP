@@ -139,7 +139,7 @@ async function uploadEncounterCopy(blob:Blob,scenario:ScenarioKey,recordingCaseI
  const data=await res.json().catch(()=>({detail:'Upload failed'}));if(!res.ok)throw new Error(data.detail||'Upload failed');return {uploaded:true,...data};
 }
 
-async function api(path:string,options:RequestInit={}){
+async function api<T=any>(path:string,options:RequestInit={}):Promise<T>{
  const res=await fetch(API+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
  const data=await res.json().catch(()=>({detail:'The server returned an unreadable response.'}));
  if(!res.ok)throw new ApiError(res.status,typeof data.detail==='string'?data.detail:'Request failed');

@@ -5,19 +5,54 @@ export type GuestRightsAnswer = {
   notice: string;
 };
 
+export type GuestResource = {title: string; url: string; kind: string; official: boolean};
+
 export type GuestResearch = {
   query: string;
   topic: string;
   guidance: string;
-  resources: Array<{title: string; url: string; kind: string; official: boolean}>;
+  resources: GuestResource[];
   notice: string;
 };
 
-export async function guestRightsAndEncounter(apiBase: string, requestJson: typeof fetch, query: string) {
+/** JSON request helper (the App's `api`): resolves to the parsed body, throws on non-2xx. */
+export type GuestRequestJson = <T>(path: string, init?: RequestInit) => Promise<T>;
+
+export type OfficialIndexRow = {title?: string; url?: string; kind?: string; official?: boolean};
+
+export type IndexedAuthorityRow = {title?: string; citation?: string; source_url?: string | null; url?: string | null};
+
+/** Response of POST /public/rights-assistant (grounded answer or corpus-unavailable fallback). */
+export type PublicRightsAssistantResponse = {
+  guest?: boolean;
+  mode?: string;
+  analysis?: string;
+  answer?: string;
+  authorities?: IndexedAuthorityRow[];
+  grounded_authority_count?: number;
+  coverage_notice?: string | null;
+  official_indexes?: OfficialIndexRow[];
+  login_required?: boolean;
+};
+
+/** Response of GET /public/encounter?situation=... */
+export type PublicEncounterResponse = {
+  guest?: boolean;
+  disclaimer?: string;
+  coverage_limit?: string | null;
+  prompt?: string;
+  official_indexes?: OfficialIndexRow[];
+};
+
+export async function guestRightsAndEncounter(
+  apiBase: string,
+  requestJson: GuestRequestJson,
+  query: string,
+): Promise<{answer: GuestRightsAnswer; research: GuestResearch}> {
   const q = query.trim();
   const [assistant, pack] = await Promise.all([
-    requestJson('/public/rights-assistant', {method: 'POST', body: JSON.stringify({query: q, mode: 'rights'})}),
-    requestJson('/public/encounter?situation=' + encodeURIComponent(q)),
+    requestJson<PublicRightsAssistantResponse>('/public/rights-assistant', {method: 'POST', body: JSON.stringify({query: q, mode: 'rights'})}),
+    requestJson<PublicEncounterResponse>('/public/encounter?situation=' + encodeURIComponent(q)),
   ]);
   const answerText =
     typeof assistant.analysis === 'string' && assistant.analysis.trim()
@@ -40,8 +75,8 @@ export async function guestRightsAndEncounter(apiBase: string, requestJson: type
   return {answer, research};
 }
 
-export async function guestEncounterReply(requestJson: typeof fetch, prompt: string) {
-  const data = await requestJson('/public/rights-assistant', {
+export async function guestEncounterReply(requestJson: GuestRequestJson, prompt: string): Promise<PublicRightsAssistantResponse> {
+  const data = await requestJson<PublicRightsAssistantResponse>('/public/rights-assistant', {
     method: 'POST',
     body: JSON.stringify({query: prompt, mode: 'talk_to_me'}),
   });
@@ -49,24 +84,24 @@ export async function guestEncounterReply(requestJson: typeof fetch, prompt: str
   return data;
 }
 
-const FALLBACK_INDEXES = [
+const FALLBACK_INDEXES: OfficialIndexRow[] = [
   {title: 'Supreme Court of Georgia opinion index', url: 'https://www.gasupreme.us/2026-opinions/', kind: 'court index', official: true},
   {title: 'Court of Appeals of Georgia', url: 'https://www.gaappeals.us/', kind: 'court index', official: true},
 ];
 
-export function guestOfficialIndexes(pack: {official_indexes?: Array<{title?: string; url?: string; kind?: string; official?: boolean}>}) {
+export function guestOfficialIndexes(pack: {official_indexes?: OfficialIndexRow[]}): GuestResource[] {
   const rows = Array.isArray(pack.official_indexes) && pack.official_indexes.length ? pack.official_indexes : FALLBACK_INDEXES;
   return rows
-    .filter((row) => row && typeof row.url === 'string' && row.url.startsWith('https://'))
+    .filter((row): row is OfficialIndexRow & {url: string} => Boolean(row) && typeof row.url === 'string' && row.url.startsWith('https://'))
     .map((row) => ({
       title: row.title || row.url,
-      url: row.url as string,
+      url: row.url,
       kind: row.kind || 'court index',
       official: row.official !== false,
     }));
 }
 
-export function indexedAuthorityLinks(assistant: {authorities?: Array<{title?: string; citation?: string; source_url?: string; url?: string}>}) {
+export function indexedAuthorityLinks(assistant: {authorities?: IndexedAuthorityRow[]}): GuestResource[] {
   const rows = Array.isArray(assistant.authorities) ? assistant.authorities : [];
   return rows
     .map((row) => {
@@ -81,5 +116,5 @@ export function indexedAuthorityLinks(assistant: {authorities?: Array<{title?: s
         official: false,
       };
     })
-    .filter((row): row is {title: string; url: string; kind: string; official: boolean} => row !== null);
+    .filter((row): row is GuestResource => row !== null);
 }

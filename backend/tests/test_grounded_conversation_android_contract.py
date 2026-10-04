@@ -12,7 +12,8 @@ def test_talk_to_me_adapter_uses_dedicated_grounded_endpoint():
     mode = MODE.read_text(encoding="utf-8")
     api = API.read_text(encoding="utf-8")
     assert "GroundedLegalMode.analyze(api, GroundedLegalMode.Mode.TALK_TO_ME, request)" in conversation
-    assert "Mode.TALK_TO_ME -> api.talkToMeAnalysis(clean)" in mode
+    # Talk to Me moved to the guest grounded endpoint (same grounded_legal_response pipeline).
+    assert 'Mode.TALK_TO_ME -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "talk_to_me")' in mode
     assert "fun talkToMeAnalysis" in api
     assert 'groundedLegalAssistant(transcript,"talk_to_me")' in api
     assert 'execute("/internal/legal-assistant"' in api
