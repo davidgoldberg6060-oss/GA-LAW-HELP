@@ -44,15 +44,31 @@ export type PublicEncounterResponse = {
   official_indexes?: OfficialIndexRow[];
 };
 
+/** Server limit for POST /public/rights-assistant `query` (backend/app/main.py). */
+export const GUEST_QUERY_MAX_CHARS = 4000;
+/** Server limit for GET /public/encounter `situation` (backend/app/public_rights.py max_length). */
+export const ENCOUNTER_SITUATION_MAX_CHARS = 400;
+export const GUEST_QUERY_TOO_LONG_MESSAGE =
+  'Your question is too long for free research. Please shorten it to 4,000 characters or fewer and focus on the key facts.';
+
+/** The encounter pack only needs a short situation label; trim instead of failing with HTTP 422. */
+export function encounterSituation(query: string): string {
+  return query.trim().slice(0, ENCOUNTER_SITUATION_MAX_CHARS);
+}
+
 export async function guestRightsAndEncounter(
   apiBase: string,
   requestJson: GuestRequestJson,
   query: string,
 ): Promise<{answer: GuestRightsAnswer; research: GuestResearch}> {
   const q = query.trim();
+  if (q.length > GUEST_QUERY_MAX_CHARS) throw new Error(GUEST_QUERY_TOO_LONG_MESSAGE);
   const [assistant, pack] = await Promise.all([
     requestJson<PublicRightsAssistantResponse>('/public/rights-assistant', {method: 'POST', body: JSON.stringify({query: q, mode: 'rights'})}),
-    requestJson<PublicEncounterResponse>('/public/encounter?situation=' + encodeURIComponent(q)),
+    // The encounter pack is supplementary: a failure here must not discard the grounded answer.
+    requestJson<PublicEncounterResponse>('/public/encounter?situation=' + encodeURIComponent(encounterSituation(q))).catch(
+      (): PublicEncounterResponse => ({}),
+    ),
   ]);
   const answerText =
     typeof assistant.analysis === 'string' && assistant.analysis.trim()

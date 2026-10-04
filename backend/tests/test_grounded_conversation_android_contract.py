@@ -22,7 +22,9 @@ def test_talk_to_me_adapter_uses_dedicated_grounded_endpoint():
 def test_conversation_context_is_bounded_and_requires_a_message():
     source = CONVERSATION.read_text(encoding="utf-8")
     assert "MAX_CONTEXT_CHARS = 12_000" in source
-    assert "takeLast(MAX_CONTEXT_CHARS)" in source
+    # History is trimmed to whatever fits the guest endpoint limit (never more than MAX_CONTEXT_CHARS).
+    assert "minOf(MAX_CONTEXT_CHARS, MAX_REQUEST_CHARS - fixedChars - CONTEXT_HEADER.length - 1)" in source
+    assert "history.toString().takeLast(contextBudget)" in source
     assert 'require(cleanMessage.isNotEmpty())' in source
 
 

@@ -30,6 +30,9 @@ object GroundedLegalMode {
         val clean = query.trim()
         require(clean.isNotEmpty()) { "Legal question cannot be empty." }
         require(clean.length <= 50_000) { "Legal question is too large." }
+        if (mode == Mode.RIGHTS || mode == Mode.TALK_TO_ME) {
+            require(clean.length <= GuestPublicApi.MAX_QUERY_CHARS) { GuestPublicApi.QUERY_TOO_LONG_MESSAGE }
+        }
 
         val raw = when (mode) {
             Mode.CASE_ANALYSIS -> api.caseAnalysisWithVerifiedAuthorities(clean)
