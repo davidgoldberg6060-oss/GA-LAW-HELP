@@ -29,6 +29,9 @@ class GuestPublicRightsContractTest {
         val guestScreen = source("app/src/main/java/help/galaw/standalone/GuestRightsActivity.kt")
         assertTrue(guestScreen.contains("GuestPublicApi.rightsAssistant"))
         assertTrue(guestScreen.contains("GuestPublicApi.encounter"))
+        assertTrue(guestScreen.contains("official_indexes"))
+        assertTrue(guestScreen.contains("coverage_limit"))
+        assertTrue(guestScreen.contains("Do not resist, lie, or destroy evidence"))
     }
 
     @Test

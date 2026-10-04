@@ -13,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlin.concurrent.thread
+import org.json.JSONObject
 
 class GuestRightsActivity : AppCompatActivity() {
     companion object { const val EXTRA_SITUATION = "situation" }
@@ -59,9 +60,9 @@ class GuestRightsActivity : AppCompatActivity() {
                 Toast.makeText(this@GuestRightsActivity, "Looking up guest rights help…", Toast.LENGTH_SHORT).show()
                 thread {
                     try {
-                        GuestPublicApi.encounter(BuildConfig.API_BASE_URL, q)
+                        val pack = GuestPublicApi.encounter(BuildConfig.API_BASE_URL, q)
                         val raw = GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, q, "rights")
-                        val text = GroundedLegalResult.answer(raw).ifBlank { raw.toString(2) }
+                        val text = guestRightsDisplay(pack, raw)
                         runOnUiThread { answer.text = text }
                     } catch (error: Exception) {
                         runOnUiThread { Toast.makeText(this@GuestRightsActivity, error.message ?: "Guest rights help is unavailable.", Toast.LENGTH_LONG).show() }
@@ -79,5 +80,29 @@ class GuestRightsActivity : AppCompatActivity() {
         }
         listOf(title, subtitle, question, ask, answer, back).forEach { root.addView(it) }
         setContentView(ScrollView(this).apply { setBackgroundColor(navy); addView(root) })
+    }
+}
+
+/** Render the public encounter pack beside the rights-assistant answer. Index links are court pages, not current-law claims. */
+internal fun guestRightsDisplay(pack: JSONObject, assistant: JSONObject): String {
+    val analysis = GroundedLegalResult.answer(assistant).ifBlank { assistant.toString(2) }
+    return buildString {
+        append(analysis)
+        val disclaimer = pack.optString("disclaimer")
+        val limit = pack.optString("coverage_limit")
+        if (disclaimer.isNotBlank()) append("\n\n").append(disclaimer)
+        if (limit.isNotBlank()) append("\n\n").append(limit)
+        val indexes = pack.optJSONArray("official_indexes")
+        if (indexes != null && indexes.length() > 0) {
+            append("\n\nOfficial indexes (not a complete code, and not a claim that any citation is current Georgia law):")
+            for (i in 0 until indexes.length()) {
+                val row = indexes.optJSONObject(i) ?: continue
+                val url = row.optString("url")
+                if (!url.startsWith("https://")) continue
+                val title = row.optString("title").ifBlank { url }
+                append("\n- ").append(title).append(" ").append(url)
+            }
+        }
+        append("\n\nStay calm. Do not resist, lie, or destroy evidence. Private cases stay behind sign-in.")
     }
 }
