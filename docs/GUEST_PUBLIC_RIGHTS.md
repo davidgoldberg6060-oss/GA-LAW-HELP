@@ -13,5 +13,5 @@ Free research and encounter help must not require an account.
 - Issue 88 corpus coverage is separate: an empty index must surface a coverage notice rather than invented citations. A missing `DATABASE_URL` is not recorded as ingested coverage.
 - Regression: `tests/test_guest_free_research_browser_path.py`.
 
-- Signed-in shell `HomeActivity` also opens without a session. Georgia Laws and Talk to Me call `api.publicAsk`, which uses `POST /public/rights-assistant` and `GET /public/encounter`. My Cases, Documents, Legal Tools, and Account stay behind `requireSignedIn`.
+- Signed-in shell `HomeActivity` also opens without a session. Georgia Laws and the home ask box call `api.publicAsk` (`GET /public/encounter` then `POST /public/rights-assistant` in rights mode). Talk to Me uses `TalkToMeController`, which loads `GET /public/encounter` and posts `POST /public/rights-assistant` in `talk_to_me` mode. My Cases, Documents, Legal Tools, and Account stay behind `requireSignedIn`.
 - Guest research lists official court indexes plus any https source links returned by `POST /public/rights-assistant`. Those indexed links are labeled not verified as current Georgia law. Missing links are not invented.
