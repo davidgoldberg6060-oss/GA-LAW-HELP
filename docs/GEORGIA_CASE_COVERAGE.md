@@ -1,3 +1,12 @@
+Last production check: 2026-10-05 16:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were written. Discover-only reads of the official annual indexes (importer host, PDF, and first-docket rules; not stored authorities and not current-law verification):
+
+| Year | Index | HTTP | Bytes | Docket-labeled PDF anchors | Unique PDF URLs | Dockets with more than one PDF |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 2024 | https://www.gasupreme.us/2024-opinions/ | 200 | 1,630,106 | 238 | 231 | 0 |
+| 2026 | https://www.gasupreme.us/2026-opinions/ | 200 | 1,629,113 | 254 | 254 | 0 |
+
+`discover()` dedupes by URL, so it would report 231 for 2024 and 254 for 2026. The 2025 index inventory on the next line is unchanged (247 unique PDF URLs). These counts are not persisted coverage.
+
 # Georgia public ruling coverage
 
 Last production check: 2026-10-05 06:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were written. A discover-only read of https://www.gasupreme.us/2025-opinions/ returned HTML (1,631,171 bytes, content-type text/html). Using the importer's official-host PDF and first-docket rules: 250 docket-labeled PDF anchors, 247 unique PDF URLs, 0 dockets pointing at more than one PDF. `discover()` dedupes by URL and would report 247. Consolidated PDFs keep only the first docket token in the link text. Those counts are an index inventory, not stored authorities, and are not current-law verification.
