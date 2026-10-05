@@ -8,6 +8,7 @@ MAIN = ROOT / "android/app/src/main/java/help/galaw/standalone/MainActivity.kt"
 def test_controller_uses_grounded_conversation_only():
     text = CONTROLLER.read_text(encoding="utf-8")
     assert "GroundedConversation.analyze" in text
+    assert "GuestPublicApi.encounter" in text
     assert "publicAsk(" not in text
     assert "groundedLegalAssistant(" not in text
     assert "talkToMeAnalysis(" not in text
@@ -20,8 +21,12 @@ def test_controller_preserves_authority_summary_in_transcript():
     assert "history.append(reply.transcriptEntry)" in text
 
 
-def test_legacy_activity_call_is_visible_until_final_ui_wiring():
-    # Deliberately documents the remaining release task instead of pretending it is complete.
-    # Remove this assertion when MainActivity is switched to TalkToMeController.reply().
+def test_main_talk_to_me_uses_guest_controller_not_rights_public_ask():
     text = MAIN.read_text(encoding="utf-8")
-    assert "api.publicAsk(prompt)" in text
+    start = text.index("private fun showTalkToMe()")
+    end = text.index("private fun showTalkSaveCase", start)
+    screen = text[start:end]
+    assert "TalkToMeController.reply" in screen
+    assert "TalkToMeController.append" in screen
+    assert "api.publicAsk(" not in screen
+    assert "requirePaid{showTalkToMe()" not in text

@@ -17,6 +17,8 @@ object TalkToMeController {
         message: String,
         languageInstruction: String
     ): Reply {
+        // Load the public encounter pack without a session. A pack failure must not block the answer.
+        runCatching { GuestPublicApi.encounter(BuildConfig.API_BASE_URL, message) }
         val turn = GroundedConversation.analyze(api, history, message, languageInstruction)
         return Reply(
             transcriptEntry = turn.transcriptEntry,
