@@ -124,10 +124,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--offset", type=int, default=0, help="Skip this many index entries for a later batch")
     parser.add_argument("--pause", type=float, default=1.0, help="Seconds between court requests")
     parser.add_argument("--commit", action="store_true", help="Persist each acquired document")
+    parser.add_argument("--discover-only", action="store_true", help="Count official index PDFs only; do not download opinions or open a database")
     args = parser.parse_args(argv)
+    if args.commit and args.discover_only:
+        parser.error("--commit and --discover-only cannot be combined")
     if not 1 <= args.limit <= 500 or args.offset < 0 or not 0.5 <= args.pause <= 30:
         parser.error("Limit must be 1-500, offset nonnegative, and pause 0.5-30 seconds")
     opinions = discover(args.year)
+    if args.discover_only:
+        print(json.dumps({"year": args.year, "discovered": len(opinions), "offset": args.offset,
+                          "attempted": 0, "succeeded": 0, "unverified": 0, "failed": 0,
+                          "committed": False, "discover_only": True,
+                          "note": "Index inventory only. No opinion PDFs downloaded and no corpus rows written."}), flush=True)
+        return 0
     success = 0
     errors = 0
     unverified = 0
