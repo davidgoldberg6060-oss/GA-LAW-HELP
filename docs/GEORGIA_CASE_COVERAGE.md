@@ -1,3 +1,11 @@
+Last production check: 2026-10-05 17:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were written. A Court of Appeals opinion-search request for 2026-09-05 through 2026-10-05 returned HTTP 405 with a human-verification page, so no appeals counts were recorded. Discover-only read of the official 2023 Supreme Court index (importer host, PDF, and first-docket rules; not stored authorities and not current-law verification):
+
+| Year | Index | HTTP | Bytes | Docket-labeled PDF anchors | Unique PDF URLs | Dockets with more than one PDF |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 2023 | https://www.gasupreme.us/2023-opinions/ | 200 | 1,627,326 | 219 | 218 | 2 |
+
+`discover()` keeps unique (docket tuple, URL) pairs, so it would report 219 links and 218 PDFs. Two first-docket tokens point at more than one PDF and would need manual review before any import. These counts are not persisted coverage and are not current-law verification. The 2024–2026 index inventories below are unchanged.
+
 Last production check: 2026-10-05 16:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were written. Discover-only reads of the official annual indexes (importer host, PDF, and first-docket rules; not stored authorities and not current-law verification):
 
 | Year | Index | HTTP | Bytes | Docket-labeled PDF anchors | Unique PDF URLs | Dockets with more than one PDF |
