@@ -55,3 +55,27 @@ def test_fails_closed_when_index_has_no_opinion_documents():
         assert "No opinion PDFs" in str(exc)
     else:
         raise AssertionError("An empty index must not look like a complete import")
+
+
+def test_discover_only_counts_index_without_downloading_or_opening_database(monkeypatch, capsys):
+    html = b'<a href="/files/s25a0001.pdf">S25A0001. SAMPLE v. THE STATE</a>'
+
+    def transport(url):
+        assert url == "https://www.gasupreme.us/2025-opinions/"
+        return FetchResponse(url, 200, {"Content-Type": "text/html"}, html)
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("discover-only must not acquire PDFs or open a database")
+
+    monkeypatch.setattr("app.ingestion.import_supreme_opinions.production_transport", transport)
+    monkeypatch.setattr("app.ingestion.import_supreme_opinions.prepare_opinion", forbidden)
+    monkeypatch.setattr("app.ingestion.import_supreme_opinions.SessionLocal", forbidden)
+    from app.ingestion.import_supreme_opinions import main
+
+    assert main(["--year", "2025", "--discover-only"]) == 0
+    import json
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["discovered"] == 1
+    assert summary["attempted"] == 0
+    assert summary["committed"] is False
+    assert summary["discover_only"] is True
