@@ -1,3 +1,11 @@
+Last production check: 2026-10-06 17:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were written. Discover-only read of the official 2019 Supreme Court index (importer host, PDF, and first-docket rules; not stored authorities and not current-law verification):
+
+| Year | Index | HTTP | Bytes | Docket-labeled PDF anchors | Unique PDF URLs | Dockets with more than one PDF |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 2019 | https://www.gasupreme.us/2019-opinions/ | 200 | 1,649,016 | 344 | 342 | 0 |
+
+`discover()` dedupes by URL and would report 342. Two PDF URLs each carried two docket labels, but no first-docket token pointed at more than one PDF, so the importer's ambiguous-docket check would not reject this index. These counts are not persisted coverage and are not current-law verification. The 2020–2026 index inventories below are unchanged.
+
 Last production check: 2026-10-06 14:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were written. Discover-only read of the official 2020 Supreme Court index (importer host, PDF, and first-docket rules; not stored authorities and not current-law verification):
 
 | Year | Index | HTTP | Bytes | Docket-labeled PDF anchors | Unique PDF URLs | Dockets with more than one PDF |
