@@ -4,6 +4,7 @@
     <application android:supportsRtl="true" android:theme="@style/Theme.GALaw" android:label="GA.LAW.HELP" android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".HomeActivity" android:exported="false" />
+        <activity android:name=".GeorgiaLawsActivity" android:exported="false" />
         <activity android:name=".InternalLegalSearchActivity" android:exported="false" />
         <activity android:name=".GuestRightsActivity" android:exported="false" />
         <activity android:name=".AuthActivity" android:exported="true">
