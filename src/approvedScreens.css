@@ -15,5 +15,9 @@
 .approvedChips button.on,.approvedTabs button.on{background:#e2b54e;color:#02111d}
 .approvedDrawer{position:fixed;inset:0 auto 0 0;width:min(320px,88vw);z-index:30;padding:1rem;overflow:auto;display:flex;flex-direction:column}
 .approvedDrawer button{text-align:left;margin:.25rem 0;background:#02111d;color:#fff;border:1px solid #194e70;padding:.55rem .7rem}
+.approvedChat{display:flex;flex-direction:column;gap:.4rem;margin:.5rem 0;max-height:240px;overflow:auto}
+.approvedChat .user{align-self:flex-end;background:#e2b54e;color:#02111d;padding:.45rem .7rem;border-radius:12px;margin:0}
+.approvedChat .note{align-self:flex-start;background:#02111d;color:#f8fbff;border:1px solid #e2b54e;padding:.45rem .7rem;border-radius:12px;margin:0}
+.approvedPanel textarea{width:100%;min-height:72px;margin-top:.3rem;background:#02111d;color:#f8fbff;border:1px solid #e2b54e;border-radius:10px}
 html[data-theme="light"] body{background:#f4f7fb;color:#102033}
 @media(max-width:700px){.approvedGrid{grid-template-columns:1fr}}

@@ -26,6 +26,11 @@ type Props = {
   onAsk: (question: string) => void;
 };
 
+type ChatLine = { role: "user" | "note"; text: string };
+
+const AI_NOTE =
+  "Sent to guest research on /public/rights-assistant. This chat does not open a private case and does not invent statute or case text.";
+
 export default function ApprovedScreens(props: Props) {
   const [drawer, setDrawer] = useState(false);
   const [panel, setPanel] = useState<ScreenId>("home");
@@ -33,7 +38,18 @@ export default function ApprovedScreens(props: Props) {
   const [codeTab, setCodeTab] = useState(true);
   const [dark, setDark] = useState(true);
   const [question, setQuestion] = useState("");
+  const [chat, setChat] = useState<ChatLine[]>([
+    { role: "note", text: "AI Help uses the guest rights path. Do not resist, run, or lie. Call 911 if someone is in danger." },
+  ]);
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
+
+  function sendGuestQuestion(raw: string) {
+    const text = raw.trim();
+    if (!text) return;
+    setChat((rows) => [...rows, { role: "user", text }, { role: "note", text: AI_NOTE }]);
+    props.onAsk(text);
+    setQuestion("");
+  }
 
   function open(id: ScreenId) {
     if ((id === "cases" || id === "analysis") && !props.signedIn) {
@@ -62,9 +78,9 @@ export default function ApprovedScreens(props: Props) {
       return;
     }
     if (id === "ai") {
-      props.onAsk(question.trim() || "What should I know before a Georgia police encounter?");
-      const ask = document.querySelector(".ask input");
-      if (ask instanceof HTMLInputElement) ask.focus();
+      setPanel("ai");
+      setDrawer(false);
+      return;
     }
     if (id === "rights") props.onRights("public");
     setPanel(id);
@@ -137,7 +153,7 @@ export default function ApprovedScreens(props: Props) {
                 Guest question
                 <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask without opening a private case" />
               </label>
-              <button type="button" onClick={() => props.onAsk(`Title ${title.number} ${title.name}. ${question}`.trim())}>Ask on guest research</button>
+              <button type="button" onClick={() => sendGuestQuestion(`Title ${title.number} ${title.name}. ${question}`)}>Ask on guest research</button>
             </>
           )}
           {panel === "forms" && (
@@ -189,12 +205,17 @@ export default function ApprovedScreens(props: Props) {
           {panel === "ai" && (
             <>
               <h2>AI Help</h2>
-              <p>Guest questions use free research and /public/rights-assistant. Private case chat stays behind sign-in.</p>
+              <p>Guest questions use /public/rights-assistant. Private case chat stays behind sign-in.</p>
+              <div className="approvedChat" aria-live="polite">
+                {chat.map((line, index) => (
+                  <p key={index} className={line.role === "user" ? "user" : "note"}>{line.text}</p>
+                ))}
+              </div>
               <label>
                 Question
-                <textarea value={question} onChange={(event) => setQuestion(event.target.value)} />
+                <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask a Georgia rights question" />
               </label>
-              <button type="button" onClick={() => props.onAsk(question)}>Send to guest research</button>
+              <button type="button" onClick={() => sendGuestQuestion(question)}>Send to guest research</button>
             </>
           )}
           {panel === "settings" && (
