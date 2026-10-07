@@ -1,6 +1,8 @@
 import React,{FormEvent,useEffect,useRef,useState}from'react';
 import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint,Eye,EyeOff,Upload}from'lucide-react';
 import{guestEncounterReply,guestRightsAndEncounter}from'./guestPublic';
+import ApprovedScreens from './ApprovedScreens';
+import './approvedScreens.css';
 
 const API='https://api-production-60cc.up.railway.app';
 const ACCESS_KEY='ga_access_token',REFRESH_KEY='ga_refresh_token';
@@ -480,6 +482,7 @@ export default function App(){
     <button disabled={researching}><Search size={15}/>{researching?<><LoaderCircle className="spin" size={17}/>Checking</>:'Free research'}</button></form>
    <small>Legal information and research assistance — not a substitute for advice from a licensed attorney.</small>
   </section>
+  <ApprovedScreens signedIn={!!user} onSignIn={()=>setAuthOpen(true)} onCases={openCaseWorkspace} onAnalysis={openCaseWorkspace} onLogout={logout} onRights={openRights} onAsk={(text)=>{if(text.trim())setQ(text);}} />
   {(aiAnswer||research)&&<section className="results" id="research-results">
    {aiAnswer&&<><div className="resultHead"><MessageSquare/><div><span>Ask GA.LAW.HELP</span><h2>AI legal information</h2></div></div><p className="question">“{aiAnswer.question}”</p><div className="aiAnswer" style={{whiteSpace:'pre-wrap'}}>{aiAnswer.answer}</div><small>{aiAnswer.notice}</small></>}
    {research&&<><div className="resultHead" style={{marginTop:'1.5rem'}}><Search/><div><span>Verify and research</span><h2>{research.topic}</h2></div></div><p>{research.guidance}</p><div className="sources">{research.resources.map(r=><a key={r.url} href={r.url} target="_blank" rel="noreferrer"><div><b>{r.title}</b><span>{r.official===false?r.kind+' · not a verified current citation':r.kind+' · Official source'}</span></div><ExternalLink size={18}/></a>)}</div><small>{research.notice}</small></>}
