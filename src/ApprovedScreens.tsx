@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  AI_HELP_LIMIT,
   APPEALS_OPINIONS_URL,
   CODE_REVISION_URL,
   SAFETY_NOTICE,
@@ -10,11 +11,13 @@ import {
   homeTiles,
   lawTitles,
   resourceLinks,
+  rightsNotes,
   rightsTopics,
   type ScreenId,
 } from "./approvedScreenCatalog";
 
 type Scenario = "traffic" | "public" | "home" | "questioning" | "arrest" | "witness";
+type ChatLine = { role: "you" | "guest"; text: string };
 
 type Props = {
   signedIn: boolean;
@@ -33,7 +36,23 @@ export default function ApprovedScreens(props: Props) {
   const [codeTab, setCodeTab] = useState(true);
   const [dark, setDark] = useState(true);
   const [question, setQuestion] = useState("");
+  const [rightsId, setRightsId] = useState<(typeof rightsTopics)[number]["id"]>("encounter");
+  const [chat, setChat] = useState<ChatLine[]>([
+    { role: "guest", text: AI_HELP_LIMIT },
+  ]);
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
+
+  function sendGuestQuestion(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setChat((lines) => [
+      ...lines,
+      { role: "you", text: trimmed },
+      { role: "guest", text: `${AI_HELP_LIMIT} ${SAFETY_NOTICE}` },
+    ]);
+    props.onAsk(trimmed);
+    setQuestion("");
+  }
 
   function open(id: ScreenId) {
     if ((id === "cases" || id === "analysis") && !props.signedIn) {
@@ -62,9 +81,9 @@ export default function ApprovedScreens(props: Props) {
       return;
     }
     if (id === "ai") {
-      props.onAsk(question.trim() || "What should I know before a Georgia police encounter?");
-      const ask = document.querySelector(".ask input");
-      if (ask instanceof HTMLInputElement) ask.focus();
+      setPanel("ai");
+      setDrawer(false);
+      return;
     }
     if (id === "rights") props.onRights("public");
     setPanel(id);
@@ -91,16 +110,12 @@ export default function ApprovedScreens(props: Props) {
       )}
       <div className="approvedGrid">
         {homeTiles.map((item) => (
-          <button type="button" key={item.id} className="approvedTile" onClick={() => open(item.id)}>
+          <button type="button" key={item.id} className={item.id === "emergency" ? "approvedTile approvedEmergencyTile" : "approvedTile"} onClick={() => open(item.id)}>
             <strong>{item.label}</strong>
             <span>{item.hint}</span>
           </button>
         ))}
       </div>
-      <button type="button" className="approvedEmergency" onClick={() => open("emergency")}>
-        Emergency Help
-        <small>Important contacts. Call 911 if someone is in danger.</small>
-      </button>
       {panel !== "home" && (
         <div className="approvedPanel">
           {panel === "laws" && (
@@ -168,9 +183,10 @@ export default function ApprovedScreens(props: Props) {
               <p>Guest help stays on /public/rights-assistant. {SAFETY_NOTICE}</p>
               <div className="approvedChips">
                 {rightsTopics.map((topic) => (
-                  <button type="button" key={topic.id} onClick={() => props.onRights(topic.scenario)}>{topic.label}</button>
+                  <button type="button" key={topic.id} className={rightsId === topic.id ? "on" : ""} onClick={() => { setRightsId(topic.id); props.onRights(topic.scenario); }}>{topic.label}</button>
                 ))}
               </div>
+              <p>{rightsNotes[rightsId]}</p>
             </>
           )}
           {panel === "resources" && (
@@ -189,12 +205,18 @@ export default function ApprovedScreens(props: Props) {
           {panel === "ai" && (
             <>
               <h2>AI Help</h2>
-              <p>Guest questions use free research and /public/rights-assistant. Private case chat stays behind sign-in.</p>
+              <div className="approvedChat" aria-live="polite">
+                {chat.map((line, index) => (
+                  <p key={`${line.role}-${index}`} className={line.role === "you" ? "you" : "guest"}>
+                    <strong>{line.role === "you" ? "You" : "Guest help"}</strong> {line.text}
+                  </p>
+                ))}
+              </div>
               <label>
                 Question
-                <textarea value={question} onChange={(event) => setQuestion(event.target.value)} />
+                <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask without signing in" />
               </label>
-              <button type="button" onClick={() => props.onAsk(question)}>Send to guest research</button>
+              <button type="button" onClick={() => sendGuestQuestion(question)}>Send to guest research</button>
             </>
           )}
           {panel === "settings" && (
