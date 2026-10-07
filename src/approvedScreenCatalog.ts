@@ -30,12 +30,12 @@ export const homeTiles: ScreenItem[] = [
   { id: "analysis", label: "Case Analysis", hint: "Upload stays private", requiresSignIn: true },
   { id: "rights", label: "Know Your Rights", hint: "Guest rights help", requiresSignIn: false },
   { id: "resources", label: "Resources", hint: "Help and support", requiresSignIn: false },
+  { id: "emergency", label: "Emergency Help", hint: "Call 911 for danger", requiresSignIn: false },
 ];
 
 export const drawerItems: ScreenItem[] = [
   { id: "home", label: "Home", hint: "Dashboard", requiresSignIn: false },
   ...homeTiles,
-  { id: "emergency", label: "Emergency Help", hint: "Call 911 for danger", requiresSignIn: false },
   { id: "dark", label: "Dark Mode", hint: "Navy and gold", requiresSignIn: false },
   { id: "settings", label: "Settings", hint: "Account and notices", requiresSignIn: false },
   { id: "logout", label: "Log Out", hint: "End this session", requiresSignIn: false },
@@ -71,6 +71,14 @@ export const rightsTopics = [
   { id: "constitutional", label: "Constitutional rights", scenario: "questioning" },
 ] as const;
 
+export const rightsNotes: Record<(typeof rightsTopics)[number]["id"], string> = {
+  arrest: "If arrested, do not resist or run. Say you are remaining silent and want a lawyer.",
+  encounter: "Ask whether you are free to leave. Keep your hands visible. Do not lie.",
+  court: "Be on time and respectful. Ask for a lawyer if you need one. Do not lie to the court.",
+  jail: "Do not discuss the facts on recorded jail calls or with other detainees. Ask for a lawyer.",
+  constitutional: "You may remain silent and ask for a lawyer. That is not a reason to resist or destroy evidence.",
+};
+
 export const resourceLinks = [
   { title: "Georgia Legal Services Program", url: "https://www.glsp.org/" },
   { title: "State Bar of Georgia — Find Legal Help", url: "https://www.gabar.org/" },
@@ -85,3 +93,6 @@ export const courtLinks = [
 
 export const SAFETY_NOTICE =
   "Do not resist, run, lie, or destroy evidence. Ask whether you are free to leave, state that you choose to remain silent, and ask for a lawyer. This is not a substitute for a licensed Georgia attorney.";
+
+export const AI_HELP_LIMIT =
+  "Guest AI Help sends this question to /public/rights-assistant. It does not open a private case and does not invent Official Code of Georgia text when the corpus is not loaded.";
