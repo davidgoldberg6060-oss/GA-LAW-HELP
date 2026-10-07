@@ -46,7 +46,7 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
             tile("●", "AI Help", "Ask legal questions", Color.rgb(43, 201, 112)) { openInternal("talk_to_me", "Talk to Me") },
             tile("▤", "Legal Tools", "Motions & rules", gold) { openInternal("motions", "Motions & Court Rules") }))
         body.addView(gridRow(
-            tile("⚖", "Georgia Laws", "Statutes & cases", Color.rgb(235, 61, 65)) { openInternal("case_lookup", "Georgia Laws & Cases") },
+            tile("⚖", "Georgia Laws", "Statutes & cases", Color.rgb(235, 61, 65), actions::openGeorgiaLaws),
             tile("▰", "Court Info", "Courts & procedure", Color.rgb(144, 103, 246)) { openInternal("court_info", "Georgia Court Info") },
             tile("▤", "Legal Forms", "Forms guidance", Color.rgb(245, 139, 53)) { openInternal("legal_forms", "Georgia Legal Forms") }))
         body.addView(gridRow(
@@ -62,7 +62,7 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
         orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         addView(text("☰", 25f, false, blue).apply { gravity = Gravity.CENTER; contentDescription = "Open menu"; setOnClickListener { actions.openMenu() } }, LinearLayout.LayoutParams(dp(42), dp(48)))
         addView(text("⚖  GA.LAW.HELP", 19f, true, gold).apply { gravity = Gravity.CENTER_VERTICAL }, LinearLayout.LayoutParams(0, dp(48), 1f))
-        addView(text("⌕", 27f, false, Color.WHITE).apply { gravity = Gravity.CENTER; contentDescription = "Search Georgia laws"; setOnClickListener { openInternal("case_lookup", "Georgia Laws & Cases") } }, LinearLayout.LayoutParams(dp(42), dp(48)))
+        addView(text("⌕", 27f, false, Color.WHITE).apply { gravity = Gravity.CENTER; contentDescription = "Search Georgia laws"; setOnClickListener { actions.openGeorgiaLaws() } }, LinearLayout.LayoutParams(dp(42), dp(48)))
     }
 
     private fun hero() = LinearLayout(activity).apply {
@@ -95,7 +95,7 @@ class ApprovedHomeScreen(private val activity: AppCompatActivity, private val ac
 
     private fun bottomNav() = LinearLayout(activity).apply {
         orientation = LinearLayout.HORIZONTAL; setPadding(dp(3), dp(3), dp(3), dp(4)); setBackgroundColor(Color.rgb(3, 20, 34))
-        listOf(Triple("⌂", "Home", actions::openHome), Triple("⚖", "Laws", { openInternal("case_lookup", "Georgia Laws & Cases") }), Triple("●", "AI Help", { openInternal("talk_to_me", "Talk to Me") }), Triple("▰", "Documents", actions::openDocuments), Triple("●", "Account", actions::openAccount)).forEachIndexed { i, item ->
+        listOf(Triple("⌂", "Home", actions::openHome), Triple("⚖", "Laws", actions::openGeorgiaLaws), Triple("●", "AI Help", { openInternal("talk_to_me", "Talk to Me") }), Triple("▰", "Documents", actions::openDocuments), Triple("●", "Account", actions::openAccount)).forEachIndexed { i, item ->
             addView(text("${item.first}\n${item.second}", 9.5f, false, if (i == 0) blue else muted).apply { gravity = Gravity.CENTER; setPadding(0, dp(5), 0, dp(5)); setOnClickListener { item.third() } }, LinearLayout.LayoutParams(0, -2, 1f))
         }
     }
