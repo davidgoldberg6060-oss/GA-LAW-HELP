@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { appendChat, type ChatMessage } from "./aiHelpChat";
 import {
   APPEALS_OPINIONS_URL,
   CODE_REVISION_URL,
@@ -26,10 +27,11 @@ type Props = {
   onAsk: (question: string) => void;
 };
 
-type ChatLine = { role: "user" | "note"; text: string };
-
-const AI_NOTE =
-  "Sent to guest research on /public/rights-assistant. This chat does not open a private case and does not invent statute or case text.";
+const STARTER: ChatMessage = {
+  id: "start",
+  role: "assistant",
+  text: "AI Help uses the guest rights path. Do not resist, run, or lie. Call 911 if someone is in danger.",
+};
 
 export default function ApprovedScreens(props: Props) {
   const [drawer, setDrawer] = useState(false);
@@ -38,15 +40,13 @@ export default function ApprovedScreens(props: Props) {
   const [codeTab, setCodeTab] = useState(true);
   const [dark, setDark] = useState(true);
   const [question, setQuestion] = useState("");
-  const [chat, setChat] = useState<ChatLine[]>([
-    { role: "note", text: "AI Help uses the guest rights path. Do not resist, run, or lie. Call 911 if someone is in danger." },
-  ]);
+  const [chat, setChat] = useState<ChatMessage[]>([STARTER]);
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
 
   function sendGuestQuestion(raw: string) {
     const text = raw.trim();
     if (!text) return;
-    setChat((rows) => [...rows, { role: "user", text }, { role: "note", text: AI_NOTE }]);
+    setChat((rows) => appendChat(rows, text));
     props.onAsk(text);
     setQuestion("");
   }
@@ -207,8 +207,8 @@ export default function ApprovedScreens(props: Props) {
               <h2>AI Help</h2>
               <p>Guest questions use /public/rights-assistant. Private case chat stays behind sign-in.</p>
               <div className="approvedChat" aria-live="polite">
-                {chat.map((line, index) => (
-                  <p key={index} className={line.role === "user" ? "user" : "note"}>{line.text}</p>
+                {chat.map((line) => (
+                  <p key={line.id} className={line.role === "user" ? "user" : "note"}>{line.text}</p>
                 ))}
               </div>
               <label>
