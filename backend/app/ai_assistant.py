@@ -6,6 +6,7 @@ import urllib.error
 import urllib.request
 
 OPENAI_URL = "https://api.openai.com/v1/responses"
+XAI_URL = "https://api.x.ai/v1/responses"
 logger = logging.getLogger(__name__)
 
 SYSTEM_INSTRUCTIONS = """You are GA.LAW.HELP, a Georgia-focused legal information and research assistant.
@@ -47,16 +48,33 @@ def _is_complex_legal_request(question: str) -> bool:
     return len(question) >= 2500 or any(marker in lowered for marker in LEGAL_COMPLEXITY_MARKERS)
 
 
-def _request_profile(question: str) -> dict:
+def _provider() -> dict:
+    xai_key = os.getenv("XAI_API_KEY", "").strip()
+    if xai_key:
+        return {
+            "name": "xai",
+            "url": os.getenv("XAI_API_URL", XAI_URL).strip() or XAI_URL,
+            "api_key": xai_key,
+            "default_model": os.getenv("XAI_MODEL", "grok-4").strip() or "grok-4",
+        }
+    return {
+        "name": "openai",
+        "url": os.getenv("OPENAI_API_URL", OPENAI_URL).strip() or OPENAI_URL,
+        "api_key": os.getenv("OPENAI_API_KEY", "").strip(),
+        "default_model": os.getenv("OPENAI_MODEL", "gpt-5.6").strip() or "gpt-5.6",
+    }
+
+
+def _request_profile(question: str, default_model: str) -> dict:
     if _is_complex_legal_request(question):
         return {
-            "model": os.getenv("OPENAI_LEGAL_MODEL", os.getenv("OPENAI_MODEL", "gpt-5.6")).strip() or "gpt-5.6",
+            "model": os.getenv("OPENAI_LEGAL_MODEL", default_model).strip() or default_model,
             "max_output_tokens": int(os.getenv("OPENAI_LEGAL_MAX_OUTPUT_TOKENS", "2200")),
             "reasoning": {"effort": os.getenv("OPENAI_LEGAL_REASONING_EFFORT", "medium")},
             "timeout": float(os.getenv("OPENAI_LEGAL_TIMEOUT_SECONDS", "55")),
         }
     return {
-        "model": os.getenv("OPENAI_FAST_MODEL", os.getenv("OPENAI_MODEL", "gpt-5.6")).strip() or "gpt-5.6",
+        "model": os.getenv("OPENAI_FAST_MODEL", default_model).strip() or default_model,
         "max_output_tokens": int(os.getenv("OPENAI_FAST_MAX_OUTPUT_TOKENS", "900")),
         "reasoning": {"effort": os.getenv("OPENAI_FAST_REASONING_EFFORT", "none")},
         "timeout": float(os.getenv("OPENAI_FAST_TIMEOUT_SECONDS", "30")),
@@ -64,11 +82,12 @@ def _request_profile(question: str) -> dict:
 
 
 def ask_openai(question: str) -> str:
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    provider = _provider()
+    api_key = provider["api_key"]
     if not api_key:
-        logger.error("AI provider configuration failure: OPENAI_API_KEY is missing")
+        logger.error("AI provider configuration failure: XAI_API_KEY and OPENAI_API_KEY are missing")
         raise RuntimeError("AI service is not configured")
-    profile = _request_profile(question)
+    profile = _request_profile(question, provider["default_model"])
     model = profile["model"]
     payload = json.dumps({
         "model": model,
@@ -78,7 +97,7 @@ def ask_openai(question: str) -> str:
         "reasoning": profile["reasoning"],
     }).encode("utf-8")
     request = urllib.request.Request(
-        OPENAI_URL,
+        provider["url"],
         data=payload,
         headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
         method="POST",
@@ -88,17 +107,17 @@ def ask_openai(question: str) -> str:
             data = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")
-        logger.error("AI provider HTTP failure: status=%s model=%s %s", exc.code, model, _provider_error_summary(detail))
+        logger.error("AI provider HTTP failure: provider=%s status=%s model=%s %s", provider["name"], exc.code, model, _provider_error_summary(detail))
         raise RuntimeError("AI provider request failed") from exc
     except urllib.error.URLError as exc:
         reason_type = type(getattr(exc, "reason", None)).__name__
-        logger.error("AI provider network failure: model=%s reason_type=%s", model, reason_type)
+        logger.error("AI provider network failure: provider=%s model=%s reason_type=%s", provider["name"], model, reason_type)
         raise RuntimeError("AI provider is temporarily unreachable") from exc
     except (TimeoutError, socket.timeout) as exc:
-        logger.error("AI provider timeout: model=%s", model)
+        logger.error("AI provider timeout: provider=%s model=%s", provider["name"], model)
         raise RuntimeError("AI provider timed out") from exc
     except ValueError as exc:
-        logger.error("AI provider returned invalid JSON: model=%s", model)
+        logger.error("AI provider returned invalid JSON: provider=%s model=%s", provider["name"], model)
         raise RuntimeError("AI provider returned an invalid response") from exc
 
     text = (data.get("output_text") or "").strip()
@@ -110,6 +129,6 @@ def ask_openai(question: str) -> str:
                     parts.append(part["text"])
         text = "\n".join(parts).strip()
     if not text:
-        logger.error("AI provider returned no output text: model=%s response_status=%s", model, data.get("status", "unknown"))
+        logger.error("AI provider returned no output text: provider=%s model=%s response_status=%s", provider["name"], model, data.get("status", "unknown"))
         raise RuntimeError("AI provider returned an empty response")
     return text
