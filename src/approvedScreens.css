@@ -17,3 +17,8 @@
 .approvedDrawer button{text-align:left;margin:.25rem 0;background:#02111d;color:#fff;border:1px solid #194e70;padding:.55rem .7rem}
 html[data-theme="light"] body{background:#f4f7fb;color:#102033}
 @media(max-width:700px){.approvedGrid{grid-template-columns:1fr}}
+
+.approvedChat{display:flex;flex-direction:column;gap:.4rem;margin:.4rem 0 .7rem}
+.approvedUser,.approvedAssistant{margin:0;padding:.55rem .7rem;border-radius:12px}
+.approvedUser{background:#0a273e}
+.approvedAssistant{background:#02111d;border:1px solid #e2b54e}
