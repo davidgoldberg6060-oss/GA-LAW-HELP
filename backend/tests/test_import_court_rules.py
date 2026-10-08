@@ -198,3 +198,35 @@ def test_pause_is_respected_and_hosts_are_allowlisted():
     for argv in (["--set", "nope"], ["--pause", "1"], ["--offset", "1", "--state-file", "x"]):
         with pytest.raises(SystemExit):
             cr.main(argv, fetch=make_fetch(), sleep=no_sleep, session_factory=no_db)
+
+
+def test_discover_rule_amendments_lists_official_pdfs_without_downloading_them(capsys):
+    page = """<a href="/wp-content/uploads/2026/02/ORDER_-Superior-Ct-Rules_2026_FINAL.pdf">Order</a>
+    <a href="https://example.com/not-official.pdf">skip</a>
+    <a href="/wp-content/uploads/2026/02/ORDER_-Superior-Ct-Rules_2026_FINAL.pdf">dup</a>"""
+    report = cr.discover_rule_amendments(
+        page, source_url=cr.RULE_AMENDMENTS, fetched_at="2026-10-08T21:03:09+00:00",
+        sha256="abc", index_bytes=12, robots_disallow_uploads=True,
+    )
+    assert report["committed"] is False and report["pdf_links"] == 1
+    assert report["pdfs"][0]["downloaded"] is False
+    assert report["pdfs"][0]["index_year"] == "2026"
+    assert report["pdfs"][0]["url"].endswith("/ORDER_-Superior-Ct-Rules_2026_FINAL.pdf")
+    seen = []
+    pages = {
+        "https://www.gasupreme.us/robots.txt": GS_ROBOTS,
+        cr.RULE_AMENDMENTS: page,
+    }
+
+    def fetch(url, limit):
+        seen.append(url)
+        if url.endswith(".pdf"):
+            raise AssertionError("amendment PDF must not be fetched")
+        return Fetched(url, "text/html", pages[url].encode())
+
+    assert cr.main(["--discover-rule-amendments", "--pause", "2"], fetch=fetch, sleep=no_sleep, session_factory=no_db) == 0
+    out = _lines(capsys)[-1]
+    assert out["source"] == cr.RULE_AMENDMENTS and out["pdf_links"] == 1 and out["committed"] is False
+    assert seen == ["https://www.gasupreme.us/robots.txt", cr.RULE_AMENDMENTS]
+    with pytest.raises(SystemExit):
+        cr.main(["--discover-rule-amendments", "--commit"], fetch=fetch, sleep=no_sleep, session_factory=no_db)

@@ -1,3 +1,26 @@
+Last production check: 2026-10-08 21:03 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_court_rules --discover-rule-amendments` was not run with `--commit` and no corpus rows were written. Discover-only read of the official rule-amendments index (page bytes and PDF filenames only; PDFs not downloaded; not stored rules and not current-law verification):
+
+| Index | HTTP | Bytes | SHA-256 | Official PDF links |
+| --- | ---: | ---: | --- | ---: |
+| https://www.gasupreme.us/rules/amendments-to-rules/ | 200 | 1,709,453 | `e78c6db33c89d322c0fab68b822c8f820f8203f404ccf8331e0615584819b3e8` | 299 |
+
+`https://www.gasupreme.us/robots.txt` still disallows `/wp-content/uploads/` (71 bytes, SHA-256 `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196`). Every PDF is linked under that path, so the importer reports them as blocked checkpoints and does not fetch them. Path years are upload-folder labels, not verified effective dates. Lexis was not opened. The full file list, source URL, index hash, fetch date, and gap note for each link are in `docs/inventories/gasupreme_rule_amendments_index.json`. These counts are not persisted coverage.
+
+| Index-folder year | PDF links |
+| --- | ---: |
+| 2015 | 151 |
+| 2016 | 12 |
+| 2017 | 5 |
+| 2018 | 19 |
+| 2019 | 18 |
+| 2020 | 20 |
+| 2021 | 13 |
+| 2022 | 10 |
+| 2023 | 10 |
+| 2024 | 13 |
+| 2025 | 19 |
+| 2026 | 9 |
+
 Last production check: 2026-10-08 20:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_court_rules --discover-other-codes` was not run with `--commit` and no corpus rows were written. Discover-only read of the official other-codes-and-rules index (page bytes and PDF filenames only; PDFs not downloaded; not stored rules and not current-law verification):
 
 | Index | HTTP | Bytes | SHA-256 | Official PDF links |
