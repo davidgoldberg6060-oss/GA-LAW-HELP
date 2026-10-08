@@ -24,7 +24,10 @@ type Props = {
   onLogout: () => void;
   onRights: (scenario: Scenario) => void;
   onAsk: (question: string) => void;
+  askGuest?: (question: string) => Promise<{ answer: string; notice: string }>;
 };
+
+type ChatLine = { role: "user" | "assistant"; text: string };
 
 export default function ApprovedScreens(props: Props) {
   const [drawer, setDrawer] = useState(false);
@@ -33,7 +36,33 @@ export default function ApprovedScreens(props: Props) {
   const [codeTab, setCodeTab] = useState(true);
   const [dark, setDark] = useState(true);
   const [question, setQuestion] = useState("");
+  const [chat, setChat] = useState<ChatLine[]>([]);
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatNotice, setChatNotice] = useState("");
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
+
+  async function sendGuestChat() {
+    const textValue = question.trim();
+    if (!textValue || chatBusy) return;
+    setChat((rows) => [...rows, { role: "user", text: textValue }]);
+    setQuestion("");
+    setChatBusy(true);
+    setChatNotice("");
+    try {
+      if (!props.askGuest) {
+        props.onAsk(textValue);
+        setChat((rows) => [...rows, { role: "assistant", text: "Sent to guest research on /public/rights-assistant. This chat does not open a private case." }]);
+        return;
+      }
+      const reply = await props.askGuest(textValue);
+      setChat((rows) => [...rows, { role: "assistant", text: reply.answer || "No grounded guest answer was returned." }]);
+      setChatNotice(reply.notice || "");
+    } catch (error) {
+      setChatNotice(error instanceof Error ? error.message : "Guest research is unavailable.");
+    } finally {
+      setChatBusy(false);
+    }
+  }
 
   function open(id: ScreenId) {
     if ((id === "cases" || id === "analysis") && !props.signedIn) {
@@ -189,12 +218,21 @@ export default function ApprovedScreens(props: Props) {
           {panel === "ai" && (
             <>
               <h2>AI Help</h2>
-              <p>Guest questions use free research and /public/rights-assistant. Private case chat stays behind sign-in.</p>
+              <p>Guest chat uses /public/rights-assistant only. It does not read My Cases. {SAFETY_NOTICE}</p>
+              <div className="approvedChat" aria-live="polite">
+                {chat.length === 0 && <p>Ask a Georgia rights or procedure question. Answers are information, not legal advice.</p>}
+                {chat.map((line, index) => (
+                  <p key={index} className={line.role === "user" ? "approvedUser" : "approvedAssistant"}>
+                    <strong>{line.role === "user" ? "You" : "Guest research"}</strong> {line.text}
+                  </p>
+                ))}
+              </div>
               <label>
                 Question
-                <textarea value={question} onChange={(event) => setQuestion(event.target.value)} />
+                <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Example: what should I say if I am stopped?" />
               </label>
-              <button type="button" onClick={() => props.onAsk(question)}>Send to guest research</button>
+              <button type="button" onClick={sendGuestChat} disabled={chatBusy}>{chatBusy ? "Asking…" : "Send guest question"}</button>
+              {chatNotice && <p>{chatNotice}</p>}
             </>
           )}
           {panel === "settings" && (
