@@ -1,3 +1,23 @@
+Last production check: 2026-10-08 18:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_court_rules --set municipal,business` was not run with `--commit` and no corpus rows were written. Discover-only re-read of the official other-court-rules index (page bytes and PDF filenames only; PDFs not downloaded; not stored rules and not current-law verification):
+
+| Index | HTTP | Bytes | SHA-256 |
+| --- | ---: | ---: | --- |
+| https://www.gasupreme.us/other-court-rules/ | 200 | 1,592,752 | `d470b95a30b87117d95c845395acc36e27a488552942e394fb71920ad08488d4` |
+
+Official PDF links named on that page (uploads remain disallowed by robots.txt; filenames are index labels, not verified effective dates):
+
+| Set | PDF URL | In importer before this checkpoint |
+| --- | --- | --- |
+| superior | https://www.gasupreme.us/wp-content/uploads/2026/04/UNIFORM-SUPERIOR-COURT-RULES-2026_04_09.pdf | yes |
+| state | https://www.gasupreme.us/wp-content/uploads/2024/01/UNIFORM-STATE-COURT-RULES-2024_01_18.pdf | yes |
+| juvenile | https://www.gasupreme.us/wp-content/uploads/2026/09/UNIFORM-JUVENILE-COURT-RULES-2026_09_03_ADA.pdf | yes |
+| probate | https://www.gasupreme.us/wp-content/uploads/2023/05/UNIFORM-PROBATE-COURT-RULES-2023_06_01.pdf | yes |
+| magistrate | https://www.gasupreme.us/wp-content/uploads/2023/03/UNIFORM-MAGISTRATE-COURT-RULES-2023_04_01.pdf | yes |
+| municipal | https://www.gasupreme.us/wp-content/uploads/2025/12/UNIFORM-MUNICIPAL-COURT-RULES-2024_12_12.pdf | added as blocked checkpoint only |
+| business | https://www.gasupreme.us/wp-content/uploads/2026/06/State-wide-Business-Court-Rules-2026_06_11.pdf | added as blocked checkpoint only |
+
+`https://www.gasupreme.us/robots.txt` still disallows `/wp-content/uploads/`. The importer now names `municipal` and `business` so a later run reports `blocked_by_robots` with those official URLs instead of ignoring the links. No PDF bytes were fetched. Supreme Court opinion year pages for 2010 through 2016 returned HTTP 404, so no older index counts were recorded. `https://www.legis.ga.gov/` links Georgia Code and the Georgia Constitution to Lexis hosts; those links were not opened and annotations were not scraped. `https://sos.ga.gov/georgia-constitution-revised-2025` and `https://sos.ga.gov/robots.txt` returned HTTP 403, so the Secretary of State constitution compilation was not hashed or stored. These counts are not persisted coverage.
+
 Last production check: 2026-10-08 16:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_ga_regulations --department all --commit` was not run and no corpus rows were written. Discover-only read of the official Rules and Regulations download page used by the importer (department PDF names only; no department PDF downloaded; not stored rules and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | Department PDFs named | Current-through label |
