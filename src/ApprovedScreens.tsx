@@ -39,6 +39,7 @@ export default function ApprovedScreens(props: Props) {
   const [chat, setChat] = useState<ChatLine[]>([]);
   const [chatBusy, setChatBusy] = useState(false);
   const [chatNotice, setChatNotice] = useState("");
+  const [analysisNote, setAnalysisNote] = useState("");
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
 
   async function sendGuestChat() {
@@ -65,16 +66,12 @@ export default function ApprovedScreens(props: Props) {
   }
 
   function open(id: ScreenId) {
-    if ((id === "cases" || id === "analysis") && !props.signedIn) {
+    if (id === "cases" && !props.signedIn) {
       props.onSignIn();
       return;
     }
     if (id === "cases") {
       props.onCases();
-      return;
-    }
-    if (id === "analysis") {
-      props.onAnalysis();
       return;
     }
     if (id === "logout") {
@@ -96,8 +93,19 @@ export default function ApprovedScreens(props: Props) {
       if (ask instanceof HTMLInputElement) ask.focus();
     }
     if (id === "rights") props.onRights("public");
+    if (id === "analysis") setAnalysisNote("");
     setPanel(id);
     setDrawer(false);
+  }
+
+  function openPrivateAnalysis() {
+    if (!props.signedIn) {
+      setAnalysisNote("Sign in required. This screen does not upload a guest file or open a private case.");
+      props.onSignIn();
+      return;
+    }
+    setAnalysisNote("Opening the login-only upload workspace. No public corpus text is invented here.");
+    props.onAnalysis();
   }
 
   return (
@@ -233,6 +241,15 @@ export default function ApprovedScreens(props: Props) {
               </label>
               <button type="button" onClick={sendGuestChat} disabled={chatBusy}>{chatBusy ? "Asking…" : "Send guest question"}</button>
               {chatNotice && <p>{chatNotice}</p>}
+            </>
+          )}
+          {panel === "analysis" && (
+            <>
+              <h2>Case Analysis</h2>
+              <p>Upload stays on a private case. Guests cannot attach files here, and this panel does not invent unannotated code text when DATABASE_URL is missing.</p>
+              <p>{props.signedIn ? "Signed in. Open the private workspace to upload." : "Sign in required before any case file can be selected."}</p>
+              <button type="button" onClick={openPrivateAnalysis}>{props.signedIn ? "Open private upload" : "Sign in to upload"}</button>
+              {analysisNote && <p>{analysisNote}</p>}
             </>
           )}
           {panel === "settings" && (
