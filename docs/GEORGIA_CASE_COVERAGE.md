@@ -1,3 +1,12 @@
+Last production check: 2026-10-08 11:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were written. Discover-only reads of the official 2017 and 2018 Supreme Court indexes (importer host, PDF, and first-docket rules; not stored authorities and not current-law verification):
+
+| Year | Index | HTTP | Bytes | Docket-labeled PDF anchors | Unique PDF URLs | Dockets with more than one PDF |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 2017 | https://www.gasupreme.us/2017-opinions/ | 200 | 1,652,091 | 384 | 369 | 0 |
+| 2018 | https://www.gasupreme.us/2018-opinions/ | 200 | 1,641,527 | 319 | 316 | 1 |
+
+`discover()` dedupes by URL and would report 369 for 2017. It would refuse the 2018 index until docket `S17A1905` is reviewed: that first-docket token points at more than one PDF. Index SHA-256 checkpoints (page bytes only, not opinion text): 2017 `58151d1549f3f82af864f2e623005ffedaf5f86472f0e636ff6c7b1ab86425d8`; 2018 `700d6ceb867efe20878bac0b5dc02e2f6686e4899595ab2510fc93e27d327dbe`. These counts are not persisted coverage and are not current-law verification. The 2019–2026 index inventories below are unchanged.
+
 Last production check: 2026-10-08 08:20 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_ocga_release --release release86.2022.11 --commit` was not run and no corpus rows were written. Discover-only read of the Public.Resource.Org archive.org metadata for item `gov.ga.ocga.2018`, release `release86.2022.11` (as-of 2022-11, not an effective date and not current-law verification):
 
 | Source | URL | HTTP | Title ODT files | Published bytes | Missing titles 1-53 |
@@ -140,7 +149,7 @@ ingestion is not complete.
 
 | Court / source | Discovered online range | Stored | Gap |
 | --- | --- | ---: | --- |
-| Supreme Court of Georgia annual opinion pages | 2017–2026 pages linked from the court's 2026 page | unverified | Index, import, count and check each year; earlier final reporters and revisions require separate sources. Do not treat the prior zero check as a fresh count. |
+| Supreme Court of Georgia annual opinion pages | 2017–2026 official annual index pages | unverified | 2017–2026 indexes inventoried (2018 has ambiguous docket S17A1905). No opinion PDFs stored. Earlier final reporters and revisions require separate sources. Do not treat the prior zero check as a fresh count. |
 | Court of Appeals of Georgia | Official source registered; complete archive not inventoried | unverified | Discover official individual opinions and establish dates/counts. |
 | Georgia trial courts and other public rulings | No unified archive inventoried | unverified | Inventory county and court access, document availability, restrictions and older paper records. Do not dump private trial dockets. |
 
