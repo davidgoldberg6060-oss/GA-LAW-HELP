@@ -65,18 +65,6 @@ export default function ApprovedScreens(props: Props) {
   }
 
   function open(id: ScreenId) {
-    if ((id === "cases" || id === "analysis") && !props.signedIn) {
-      props.onSignIn();
-      return;
-    }
-    if (id === "cases") {
-      props.onCases();
-      return;
-    }
-    if (id === "analysis") {
-      props.onAnalysis();
-      return;
-    }
     if (id === "logout") {
       props.onLogout();
       setDrawer(false);
@@ -233,6 +221,28 @@ export default function ApprovedScreens(props: Props) {
               </label>
               <button type="button" onClick={sendGuestChat} disabled={chatBusy}>{chatBusy ? "Asking…" : "Send guest question"}</button>
               {chatNotice && <p>{chatNotice}</p>}
+            </>
+          )}
+          {panel === "cases" && (
+            <>
+              <h2>My Cases</h2>
+              <p>Private cases stay login-only. This screen does not list another person&apos;s cases and does not call the case API.</p>
+              {props.signedIn ? (
+                <button type="button" onClick={props.onCases}>Open private case list</button>
+              ) : (
+                <button type="button" onClick={props.onSignIn}>Sign in to open My Cases</button>
+              )}
+            </>
+          )}
+          {panel === "analysis" && (
+            <>
+              <h2>Case Analysis</h2>
+              <p>Uploads stay in the signed-in case workspace. This panel does not accept files, does not invent a corpus, and is not legal advice. {SAFETY_NOTICE}</p>
+              {props.signedIn ? (
+                <button type="button" onClick={props.onAnalysis}>Continue to private upload</button>
+              ) : (
+                <button type="button" onClick={props.onSignIn}>Sign in before upload</button>
+              )}
             </>
           )}
           {panel === "settings" && (
