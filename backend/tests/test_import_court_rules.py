@@ -184,3 +184,25 @@ def test_pause_is_respected_and_hosts_are_allowlisted():
     for argv in (["--set", "nope"], ["--pause", "1"], ["--offset", "1", "--state-file", "x"]):
         with pytest.raises(SystemExit):
             cr.main(argv, fetch=make_fetch(), sleep=no_sleep, session_factory=no_db)
+
+
+def test_2026_10_08_official_rule_pdf_names_match_importer_patterns():
+    """Index inventory filenames stay selectable by find_pdf. No network and no PDF body."""
+    samples = {
+        "supreme": ("https://www.gasupreme.us/rules/",
+                    "https://www.gasupreme.us/wp-content/uploads/2026/07/SupremeCourtRules_eff-July-2-2026.pdf"),
+        "superior": ("https://www.gasupreme.us/other-court-rules/",
+                     "https://www.gasupreme.us/wp-content/uploads/2026/04/UNIFORM-SUPERIOR-COURT-RULES-2026_04_09.pdf"),
+        "state": ("https://www.gasupreme.us/other-court-rules/",
+                  "https://www.gasupreme.us/wp-content/uploads/2024/01/UNIFORM-STATE-COURT-RULES-2024_01_18.pdf"),
+        "juvenile": ("https://www.gasupreme.us/other-court-rules/",
+                     "https://www.gasupreme.us/wp-content/uploads/2026/09/UNIFORM-JUVENILE-COURT-RULES-2026_09_03_ADA.pdf"),
+        "probate": ("https://www.gasupreme.us/other-court-rules/",
+                    "https://www.gasupreme.us/wp-content/uploads/2023/05/UNIFORM-PROBATE-COURT-RULES-2023_06_01.pdf"),
+        "magistrate": ("https://www.gasupreme.us/other-court-rules/",
+                       "https://www.gasupreme.us/wp-content/uploads/2023/03/UNIFORM-MAGISTRATE-COURT-RULES-2023_04_01.pdf"),
+    }
+    for key, (index, pdf) in samples.items():
+        rule_set = cr.RULE_SETS[key]
+        html = f'<a href="{pdf}">rules</a>'
+        assert cr.find_pdf(html, rule_set, index) == pdf

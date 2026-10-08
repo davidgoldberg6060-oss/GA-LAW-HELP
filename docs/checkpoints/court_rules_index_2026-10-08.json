@@ -1,0 +1,87 @@
+{
+  "kind": "official_index_inventory",
+  "fetched_at": "2026-10-08T10:01:18Z",
+  "database_url_set": false,
+  "committed_rows": 0,
+  "not_coverage": true,
+  "gap_notes": [
+    "PDF bodies were not fetched because robots.txt disallows /wp-content/uploads/.",
+    "Filename dates are URL labels, not current-law verification.",
+    "Court of Appeals rules index returned HTTP 405 captcha; no page list recorded.",
+    "Lexis annotations were not scraped."
+  ],
+  "indexes": [
+    {
+      "set": "supreme",
+      "citation_prefix": "Ga. Sup. Ct. R.",
+      "url": "https://www.gasupreme.us/rules/",
+      "http": 200,
+      "bytes": 1592661,
+      "sha256": "b2aad41ef85f04be323cb5ad5e33e8c859b6f1f3941234103ff1e3d777ae12fe",
+      "pdf_url": "https://www.gasupreme.us/wp-content/uploads/2026/07/SupremeCourtRules_eff-July-2-2026.pdf",
+      "pdf_fetched": false,
+      "status": "blocked_by_robots"
+    },
+    {
+      "set": "superior",
+      "citation_prefix": "Unif. Super. Ct. R.",
+      "url": "https://www.gasupreme.us/other-court-rules/",
+      "http": 200,
+      "bytes": 1592686,
+      "sha256": "bbc3aad7d610abdd5d931a0a730e67dfe89ae5ab91968e08f73a3c668a67b180",
+      "pdf_url": "https://www.gasupreme.us/wp-content/uploads/2026/04/UNIFORM-SUPERIOR-COURT-RULES-2026_04_09.pdf",
+      "pdf_fetched": false,
+      "status": "blocked_by_robots"
+    },
+    {
+      "set": "state",
+      "citation_prefix": "Unif. State Ct. R.",
+      "url": "https://www.gasupreme.us/other-court-rules/",
+      "http": 200,
+      "bytes": 1592686,
+      "sha256": "bbc3aad7d610abdd5d931a0a730e67dfe89ae5ab91968e08f73a3c668a67b180",
+      "pdf_url": "https://www.gasupreme.us/wp-content/uploads/2024/01/UNIFORM-STATE-COURT-RULES-2024_01_18.pdf",
+      "pdf_fetched": false,
+      "status": "blocked_by_robots"
+    },
+    {
+      "set": "juvenile",
+      "citation_prefix": "Unif. Juv. Ct. R.",
+      "url": "https://www.gasupreme.us/other-court-rules/",
+      "http": 200,
+      "bytes": 1592686,
+      "sha256": "bbc3aad7d610abdd5d931a0a730e67dfe89ae5ab91968e08f73a3c668a67b180",
+      "pdf_url": "https://www.gasupreme.us/wp-content/uploads/2026/09/UNIFORM-JUVENILE-COURT-RULES-2026_09_03_ADA.pdf",
+      "pdf_fetched": false,
+      "status": "blocked_by_robots"
+    },
+    {
+      "set": "probate",
+      "citation_prefix": "Unif. Prob. Ct. R.",
+      "url": "https://www.gasupreme.us/other-court-rules/",
+      "http": 200,
+      "bytes": 1592686,
+      "sha256": "bbc3aad7d610abdd5d931a0a730e67dfe89ae5ab91968e08f73a3c668a67b180",
+      "pdf_url": "https://www.gasupreme.us/wp-content/uploads/2023/05/UNIFORM-PROBATE-COURT-RULES-2023_06_01.pdf",
+      "pdf_fetched": false,
+      "status": "blocked_by_robots"
+    },
+    {
+      "set": "magistrate",
+      "citation_prefix": "Unif. Mag. Ct. R.",
+      "url": "https://www.gasupreme.us/other-court-rules/",
+      "http": 200,
+      "bytes": 1592686,
+      "sha256": "bbc3aad7d610abdd5d931a0a730e67dfe89ae5ab91968e08f73a3c668a67b180",
+      "pdf_url": "https://www.gasupreme.us/wp-content/uploads/2023/03/UNIFORM-MAGISTRATE-COURT-RULES-2023_04_01.pdf",
+      "pdf_fetched": false,
+      "status": "blocked_by_robots"
+    }
+  ],
+  "court_of_appeals_rules_index": {
+    "url": "https://www.gaappeals.gov/court-rules/",
+    "http": 405,
+    "waf": "captcha",
+    "pages_recorded": 0
+  }
+}
