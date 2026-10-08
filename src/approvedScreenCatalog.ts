@@ -58,9 +58,9 @@ export const lawTitles: LawTitle[] = [
 ];
 
 export const formGroups = [
-  { id: "criminal", label: "Criminal", url: "https://georgiacourts.gov/tag/forms/", note: "Official Georgia Courts forms index, including inmate civil and habeas starting points. Not a completed pleading." },
-  { id: "civil", label: "Civil", url: "https://georgiacourts.gov/tag/forms/", note: "Official forms index only. Local clerk rules still control filing." },
-  { id: "family", label: "Family", url: "https://georgiacourts.gov/tag/forms/", note: "Official family and divorce form index. Not advice about custody or support." },
+  { id: "criminal", label: "Criminal", url: "https://georgiacourts.gov/inmate-forms/", note: "Official Administrative Office of the Courts inmate civil-action and habeas form index. A blank form, not a completed pleading or advice to resist." },
+  { id: "civil", label: "Civil", url: "https://georgiacourts.gov/forms-and-records/", note: "Official Georgia Courts forms and records index. Local clerk rules still control filing." },
+  { id: "family", label: "Family", url: "https://georgiacourts.gov/a2j/self-help-resources/family-law/", note: "Official family-law self-help index, including divorce forms. Not advice about custody or support." },
 ];
 
 export const rightsTopics = [
