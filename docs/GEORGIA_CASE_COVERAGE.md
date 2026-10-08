@@ -1,3 +1,18 @@
+Last production check: 2026-10-08 14:00 UTC. DATABASE_URL was unset, so no importer was run with `--commit` and no corpus rows were written. Discover-only reads of official Supreme Court index pages that were not yet checkpointed (page bytes and PDF filenames only; PDFs not downloaded; not stored rules or opinions and not current-law verification):
+
+| Index | HTTP | Bytes | SHA-256 | PDF filenames named on the page |
+| --- | ---: | ---: | --- | ---: |
+| https://www.gasupreme.us/other-codes-rules/ | 200 | 1,603,773 | `cc966fef803830324b59aedf2f260edad9ef0ca64d5c6d67cf846cf7b00c51a4` | 27 |
+| https://www.gasupreme.us/forthcoming-opinions/ | 200 | 1,594,096 | `bdad48b406418bc63d3794773b3f3dc509c207a7dab9b2f395b1a34bf5995ae2` | 10 |
+| https://www.gasupreme.us/2016-opinions/ | 404 | — | — | not an official annual index at this URL |
+| https://www.gaappeals.gov/ | 405 | — | — | not read |
+
+`https://www.gasupreme.us/robots.txt` still disallows `/wp-content/uploads/` (unchanged SHA-256 `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196`). Every PDF named below is linked from that path, so the importer must not auto-fetch them. Filename dates and link labels are index text, not verified effective dates. The Court of Appeals host again returned HTTP 405, so no appeals opinion counts were recorded. These counts are not persisted coverage.
+
+Other codes and rules page names these PDFs (not downloaded): `Order_Amend-Part-A-Fitness-Board-Membership_issued.pdf`, `Code-of-Judicial-Conduct-2024_02_01.pdf`, `Rule-2.5-order_final_issued_1.pdf`, `order-amending-CJC-Terminology-section-definition-of-law-Issued.pdf`, `CODE_OF_JUDICIAL_CONDUCT_AMENDMENT_ORDER_OCTOBER_22_2018.pdf`, `Order_CJC_FINAL.pdf`, `Order_CJC_REDLINE-.pdf`, `georgia_code_judicial_conduct_revised_5-14-15.pdf`, `Civil_Domestic_Filing_Disposition_Form-FINAL-eff-010120.pdf`, `JQC-RULES-2023_02_03.pdf`, `JQC-Rules-Amendment-Approval-Order_entered_sub.pdf`, `Replacement-Citizen-Order_entered.pdf`, `JQC_RULES_AMENDMENT_ORDER_OCTOBER_22_2018.pdf`, `JQC_Final_Rules_Order.pdf`, `JQC_Interim_Rules_Order_06-28-17.pdf`, `JURY_COMPOSITION_RULE_2019-04-11.pdf`, `RulesForLegalInterpreting_updatedMarch2025.pdf`, `Order-_-Amended-Rules-for-LegaInterpreting.pdf`, `Statewide-Min-Standards-Rules-final.pdf`, `UNIFIED_APPEAL-06_06_18.pdf`, `2026-UAP-amendments-Final-Order_entered.pdf`, `Uniform_Misdemeanor_Citation_Approval_Order_jul_2019.pdf`, `Uniform_Misdemeanor_Citation_Rules_FINAL_REVISED_07-01-2019.pdf`, `Uniform_Misdemeanor_Citation_Approval_Order_dec_2018.pdf`, `Uniform_Misdemeanor_Citation_Rules_FINAL_ADOPTED_12-7-18.pdf`, `Uniform_Misdemeanor_Citation_Form-_FINAL_ADOPTED_12-7-18.pdf`, `Uniform_Transfer_Rule_Adopted_Judicial_Council_12-7-2018-_FINAL.pdf`. The page also links `https://godr.org/about-us/rules/` and `https://www.gabaradmissions.org/rules-governing-admission`; those hosts were not fetched. Judicial conduct, JQC, interpreting, e-filing, unified appeal, and uniform citation rules are not in the importer `RULE_SETS`.
+
+Forthcoming opinions page names these slip-opinion PDFs (not downloaded): `s24z1139.pdf`, `s25g1446.pdf`, `s26a0604.pdf`, `s26a0732.pdf`, `s26a0769.pdf`, `s26a0775.pdf`, `s26a1003.pdf`, `s26a1067.pdf`, `s26a1488.pdf`, `s26y0982.pdf`. They are not part of the 2017–2026 annual index inventories and were not treated as stored authorities.
+
 Last production check: 2026-10-08 12:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_court_rules --set all` was not run with `--commit` and no corpus rows were written. Discover-only reads of official rule index pages (page bytes and PDF filenames only; PDFs not downloaded; not stored rules and not current-law verification):
 
 | Index | HTTP | Bytes | SHA-256 | PDF links named on the page |
@@ -160,9 +175,9 @@ ingestion is not complete.
 
 | Court / source | Discovered online range | Stored | Gap |
 | --- | --- | ---: | --- |
-| Supreme Court of Georgia annual opinion pages | 2017–2026 official annual index pages | unverified | 2017–2026 indexes inventoried (2018 has ambiguous docket S17A1905). No opinion PDFs stored. Earlier final reporters and revisions require separate sources. Do not treat the prior zero check as a fresh count. |
-| Court of Appeals of Georgia | Official source registered; complete archive not inventoried | unverified | Opinion search and court-rules index returned HTTP 405 on 2026-10-05 and 2026-10-08. Discover official individual opinions and establish dates/counts. |
-| Court rules | Supreme Court rules index and other-court-rules index fetched 2026-10-08; Court of Appeals rules index HTTP 405 | unverified | PDF bodies live under a robots-disallowed uploads path and were not fetched. Municipal and statewide business court PDFs are named but not in importer rule sets. No rule text stored. |
+| Supreme Court of Georgia annual opinion pages | 2017–2026 official annual index pages; 2016 URL returned 404 | unverified | 2017–2026 indexes inventoried (2018 has ambiguous docket S17A1905). Forthcoming-opinions index names 10 slip PDFs not in those annual counts. No opinion PDFs stored. Earlier final reporters and revisions require separate sources. Do not treat the prior zero check as a fresh count. |
+| Court of Appeals of Georgia | Official source registered; complete archive not inventoried | unverified | Opinion search and court-rules index returned HTTP 405 on 2026-10-05 and 2026-10-08. The site root returned HTTP 405 again on 2026-10-08 14:00 UTC. Discover official individual opinions and establish dates/counts. |
+| Court rules | Supreme Court rules, other-court-rules, and other-codes-rules indexes fetched 2026-10-08; Court of Appeals rules index HTTP 405 | unverified | PDF bodies live under a robots-disallowed uploads path and were not fetched. Other-codes page names 27 PDFs (judicial conduct, JQC, interpreting, e-filing, unified appeal, uniform citation) that are not in importer rule sets. Municipal and statewide business court PDFs are named but not in importer rule sets. No rule text stored. |
 | Georgia trial courts and other public rulings | No unified archive inventoried | unverified | Inventory county and court access, document availability, restrictions and older paper records. Do not dump private trial dockets. |
 
 Official annual index: https://www.gasupreme.us/2026-opinions/
