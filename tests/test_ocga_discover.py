@@ -13,6 +13,9 @@ def test_discover_release_reads_metadata_only():
             "files": [
                 {"name": "release86.2022.11/gov.ga.ocga.title.16.odt", "sha1": "abc123", "size": "12"},
                 {"name": "release86.2022.11/gov.ga.court.rules.odt", "sha1": "def456", "size": "9"},
+                {"name": "release86.2022.11/gov.ga.ocga.constitution.ga.odt", "sha1": "c0ffee", "size": "8"},
+                {"name": "release86.2022.11/gov.ga.ag.2020.opinions.odt", "sha1": "same", "size": "6315"},
+                {"name": "release86.2022.11/gov.ga.ag.2022.opinions.odt", "sha1": "same", "size": "6315"},
             ]
         }).encode()
 
@@ -25,6 +28,11 @@ def test_discover_release_reads_metadata_only():
     assert report["titles"][0]["sha1"] == "abc123"
     assert report["titles"][0]["url"].endswith("/release86.2022.11/gov.ga.ocga.title.16.odt")
     assert "gov.ga.court.rules.odt" in report["other_odt"]
+    companions = {item["file"]: item for item in report["companion_files"]}
+    assert companions["gov.ga.court.rules.odt"]["downloaded"] is False
+    assert companions["gov.ga.court.rules.odt"]["sha1"] == "def456"
+    assert "not downloaded" in companions["gov.ga.ocga.constitution.ga.odt"]["gap"]
+    assert companions["gov.ga.ag.2020.opinions.odt"]["sha1"] == companions["gov.ga.ag.2022.opinions.odt"]["sha1"]
     assert "01" in report["missing_titles"]
     assert "16" not in report["missing_titles"]
 

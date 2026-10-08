@@ -324,6 +324,19 @@ def discover_release(release: str, fetch: Callable[[str], bytes] = fetch_bytes) 
         })
     title_names = {title_file(title) for title in TITLES}
     other = sorted(name for name in manifest if name.endswith(".odt") and name not in title_names)
+    companions = []
+    for name in sorted(manifest):
+        if name in title_names:
+            continue
+        published = manifest[name]
+        companions.append({
+            "file": name,
+            "url": f"{DOWNLOAD_BASE}{release}/{name}",
+            "sha1": published.get("sha1"),
+            "size": published.get("size"),
+            "downloaded": False,
+            "gap": _companion_gap(name),
+        })
     return {
         "mode": "discover-only",
         "source": METADATA_URL,
@@ -335,9 +348,25 @@ def discover_release(release: str, fetch: Callable[[str], bytes] = fetch_bytes) 
         "missing_titles": missing,
         "titles": titles,
         "other_odt": other,
+        "companion_files": companions,
         "committed": False,
-        "note": "Manifest inventory only. Not stored authorities and not current-law verification.",
+        "note": "Manifest inventory only. Companion files are not downloaded and are not stored authorities.",
     }
+
+
+def _companion_gap(name: str) -> str:
+    """Gap note for a non-title release file. Does not describe file text."""
+    if name == "gov.ga.ocga.constitution.ga.odt":
+        return "Georgia constitution compilation in this release; not downloaded; not a current-law check; Lexis not opened."
+    if name == "gov.ga.ocga.constitution.us.odt":
+        return "United States constitution copy in this release; not Georgia authority text; not downloaded."
+    if name == "gov.ga.court.rules.odt":
+        return "2022-11 release court-rules file; not the later gasupreme.us PDFs; not downloaded."
+    if name.startswith("gov.ga.ag."):
+        return "Attorney General file named in the release; not downloaded; do not treat the published checksum as opinion text."
+    if "index" in name:
+        return "Index file, not authority text; not downloaded."
+    return "Named in the release manifest only; not downloaded and not stored."
 
 
 # ---------------------------------------------------------------- CLI

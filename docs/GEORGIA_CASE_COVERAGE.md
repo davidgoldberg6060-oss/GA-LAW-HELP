@@ -1,3 +1,23 @@
+Last production check: 2026-10-08 19:05 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_ocga_release --release release86.2022.11 --commit` was not run and no corpus rows were written. Discover-only read of archive.org metadata for item `gov.ga.ocga.2018` (file names, sizes, and published SHA-1 only; companion files not downloaded; not stored authorities and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 |
+| --- | --- | ---: | ---: | --- |
+| archive.org metadata | https://archive.org/metadata/gov.ga.ocga.2018 | 200 | 834,800 | `6932b465976fad58e8aec931b1c67f7d1079b59af79c7ef352512c1c61b174d6` |
+
+Companion files named in `release86.2022.11` besides the 53 title ODTs (published checksums are file checkpoints, not text):
+
+| File | Bytes | Published SHA-1 | Gap |
+| --- | ---: | --- | --- |
+| gov.ga.ocga.constitution.ga.odt | 1,804,968 | `b37dfc34a98e2103ea588743a605e12136a08756` | Georgia constitution compilation in this release; not downloaded; not a current-law check; Lexis not opened |
+| gov.ga.ocga.constitution.us.odt | 1,719,677 | `b53d02725edb45e9ce5c8e1fafa7d60d8566cdfb` | United States constitution copy; not Georgia authority text; not downloaded |
+| gov.ga.court.rules.odt | 3,026,291 | `4610a0430d2d6a6dabf67ce569a589bfb0a6a84a` | 2022-11 release court-rules file; not the later gasupreme.us PDFs; not downloaded |
+| gov.ga.court.rules.index.odt | 123,188 | `0a499e7d7ff0e89e1af0642489c0082586b1ece6` | Index file, not authority text; not downloaded |
+| gov.ga.ocga.index.odt | 6,035,845 | `2e7eaf2529d7281864b409bcb1393157cd6e8487` | Index file, not authority text; not downloaded |
+| gov.ga.ag.2020.opinions.odt | 6,315 | `7f01267e4ee10050ed02458a245a1106fe8793a5` | Same published SHA-1 as the 2022 AG file; not downloaded; not opinion text |
+| gov.ga.ag.2022.opinions.odt | 6,315 | `7f01267e4ee10050ed02458a245a1106fe8793a5` | Same published SHA-1 as the 2020 AG file; not downloaded; not opinion text |
+
+Matching RTF companions are named in the same manifest and were not downloaded. The importer discover report now lists these companion URLs, sizes, published SHA-1 values, and gap notes, and still refuses `--discover-only` with `--commit`. These counts are not persisted coverage.
+
 Last production check: 2026-10-08 18:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_court_rules --set municipal,business` was not run with `--commit` and no corpus rows were written. Discover-only re-read of the official other-court-rules index (page bytes and PDF filenames only; PDFs not downloaded; not stored rules and not current-law verification):
 
 | Index | HTTP | Bytes | SHA-256 |
