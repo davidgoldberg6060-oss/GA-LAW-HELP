@@ -16,7 +16,9 @@ section is still current: records stay ``unverified`` with ``unknown`` currency.
 heading in the release is only "Repealed." or "Reserved." are counted and not stored.
 
 Preview by default; ``--commit`` persists. ``--state-file`` checkpoints finished titles and the
-section position inside the current title (commit mode only).
+section position inside the current title (commit mode only). ``--discover-only`` reads the
+archive.org release manifest (file name, size, published SHA-1) and does not download title
+text or open a database.
 """
 from __future__ import annotations
 
@@ -295,6 +297,49 @@ def require_annotation_table(session_factory) -> None:
                              "backend/migrations/20261004_authority_annotations.sql before --commit")
 
 
+
+def discover_release(release: str, fetch: Callable[[str], bytes] = fetch_bytes) -> dict:
+    """Metadata-only inventory of one Public.Resource.Org OCGA release.
+
+    Fetches the archive.org item metadata only. Does not download ODT text, parse sections,
+    or open a database. A published SHA-1 is a file checkpoint, not stored authority text
+    and not proof the section is current law.
+    """
+    as_of = release_as_of(release)
+    manifest = release_manifest(release, fetch)
+    titles = []
+    missing = []
+    for title in TITLES:
+        name = title_file(title)
+        published = manifest.get(name) or {}
+        if not published.get("sha1"):
+            missing.append(title)
+            continue
+        titles.append({
+            "title": int(title),
+            "file": name,
+            "url": f"{DOWNLOAD_BASE}{release}/{name}",
+            "sha1": published["sha1"],
+            "size": published.get("size"),
+        })
+    title_names = {title_file(title) for title in TITLES}
+    other = sorted(name for name in manifest if name.endswith(".odt") and name not in title_names)
+    return {
+        "mode": "discover-only",
+        "source": METADATA_URL,
+        "item": ITEM,
+        "release": release,
+        "as_of": as_of,
+        "fetched_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "title_files": len(titles),
+        "missing_titles": missing,
+        "titles": titles,
+        "other_odt": other,
+        "committed": False,
+        "note": "Manifest inventory only. Not stored authorities and not current-law verification.",
+    }
+
+
 # ---------------------------------------------------------------- CLI
 def _load_state(path):
     return json.loads(Path(path).read_text(encoding="utf-8")) if path and Path(path).exists() else {}
@@ -316,6 +361,8 @@ def main(argv: list[str] | None = None, *, fetch: Callable[[str], bytes] = fetch
     parser.add_argument("--state-file", help="JSON checkpoint for resuming (commit mode only)")
     parser.add_argument("--pause", type=float, default=2.0, help="Seconds between file downloads")
     parser.add_argument("--commit", action="store_true", help="Persist sections (default: preview only)")
+    parser.add_argument("--discover-only", action="store_true",
+                        help="Read the archive.org release manifest only. Do not download ODT text or open the database.")
     parser.add_argument("--quiet", action="store_true", help="Only print per-title and summary lines")
     args = parser.parse_args(argv)
     try:
@@ -329,6 +376,13 @@ def main(argv: list[str] | None = None, *, fetch: Callable[[str], bytes] = fetch
         parser.error("limit must be 1-100000, offset nonnegative, pause 0.5-60 seconds")
     if args.offset and args.state_file:
         parser.error("use either --offset or --state-file, not both")
+    if args.discover_only and args.commit:
+        parser.error("--discover-only cannot be combined with --commit")
+    if args.discover_only:
+        report = discover_release(args.release, fetch)
+        print(json.dumps(report), flush=True)
+        return 1 if report["missing_titles"] else 0
+
 
     state = _load_state(args.state_file)
     if state.get("release") not in (None, args.release):
