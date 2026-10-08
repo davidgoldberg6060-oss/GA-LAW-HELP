@@ -1,3 +1,41 @@
+Last production check: 2026-10-08 20:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_court_rules --discover-other-codes` was not run with `--commit` and no corpus rows were written. Discover-only read of the official other-codes-and-rules index (page bytes and PDF filenames only; PDFs not downloaded; not stored rules and not current-law verification):
+
+| Index | HTTP | Bytes | SHA-256 | Official PDF links |
+| --- | ---: | ---: | --- | ---: |
+| https://www.gasupreme.us/other-codes-rules/ | 200 | 1,603,773 | `c1e342e7c3be85988a16e918dd946aa7bf166c2969350926a816134e00728281` | 27 |
+
+`https://www.gasupreme.us/robots.txt` still disallows `/wp-content/uploads/` (71 bytes, SHA-256 `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196`). Every PDF below is linked under that path, so the importer reports them as blocked checkpoints and does not fetch them. Filenames are index labels, not verified effective dates. Lexis was not opened. Court of Appeals `/opinions/` and `/` still returned HTTP 405 with a captcha challenge, so no appeals opinion index was read. These counts are not persisted coverage.
+
+| File | URL |
+| --- | --- |
+| georgia_code_judicial_conduct_revised_5-14-15.pdf | https://www.gasupreme.us/wp-content/uploads/2015/06/georgia_code_judicial_conduct_revised_5-14-15.pdf |
+| Order_CJC_FINAL.pdf | https://www.gasupreme.us/wp-content/uploads/2016/09/Order_CJC_FINAL.pdf |
+| Order_CJC_REDLINE-.pdf | https://www.gasupreme.us/wp-content/uploads/2016/09/Order_CJC_REDLINE-.pdf |
+| UNIFIED_APPEAL-06_06_18.pdf | https://www.gasupreme.us/wp-content/uploads/2018/06/UNIFIED_APPEAL-06_06_18.pdf |
+| CODE_OF_JUDICIAL_CONDUCT_AMENDMENT_ORDER_OCTOBER_22_2018.pdf | https://www.gasupreme.us/wp-content/uploads/2018/10/CODE_OF_JUDICIAL_CONDUCT_AMENDMENT_ORDER_OCTOBER_22_2018.pdf |
+| Uniform_Misdemeanor_Citation_Approval_Order_dec_2018.pdf | https://www.gasupreme.us/wp-content/uploads/2018/12/Uniform_Misdemeanor_Citation_Approval_Order_dec_2018.pdf |
+| Uniform_Misdemeanor_Citation_Form-_FINAL_ADOPTED_12-7-18.pdf | https://www.gasupreme.us/wp-content/uploads/2018/12/Uniform_Misdemeanor_Citation_Form-_FINAL_ADOPTED_12-7-18.pdf |
+| Uniform_Misdemeanor_Citation_Rules_FINAL_ADOPTED_12-7-18.pdf | https://www.gasupreme.us/wp-content/uploads/2018/12/Uniform_Misdemeanor_Citation_Rules_FINAL_ADOPTED_12-7-18.pdf |
+| Uniform_Transfer_Rule_Adopted_Judicial_Council_12-7-2018-_FINAL.pdf | https://www.gasupreme.us/wp-content/uploads/2018/12/Uniform_Transfer_Rule_Adopted_Judicial_Council_12-7-2018-_FINAL.pdf |
+| Uniform_Misdemeanor_Citation_Approval_Order_jul_2019.pdf | https://www.gasupreme.us/wp-content/uploads/2019/02/Uniform_Misdemeanor_Citation_Approval_Order_jul_2019.pdf |
+| Uniform_Misdemeanor_Citation_Rules_FINAL_REVISED_07-01-2019.pdf | https://www.gasupreme.us/wp-content/uploads/2019/02/Uniform_Misdemeanor_Citation_Rules_FINAL_REVISED_07-01-2019.pdf |
+| JURY_COMPOSITION_RULE_2019-04-11.pdf | https://www.gasupreme.us/wp-content/uploads/2019/04/JURY_COMPOSITION_RULE_2019-04-11.pdf |
+| Civil_Domestic_Filing_Disposition_Form-FINAL-eff-010120.pdf | https://www.gasupreme.us/wp-content/uploads/2019/08/Civil_Domestic_Filing_Disposition_Form-FINAL-eff-010120.pdf |
+| order-amending-CJC-Terminology-section-definition-of-law-Issued.pdf | https://www.gasupreme.us/wp-content/uploads/2020/07/order-amending-CJC-Terminology-section-definition-of-law-Issued.pdf |
+| Statewide-Min-Standards-Rules-final.pdf | https://www.gasupreme.us/wp-content/uploads/2020/10/Statewide-Min-Standards-Rules-final.pdf |
+| Order-_-Amended-Rules-for-LegaInterpreting.pdf | https://www.gasupreme.us/wp-content/uploads/2024/01/Order-_-Amended-Rules-for-LegaInterpreting.pdf |
+| Code-of-Judicial-Conduct-2024_02_01.pdf | https://www.gasupreme.us/wp-content/uploads/2024/02/Code-of-Judicial-Conduct-2024_02_01.pdf |
+| Rule-2.5-order_final_issued_1.pdf | https://www.gasupreme.us/wp-content/uploads/2024/02/Rule-2.5-order_final_issued_1.pdf |
+| RulesForLegalInterpreting_updatedMarch2025.pdf | https://www.gasupreme.us/wp-content/uploads/2025/03/RulesForLegalInterpreting_updatedMarch2025.pdf |
+| 2026-UAP-amendments-Final-Order_entered.pdf | https://www.gasupreme.us/wp-content/uploads/2025/12/2026-UAP-amendments-Final-Order_entered.pdf |
+| Order_Amend-Part-A-Fitness-Board-Membership_issued.pdf | https://www.gasupreme.us/wp-content/uploads/2025/12/Order_Amend-Part-A-Fitness-Board-Membership_issued.pdf |
+| JQC-RULES-2023_02_03.pdf | https://www.gasupreme.us/wp-content/uploads/2026/03/JQC-RULES-2023_02_03.pdf |
+| JQC-Rules-Amendment-Approval-Order_entered_sub.pdf | https://www.gasupreme.us/wp-content/uploads/2026/03/JQC-Rules-Amendment-Approval-Order_entered_sub.pdf |
+| JQC_Final_Rules_Order.pdf | https://www.gasupreme.us/wp-content/uploads/2026/03/JQC_Final_Rules_Order.pdf |
+| JQC_Interim_Rules_Order_06-28-17.pdf | https://www.gasupreme.us/wp-content/uploads/2026/03/JQC_Interim_Rules_Order_06-28-17.pdf |
+| JQC_RULES_AMENDMENT_ORDER_OCTOBER_22_2018.pdf | https://www.gasupreme.us/wp-content/uploads/2026/03/JQC_RULES_AMENDMENT_ORDER_OCTOBER_22_2018.pdf |
+| Replacement-Citizen-Order_entered.pdf | https://www.gasupreme.us/wp-content/uploads/2026/03/Replacement-Citizen-Order_entered.pdf |
+
 Last production check: 2026-10-08 19:05 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_ocga_release --release release86.2022.11 --commit` was not run and no corpus rows were written. Discover-only read of archive.org metadata for item `gov.ga.ocga.2018` (file names, sizes, and published SHA-1 only; companion files not downloaded; not stored authorities and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 |
