@@ -22,3 +22,5 @@ html[data-theme="light"] body{background:#f4f7fb;color:#102033}
 .approvedUser,.approvedAssistant{margin:0;padding:.55rem .7rem;border-radius:12px}
 .approvedUser{background:#0a273e}
 .approvedAssistant{background:#02111d;border:1px solid #e2b54e}
+.approvedCaseList{margin:.4rem 0 .7rem;padding-left:1.1rem}
+.approvedPanel input[type=file]{display:block;margin:.35rem 0 .7rem;color:#f8fbff}

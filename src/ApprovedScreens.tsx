@@ -67,14 +67,13 @@ export default function ApprovedScreens(props: Props) {
   function open(id: ScreenId) {
     if ((id === "cases" || id === "analysis") && !props.signedIn) {
       props.onSignIn();
+      setPanel(id);
+      setDrawer(false);
       return;
     }
-    if (id === "cases") {
-      props.onCases();
-      return;
-    }
-    if (id === "analysis") {
-      props.onAnalysis();
+    if (id === "cases" || id === "analysis") {
+      setPanel(id);
+      setDrawer(false);
       return;
     }
     if (id === "logout") {
@@ -233,6 +232,36 @@ export default function ApprovedScreens(props: Props) {
               </label>
               <button type="button" onClick={sendGuestChat} disabled={chatBusy}>{chatBusy ? "Asking…" : "Send guest question"}</button>
               {chatNotice && <p>{chatNotice}</p>}
+            </>
+          )}
+          {panel === "cases" && (
+            <>
+              <h2>My Cases</h2>
+              <p>Private case lists stay login-only. This screen does not load guest case files.</p>
+              {props.signedIn ? (
+                <>
+                  <ul className="approvedCaseList" aria-label="Signed-in case list">
+                    <li>No titles are listed in the public shell. Open the signed-in workspace to see your cases.</li>
+                  </ul>
+                  <button type="button" onClick={props.onCases}>Open signed-in case list</button>
+                </>
+              ) : (
+                <button type="button" onClick={props.onSignIn}>Sign in to see My Cases</button>
+              )}
+            </>
+          )}
+          {panel === "analysis" && (
+            <>
+              <h2>Case Analysis</h2>
+              <p>Uploads stay on the signed-in case workspace. Guest research cannot receive a case file.</p>
+              <label>
+                Document for signed-in analysis
+                <input type="file" disabled={!props.signedIn} aria-label="Case analysis upload" />
+              </label>
+              <button type="button" onClick={() => (props.signedIn ? props.onAnalysis() : props.onSignIn())}>
+                {props.signedIn ? "Continue in signed-in analysis" : "Sign in to upload"}
+              </button>
+              <p>Do not upload evidence while signed out. This control does not post to guest rights.</p>
             </>
           )}
           {panel === "settings" && (
