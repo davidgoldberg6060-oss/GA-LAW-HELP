@@ -3,8 +3,9 @@
 Rule sets (``--set``):
 - ``coa``: Rules of the Court of Appeals of Georgia, HTML pages on www.gaappeals.gov.
 - ``supreme``: Rules of the Supreme Court of Georgia, PDF linked from www.gasupreme.us/rules/.
-- ``superior``, ``state``, ``juvenile``, ``probate``, ``magistrate``: the Uniform Rules, PDFs
-  linked from www.gasupreme.us/other-court-rules/.
+- ``superior``, ``state``, ``juvenile``, ``probate``, ``magistrate``, ``municipal``, ``business``:
+  Uniform Rules and Statewide Business Court Rules PDFs linked from
+  www.gasupreme.us/other-court-rules/.
 
 robots.txt is checked (with ``*`` wildcards) for every URL before it is fetched, and requests are
 spaced at least ``--pause`` seconds apart (default 3 s). www.gasupreme.us disallows
@@ -74,6 +75,10 @@ RULE_SETS = {
                        r"UNIFORM-PROBATE-COURT-RULES[^\"'/]*\.pdf"),
     "magistrate": RuleSet("magistrate", "Uniform Magistrate Court Rules", "Unif. Mag. Ct. R.", OTHER_RULES,
                           r"UNIFORM-MAGISTRATE-COURT-RULES[^\"'/]*\.pdf"),
+    "municipal": RuleSet("municipal", "Uniform Municipal Court Rules", "Unif. Mun. Ct. R.", OTHER_RULES,
+                         r"UNIFORM-MUNICIPAL-COURT-RULES[^\"'/]*\.pdf"),
+    "business": RuleSet("business", "Statewide Business Court Rules", "Statewide Bus. Ct. R.", OTHER_RULES,
+                        r"State-wide-Business-Court-Rules[^\"'/]*\.pdf"),
 }
 
 DATE = r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s+(\d{4})"
