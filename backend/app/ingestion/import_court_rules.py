@@ -49,6 +49,7 @@ USER_AGENT = "GA.LAW.HELP-corpus-import/1.0 (+https://github.com/davidgoldberg60
 MAX_BYTES = 60 * 1024 * 1024
 ALLOWED = {"www.gaappeals.gov", "gaappeals.gov", "www.gasupreme.us", "gasupreme.us"}
 OTHER_RULES = "https://www.gasupreme.us/other-court-rules/"
+OTHER_CODES = "https://www.gasupreme.us/other-codes-rules/"
 
 
 @dataclass(frozen=True)
@@ -350,6 +351,50 @@ def persist_rule(db, rule: CourtRule, rule_set: RuleSet, **kwargs) -> int:
     return saved.id
 
 
+
+
+def discover_other_codes(index_html: str, *, source_url: str, fetched_at: str, sha256: str,
+                         index_bytes: int, robots_disallow_uploads: bool) -> dict:
+    """Inventory the official other-codes-rules page without downloading PDFs.
+
+    PDF links under /wp-content/uploads/ stay blocked when robots.txt disallows that path.
+    Filenames are index labels, not effective dates and not stored rule text.
+    """
+    hrefs = [html.unescape(h) for h in re.findall(r'href="([^"]+\.pdf)"', index_html, re.I)]
+    pdfs = []
+    seen: set[str] = set()
+    for href in hrefs:
+        url = urllib.parse.urljoin(source_url, href)
+        if url in seen:
+            continue
+        seen.add(url)
+        host = (urllib.parse.urlsplit(url).hostname or "").lower()
+        if host not in {"www.gasupreme.us", "gasupreme.us"}:
+            continue
+        pdfs.append({
+            "url": url,
+            "file": urllib.parse.unquote(urllib.parse.urlsplit(url).path.rsplit("/", 1)[-1]),
+            "downloaded": False,
+            "gap": (
+                "Named on the other-codes-rules index only. PDF not downloaded because "
+                "robots.txt disallows /wp-content/uploads/. Filename is not an effective date "
+                "and not stored rule text."
+            ),
+        })
+    return {
+        "mode": "discover-only",
+        "source": source_url,
+        "fetched_at": fetched_at,
+        "index_sha256": sha256,
+        "index_bytes": index_bytes,
+        "pdf_links": len(pdfs),
+        "pdfs": pdfs,
+        "robots_disallow_uploads": robots_disallow_uploads,
+        "committed": False,
+        "note": "Index inventory only. No PDFs downloaded and no authority rows written.",
+    }
+
+
 # ---------------------------------------------------------------- CLI
 def load_set(rule_set: RuleSet, client: Client, pdf_dir: str | None) -> dict:
     """Rules of one set plus provenance, or a ``blocked``/``error`` description."""
@@ -393,6 +438,8 @@ def load_set(rule_set: RuleSet, client: Client, pdf_dir: str | None) -> dict:
 def main(argv: list[str] | None = None, *, fetch=http_fetch, sleep=time.sleep, session_factory=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--set", default="all", help="Comma list of: " + ", ".join(RULE_SETS) + " (or 'all')")
+    parser.add_argument("--discover-other-codes", action="store_true",
+                        help="Inventory https://www.gasupreme.us/other-codes-rules/ only. Do not download PDFs or open a database.")
     parser.add_argument("--pdf-dir", help="Folder with hand-downloaded official PDFs (robots-blocked sets)")
     parser.add_argument("--limit", type=int, default=2000, help="Max rules this run (1-20000)")
     parser.add_argument("--offset", type=int, default=0, help="Skip this many rules first")
@@ -401,6 +448,27 @@ def main(argv: list[str] | None = None, *, fetch=http_fetch, sleep=time.sleep, s
     parser.add_argument("--commit", action="store_true", help="Persist rules (default: preview only)")
     parser.add_argument("--quiet", action="store_true", help="Only print per-set and summary lines")
     args = parser.parse_args(argv)
+    if args.discover_other_codes and args.commit:
+        parser.error("--discover-other-codes cannot be combined with --commit")
+    if args.discover_other_codes:
+        client = Client(args.pause, fetch=fetch, sleep=sleep)
+        if not client.allowed(OTHER_CODES):
+            print(json.dumps({"mode": "discover-only", "source": OTHER_CODES, "status": "blocked_by_robots",
+                              "committed": False}), flush=True)
+            return 1
+        fetched = client.get(OTHER_CODES)
+        robots = client.robots(OTHER_CODES)
+        sample = "https://www.gasupreme.us/wp-content/uploads/other-codes-rules.pdf"
+        report = discover_other_codes(
+            fetched.body.decode("utf-8", "replace"),
+            source_url=OTHER_CODES,
+            fetched_at=datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+            sha256=hashlib.sha256(fetched.body).hexdigest(),
+            index_bytes=len(fetched.body),
+            robots_disallow_uploads=not robots.allowed(sample),
+        )
+        print(json.dumps(report), flush=True)
+        return 0
     keys = list(RULE_SETS) if args.set == "all" else [k.strip() for k in args.set.split(",") if k.strip()]
     if not keys or any(k not in RULE_SETS for k in keys):
         parser.error("--set must list known rule sets: " + ", ".join(RULE_SETS))
