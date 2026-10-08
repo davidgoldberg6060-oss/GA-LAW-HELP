@@ -23,7 +23,7 @@ INDEX = "https://law.georgia.gov/opinions"
 HOST = "law.georgia.gov"
 USER_AGENT = "GA.LAW.HELP-corpus-import/1.0 (+https://github.com/davidgoldberg6060-oss/GA-LAW-HELP)"
 LABEL = re.compile(r"^U?\d{2,4}-\d+$", re.I)
-MAX_PAGES = 11  # page=0 through page=10; later pages are short tails
+MAX_PAGES = 40  # hard cap; stop earlier when a page names no citation labels
 
 
 class _Index(HTMLParser):
@@ -100,7 +100,7 @@ def parse_index(html: str, *, page_url: str) -> list[dict]:
     return list(seen.values())
 
 
-def discover_report(pages: list[dict], *, fetched_at: str) -> dict:
+def discover_report(pages: list[dict], *, fetched_at: str, stopped_reason: str = "not-run") -> dict:
     """pages: {url, sha256, bytes, html} already fetched. Does not open PDFs."""
     opinions: list[dict] = []
     page_rows = []
@@ -127,6 +127,7 @@ def discover_report(pages: list[dict], *, fetched_at: str) -> dict:
         "pdf_links_named": sum(1 for item in unique.values() if item["pdf_url"]),
         "unpublished_pdf_urls_not_fetched": unpublished,
         "gap": "Index pages only. Opinion PDFs were not downloaded. Not stored authorities and not current-law verification.",
+        "stopped_reason": stopped_reason,
     }
 
 
@@ -161,16 +162,40 @@ def main(argv: list[str] | None = None) -> int:
     if not 0.5 <= args.pause <= 30:
         parser.error("pause must be 0.5-30 seconds")
     fetched_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    pages = []
-    for number in range(MAX_PAGES):
-        url = INDEX if number == 0 else INDEX + "?" + urlencode({"page": number})
-        _, body = _fetch(url)
-        pages.append({"url": url, "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest(), "html": body.decode("utf-8", "replace")})
-        if number + 1 < MAX_PAGES:
-            time.sleep(args.pause)
-    report = discover_report(pages, fetched_at=fetched_at)
+    pages, stopped_reason = collect_index_pages(_fetch, time.sleep, args.pause, MAX_PAGES)
+    report = discover_report(pages, fetched_at=fetched_at, stopped_reason=stopped_reason)
     print(json.dumps(report), flush=True)
     return 0
+
+
+def page_url(number: int) -> str:
+    if number == 0:
+        return INDEX
+    return INDEX + "?" + urlencode({"page": number})
+
+
+def collect_index_pages(fetch, sleep, pause: float, max_pages: int) -> tuple[list[dict], str]:
+    """Fetch index HTML only. Stop when a page names no citation labels or repeats the previous hash."""
+    pages = []
+    previous_sha = None
+    stopped_reason = "hard-cap"
+    for number in range(max_pages):
+        url = page_url(number)
+        _, body = fetch(url)
+        sha = hashlib.sha256(body).hexdigest()
+        html = body.decode("utf-8", "replace")
+        pages.append({"url": url, "bytes": len(body), "sha256": sha, "html": html})
+        labels = parse_index(html, page_url=url)
+        if not labels:
+            stopped_reason = "no-citation-labels"
+            break
+        if previous_sha is not None and sha == previous_sha:
+            stopped_reason = "duplicate-page-hash"
+            break
+        previous_sha = sha
+        if number + 1 < max_pages:
+            sleep(pause)
+    return pages, stopped_reason
 
 
 if __name__ == "__main__":
