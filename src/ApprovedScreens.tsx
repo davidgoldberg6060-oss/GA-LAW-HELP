@@ -16,8 +16,18 @@ import {
 
 type Scenario = "traffic" | "public" | "home" | "questioning" | "arrest" | "witness";
 
+export type CaseListRow = {
+  id: number;
+  title: string;
+  caseNumber?: string | null;
+  county?: string | null;
+  caseType?: string | null;
+  stage?: string | null;
+};
+
 type Props = {
   signedIn: boolean;
+  cases?: CaseListRow[];
   onSignIn: () => void;
   onCases: () => void;
   onAnalysis: () => void;
@@ -69,12 +79,9 @@ export default function ApprovedScreens(props: Props) {
       props.onSignIn();
       return;
     }
-    if (id === "cases") {
-      props.onCases();
-      return;
-    }
-    if (id === "analysis") {
-      props.onAnalysis();
+    if (id === "cases" || id === "analysis") {
+      setPanel(id);
+      setDrawer(false);
       return;
     }
     if (id === "logout") {
@@ -132,6 +139,35 @@ export default function ApprovedScreens(props: Props) {
       </button>
       {panel !== "home" && (
         <div className="approvedPanel">
+          {panel === "cases" && (
+            <>
+              <h2>My Cases</h2>
+              <p>Private cases stay login-only. This list does not invent matters and does not call guest research.</p>
+              {!props.signedIn && <p>Sign in to load your cases.</p>}
+              {props.signedIn && (props.cases || []).length === 0 && <p>No saved cases are loaded. Open the private workspace to refresh from your account.</p>}
+              {props.signedIn && (props.cases || []).map((row) => (
+                <p key={row.id}>
+                  <strong>{row.title || "Untitled case"}</strong>
+                  {" · "}
+                  {row.caseNumber || "No case number"}
+                  {" · "}
+                  {row.county || "County not set"}
+                  {" · "}
+                  {row.caseType || "type not set"}
+                  {row.stage ? ` · ${row.stage}` : ""}
+                </p>
+              ))}
+              <button type="button" onClick={props.onCases}>Open private case workspace</button>
+            </>
+          )}
+          {panel === "analysis" && (
+            <>
+              <h2>Case Analysis</h2>
+              <p>Uploads stay on the signed-in case workspace. This screen does not send a file to guest research and does not invent a corpus.</p>
+              <p>{SAFETY_NOTICE}</p>
+              <button type="button" onClick={props.onAnalysis}>Open private upload</button>
+            </>
+          )}
           {panel === "laws" && (
             <>
               <h2>Georgia Laws</h2>
