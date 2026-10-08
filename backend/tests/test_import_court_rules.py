@@ -27,7 +27,9 @@ COA_16 = """<div class="entry-content"><h1>IV. Extension of Time for Filing</h1>
 <h2>Rule 16. Extension of Time for Filing.</h2><p>(a) Notices of Appeal.</p></div>"""
 COA_22 = """<div class="entry-content"><h2>Rule 22. Reserved.</h2></div>"""
 OTHER = """<a href="/wp-content/uploads/2025/01/UNIFORM-SUPERIOR-COURT-RULES-2025_01_01.pdf">Old</a>
-<a href="/wp-content/uploads/2026/04/UNIFORM-SUPERIOR-COURT-RULES-2026_04_09.pdf">Rules</a>"""
+<a href="/wp-content/uploads/2026/04/UNIFORM-SUPERIOR-COURT-RULES-2026_04_09.pdf">Rules</a>
+<a href="/wp-content/uploads/2025/12/UNIFORM-MUNICIPAL-COURT-RULES-2024_12_12.pdf">Municipal Court</a>
+<a href="/wp-content/uploads/2026/06/State-wide-Business-Court-Rules-2026_06_11.pdf">Rules</a>"""
 USC_TEXT = """UNIFORM RULES
 TABLE OF CONTENTS
 Rule 1. PREAMBLE ............................................ 1
@@ -129,6 +131,18 @@ def test_preview_imports_coa_and_reports_robots_blocked_pdfs_without_fetching_th
     assert not any(url.endswith(".pdf") for url in seen)
     assert lines[-1]["blocked_by_robots"] == ["superior"] and lines[-1]["placeholders_skipped"] == 1
 
+
+
+def test_municipal_and_business_indexes_name_official_pdfs_without_fetching_them(capsys):
+    seen = []
+    assert cr.main(["--set", "municipal,business"], fetch=make_fetch(seen), sleep=no_sleep, session_factory=no_db) == 0
+    lines = _lines(capsys)
+    blocked = {l["set"]: l for l in lines if l.get("status") == "blocked_by_robots"}
+    assert blocked["municipal"]["pdf_url"].endswith("/UNIFORM-MUNICIPAL-COURT-RULES-2024_12_12.pdf")
+    assert blocked["business"]["pdf_url"].endswith("/State-wide-Business-Court-Rules-2026_06_11.pdf")
+    assert not any(url.endswith(".pdf") for url in seen)
+    assert lines[-1]["blocked_by_robots"] == ["municipal", "business"]
+    assert lines[-1]["committed"] is False
 
 def test_operator_supplied_pdf_is_used_with_the_official_url_as_provenance(tmp_path, capsys):
     (tmp_path / "UNIFORM-SUPERIOR-COURT-RULES-2026_04_09.pdf").write_bytes(USC_PDF)
