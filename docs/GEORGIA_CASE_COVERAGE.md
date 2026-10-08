@@ -1,3 +1,14 @@
+Last production check: 2026-10-08 12:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_court_rules --set all` was not run with `--commit` and no corpus rows were written. Discover-only reads of official rule index pages (page bytes and PDF filenames only; PDFs not downloaded; not stored rules and not current-law verification):
+
+| Index | HTTP | Bytes | SHA-256 | PDF links named on the page |
+| --- | ---: | ---: | --- | --- |
+| https://www.gasupreme.us/rules/ | 200 | 1,592,674 | `9856522213b68148cd6139a4002622da70c7f65771a95e1ffd640b9752e1c3d0` | `SupremeCourtRules_eff-July-2-2026.pdf`, `CHART-WEB-POSTING-July-2-2026.pdf`, `QUICK-REFERENCE-RULES.pdf` |
+| https://www.gasupreme.us/other-court-rules/ | 200 | 1,592,686 | `9b6eb00e2a3d9dc49958f7409a7b2544d9ef7297cde643cb423f717e4750504c` | superior 2026-04-09, state 2024-01-18, juvenile 2026-09-03 ADA, probate 2023-06-01, magistrate 2023-04-01, municipal 2024-12-12, statewide business court 2026-06-11 |
+| https://www.gaappeals.gov/court-rules/ | 405 | — | — | not read |
+| https://www.gaappeals.gov/robots.txt | 405 | — | — | not read |
+
+`https://www.gasupreme.us/robots.txt` returned HTTP 200 (71 bytes, SHA-256 `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196`) and disallows `/wp-content/uploads/`, which is where every PDF above is linked. The importer must not auto-fetch those PDFs. Uniform municipal court rules and statewide business court rules are named on the official page but are not in the importer `RULE_SETS`. The other-rules page also links `https://www.gaappeals.gov/rules-1-8/`; that page was not fetched after the Court of Appeals host returned 405. Filename dates are labels on the index, not verified effective dates. The archive.org `gov.ga.court.rules.odt` checkpoint from the 2022-11 OCGA release was not downloaded. These counts are not persisted coverage.
+
 Last production check: 2026-10-08 11:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --limit 25 --commit` was not run and no corpus rows were written. Discover-only reads of the official 2017 and 2018 Supreme Court indexes (importer host, PDF, and first-docket rules; not stored authorities and not current-law verification):
 
 | Year | Index | HTTP | Bytes | Docket-labeled PDF anchors | Unique PDF URLs | Dockets with more than one PDF |
@@ -150,7 +161,8 @@ ingestion is not complete.
 | Court / source | Discovered online range | Stored | Gap |
 | --- | --- | ---: | --- |
 | Supreme Court of Georgia annual opinion pages | 2017–2026 official annual index pages | unverified | 2017–2026 indexes inventoried (2018 has ambiguous docket S17A1905). No opinion PDFs stored. Earlier final reporters and revisions require separate sources. Do not treat the prior zero check as a fresh count. |
-| Court of Appeals of Georgia | Official source registered; complete archive not inventoried | unverified | Discover official individual opinions and establish dates/counts. |
+| Court of Appeals of Georgia | Official source registered; complete archive not inventoried | unverified | Opinion search and court-rules index returned HTTP 405 on 2026-10-05 and 2026-10-08. Discover official individual opinions and establish dates/counts. |
+| Court rules | Supreme Court rules index and other-court-rules index fetched 2026-10-08; Court of Appeals rules index HTTP 405 | unverified | PDF bodies live under a robots-disallowed uploads path and were not fetched. Municipal and statewide business court PDFs are named but not in importer rule sets. No rule text stored. |
 | Georgia trial courts and other public rulings | No unified archive inventoried | unverified | Inventory county and court access, document availability, restrictions and older paper records. Do not dump private trial dockets. |
 
 Official annual index: https://www.gasupreme.us/2026-opinions/
