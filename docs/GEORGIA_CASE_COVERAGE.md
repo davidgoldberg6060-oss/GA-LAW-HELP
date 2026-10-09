@@ -1,3 +1,12 @@
+Last production check: 2026-10-09 11:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2022 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2022 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| 2022 opinions index | https://www.gasupreme.us/2022-opinions/ | 200 | 1,629,420 | `fe349a85a4b57e761e9f4be0f24055f989235e4ec01e4d490596178b0f0680d7` | 221 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+The importer's docket rule named 221 anchors and 221 unique uploads PDF URLs. robots.txt disallows `/wp-content/uploads/`, so none of those files were fetched. `parse_index` does not refuse this year: no docket points at more than one PDF. Two anchor tokens do not match the PDF filename (S19Z1369 is `document-16.pdf`; S21H0656 shares an anchor with S22A1020 and the file is `s22a1020.pdf`). Raw anchors also include 22 summary PDFs whose link text has no docket token; those were not counted as opinions. Nested markup splits some anchor text, so stored titles would be fragments if imported from the index label alone. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-09-supreme-2022.md`.
+
 Last production check: 2026-10-09 09:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2023 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2023 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
