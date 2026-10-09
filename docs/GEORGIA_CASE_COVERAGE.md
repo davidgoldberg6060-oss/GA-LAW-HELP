@@ -1,3 +1,12 @@
+Last production check: 2026-10-09 07:05 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2024 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2024 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| 2024 opinions index | https://www.gasupreme.us/2024-opinions/ | 200 | 1,632,385 | `d75f735e1dd46349187900a31c94927170a0b1da7bf0d36d185c03ef75943262` | 231 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+The importer's docket rule named 231 unique uploads PDF URLs. robots.txt disallows `/wp-content/uploads/`, so none of those files were fetched. Raw anchors also include summary PDFs whose link text has no docket token; those were not counted as opinions. Nested markup splits some anchor text, so stored titles would be fragments if imported from the index label alone. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-09-supreme-2024.md`.
+
 Last production check: 2026-10-09 06:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_appeals_opinions --discover-only --commit` was refused and no corpus rows were written. Discover-only read of the Court of Appeals opinion-search page and robots.txt only (response bytes hashed; date-search endpoint not requested; efast opinion PDFs not downloaded; not stored opinions and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
