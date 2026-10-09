@@ -1,3 +1,12 @@
+Last production check: 2026-10-09 13:02 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2022 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2022 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| 2022 opinions index | https://www.gasupreme.us/2022-opinions/ | 200 | 1,629,465 | `b88c7535d7b05d397c778caf1ccbcbdaade42c8c28237b69d59a85dfface0730` | 221 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+The importer's docket rule named 221 anchors and 221 unique uploads PDF URLs. robots.txt disallows `/wp-content/uploads/`, so none of those files were fetched. `parse_index` does not refuse this year: no docket token maps to more than one PDF. Two kept anchors do not match the PDF filename (S19Z1369 -> document-16.pdf; S21H0656 -> s22a1020.pdf, which matches companion token S22A1020). Thirteen kept anchors name companion dockets on one URL. Raw anchors also include 22 summary PDFs whose link text has no docket token; those were not counted as opinions. Nested markup splits some anchor text, so stored titles would be fragments if imported from the index label alone. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-09-supreme-2022.md`.
+
 Last production check: 2026-10-09 12:02 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2025 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
