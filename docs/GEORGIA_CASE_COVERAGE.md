@@ -1,3 +1,12 @@
+Last production check: 2026-10-09 06:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_appeals_opinions --discover-only --commit` was refused and no corpus rows were written. Discover-only read of the Court of Appeals opinion-search page and robots.txt only (response bytes hashed; date-search endpoint not requested; efast opinion PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| opinion search page | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `9194866ac226fac09ec04b679585578cf12ed2a3c6ea7340fc46eb34714186d8` | 0 |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `b215ca70f33fde33a0f23f5e1e77100f48f016ae9f849da93269054ccb510aa0` | 0 |
+
+Both responses were AWS WAF Human Verification pages, not the court index or robots file. The SHA-256 values are of those captcha responses and will change on the next fetch. No docket labels or PDF URLs were named. `results_all.php` and `efast.gaappeals.gov` were not requested. Lexis was not opened. These counts are not persisted coverage.
+
 Last production check: 2026-10-09 05:05 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2026 --discover-only --forthcoming --commit` was refused and no corpus rows were written. Discover-only read of the official forthcoming-opinions index (page bytes and PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
