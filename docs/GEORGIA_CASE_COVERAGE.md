@@ -1,3 +1,12 @@
+Last production check: 2026-10-09 09:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2023 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2023 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| 2023 opinions index | https://www.gasupreme.us/2023-opinions/ | 200 | 1,629,592 | `58d21310a0f71dab19a4a860335983937f07c245ad1a4ef57189aa6ded1ce1ec` | 219 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+The importer's docket rule named 219 anchors and 218 unique uploads PDF URLs. robots.txt disallows `/wp-content/uploads/`, so none of those files were fetched. `parse_index` refuses this year because S21Z0595 and S23Y0434 each point at more than one PDF. One anchor token (S23C0795) does not match its PDF filename. Raw anchors also include summary PDFs whose link text has no docket token; those were not counted as opinions. Nested markup splits some anchor text, so stored titles would be fragments if imported from the index label alone. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-09-supreme-2023.md`.
+
 Last production check: 2026-10-09 07:05 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2024 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2024 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
