@@ -1,3 +1,28 @@
+Last production check: 2026-10-09 05:05 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2026 --discover-only --forthcoming --commit` was refused and no corpus rows were written. Discover-only read of the official forthcoming-opinions index (page bytes and PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| forthcoming opinions | https://www.gasupreme.us/forthcoming-opinions/ | 200 | 1,596,305 | `237773d05120a1d28af09c2690c794f36e277fa649abcb6f1e2e1b691478a91f` | 10 |
+| 2016 annual index | https://www.gasupreme.us/2016-opinions/ | 404 | 1,588,085 | `5a87fe8d2035a87891e96fbaae71d6889b344db17a7b09968f964e96559db394` | 0 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+`/opinions/forthcoming-opinions/` redirected to `/forthcoming-opinions/`. robots.txt disallows `/wp-content/uploads/`, so every named PDF stayed unfetched. The 2016 annual index is a WordPress 404; the importer still starts at 2017. Court of Appeals `/opinion-search/` returned HTTP 405 from this environment, so no appeals opinion index was read. Lexis was not opened. These counts are not persisted coverage.
+
+| Docket label | PDF URL | Gap |
+| --- | --- | --- |
+| S25G1446, S25G1447. CRAVENS v. SLAUGHTER et al. (two cases) | https://www.gasupreme.us/wp-content/uploads/2026/09/s25g1446.pdf | Index label only; PDF not downloaded; companion docket shares one URL; not stored text |
+| S26A0604. WARE v. THE STATE | https://www.gasupreme.us/wp-content/uploads/2026/09/s26a0604.pdf | Index label only; PDF not downloaded; not stored text |
+| S26A0732. WALKER v. THE STATE | https://www.gasupreme.us/wp-content/uploads/2026/09/s26a0732.pdf | Index label only; PDF not downloaded; not stored text |
+| S26A0769. LOWE v. THE STATE | https://www.gasupreme.us/wp-content/uploads/2026/09/s26a0769.pdf | Index label only; PDF not downloaded; not stored text |
+| S26A0775. GAMBLE v. THE STATE | https://www.gasupreme.us/wp-content/uploads/2026/09/s26a0775.pdf | Index label only; PDF not downloaded; not stored text |
+| S26A1003. REYNOLDS v. THE STATE | https://www.gasupreme.us/wp-content/uploads/2026/09/s26a1003.pdf | Index label only; PDF not downloaded; not stored text |
+| S26A1067. WILSON v. THE STATE | https://www.gasupreme.us/wp-content/uploads/2026/09/s26a1067.pdf | Index label only; PDF not downloaded; not stored text |
+| S26A1488. MARTIN v. THE STATE | https://www.gasupreme.us/wp-content/uploads/2026/09/s26a1488.pdf | Index label only; PDF not downloaded; not stored text |
+| S24Z1139, S25Z0722. INQUIRY CONCERNING JUDGE SHERMELA J. WILLIAMS (two cases) | https://www.gasupreme.us/wp-content/uploads/2026/09/s24z1139.pdf | Index label only; PDF not downloaded; companion docket shares one URL; not stored text |
+| S26Y0982. IN THE MATTER OF JAMES A. SATCHER JR. | https://www.gasupreme.us/wp-content/uploads/2026/09/s26y0982.pdf | Index label only; PDF not downloaded; not stored text |
+
+Oral-argument calendar JSON on the same page names other dockets (including S25G1349 and S26G1200). Those are not opinion PDF links and were not fetched.
+
 Last production check: 2026-10-09 02:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_ocga_release --release release86.2022.11 --discover-only --commit` was refused and no corpus rows were written. Discover-only read of archive.org metadata for item `gov.ga.ocga.2018` (file names, sizes, and published SHA-1 only; title ODTs not downloaded; not stored authorities and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | Title ODTs named |

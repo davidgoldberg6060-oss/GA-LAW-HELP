@@ -25,6 +25,11 @@ from .pipeline import persist_item
 
 CASE_NO = re.compile(r"\bS\d{2}[A-Z]\d{4}\b", re.I)
 INDEX_LIMIT = 3 * 1024 * 1024
+FORTHCOMING_URL = "https://www.gasupreme.us/forthcoming-opinions/"
+COURT_HOSTS = {"gasupreme.us", "www.gasupreme.us"}
+# robots.txt on gasupreme.us disallows /wp-content/uploads/. Index labels may name
+# those URLs, but the importer must not fetch them.
+UPLOADS_DISALLOW = "/wp-content/uploads/"
 
 
 @dataclass(frozen=True)
@@ -63,7 +68,7 @@ class OpinionIndex(HTMLParser):
             except ValueError:
                 pass
             else:
-                if urlparse(url).hostname in {"gasupreme.us", "www.gasupreme.us"}:
+                if urlparse(url).hostname in COURT_HOSTS:
                     self.opinions.append(Opinion(match.group().upper(), label, url))
         self.current_href = None
         self.current_text = []
@@ -82,6 +87,18 @@ def _validated_unique_opinions(opinions: list[Opinion]) -> list[Opinion]:
     return list(by_url.values())
 
 
+def parse_index(html: str, index_url: str) -> list[Opinion]:
+    parser = OpinionIndex(index_url)
+    parser.feed(html)
+    if not parser.opinions:
+        raise ValueError("No opinion PDFs discovered; inspect the index layout")
+    return _validated_unique_opinions(parser.opinions)
+
+
+def uploads_blocked(url: str) -> bool:
+    return UPLOADS_DISALLOW in urlparse(url).path
+
+
 def discover(year: int, transport=production_transport) -> list[Opinion]:
     if not 2017 <= year <= 2100:
         raise ValueError("Select a year in the court's published online archive")
@@ -89,16 +106,28 @@ def discover(year: int, transport=production_transport) -> list[Opinion]:
     response = transport(index_url)
     if response.status_code != 200 or len(response.body) > INDEX_LIMIT:
         raise ValueError(f"Unable to read bounded court index for {year}")
-    if urlparse(response.url).hostname not in {"gasupreme.us", "www.gasupreme.us"}:
+    if urlparse(response.url).hostname not in COURT_HOSTS:
         raise ValueError("Court index redirected outside the court host")
     content_type = next((v for k, v in response.headers.items() if k.lower() == "content-type"), "")
     if not content_type.lower().startswith("text/html"):
         raise ValueError("Court index did not return HTML")
-    parser = OpinionIndex(index_url)
-    parser.feed(response.body.decode("utf-8", errors="replace"))
-    if not parser.opinions:
-        raise ValueError("No opinion PDFs discovered; inspect the index layout")
-    return _validated_unique_opinions(parser.opinions)
+    return parse_index(response.body.decode("utf-8", errors="replace"), index_url)
+
+
+def discover_forthcoming(transport=production_transport) -> list[Opinion]:
+    """Read the forthcoming-opinions index only. Do not download uploads PDFs."""
+    response = transport(FORTHCOMING_URL)
+    if response.status_code != 200 or len(response.body) > INDEX_LIMIT:
+        raise ValueError("Unable to read bounded forthcoming opinions index")
+    if urlparse(response.url).hostname not in COURT_HOSTS:
+        raise ValueError("Forthcoming index redirected outside the court host")
+    content_type = next((v for k, v in response.headers.items() if k.lower() == "content-type"), "")
+    if not content_type.lower().startswith("text/html"):
+        raise ValueError("Forthcoming index did not return HTML")
+    opinions = parse_index(response.body.decode("utf-8", errors="replace"), response.url)
+    if any(not uploads_blocked(item.url) for item in opinions):
+        raise ValueError("Forthcoming index named a PDF outside the robots-disallowed uploads path")
+    return opinions
 
 
 def prepare_opinion(opinion: Opinion, *, transport=production_transport):
@@ -125,16 +154,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pause", type=float, default=1.0, help="Seconds between court requests")
     parser.add_argument("--commit", action="store_true", help="Persist each acquired document")
     parser.add_argument("--discover-only", action="store_true", help="Count official index PDFs only; do not download opinions or open a database")
+    parser.add_argument("--forthcoming", action="store_true", help="Inventory the forthcoming-opinions index only; uploads PDFs stay unfetched")
     args = parser.parse_args(argv)
-    if args.commit and args.discover_only:
-        parser.error("--commit and --discover-only cannot be combined")
+    if args.commit and (args.discover_only or args.forthcoming):
+        parser.error("--commit cannot be combined with --discover-only or --forthcoming")
+    if args.forthcoming and not args.discover_only:
+        parser.error("--forthcoming requires --discover-only")
     if not 1 <= args.limit <= 500 or args.offset < 0 or not 0.5 <= args.pause <= 30:
         parser.error("Limit must be 1-500, offset nonnegative, and pause 0.5-30 seconds")
-    opinions = discover(args.year)
+    opinions = discover_forthcoming() if args.forthcoming else discover(args.year)
     if args.discover_only:
         print(json.dumps({"year": args.year, "discovered": len(opinions), "offset": args.offset,
                           "attempted": 0, "succeeded": 0, "unverified": 0, "failed": 0,
                           "committed": False, "discover_only": True,
+                          "forthcoming": args.forthcoming,
+                          "uploads_blocked": all(uploads_blocked(item.url) for item in opinions),
                           "note": "Index inventory only. No opinion PDFs downloaded and no corpus rows written."}), flush=True)
         return 0
     success = 0
