@@ -1,3 +1,23 @@
+Last production check: 2026-10-09 00:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_ag_opinions --discover-categories --commit` was refused and no corpus rows were written. Discover-only hashes of the official Attorney General category indexes (page bytes and citation-label counts only; PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Category | URL | HTTP | Bytes | SHA-256 | Labels | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: | ---: |
+| official | https://law.georgia.gov/opinions/official | 200 | 144,464 | `109b04215fde567eb8fffd533ba0c279cb6b2d4282b7890f1cac82a5018a9814` | 50 | 4 |
+| official | https://law.georgia.gov/opinions/official?page=1 | 200 | 143,780 | `ce54e2d15f781b1aa3b3587aba516f42ef95fd1ff86ca97a9b22b7165fea2c59` | 50 | 0 |
+| official | https://law.georgia.gov/opinions/official?page=2 | 200 | 140,561 | `fcd0a205ebf2330e507b2da5bab1fd438d9d8f95d3b11f6c9959ad91472f50af` | 50 | 0 |
+| official | https://law.georgia.gov/opinions/official?page=3 | 200 | 141,408 | `921c06b33412ad32df418a75142944e45b8ff8a09a1b596ed2315c4fb8608f37` | 50 | 0 |
+| official | https://law.georgia.gov/opinions/official?page=4 | 200 | 140,249 | `2c7316e54ddf4a83f68ffa44b34907ad1c8791125257457d461bb3f1d30a73d0` | 50 | 0 |
+| official | https://law.georgia.gov/opinions/official?page=5 | 200 | 139,524 | `25c1f0c9d1e16c6eb0c120cc0c3c39aafd0bbcbb78b39073efd3ff37ce96ea52` | 50 | 0 |
+| official | https://law.georgia.gov/opinions/official?page=6 | 200 | 112,161 | `7c7f26da7c5ea01e53c8308fd84e2b037970db5d110398fe698a466284809fc4` | 21 | 0 |
+| unofficial | https://law.georgia.gov/opinions/unofficial | 200 | 142,165 | `737942699d0b0bb2ad2517c948e029c23819fc5100ab31f2e7939517d505549f` | 50 | 1 |
+| unofficial | https://law.georgia.gov/opinions/unofficial?page=1 | 200 | 139,803 | `cf2a97a781f569af2af8d0dfc43db5fae3dec0423f24d77e8658c8e109de19d3` | 50 | 0 |
+| unofficial | https://law.georgia.gov/opinions/unofficial?page=2 | 200 | 140,053 | `a5e1df183e48e1c33f3d8e828326972ba5663ab8deccf6ba2e4172f62c139f5e` | 50 | 0 |
+| unofficial | https://law.georgia.gov/opinions/unofficial?page=3 | 200 | 140,964 | `a4313ea8f80c1418451e76006c6ffa36926b4fca90161d2f7babc32d04ba816b` | 50 | 0 |
+| unofficial | https://law.georgia.gov/opinions/unofficial?page=4 | 200 | 107,011 | `35be77f3b5dd8821861874735572ac10396bebd3cd2e98fd8fb14a91c493797b` | 16 | 0 |
+| obsolete-and-modified | https://law.georgia.gov/opinions/obsolete-and-modified-opinions | 200 | 91,323 | `36bc7f5d548498e3d86adbcc2d56979af9b431e35270010ec5f5aa6642442e7b` | 0 | 1 |
+
+Official page 0 names labels `2026-2` through `2024-1` among 50 labels. Unofficial page 0 names `U2026-1` among 50 labels. Combined label counts are 321 official and 216 unofficial. The obsolete page names no citation label; it links `https://law.georgia.gov/document/publication/obsoleteandmodifiedopinionsthroughaugust2016pdf/download` (filename says through August 2016). That PDF was not fetched. Official page 0 also names `https://law.georgia.gov/document/document/032426-official-ag-opinionpdf--UNPUBLISHED-document--DO-NOT-SHARE-this-URL--/download`; that URL was not fetched. `https://law.georgia.gov/opinions?page=11` returned HTTP 200 (93,601 bytes, SHA-256 `5666188473f79e98b739c44ef9e418b6bce5f4e97fce94cfed2a481511e3fa04`) and named no citation labels, so the main index tail after page 10 is empty. These counts are not persisted coverage.
+
 Last production check: 2026-10-08 22:05 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_ag_opinions --commit` was refused and no corpus rows were written. Discover-only hashes of the official Attorney General opinion index (page bytes and citation labels only; PDFs not downloaded; not stored opinions and not current-law verification):
 
 | Page | URL | HTTP | Bytes | SHA-256 |
