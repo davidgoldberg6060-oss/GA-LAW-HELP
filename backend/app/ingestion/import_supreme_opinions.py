@@ -11,7 +11,9 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from html.parser import HTMLParser
+import hashlib
 import json
+import os
 import re
 import time
 from urllib.parse import urljoin, urlparse
@@ -99,11 +101,80 @@ def uploads_blocked(url: str) -> bool:
     return UPLOADS_DISALLOW in urlparse(url).path
 
 
+def _page_checkpoint(url: str, response, *, pdf_links_named: int) -> dict:
+    body = response.body or b""
+    text = body.decode("utf-8", errors="replace")
+    captcha = (
+        response.status_code != 200
+        or "Human Verification" in text
+        or "awsWafCookieDomainList" in text
+    )
+    return {
+        "url": url,
+        "final_url": response.url,
+        "status_code": response.status_code,
+        "bytes": len(body),
+        "sha256": hashlib.sha256(body).hexdigest(),
+        "pdf_links_named": pdf_links_named,
+        "waf_captcha": captcha,
+        "downloaded_pdfs": 0,
+        "gap": (
+            "WAF captcha or non-200; not an opinion index; PDFs not named or downloaded"
+            if captcha
+            else "Index HTML hashed only; opinion PDFs not downloaded"
+        ),
+    }
+
+
+def discover_year_index(year: int, transport=production_transport) -> dict:
+    """Hash one annual opinion index and robots.txt. Do not download PDFs."""
+    if not 2017 <= year <= 2100:
+        raise ValueError("Select a year in the court's published online archive")
+    index_url = f"https://www.gasupreme.us/{year}-opinions/"
+    robots_url = "https://www.gasupreme.us/robots.txt"
+    index_response = transport(assert_public_official_url(index_url))
+    opinions: list[Opinion] = []
+    parse_error = None
+    if index_response.status_code == 200 and len(index_response.body or b"") <= INDEX_LIMIT:
+        if urlparse(index_response.url).hostname in COURT_HOSTS:
+            try:
+                opinions = parse_index(index_response.body.decode("utf-8", errors="replace"), index_response.url)
+            except ValueError as exc:
+                parse_error = str(exc)
+    if any(not uploads_blocked(item.url) for item in opinions):
+        raise ValueError("Annual index named a PDF outside the robots-disallowed uploads path")
+    robots_response = transport(assert_public_official_url(robots_url))
+    return {
+        "mode": "discover-only",
+        "year": year,
+        "committed": False,
+        "pdfs_downloaded": 0,
+        "discovered": len(opinions),
+        "unique_pdf_urls": len({item.url for item in opinions}),
+        "uploads_blocked": all(uploads_blocked(item.url) for item in opinions) if opinions else None,
+        "parse_error": parse_error,
+        "pages": [
+            _page_checkpoint(index_url, index_response, pdf_links_named=len(opinions)),
+            _page_checkpoint(robots_url, robots_response, pdf_links_named=0),
+        ],
+        "opinions": [
+            {
+                "docket": item.docket,
+                "title": item.title,
+                "url": item.url,
+                "gap": "Index label only; PDF not downloaded; uploads path disallowed; not stored text",
+            }
+            for item in opinions
+        ],
+        "note": "Index checkpoint only. No opinion PDFs downloaded and no corpus rows written.",
+    }
+
+
 def discover(year: int, transport=production_transport) -> list[Opinion]:
     if not 2017 <= year <= 2100:
         raise ValueError("Select a year in the court's published online archive")
     index_url = f"https://www.gasupreme.us/{year}-opinions/"
-    response = transport(index_url)
+    response = transport(assert_public_official_url(index_url))
     if response.status_code != 200 or len(response.body) > INDEX_LIMIT:
         raise ValueError(f"Unable to read bounded court index for {year}")
     if urlparse(response.url).hostname not in COURT_HOSTS:
@@ -162,6 +233,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--forthcoming requires --discover-only")
     if not 1 <= args.limit <= 500 or args.offset < 0 or not 0.5 <= args.pause <= 30:
         parser.error("Limit must be 1-500, offset nonnegative, and pause 0.5-30 seconds")
+    if args.commit and not os.environ.get("DATABASE_URL"):
+        parser.error("DATABASE_URL is unset; refusing to write corpus rows")
+    if args.discover_only and not args.forthcoming:
+        print(json.dumps(discover_year_index(args.year)), flush=True)
+        return 0
     opinions = discover_forthcoming() if args.forthcoming else discover(args.year)
     if args.discover_only:
         print(json.dumps({"year": args.year, "discovered": len(opinions), "offset": args.offset,
