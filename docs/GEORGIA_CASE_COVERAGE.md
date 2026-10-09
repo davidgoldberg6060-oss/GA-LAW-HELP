@@ -1,3 +1,11 @@
+Last production check: 2026-10-09 04:05 UTC. DATABASE_URL was unset, so no opinion PDFs were downloaded and no corpus rows were written. Discover-only read of the official Supreme Court forthcoming-opinions index (page bytes and docket-labeled PDF anchors only; not stored authorities and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | Docket-labeled PDF anchors | Unique PDF URLs | Dockets with more than one PDF |
+| --- | --- | ---: | ---: | --- | ---: | ---: | ---: |
+| Forthcoming opinions | https://www.gasupreme.us/forthcoming-opinions/ | 200 | 1,596,305 | `ada88827d0b5f64dedaf615fd28d79d65c9a601ede1af207e33af1b4f9756e32` | 10 | 10 | 0 |
+
+`https://www.gasupreme.us/opinions/forthcoming-opinions/` redirected to that index. The annual importer (`import_supreme_opinions --year`) does not read this page. First-docket tokens on the ten named PDFs were S25G1446, S26A0604, S26A0732, S26A0769, S26A0775, S26A1003, S26A1067, S26A1488, S24Z1139, and S26Y0982. Two labels also named a second docket (S25G1447 and S25Z0722) on the same PDF; no first-docket token pointed at more than one PDF. Those PDFs were not fetched. `https://www.gasupreme.us/opinions/` returned HTTP 404. The same run still got HTTP 405 from `https://www.gaappeals.gov/` and `https://www.gaappeals.gov/robots.txt`, so no Court of Appeals opinion index was read. These counts are not persisted coverage.
+
 Last production check: 2026-10-09 02:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_ocga_release --release release86.2022.11 --discover-only --commit` was refused and no corpus rows were written. Discover-only read of archive.org metadata for item `gov.ga.ocga.2018` (file names, sizes, and published SHA-1 only; title ODTs not downloaded; not stored authorities and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | Title ODTs named |
