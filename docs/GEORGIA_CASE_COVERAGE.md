@@ -1,3 +1,12 @@
+Last production check: 2026-10-09 12:02 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2025 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2025 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| 2025 opinions index | https://www.gasupreme.us/2025-opinions/ | 200 | 1,633,450 | `ebd008eb60fad33a8d636711806790f9c9e9f869292d0ef71a2c94160a6d472e` | 250 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+The importer's docket rule named 250 anchors and 247 unique uploads PDF URLs. robots.txt disallows `/wp-content/uploads/`, so none of those files were fetched. `parse_index` does not refuse this year: no docket token maps to more than one PDF. Three pairs of distinct captions share one URL and unique-URL dedupe would keep only the first caption (S25A0058/S25A0150, S25A0249/S25A0250, S24A1303/S24A1304). Raw anchors also include summary PDFs whose link text has no docket token; those were not counted as opinions. Nested markup splits some anchor text, so stored titles would be fragments if imported from the index label alone. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-09-supreme-2025.md`.
+
 Last production check: 2026-10-09 09:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2023 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2023 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
