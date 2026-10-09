@@ -1,3 +1,12 @@
+Last production check: 2026-10-09 16:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2019 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2019 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| 2019 opinions index | https://www.gasupreme.us/2019-opinions/ | 200 | 1,651,712 | `56203266f0ce8fc8055bc89667eedf8db3708eb470cfadf5a7c94c26876c2d58` | 344 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+The importer's docket rule named 344 anchors and 342 unique uploads PDF URLs. robots.txt disallows `/wp-content/uploads/`, so none of those files were fetched. `parse_index` does not refuse this year: no docket token maps to more than one PDF. One kept anchor uses `_sub2` (S19A0231). Five kept anchors use a filename that is not a plain docket or `_sub` (S19C1007 -> s19g1007.pdf; S18Y0982 -> s18y0982_reinstatement.pdf; S18G1644 -> s18c1644.pdf; S19I1232 -> s18g1007.pdf; S17Y1532 -> s17y1532_reinstatement.pdf). Twelve other kept anchors use `_sub`. Twenty-one kept anchors name companion dockets on one URL. Two extra docket-labeled anchors repeat a URL already kept by unique-URL dedupe. Thirty-eight summary PDF anchors have no docket token; those were not counted as opinions. Nested markup splits some anchor text, so stored titles would be fragments if imported from the index label alone. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-09-supreme-2019.md`.
+
 Last production check: 2026-10-09 15:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2020 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2020 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
