@@ -18,7 +18,9 @@ import argparse
 from dataclasses import dataclass
 from datetime import date, timedelta
 from html.parser import HTMLParser
+import hashlib
 import json
+import os
 import re
 import time
 from urllib.parse import urlencode, urljoin, urlparse
@@ -31,6 +33,8 @@ from .pipeline import persist_item
 
 SOURCE_KEY = "ga_appeals_opinion_search"
 SEARCH_URL = "https://www.gaappeals.gov/wp-content/themes/benjamin/docket/docketdate/results_all.php"
+INDEX_PAGE = "https://www.gaappeals.gov/opinion-search/"
+ROBOTS_URL = "https://www.gaappeals.gov/robots.txt"
 INDEX_HOSTS = {"www.gaappeals.gov", "gaappeals.gov"}
 PDF_HOSTS = {"efast.gaappeals.gov"}
 DOCKET = re.compile(r"^A\d{2}[A-Z]\d{4}$")
@@ -101,6 +105,52 @@ def _official_pdf(url: str | None) -> str | None:
     except ValueError:
         return None
     return url if urlparse(url).hostname in PDF_HOSTS else None
+
+
+
+def _checkpoint_page(url: str, response) -> dict:
+    """Hash an index or robots response. Never follow a PDF link."""
+    body = response.body or b""
+    text = body.decode("utf-8", errors="replace")
+    captcha = (
+        response.status_code != 200
+        or "Human Verification" in text
+        or "awsWafCookieDomainList" in text
+    )
+    return {
+        "url": url,
+        "final_url": response.url,
+        "status_code": response.status_code,
+        "bytes": len(body),
+        "sha256": hashlib.sha256(body).hexdigest(),
+        "pdf_links_named": 0,
+        "waf_captcha": captcha,
+        "downloaded_pdfs": 0,
+        "gap": (
+            "WAF captcha or non-200; not an opinion index; PDFs not named or downloaded"
+            if captcha
+            else "Index HTML hashed only; opinion PDFs not downloaded"
+        ),
+    }
+
+
+def discover_index(transport=production_transport) -> dict:
+    """Read the public opinion-search page and robots.txt only.
+
+    Does not call the date-search endpoint and does not download efast PDFs.
+    """
+    pages = []
+    for url in (INDEX_PAGE, ROBOTS_URL):
+        response = transport(assert_public_official_url(url))
+        pages.append(_checkpoint_page(url, response))
+    return {
+        "mode": "discover-only",
+        "committed": False,
+        "pdfs_downloaded": 0,
+        "search_endpoint_requested": False,
+        "pages": pages,
+        "note": "Index checkpoint only. No opinion PDFs downloaded and no corpus rows written.",
+    }
 
 
 def search_url(start: date, end: date) -> str:
@@ -203,14 +253,24 @@ def prepare_opinion(opinion: AppealsOpinion, *, transport=production_transport):
 
 def main(argv: list[str] | None = None, *, transport=production_transport, session_factory=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--start", type=date.fromisoformat, required=True, help="First judgment date (YYYY-MM-DD)")
-    parser.add_argument("--end", type=date.fromisoformat, required=True, help="Last judgment date (YYYY-MM-DD)")
+    parser.add_argument("--start", type=date.fromisoformat, help="First judgment date (YYYY-MM-DD)")
+    parser.add_argument("--end", type=date.fromisoformat, help="Last judgment date (YYYY-MM-DD)")
+    parser.add_argument("--discover-only", action="store_true", help="Hash the opinion-search page and robots.txt only; do not download opinions or open a database")
     parser.add_argument("--limit", type=int, default=100, help="Maximum PDFs per run (1-500)")
     parser.add_argument("--offset", type=int, default=0, help="Skip this many discovered opinions for a later batch")
     parser.add_argument("--pause", type=float, default=1.0, help="Seconds between court requests")
     parser.add_argument("--include-orders", action="store_true", help="Also import application rulings, dismissals, withdrawals and transfers")
     parser.add_argument("--commit", action="store_true", help="Persist each acquired document")
     args = parser.parse_args(argv)
+    if args.commit and args.discover_only:
+        parser.error("--commit cannot be combined with --discover-only")
+    if args.discover_only:
+        print(json.dumps(discover_index(transport)), flush=True)
+        return 0
+    if args.start is None or args.end is None:
+        parser.error("--start and --end are required unless --discover-only is set")
+    if args.commit and not os.environ.get("DATABASE_URL"):
+        parser.error("DATABASE_URL is unset; refusing to write corpus rows")
     if not 1 <= args.limit <= 500 or args.offset < 0 or not 0.5 <= args.pause <= 30:
         parser.error("Limit must be 1-500, offset nonnegative, and pause 0.5-30 seconds")
     if args.end < args.start or (args.end - args.start).days > 366:
