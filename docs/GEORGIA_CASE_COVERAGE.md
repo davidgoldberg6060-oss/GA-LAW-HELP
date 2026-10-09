@@ -1,3 +1,12 @@
+Last production check: 2026-10-09 15:01 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2020 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2020 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| 2020 opinions index | https://www.gasupreme.us/2020-opinions/ | 200 | 1,652,047 | `558e710ac33e46b962341fcc2ffd5a457367b12c87df7e520a84f02e56035a7e` | 348 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+The importer's docket rule named 348 anchors and 342 unique uploads PDF URLs. robots.txt disallows `/wp-content/uploads/`, so none of those files were fetched. `parse_index` does not refuse this year: no docket token maps to more than one PDF. Five kept anchors use a filename suffix other than a plain docket or `_sub` (two `_sub2`, three `_Reinstatement`). Sixteen other kept anchors use `_sub`. Seventeen kept anchors name companion dockets on one URL. Six extra docket-labeled anchors repeat a URL already kept by unique-URL dedupe. Raw anchors also include 22 summary PDFs whose link text has no docket token; those were not counted as opinions. Nested markup splits some anchor text, so stored titles would be fragments if imported from the index label alone. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-09-supreme-2020.md`.
+
 Last production check: 2026-10-09 14:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2021 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2021 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
 
 | Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
