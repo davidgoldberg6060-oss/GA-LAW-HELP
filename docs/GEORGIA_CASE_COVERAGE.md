@@ -1,3 +1,12 @@
+Last production check: 2026-10-10 07:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia Attorney General opinions index (https://law.georgia.gov/opinions). Page bytes and robots.txt were hashed; opinion PDFs were not downloaded; not stored opinions and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinions index | https://law.georgia.gov/opinions | 200 | 146,783 | `8a4730817fe28bccc7bcb9cd5344ee7b04e5fe808f32de22faeeefbe0102f874` | Index labels only |
+| robots.txt | https://law.georgia.gov/robots.txt | 200 | 1,677 | `1ec8e6c4fed3dc4f55da7a82412fc7bb6649941ba44ccc6b47ba7968604d1c1b` | Allows /opinions |
+
+The index names 46 opinion citation links (examples 2013-2 through 2026-2 and U-prefixed). Five document download links were present; none were fetched. Category indexes and later pagination were not walked. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-10-ag-opinions-index.md`.
+
 Last production check: 2026-10-10 03:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia General Assembly annual general-statutes summary index (https://www.legis.ga.gov/general-statutes). Raw fetch returned the SPA shell (HTTP 200, 1,492 bytes, SHA-256 `05dd7a574b081f27c023001daa94e1f2f49a3f84151f0c6639ec54d7c691479a`). The rendered page titles itself "Annual Summary of Laws - Georgia General Assembly" and names 21 summary PDF links (2006–2026). Those PDFs were not downloaded. robots.txt returns the same SPA shell. The site's "Georgia Code" link points at LexisNexis (http://www.lexisnexis.com/hottopics/gacode); that host was not opened. These are session-summary labels, not unannotated OCGA section text and not current-law verification. The label list is in `ops/legal-import/2026-10-10-general-statutes-summaries.md`.
 
 Last production check: 2026-10-09 22:00 UTC. DATABASE_URL was unset, so `python -m backend.app.ingestion.import_supreme_opinions --year 2017 --discover-only --commit` was refused and no corpus rows were written. Discover-only hashed the 2017 annual opinion index and robots.txt (page bytes and docket-labeled PDF link labels only; opinion PDFs not downloaded; not stored opinions and not current-law verification):
