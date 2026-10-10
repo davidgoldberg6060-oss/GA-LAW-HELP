@@ -60,10 +60,13 @@ jobs:
             -t 'legal_sources' -t 'legal_authorities' -t 'authority_versions' -t 'authority_annotations*' \
             -Fc -f db_backup/legal_corpus_data.dump
           ls -la db_backup
+          # Artifact storage can be over quota, so the schema is also kept in this run's log.
+          echo "::group::schema.sql"; cat db_backup/schema.sql; echo "::endgroup::"
 
       - name: Upload backup artifact
         if: ${{ inputs.action == 'backup' || inputs.action == 'migrate' }}
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: db-backup-${{ github.run_id }}
           path: db_backup/
