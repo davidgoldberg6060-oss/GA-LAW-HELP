@@ -20,3 +20,7 @@ SELECT
   EXISTS (SELECT 1 FROM pg_constraint WHERE conname='ck_legal_authorities_currency_status') AS m_20261004_status_vocabulary,
   to_regclass('public.authority_annotations') IS NOT NULL AS m_20261004_annotations,
   to_regclass('public.ix_legal_authorities_fulltext') IS NOT NULL AS m_20261004_fulltext;
+-- Spot check: newest three authorities of each type (no full text).
+SELECT authority_type, citation, left(title, 70) AS title, length(text) AS text_chars, status, retrieved_at::date
+  FROM (SELECT *, row_number() OVER (PARTITION BY authority_type ORDER BY id DESC) AS rn FROM legal_authorities) x
+  WHERE rn <= 3 ORDER BY authority_type, id DESC;
