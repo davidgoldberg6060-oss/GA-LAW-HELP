@@ -3,7 +3,13 @@
 # Inputs arrive as env vars (never interpolated into the script). Any extra arguments
 # (the workflow passes --commit only from its guarded commit step) are appended.
 set -euo pipefail
-cd "$(dirname "$0")/../../backend"
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPTS_DIR/../../backend"
+
+# Commit mode: normalize the secret's URL for SQLAlchemy + psycopg v3 (postgresql+psycopg://, sslmode=require).
+for arg in "$@"; do
+  if [ "$arg" = "--commit" ]; then source "$SCRIPTS_DIR/db-url.sh"; fi
+done
 
 case "$LIMIT" in ''|*[!0-9]*) echo "::error::limit must be a whole number"; exit 1 ;; esac
 case "$OFFSET" in ''|*[!0-9]*) echo "::error::offset must be a whole number"; exit 1 ;; esac
