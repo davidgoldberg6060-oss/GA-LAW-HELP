@@ -1,3 +1,14 @@
+Last production check: 2026-10-10 09:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the official Georgia court-rules indexes on www.gasupreme.us (page bytes and robots.txt hashed; rule PDFs not downloaded; not stored rule text and not current-law verification). robots.txt disallows `/wp-content/uploads/`.
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| Supreme Court rules index | https://www.gasupreme.us/rules/ | 200 | 1,594,903 | `95608f4a78399d2889a35b3a0356fb03c1fc5da0beede43840273563aa3fd9dc` | 3 |
+| Other court rules index | https://www.gasupreme.us/other-court-rules/ | 200 | 1,594,928 | `51741266e74082e7fb01d06efedeb8124eac45335c43f1b9b3161c91333f1c50` | 7 |
+| Other codes and rules index | https://www.gasupreme.us/other-codes-rules/ | 200 | 1,606,028 | `31c2c4c5a716930457027321cd97a3e8695a69533e1fc5f38379c0cc088e377b` | 27 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+The rules index names the Supreme Court Rules PDF (eff. July 2, 2026 label), a chart, and a quick-reference PDF. The other-court-rules index names seven Uniform Rules / Business Court PDFs (Superior, State, Juvenile, Probate, Magistrate, Municipal, Business). The other-codes-rules index names 27 PDF labels (Judicial Conduct, JQC, interpreting, Unified Appeal, misdemeanor citation, and related orders). None of those PDFs were fetched. Court of Appeals rules (`https://www.gaappeals.gov/court-rules/`) returned HTTP 405 AWS WAF captcha; no rule pages were read. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-10-court-rules-indexes.md`.
+
 Last production check: 2026-10-10 07:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia Attorney General opinions index (https://law.georgia.gov/opinions). Page bytes and robots.txt were hashed; opinion PDFs were not downloaded; not stored opinions and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
