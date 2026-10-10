@@ -7,6 +7,12 @@ name: Database maintenance
 #   migrate - takes the same backup first, then applies backend/migrations/*.sql in filename
 #             order, each in its own transaction (ON_ERROR_STOP). Every migration is idempotent
 #             and additive; nothing is dropped or truncated. Prints status afterwards.
+#   init-schema - for a brand-new empty database only: creates every application table from the
+#             SQLAlchemy models (Base.metadata.create_all, the same thing non-production startup
+#             does), then applies backend/migrations in order. create_all only creates missing
+#             tables; it never alters or drops existing ones. The Supabase chain in
+#             supabase/migrations needs Supabase roles (anon/authenticated, auth.uid()) and does
+#             not apply to plain Postgres.
 on:
   workflow_dispatch:
     inputs:
@@ -19,6 +25,7 @@ on:
           - status
           - backup
           - migrate
+          - init-schema
 
 permissions:
   contents: read
@@ -72,8 +79,31 @@ jobs:
           path: db_backup/
           retention-days: 14
 
+      - uses: actions/setup-python@v5
+        if: ${{ inputs.action == 'init-schema' }}
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Create application tables (create_all)
+        if: ${{ inputs.action == 'init-schema' }}
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          pip install -q -r requirements.txt
+          source ../.github/scripts/db-url.sh
+          python - <<'PY'
+          import app.models  # registers every table on Base.metadata
+          from app.database import Base, engine, verify_production_schema
+          Base.metadata.create_all(bind=engine)
+          verify_production_schema()
+          print("create_all ok:", len(Base.metadata.tables), "tables")
+          PY
+
       - name: Apply backend migrations
-        if: ${{ inputs.action == 'migrate' }}
+        if: ${{ inputs.action == 'migrate' || inputs.action == 'init-schema' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
@@ -85,7 +115,7 @@ jobs:
           done
 
       - name: Status (after)
-        if: ${{ inputs.action == 'migrate' }}
+        if: ${{ inputs.action == 'migrate' || inputs.action == 'init-schema' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
