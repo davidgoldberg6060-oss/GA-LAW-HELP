@@ -7,6 +7,8 @@ name: Database maintenance
 #   migrate - takes the same backup first, then applies backend/migrations/*.sql in filename
 #             order, each in its own transaction (ON_ERROR_STOP). Every migration is idempotent
 #             and additive; nothing is dropped or truncated. Prints status afterwards.
+#   search-check - read-only: runs the app's own search_georgia_authorities() for the
+#             search_query input and prints the top citations.
 #   init-schema - for a brand-new empty database only: creates every application table from the
 #             SQLAlchemy models (Base.metadata.create_all, the same thing non-production startup
 #             does), then applies backend/migrations in order. create_all only creates missing
@@ -26,6 +28,12 @@ on:
           - backup
           - migrate
           - init-schema
+          - search-check
+      search_query:
+        description: "search-check only: question to search"
+        required: false
+        default: "carrying a weapon without a license"
+        type: string
 
 permissions:
   contents: read
@@ -80,7 +88,7 @@ jobs:
           retention-days: 14
 
       - uses: actions/setup-python@v5
-        if: ${{ inputs.action == 'init-schema' }}
+        if: ${{ inputs.action == 'init-schema' || inputs.action == 'search-check' }}
         with:
           python-version: "3.12"
           cache: pip
@@ -121,3 +129,24 @@ jobs:
         run: |
           source .github/scripts/db-url.sh
           psql "$LIBPQ_URL" -X -f .github/scripts/db-status.sql
+
+      - name: Search check (app search service)
+        if: ${{ inputs.action == 'search-check' }}
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SEARCH_QUERY: ${{ inputs.search_query }}
+        run: |
+          pip install -q -r requirements.txt
+          source ../.github/scripts/db-url.sh
+          python - <<'PY'
+          import os
+          from app.database import SessionLocal
+          from app.authority_search_service import search_georgia_authorities
+          query = os.environ["SEARCH_QUERY"]
+          with SessionLocal() as db:
+              hits = search_georgia_authorities(db, query, limit=10)
+          print(f"query={query!r} hits={len(hits)}")
+          for h in hits:
+              print(f"- [{h.authority_type}] {h.citation} | {(h.title or '')[:80]} | {h.source_url}")
+          PY
