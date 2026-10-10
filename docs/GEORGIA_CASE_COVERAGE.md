@@ -1,1 +1,2 @@
-PLACEHOLDER_FOR_COVERAGE
+Last production check: 2026-10-10 05:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only hashed the official Georgia court-rules index pages (https://www.gasupreme.us/other-court-rules/, https://www.gasupreme.us/rules/, https://www.gasupreme.us/other-codes-rules/) and robots.txt. other-court-rules named 7 Uniform/Business Court PDF links; supreme rules named 3 PDF links (current rules PDF labeled effective July 2, 2026, amendment chart, quick reference); other-codes-rules named 27 PDF links. All PDFs live under /wp-content/uploads/ which robots.txt disallows, so none were downloaded. Not stored rule text and not current-law verification. The label list is in `ops/legal-import/2026-10-10-court-rules-indexes.md`.
+
