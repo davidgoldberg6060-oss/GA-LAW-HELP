@@ -58,10 +58,12 @@ def test_fails_closed_when_index_has_no_opinion_documents():
 
 
 def test_discover_only_counts_index_without_downloading_or_opening_database(monkeypatch, capsys):
-    html = b'<a href="/files/s25a0001.pdf">S25A0001. SAMPLE v. THE STATE</a>'
+    html = b'<a href="/wp-content/uploads/2025/01/s25a0001.pdf">S25A0001. SAMPLE v. THE STATE</a>'
 
     def transport(url):
-        assert url == "https://www.gasupreme.us/2025-opinions/"
+        assert url in ("https://www.gasupreme.us/2025-opinions/", "https://www.gasupreme.us/robots.txt")
+        if url.endswith("/robots.txt"):
+            return FetchResponse(url, 200, {"Content-Type": "text/plain"}, b"User-agent: *\nDisallow: /wp-content/uploads/\n")
         return FetchResponse(url, 200, {"Content-Type": "text/html"}, html)
 
     def forbidden(*_args, **_kwargs):
@@ -76,9 +78,9 @@ def test_discover_only_counts_index_without_downloading_or_opening_database(monk
     import json
     summary = json.loads(capsys.readouterr().out)
     assert summary["discovered"] == 1
-    assert summary["attempted"] == 0
+    assert summary["pdfs_downloaded"] == 0
     assert summary["committed"] is False
-    assert summary["discover_only"] is True
+    assert summary["mode"] == "discover-only"
 
 
 def test_forthcoming_index_names_uploads_pdfs_without_fetching_them(monkeypatch, capsys):

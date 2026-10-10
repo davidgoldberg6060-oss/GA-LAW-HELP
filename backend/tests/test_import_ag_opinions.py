@@ -1,6 +1,6 @@
 import json
 
-from backend.app.ingestion.import_ag_opinions import discover_report, main, parse_index
+from app.ingestion.import_ag_opinions import discover_report, main, parse_index
 
 FIXTURE = """
 <table>

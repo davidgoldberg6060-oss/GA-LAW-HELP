@@ -96,4 +96,5 @@ jobs:
           case "$DATABASE_URL" in
             sqlite*) echo "::error::DATABASE_URL points at SQLite; refusing to commit an import to a throwaway runner database."; exit 1 ;;
           esac
+          source ../.github/scripts/db-url.sh
           bash ../.github/scripts/run-legal-import.sh --commit

@@ -58,8 +58,11 @@ jobs:
         working-directory: android
         run: ./gradlew bundleRelease -PGALAW_API_BASE_URL=https://api-production-60cc.up.railway.app
       - uses: actions/upload-artifact@v4
+        # The build above is the check; a full artifact-storage quota must not fail CI.
+        continue-on-error: true
         with:
           name: ga-law-help-android-unsigned
+          retention-days: 7
           path: |
             android/app/build/outputs/apk/debug/*.apk
             android/app/build/outputs/bundle/release/*.aab

@@ -236,9 +236,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.commit and not os.environ.get("DATABASE_URL"):
         parser.error("DATABASE_URL is unset; refusing to write corpus rows")
     if args.discover_only and not args.forthcoming:
-        print(json.dumps(discover_year_index(args.year)), flush=True)
+        print(json.dumps(discover_year_index(args.year, production_transport)), flush=True)
         return 0
-    opinions = discover_forthcoming() if args.forthcoming else discover(args.year)
+    opinions = discover_forthcoming(production_transport) if args.forthcoming else discover(args.year, production_transport)
     if args.discover_only:
         print(json.dumps({"year": args.year, "discovered": len(opinions), "offset": args.offset,
                           "attempted": 0, "succeeded": 0, "unverified": 0, "failed": 0,
