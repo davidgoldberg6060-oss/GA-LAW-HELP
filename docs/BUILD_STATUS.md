@@ -39,6 +39,8 @@ Implemented and verified in this increment:
 - Refresh-token reuse detection with account-wide session revocation
 - Idempotency guards for completed resumable uploads
 
+Official-source inventory checkpoint (2026-10-10 12:01 UTC): other-court-rules index on www.gasupreme.us names 7 Uniform/Statewide Business Court Rules PDFs. DATABASE_URL unset, so no rows written. PDFs not downloaded (robots.txt disallows /wp-content/uploads/). See ops/legal-import/2026-10-10-other-court-rules-index.md. Not stored rule text.
+
 Still required before production release:
 - A production container host, HTTPS domain, and provider-side environment secrets
 - Live API-to-Supabase connection verification from that host
