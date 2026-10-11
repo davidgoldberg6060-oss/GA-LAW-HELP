@@ -8,6 +8,8 @@ This remains a development build. The GALAWHELP database migrations are live; be
 
 Official-source coverage is an inventory, not ingested authority. `docs/GEORGIA_CASE_COVERAGE.md` records citation, source URL, hash, fetch date, and gap notes. A missing `DATABASE_URL` means no corpus rows are written and no coverage is claimed. Answers must not invent statute or case text.
 
+Public case search (`GET /public/georgia-cases?q=`) uses keyword / full-text retrieval (not a whole-question ILIKE). An empty result returns a clear coverage message rather than a blank or invented citation.
+
 ## Verification
 
 ```bash

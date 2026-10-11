@@ -60,6 +60,19 @@ def test_public_case_payload_discloses_unknown_legal_status_and_safe_provenance(
     assert blank["precedential_status"] == "unknown"
 
 
+def test_public_case_list_uses_keyword_search_not_full_question_ilike():
+    source = Path("app/main.py").read_text(encoding="utf-8")
+    list_route = source.split("@app.get('/public/georgia-cases')", 1)[1].split(
+        "@app.get('/public/georgia-cases/{authority_id}')", 1
+    )[0]
+    assert "search_georgia_authorities" in list_route
+    assert "search_mode" in list_route
+    assert "Missing authority is not invented" in list_route
+    # Whole-question ILIKE against title/citation/text was replaced.
+    assert "like=f'%{q}%'" not in list_route
+    assert "query.filter(or_(models.LegalAuthority.title.ilike" not in list_route
+
+
 def test_public_case_routes_do_not_require_ownership_or_read_private_case_tables():
     source = Path("app/main.py").read_text(encoding="utf-8")
     list_route = source.split("@app.get('/public/georgia-cases')", 1)[1].split(
