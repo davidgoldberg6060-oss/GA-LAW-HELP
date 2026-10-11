@@ -10,9 +10,9 @@ from .motion_screen_service import motion_screen_response
 from .innocence_analysis_service import innocence_analysis_response
 from .case_chat_service import analyze_case_conversation, case_summary_from_case, parse_history
 from .internal_legal_search import search_internal
-from .authority_search_service import persisted_authority_hits
+from .authority_search_service import persisted_authority_hits, public_law_search
 from .grounded_legal_assistant import grounded_legal_response
-from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload
+from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload, safe_public_source_url
 from .ingestion.coverage import corpus_coverage
 from .encounter_prompt import encounter_prompt_block
 from .public_rights import official_indexes, router as public_rights_router
@@ -63,6 +63,17 @@ def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):
     row=_public_georgia_case_query(db).filter(models.LegalAuthority.id==authority_id).first()
     if not row: raise HTTPException(404,'Public Georgia case not found.')
     return {'case':public_case_payload(row,include_text=True),'coverage_notice':'Verify the opinion and current precedential status against the linked official source before legal reliance.'}
+
+@app.get('/public/georgia-laws/search')
+def public_georgia_law_search(kind:str='statutes',q:str='',title:str='',chapter:str='',limit:int=25,db:Session=Depends(get_db)):
+    """Guest Georgia Laws screen: statutes/regulations, case law, or court rules from the persisted corpus."""
+    q=q.strip()
+    if len(q)>400: raise HTTPException(400,'Search keyword is too long.')
+    if not q and not title.strip(): raise HTTPException(400,'Enter a keyword or choose a title.')
+    try: rows=public_law_search(db,kind=kind,keyword=q,title=title,chapter=chapter,limit=limit)
+    except ValueError as error: raise HTTPException(400,str(error))
+    items=[{'id':r.id,'citation':r.citation,'title':r.title,'record_type':r.authority_type,'status':r.status,'currency_status':r.currency_status,'precedential_status':r.precedential_status,'source_url':safe_public_source_url(r.source_url),'excerpt':r.text[:600],'usable_as_support':r.usable_as_support} for r in rows]
+    return {'kind':kind,'query':q,'title':title,'chapter':chapter,'items':items,'coverage_notice':'Indexed public Georgia authorities. Verify currency against the official source before relying on any result. Missing authority is not invented.'}
 
 def _guest_rights_without_corpus(query:str, mode:str) -> dict:
     """Encounter-pack fallback. Does not invent citations or claim current Georgia law."""

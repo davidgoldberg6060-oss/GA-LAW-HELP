@@ -92,7 +92,7 @@ def authority_document_expression():
     return func.to_tsvector(literal_column(f"'{FTS_CONFIG}'::regconfig"), fts_document_text())
 
 
-def _postgres_rows(db: Session, term: str, keywords: list[str], limit: int) -> list[LegalAuthority]:
+def _postgres_rows(db: Session, term: str, keywords: list[str], limit: int, filters: tuple = ()) -> list[LegalAuthority]:
     needle = f"%{term}%"
     citation_hit = LegalAuthority.citation.ilike(needle)
     if keywords:
@@ -108,6 +108,7 @@ def _postgres_rows(db: Session, term: str, keywords: list[str], limit: int) -> l
         db.query(LegalAuthority)
         .filter(LegalAuthority.jurisdiction.ilike("Georgia"))
         .filter(match)
+        .filter(*filters)
         .order_by(rank.desc(), LegalAuthority.citation.asc())
         .limit(limit)
         .all()
@@ -130,7 +131,7 @@ def _fallback_score(row: LegalAuthority, term: str, keywords: list[str]) -> floa
     return score
 
 
-def _fallback_rows(db: Session, term: str, keywords: list[str], limit: int) -> list[LegalAuthority]:
+def _fallback_rows(db: Session, term: str, keywords: list[str], limit: int, filters: tuple = ()) -> list[LegalAuthority]:
     """Portable word-based search (SQLite tests / non-Postgres databases)."""
     clauses = [LegalAuthority.citation.ilike(f"%{term}%")]
     for word in keywords:
@@ -140,6 +141,7 @@ def _fallback_rows(db: Session, term: str, keywords: list[str], limit: int) -> l
         db.query(LegalAuthority)
         .filter(LegalAuthority.jurisdiction.ilike("Georgia"))
         .filter(or_(*clauses))
+        .filter(*filters)
         .limit(_SQLITE_CANDIDATES)
         .all()
     )
@@ -149,7 +151,7 @@ def _fallback_rows(db: Session, term: str, keywords: list[str], limit: int) -> l
     return [row for row, _ in scored[:limit]]
 
 
-def search_georgia_authorities(db: Session, query: str, *, limit: int = 8) -> list[AuthoritySearchResult]:
+def search_georgia_authorities(db: Session, query: str, *, limit: int = 8, filters: tuple = ()) -> list[AuthoritySearchResult]:
     """Word-based search of persisted Georgia authorities, best matches first.
 
     Postgres uses full-text search (to_tsvector / websearch_to_tsquery, ranked with ts_rank_cd,
@@ -163,9 +165,9 @@ def search_georgia_authorities(db: Session, query: str, *, limit: int = 8) -> li
     keywords = search_keywords(term)
     bind = db.get_bind()
     if bind is not None and bind.dialect.name == "postgresql":
-        rows = _postgres_rows(db, term, keywords, limit)
+        rows = _postgres_rows(db, term, keywords, limit, filters)
     else:
-        rows = _fallback_rows(db, term, keywords, limit)
+        rows = _fallback_rows(db, term, keywords, limit, filters)
     return [
         AuthoritySearchResult(
             id=row.id,
@@ -218,3 +220,57 @@ def persisted_authority_hits(db: Session, query: str, *, limit: int = 12) -> lis
             "authority_id": row.id,
         })
     return hits
+
+
+# Georgia Laws screen tabs -> persisted authority types.
+PUBLIC_LAW_KINDS = {
+    "statutes": ("statute", "regulation"),
+    "case_law": ("case_law", "case", "opinion"),
+    "court_rules": ("court_rule",),
+}
+_PUBLIC_EXCLUDED_STATUSES = ("sealed", "juvenile", "expunged", "restricted", "private", "unavailable")
+_SECTION_PART = re.compile(r"^[0-9]{1,3}[A-Za-z]?$")
+
+
+def public_law_search(db: Session, *, kind: str, keyword: str = "", title: str = "", chapter: str = "", limit: int = 25) -> list[AuthoritySearchResult]:
+    """Guest Georgia Laws search over persisted public authorities (no private user data).
+
+    ``title``/``chapter`` narrow O.C.G.A. statutes by citation prefix (e.g. 16 / 11 ->
+    "O.C.G.A. § 16-11-"). With no keyword, statutes in that title/chapter are listed in
+    citation order. Restricted records are never returned.
+    """
+    types = PUBLIC_LAW_KINDS.get(kind)
+    if types is None:
+        raise ValueError("Unsupported law kind.")
+    limit = max(1, min(int(limit), 25))
+    filters = [
+        func.lower(LegalAuthority.authority_type).in_(types),
+        func.lower(func.coalesce(LegalAuthority.status, "")).notin_(_PUBLIC_EXCLUDED_STATUSES),
+    ]
+    title = (title or "").strip(); chapter = (chapter or "").strip()
+    if title:
+        if not _SECTION_PART.match(title) or (chapter and not _SECTION_PART.match(chapter)):
+            raise ValueError("Title and chapter must be numbers such as 16 and 11.")
+        prefix = f"O.C.G.A. § {title}-" + (f"{chapter}-" if chapter else "")
+        filters.append(LegalAuthority.citation.ilike(prefix + "%"))
+    filters = tuple(filters)
+    term = (keyword or "").strip()
+    if term:
+        return search_georgia_authorities(db, term, limit=limit, filters=filters)
+    if not title:
+        return []
+    rows = (
+        db.query(LegalAuthority)
+        .filter(LegalAuthority.jurisdiction.ilike("Georgia"))
+        .filter(*filters)
+        .order_by(LegalAuthority.citation.asc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        AuthoritySearchResult(id=row.id, citation=row.citation, title=row.title, authority_type=row.authority_type,
+                              source_url=row.source_url, status=row.status, currency_status=row.currency_status or "unknown",
+                              precedential_status=row.precedential_status or "unknown", text=(row.text or "")[:12000],
+                              usable_as_support=_usable(row))
+        for row in rows
+    ]
