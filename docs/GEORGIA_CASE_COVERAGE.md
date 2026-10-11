@@ -1,3 +1,14 @@
+Last production check: 2026-10-11 12:04 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of Supreme Court of Georgia court-rules indexes (rules, other-court-rules, other-codes-rules) and robots.txt. Page bytes were hashed; PDF links were named from index HTML only; no PDFs under /wp-content/uploads/ were downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| Supreme Court Rules index | https://www.gasupreme.us/rules/ | 200 | 1,594,903 | `79a76a9751b0f03c08ad8fb19655146da111ec50e88df13b9b35f4635b32002f` | 3 |
+| Other court rules index | https://www.gasupreme.us/other-court-rules/ | 200 | 1,594,928 | `410098ae3958141174a65c1458369ab6b915bf67d340d269f312f2783fe311df` | 7 |
+| Other codes & rules index | https://www.gasupreme.us/other-codes-rules/ | 200 | 1,606,015 | `35b129cd35d83a61b16adb3a9aa9659633c52c5dddcf9132bc335ac66aa42592` | 28 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+robots.txt disallows `/wp-content/uploads/`, so none of the named PDFs were fetched. Named files include SupremeCourtRules_eff-July-2-2026.pdf, uniform rules for Superior/State/Juvenile/Probate/Magistrate/Municipal courts, Statewide Business Court Rules, and 28 other codes/rules PDFs. Filenames are index labels only, not effective dates and not stored text. Court of Appeals rules remain blocked by WAF captcha on prior checks. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-11-court-rules-indexes.md`.
+
 Last production check: 2026-10-10 11:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018). Metadata bytes were hashed; title ODT files and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
