@@ -33,6 +33,11 @@ on:
         required: true
         default: "0"
         type: string
+      courtlistener_release:
+        description: "courtlistener only: release tag holding pre-filtered Georgia files (courtlistener-ga-YYYY-MM-DD); blank streams the full 55 GB bulk file"
+        required: false
+        default: ""
+        type: string
       commit:
         description: "Persist to the database in secrets.DATABASE_URL (leave unchecked for preview)"
         required: true
@@ -70,6 +75,22 @@ jobs:
           path: backend/.import-cache
           key: courtlistener-index-${{ github.run_id }}
           restore-keys: courtlistener-index-
+
+      - name: Fetch pre-filtered CourtListener Georgia files
+        if: ${{ inputs.source == 'courtlistener' && inputs.courtlistener_release != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.courtlistener_release }}
+        run: |
+          if [[ ! "$TAG" =~ ^courtlistener-ga-([0-9]{4}-[0-9]{2}-[0-9]{2})$ ]]; then
+            echo "::error::courtlistener_release must look like courtlistener-ga-YYYY-MM-DD"; exit 1
+          fi
+          bulk_date="${BASH_REMATCH[1]}"
+          mkdir -p .import-cache
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -D .import-cache --clobber
+          ls -la .import-cache
+          echo "CL_OPINIONS_FILE=.import-cache/opinions-ga-${bulk_date}.csv.bz2" >> "$GITHUB_ENV"
+          echo "CL_BULK_DATE=${bulk_date}" >> "$GITHUB_ENV"
 
       - name: Preview import (no database writes)
         if: ${{ !inputs.commit }}
