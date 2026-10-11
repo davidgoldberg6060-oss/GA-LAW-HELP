@@ -1,3 +1,12 @@
+Last production check: 2026-10-11 16:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia 2026 opinions index (https://www.gasupreme.us/2026-opinions/). Page bytes and robots.txt were hashed; opinion PDFs were not downloaded; not stored opinions and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| 2026 opinions index | https://www.gasupreme.us/2026-opinions/ | 200 | 1,631,405 | `42ec0050b78c2c118885b35d4da958a8880b9729d38c258afde28db4c2d012d2` | 263 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+The page named 263 PDF anchors and 263 unique uploads PDF URLs. 254 anchors contain a docket token. Nine anchors are summary PDFs with no docket token. Fifteen kept anchors name companion dockets on one URL. No docket token maps to more than one PDF. robots.txt disallows `/wp-content/uploads/`, so none of those files were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-11-supreme-2026.md`.
+
 Last production check: 2026-10-10 11:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018). Metadata bytes were hashed; title ODT files and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
