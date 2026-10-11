@@ -44,8 +44,11 @@ jobs:
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        # The build is the check. When the account's artifact storage quota is full the upload
+        # fails; do not fail the workflow for that (the build log still shows the APK was built).
+        continue-on-error: true
         with:
           name: GA-LAW-HELP-Android-connected
           path: android/app/build/outputs/apk/debug/GA-LAW-HELP-connected.apk
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
