@@ -16,7 +16,15 @@ case "$SOURCE" in
   courtlistener)
     # SCOPE: "ga", "gactapp" or "ga,gactapp"; bulk files only (no API token needed)
     args=(-m app.ingestion.import_courtlistener_opinions --source bulk --court "${SCOPE:-ga,gactapp}"
-          --limit "$LIMIT" --offset "$OFFSET" --index-cache .import-cache/courtlistener-index.json --quiet) ;;
+          --limit "$LIMIT" --offset "$OFFSET" --index-cache .import-cache/courtlistener-index.json --quiet)
+    # Optional pre-filtered Georgia-only opinions file (made by app/ingestion/courtlistener_prefilter.py).
+    if [ -n "${CL_OPINIONS_FILE:-}" ]; then
+      if [[ ! "$CL_OPINIONS_FILE" =~ ^\.import-cache/opinions-ga-[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv\.bz2$ ]] \
+         || [[ ! "${CL_BULK_DATE:-}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+        echo "::error::bad pre-filtered CourtListener file settings"; exit 1
+      fi
+      args+=(--opinions-file "$CL_OPINIONS_FILE" --bulk-date "$CL_BULK_DATE")
+    fi ;;
   appeals)
     # SCOPE: judgment date range "YYYY-MM-DD..YYYY-MM-DD" (at most one year)
     if [[ ! "$SCOPE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\.\.[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
