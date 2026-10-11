@@ -8,6 +8,8 @@ This remains a development build. The GALAWHELP database migrations are live; be
 
 Official-source coverage is an inventory, not ingested authority. `docs/GEORGIA_CASE_COVERAGE.md` records citation, source URL, hash, fetch date, and gap notes. A missing `DATABASE_URL` means no corpus rows are written and no coverage is claimed. Answers must not invent statute or case text.
 
+Latest discover-only checkpoint (2026-10-11): Georgia court rules indexes (`ops/legal-import/2026-10-11-court-rules-indexes.md`). Supreme Court Rules and Uniform Rules PDF links were inventoried from official indexes; robots.txt disallows `/wp-content/uploads/`, so no PDF bytes were fetched and no authority rows written.
+
 ## Verification
 
 ```bash
