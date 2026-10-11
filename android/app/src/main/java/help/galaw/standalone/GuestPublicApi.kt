@@ -33,6 +33,14 @@ object GuestPublicApi {
         return JSONObject(post(baseUrl, "/public/rights-assistant", body))
     }
 
+    /** Guest Georgia Laws search: kind = statutes | case_law | court_rules (GET /public/georgia-laws/search). */
+    fun lawSearch(baseUrl: String, kind: String, query: String, title: String = "", chapter: String = ""): JSONObject {
+        val path = "/public/georgia-laws/search?kind=" + URLEncoder.encode(kind, "UTF-8") +
+            "&q=" + URLEncoder.encode(query.trim().take(400), "UTF-8") +
+            "&title=" + URLEncoder.encode(title, "UTF-8") + "&chapter=" + URLEncoder.encode(chapter, "UTF-8")
+        return JSONObject(get(baseUrl, path))
+    }
+
     private fun open(baseUrl: String, path: String, method: String): HttpURLConnection {
         val root = baseUrl.trimEnd('/')
         return (URL(root + path).openConnection() as HttpURLConnection).apply {
