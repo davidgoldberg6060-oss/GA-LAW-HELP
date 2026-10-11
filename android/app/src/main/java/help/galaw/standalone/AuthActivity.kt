@@ -27,16 +27,12 @@ class AuthActivity : AppCompatActivity() {
 
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
     private fun text(value:String,size:Float=16f)=TextView(this).apply { text=value; textSize=size; setTextColor(Color.WHITE) }
-    private fun field(hintText:String,password:Boolean=false)=EditText(this).apply {
-        hint=hintText; setHintTextColor(Color.rgb(150,172,190)); setTextColor(Color.WHITE); setPadding(dp(18),dp(14),dp(18),dp(14))
-        background=GradientDrawable().apply { cornerRadius=dp(16).toFloat(); setColor(Color.rgb(8,31,49)); setStroke(dp(1),Color.rgb(39,124,184)) }
+    private val ui by lazy { GaUi(this) }
+    private fun field(hintText:String,password:Boolean=false)=ui.input(hintText).apply {
+        setPadding(dp(16),dp(14),dp(16),dp(14))
         if(password) inputType=129
     }
-    private fun button(title:String,primary:Boolean=false,onClick:()->Unit)=Button(this).apply {
-        text=title; isAllCaps=false; textSize=15f; setTextColor(Color.WHITE)
-        background=GradientDrawable().apply { cornerRadius=dp(16).toFloat(); setColor(if(primary) Color.rgb(18,112,176) else card); setStroke(dp(1),if(primary) blue else Color.rgb(29,67,94)) }
-        setOnClickListener { onClick() }
-    }
+    private fun button(title:String,primary:Boolean=false,onClick:()->Unit):TextView = if(primary) ui.primaryButton(title){ onClick() } else ui.secondaryButton(title){ onClick() }
     private fun add(view:View,top:Int=10){ root.addView(view,LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(top),0,0)}) }
     private fun toast(message:String)=Toast.makeText(this,message,Toast.LENGTH_LONG).show()
 
@@ -56,16 +52,17 @@ class AuthActivity : AppCompatActivity() {
     }
 
     private fun base(){
-        root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(22),dp(30),dp(22),dp(30)); setBackgroundColor(navy) }
-        setContentView(ScrollView(this).apply { setBackgroundColor(navy); addView(root) })
+        window.statusBarColor=GaUi.NAVY_TOP; window.navigationBarColor=GaUi.NAVY_DEEP
+        root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(22),dp(24),dp(22),dp(30)) }
+        setContentView(ScrollView(this).apply { background=ui.screenBackground(); isFillViewport=true; addView(root) })
     }
 
     private fun showAuth(){
         base()
-        add(ImageView(this).apply { setImageResource(R.drawable.ic_lady_justice); scaleType=ImageView.ScaleType.CENTER_INSIDE; contentDescription="Lady Justice" },0)
-        root.getChildAt(0).layoutParams=LinearLayout.LayoutParams(-1,dp(170))
-        add(text("GA.LAW.HELP",32f).apply { gravity=Gravity.CENTER; setTypeface(typeface,Typeface.BOLD) },2)
-        add(text("KNOW YOUR RIGHTS. PROTECT YOUR FUTURE.",12f).apply { gravity=Gravity.CENTER; setTextColor(blue) },2)
+        root.addView(ui.ladyJustice(),LinearLayout.LayoutParams(dp(130),dp(156)).apply{gravity=Gravity.CENTER_HORIZONTAL})
+        add(ui.wordmark(30f),2)
+        add(ui.tagline(10f),2)
+        add(ui.headline("LEGAL ANSWERS ","ANYTIME",22f),16)
         add(text("Georgia legal help, documents, case tools and AI guidance in one secure place.",15f).apply { gravity=Gravity.CENTER; setTextColor(Color.rgb(190,205,215)) },12)
         val email=field("Email address")
         val password=field("Password (new accounts: 15+ characters)",true)
@@ -99,7 +96,7 @@ class AuthActivity : AppCompatActivity() {
     }
 
     private fun showVerification(email:String){
-        base(); add(text("VERIFY EMAIL",28f).apply{setTypeface(typeface,Typeface.BOLD)},0)
+        base(); add(ui.title("Verify Email"),0)
         add(text("Open the verification email sent to ${email.ifBlank{"your email address"}}, or paste the verification token below.",14f),8)
         val token=field("Verification token"); add(token,14)
         add(button("Verify",true){
@@ -115,7 +112,7 @@ class AuthActivity : AppCompatActivity() {
     }
 
     private fun showReset(emailValue:String){
-        base(); add(text("RESET PASSWORD",28f).apply{setTypeface(typeface,Typeface.BOLD)},0)
+        base(); add(ui.title("Reset Password"),0)
         val email=field("Email address").apply{setText(emailValue)}; val token=field("Reset token"); val password=field("New password (15+ characters)",true)
         add(email,12); add(button("Send reset email",true){
             val value=email.text.toString().trim()
@@ -136,7 +133,7 @@ class AuthActivity : AppCompatActivity() {
     }
 
     private fun showFreeLaws(){
-        base(); add(text("FUNNY & WEIRD GEORGIA LAWS",27f).apply{setTypeface(typeface,Typeface.BOLD)},0)
+        base(); add(ui.title("Funny & Weird Georgia Laws"),0)
         add(text("MYTH CHECKER — FREE",13f).apply{setTextColor(blue)},4)
         add(text("Many viral ‘weird law’ lists mix folklore, old local publicity stories and real law. Treat internet claims as myths until a current official Georgia or local source verifies them.",15f),14)
         add(text("• Fried chicken must be eaten by hand — commonly tied to Gainesville publicity lore, not a statewide criminal rule.\n\n• Donkey in a bathtub — widely repeated online; verify against current official law before relying on it.\n\n• Ice-cream cone in a back pocket on Sunday — another repeated internet claim that should not be treated as current statewide law without an official source.",15f),14)

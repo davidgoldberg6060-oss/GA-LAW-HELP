@@ -18,15 +18,15 @@ class GuestRightsActivity : AppCompatActivity() {
     companion object { const val EXTRA_SITUATION = "situation" }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val navy = Color.rgb(4, 18, 31)
+        val gui = GaUi(this)
+        window.statusBarColor = GaUi.NAVY_TOP
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(40, 48, 40, 48)
-            setBackgroundColor(navy)
+            setPadding(gui.dp(18), gui.dp(4), gui.dp(18), gui.dp(28))
         }
         val title = TextView(this).apply {
-            text = "Know your rights"
-            textSize = 26f
+            text = "Know Your Rights"
+            textSize = 28f
             setTextColor(Color.WHITE)
             setTypeface(typeface, Typeface.BOLD)
         }
@@ -38,18 +38,18 @@ class GuestRightsActivity : AppCompatActivity() {
         val question = EditText(this).apply {
             hint = "Describe the encounter or rights question"
             setText(intent.getStringExtra(EXTRA_SITUATION).orEmpty())
-            setHintTextColor(Color.rgb(150, 172, 190))
+            setHintTextColor(GaUi.MUTED)
             setTextColor(Color.WHITE)
             minLines = 4
             gravity = Gravity.TOP
+            background = gui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 10, false)
+            setPadding(gui.dp(14), gui.dp(12), gui.dp(14), gui.dp(12))
         }
         val answer = TextView(this).apply {
             textSize = 15f
             setTextColor(Color.WHITE)
         }
-        val ask = Button(this).apply {
-            text = "Ask without signing in"
-            isAllCaps = false
+        val ask = gui.primaryButton("Ask without signing in") {}.apply {
             setOnClickListener {
                 val q = question.text.toString().trim()
                 if (q.isBlank()) {
@@ -69,15 +69,16 @@ class GuestRightsActivity : AppCompatActivity() {
                 }
             }
         }
-        val back = Button(this).apply {
-            text = "Back to sign in"
-            isAllCaps = false
+        val back = gui.secondaryButton("Back to sign in") {}.apply {
             setOnClickListener {
                 startActivity(Intent(this@GuestRightsActivity, AuthActivity::class.java))
                 finish()
             }
         }
-        listOf(title, subtitle, question, ask, answer, back).forEach { root.addView(it) }
-        setContentView(ScrollView(this).apply { setBackgroundColor(navy); addView(root) })
+        listOf(title, subtitle, question, ask, answer, back).forEach { root.addView(it, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gui.dp(10) }) }
+        val shell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = gui.screenBackground() }
+        shell.addView(gui.pageHeader { finish() })
+        shell.addView(ScrollView(this).apply { addView(root) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        setContentView(shell)
     }
 }

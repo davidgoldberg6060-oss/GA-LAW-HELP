@@ -41,9 +41,10 @@ def test_home_guards_private_screens_when_token_is_missing():
     for screen in ('showCases', 'showDocuments', 'showLegalTools', 'showCaseAnalysis', 'showAccount'):
         assert f'privatefun{screen}(){{if(!requireSignedIn())return;' in compact, screen
     # The drawer is now driven by HomeDrawerCatalog: private items carry requiresSignIn and the
-    # drawer handler checks it before dispatching (each private screen also guards itself above).
-    assert 'if(item.requiresSignIn&&!requireSignedIn())return@setItems' in compact
+    # side-drawer handler (onDrawerItem) checks it before dispatching (each private screen also guards itself above).
+    assert 'privatefunonDrawerItem(item:HomeDrawerItem){if(item.requiresSignIn&&!requireSignedIn())return;' in compact
+    assert 'privatefunshowMotionsHub(){if(!requireSignedIn())return;' in compact
     catalog = ''.join((HOME.parent / 'HomeDrawerCatalog.kt').read_text().split())
-    for item_id in ('cases', 'analysis'):
+    for item_id in ('cases', 'motions', 'profile'):
         assert re.search(rf'HomeDrawerItem\("{item_id}","[^"]+",true\)', catalog), item_id
     assert 'finish()' in source

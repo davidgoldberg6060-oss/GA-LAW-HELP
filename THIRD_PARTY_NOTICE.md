@@ -10,6 +10,7 @@ STANDALONE ASSISTANT GA.LAW.HELP includes or may interact with third-party softw
 - Python and backend dependencies listed in backend/requirements.txt
 - JavaScript / frontend dependencies listed in package manifests and lockfiles
 - Hosting, database, payment, AI/model, email, authentication, and app-store services configured for deployment
+- Android app design assets: the Cinzel typeface (`android/app/src/main/res/font/cinzel_*.ttf`, static instances of Cinzel, Copyright 2020 The Cinzel Project Authors, SIL Open Font License 1.1, https://github.com/NDISCOVER/Cinzel) and Material Symbols Outlined icons (`android/app/src/main/res/drawable/ga_ic_*.xml`, Google, Apache License 2.0). The Lady Justice vector (`ga_lady_justice.xml`) is original GA.LAW.HELP artwork.
 - Georgia statutes, court opinions, government forms, and other legal-source materials
 
 ## Release rule

@@ -1,105 +1,133 @@
 package help.galaw.standalone
 
-import android.content.Intent
+import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.view.Gravity
 import android.view.View
-import android.widget.ImageView
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 
-/** Owner-approved GA.LAW.HELP home template: Lady Justice hero + 3x3 legal dashboard. */
-class ApprovedHomeScreen(private val activity: AppCompatActivity, private val actions: Actions) {
+/**
+ * Owner-approved GA.LAW.HELP home (design mockup): Lady Justice header, GA.LAW.HELP wordmark,
+ * "LEGAL ANSWERS ANYTIME", Ask-a-legal-question search, three quick cards, six tiles,
+ * Emergency Information banner, quote and the five-tab bottom nav.
+ */
+class ApprovedHomeScreen(private val context: Context, private val actions: Actions) {
     interface Actions {
         fun openMenu(); fun openAccount(); fun ask(question: String); fun openCases(); fun openTalkToMe()
         fun openLegalTools(); fun openGeorgiaLaws(); fun openCourtInfo(); fun openLegalForms(); fun openCaseAnalysis()
         fun openKnowYourRights(); fun openResources(); fun openEmergency(); fun openHome(); fun openDocuments()
     }
 
-    private val navy = Color.rgb(2, 17, 29)
-    private val panel = Color.rgb(7, 29, 47)
-    private val border = Color.rgb(25, 82, 120)
-    private val blue = Color.rgb(38, 169, 255)
-    private val gold = Color.rgb(226, 181, 78)
-    private val muted = Color.rgb(175, 194, 208)
-    private fun dp(v: Int) = (v * activity.resources.displayMetrics.density).toInt()
-
-    /** Open authenticated native retrieval instead of sending legal research to a browser. */
-    private fun openInternal(mode: String, title: String) {
-        activity.startActivity(Intent(activity, InternalLegalSearchActivity::class.java).apply {
-            putExtra("mode", mode)
-            putExtra("title", title)
-        })
-    }
+    private val ui = GaUi(context)
+    private fun dp(v: Int) = ui.dp(v)
 
     fun build(): View {
-        val shell = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(navy) }
-        val body = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(8), dp(12), dp(14)) }
-        body.addView(header())
+        val shell = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; background = ui.screenBackground() }
+        val body = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), 0, dp(14), dp(12)) }
         body.addView(hero())
-        body.addView(gridRow(
-            tile("▰", "My Cases", "Track & manage", Color.rgb(34, 159, 255), actions::openCases),
-            tile("●", "AI Help", "Ask legal questions", Color.rgb(43, 201, 112)) { openInternal("talk_to_me", "Talk to Me") },
-            tile("▤", "Legal Tools", "Motions & rules", gold) { openInternal("motions", "Motions & Court Rules") }))
-        body.addView(gridRow(
-            tile("⚖", "Georgia Laws", "Statutes & cases", Color.rgb(235, 61, 65), actions::openGeorgiaLaws),
-            tile("▰", "Court Info", "Courts & procedure", Color.rgb(144, 103, 246)) { openInternal("court_info", "Georgia Court Info") },
-            tile("▤", "Legal Forms", "Forms guidance", Color.rgb(245, 139, 53)) { openInternal("legal_forms", "Georgia Legal Forms") }))
-        body.addView(gridRow(
-            tile("⌕", "Case Analysis", "Analyze & strategy", Color.rgb(45, 195, 206)) { openInternal("case_analysis", "Case Analysis") },
-            tile("♦", "Know Your Rights", "Learn your rights", Color.rgb(233, 91, 124)) { openInternal("rights", "Know Your Rights") },
-            tile("♟", "Resources", "Help & support", Color.rgb(155, 176, 191)) { openInternal("resources", "Georgia Legal Resources") }))
-        body.addView(emergencyBanner(), LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(3), dp(7), dp(3), dp(8)) })
-        val scroll = ScrollView(activity).apply { isFillViewport = true; addView(body) }
-        shell.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f)); shell.addView(bottomNav()); return shell
-    }
-
-    private fun header() = LinearLayout(activity).apply {
-        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-        addView(text("☰", 25f, false, blue).apply { gravity = Gravity.CENTER; contentDescription = "Open menu"; setOnClickListener { actions.openMenu() } }, LinearLayout.LayoutParams(dp(42), dp(48)))
-        addView(text("⚖  GA.LAW.HELP", 19f, true, gold).apply { gravity = Gravity.CENTER_VERTICAL }, LinearLayout.LayoutParams(0, dp(48), 1f))
-        addView(text("⌕", 27f, false, Color.WHITE).apply { gravity = Gravity.CENTER; contentDescription = "Search Georgia laws"; setOnClickListener { actions.openGeorgiaLaws() } }, LinearLayout.LayoutParams(dp(42), dp(48)))
-    }
-
-    private fun hero() = LinearLayout(activity).apply {
-        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(0, 0, 0, dp(7))
-        addView(ImageView(activity).apply { setImageResource(R.drawable.ic_lady_justice); scaleType = ImageView.ScaleType.CENTER_INSIDE; contentDescription = "Blindfolded Lady Justice holding scales" }, LinearLayout.LayoutParams(-1, dp(185)))
-        addView(text("GA.LAW.HELP", 28f, true, gold).apply { gravity = Gravity.CENTER; setTypeface(Typeface.create(Typeface.SERIF, Typeface.BOLD)) })
-        addView(text("KNOW YOUR RIGHTS. PROTECT YOUR FUTURE.", 10f, false, Color.rgb(184, 207, 222)).apply { gravity = Gravity.CENTER; letterSpacing = .08f; setPadding(0, dp(2), 0, dp(3)) })
-        addView(text("Georgia legal help, documents, case tools\nand AI guidance in one secure place.", 12f, false, Color.rgb(215, 225, 232)).apply { gravity = Gravity.CENTER })
-    }
-
-    private fun gridRow(vararg views: View) = LinearLayout(activity).apply {
-        orientation = LinearLayout.HORIZONTAL
-        views.forEach { addView(it, LinearLayout.LayoutParams(0, dp(104), 1f).apply { setMargins(dp(3), dp(3), dp(3), dp(3)) }) }
-    }
-
-    private fun tile(icon: String, title: String, subtitle: String, iconColor: Int, action: () -> Unit) = LinearLayout(activity).apply {
-        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(4), dp(6), dp(4), dp(5)); background = rounded(panel, border, 1, 12)
-        addView(text(icon, 25f, true, iconColor).apply { gravity = Gravity.CENTER })
-        addView(text(title, 12f, true, Color.WHITE).apply { gravity = Gravity.CENTER; setPadding(0, dp(2), 0, 0) })
-        addView(text(subtitle, 9f, false, muted).apply { gravity = Gravity.CENTER })
-        setOnClickListener { action() }
-    }
-
-    private fun emergencyBanner() = LinearLayout(activity).apply {
-        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(9), dp(10), dp(9)); background = rounded(Color.rgb(116, 18, 25), Color.rgb(229, 57, 63), 1, 12)
-        addView(text("☎", 27f, true, Color.WHITE).apply { gravity = Gravity.CENTER }, LinearLayout.LayoutParams(dp(45), -1))
-        addView(LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; addView(text("Emergency Help", 13f, true, Color.WHITE)); addView(text("Important contacts & immediate resources", 9f, false, Color.rgb(242, 205, 208))) }, LinearLayout.LayoutParams(0, -2, 1f))
-        addView(text("›", 24f, true, Color.WHITE)); setOnClickListener { actions.openEmergency() }
-    }
-
-    private fun bottomNav() = LinearLayout(activity).apply {
-        orientation = LinearLayout.HORIZONTAL; setPadding(dp(3), dp(3), dp(3), dp(4)); setBackgroundColor(Color.rgb(3, 20, 34))
-        listOf(Triple("⌂", "Home", actions::openHome), Triple("⚖", "Laws", actions::openGeorgiaLaws), Triple("●", "AI Help", { openInternal("talk_to_me", "Talk to Me") }), Triple("▰", "Documents", actions::openDocuments), Triple("●", "Account", actions::openAccount)).forEachIndexed { i, item ->
-            addView(text("${item.first}\n${item.second}", 9.5f, false, if (i == 0) blue else muted).apply { gravity = Gravity.CENTER; setPadding(0, dp(5), 0, dp(5)); setOnClickListener { item.third() } }, LinearLayout.LayoutParams(0, -2, 1f))
+        val (search, field) = ui.searchField("Ask a legal question...", glowing = true, height = 58) { q ->
+            if (q.isNotBlank()) actions.ask(q.trim()) else actions.openTalkToMe()
         }
+        field.contentDescription = "Ask a legal question"
+        body.addView(search, LinearLayout.LayoutParams(-1, dp(58)).apply { setMargins(dp(4), dp(14), dp(4), dp(12)) })
+        body.addView(row(
+            quickCard(R.drawable.ga_ic_folder, "My Cases", "Manage your cases", actions::openCases),
+            quickCard(R.drawable.ga_ic_sms, "Talk to Me", "Get legal answers", actions::openTalkToMe),
+            quickCard(R.drawable.ga_ic_description, "Legal Tools", "Forms, templates & more", actions::openLegalTools)), )
+        body.addView(row(
+            tile(R.drawable.ga_ic_account_balance, GaUi.BLUE_BRIGHT, "Georgia Laws", "Statutes & rules", actions::openGeorgiaLaws),
+            tile(R.drawable.ga_ic_balance, GaUi.GOLD, "Court Info", "Find courts & dockets", actions::openCourtInfo),
+            tile(R.drawable.ga_ic_description, GaUi.BLUE_BRIGHT, "Legal Forms", "Fill & download", actions::openLegalForms)), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        body.addView(row(
+            tile(R.drawable.ga_ic_find_in_page, GaUi.BLUE_BRIGHT, "Case Analysis", "Get insights", actions::openCaseAnalysis),
+            tile(R.drawable.ga_ic_groups, GaUi.BLUE_BRIGHT, "Know Your Rights", "Learn in plain language", actions::openKnowYourRights),
+            tile(R.drawable.ga_ic_support, GaUi.BLUE_BRIGHT, "Resources", "Aid, programs & more", actions::openResources)))
+        body.addView(emergencyBanner(), LinearLayout.LayoutParams(-1, dp(68)).apply { setMargins(dp(3), dp(12), dp(3), dp(8)) })
+        body.addView(quote())
+        shell.addView(ScrollView(context).apply { isFillViewport = true; addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        shell.addView(ui.bottomNav(listOf(
+            GaUi.NavItem("home", "Home", R.drawable.ga_ic_home) { actions.openHome() },
+            GaUi.NavItem("laws", "Laws", R.drawable.ga_ic_balance) { actions.openGeorgiaLaws() },
+            GaUi.NavItem("ai", "AI Help", R.drawable.ga_ic_sms) { actions.openTalkToMe() },
+            GaUi.NavItem("documents", "Documents", R.drawable.ga_ic_description) { actions.openDocuments() },
+            GaUi.NavItem("account", "Account", R.drawable.ga_ic_person) { actions.openAccount() }), "home"))
+        return shell
     }
 
-    private fun text(value: String, size: Float, bold: Boolean, color: Int) = TextView(activity).apply { text = value; textSize = size; setTextColor(color); if (bold) setTypeface(typeface, Typeface.BOLD) }
-    private fun rounded(fill: Int, stroke: Int, strokeWidth: Int, radius: Int) = GradientDrawable().apply { setColor(fill); cornerRadius = dp(radius).toFloat(); if (strokeWidth > 0) setStroke(dp(strokeWidth), stroke) }
+    private fun hero(): View {
+        val frame = FrameLayout(context)
+        frame.addView(ui.ladyJustice(), FrameLayout.LayoutParams(dp(108), dp(130), Gravity.START or Gravity.TOP).apply { leftMargin = dp(20) })
+        frame.addView(ui.icon(R.drawable.ga_ic_menu, GaUi.BLUE_BRIGHT, 30).apply { contentDescription = "Open menu"; setOnClickListener { actions.openMenu() } },
+            FrameLayout.LayoutParams(dp(30), dp(30), Gravity.START or Gravity.TOP).apply { setMargins(dp(4), dp(18), 0, 0) })
+        val brand = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
+        brand.addView(ui.wordmark(21f))
+        brand.addView(ui.tagline(7.5f).apply { setPadding(0, dp(1), 0, 0) })
+        frame.addView(brand, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER_HORIZONTAL or Gravity.TOP).apply { setMargins(dp(34), dp(14), 0, 0) })
+        frame.addView(ui.icon(R.drawable.ga_ic_search, GaUi.BLUE_BRIGHT, 28).apply { contentDescription = "Search Georgia laws"; setOnClickListener { actions.openGeorgiaLaws() } },
+            FrameLayout.LayoutParams(dp(28), dp(28), Gravity.END or Gravity.TOP).apply { setMargins(0, dp(18), dp(46), 0) })
+        frame.addView(ui.icon(R.drawable.ga_ic_account_circle, GaUi.BLUE_BRIGHT, 34).apply { contentDescription = "Account"; setOnClickListener { actions.openAccount() } },
+            FrameLayout.LayoutParams(dp(34), dp(34), Gravity.END or Gravity.TOP).apply { setMargins(0, dp(15), dp(2), 0) })
+        frame.addView(ui.text("KNOW YOUR RIGHTS\nBUILD A BETTER\nTOMORROW", 7.5f, GaUi.withAlphaStatic(GaUi.BLUE, 200), null, Gravity.START).apply { letterSpacing = 0.18f; setLineSpacing(0f, 1.2f) },
+            FrameLayout.LayoutParams(-2, -2, Gravity.END or Gravity.TOP).apply { setMargins(0, dp(58), dp(6), 0) })
+        val copy = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
+        copy.addView(ui.fit(ui.headline("LEGAL ANSWERS ", "ANYTIME", 25f), 16, 25), LinearLayout.LayoutParams(-1, -2))
+        copy.addView(ui.text("Search Georgia law, get guidance, and take the next step with confidence.", 12.5f, Color.rgb(222, 231, 241), null, Gravity.CENTER).apply { setPadding(dp(8), dp(4), dp(8), 0) })
+        frame.addView(copy, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+        frame.layoutParams = LinearLayout.LayoutParams(-1, dp(182))
+        return frame
+    }
+
+    private fun row(vararg views: View) = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        views.forEach { addView(it, LinearLayout.LayoutParams(0, -2, 1f).apply { setMargins(dp(2), dp(2), dp(2), dp(2)) }) }
+    }
+
+    private fun quickCard(icon: Int, title: String, subtitle: String, action: () -> Unit) = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(9), dp(10), dp(4), dp(10))
+        background = ui.glowCard(GaUi.CARD, GaUi.STROKE, 10); minimumHeight = dp(58); isClickable = true; setOnClickListener { action() }
+        addView(ui.icon(icon, GaUi.BLUE_BRIGHT, 24), LinearLayout.LayoutParams(dp(24), dp(24)).apply { rightMargin = dp(7) })
+        val col = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+        col.addView(ui.fit(ui.text(title, 13f, GaUi.WHITE, ui.sansMedium), 10, 13), LinearLayout.LayoutParams(-1, -2))
+        col.addView(ui.fit(ui.text(subtitle, 9f, GaUi.MUTED), 6, 9), LinearLayout.LayoutParams(-1, -2))
+        addView(col, LinearLayout.LayoutParams(0, -2, 1f))
+    }
+
+    private fun tile(icon: Int, tint: Int, title: String, subtitle: String, action: () -> Unit) = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(4), dp(12), dp(4), dp(12))
+        val glow = GradientDrawable().apply { gradientType = GradientDrawable.RADIAL_GRADIENT; gradientRadius = ui.dpf(60f); setGradientCenter(0.5f, 0.3f); colors = intArrayOf(GaUi.withAlphaStatic(GaUi.BLUE, 45), Color.TRANSPARENT); cornerRadius = ui.dpf(12f) }
+        background = LayerDrawable(arrayOf(ui.glowCard(GaUi.CARD, GaUi.STROKE, 12), glow)).apply { setLayerInset(1, dp(3), dp(3), dp(3), dp(3)) }
+        minimumHeight = dp(120); isClickable = true; setOnClickListener { action() }
+        addView(ui.icon(icon, tint, 42))
+        addView(ui.fit(ui.text(title, 15f, GaUi.WHITE, ui.sansMedium, Gravity.CENTER).apply { setPadding(dp(2), dp(10), dp(2), dp(2)) }, 10, 15), LinearLayout.LayoutParams(-1, -2))
+        addView(ui.fit(ui.text(subtitle, 11.5f, GaUi.MUTED, null, Gravity.CENTER).apply { setPadding(dp(2), 0, dp(2), 0) }, 7, 11), LinearLayout.LayoutParams(-1, -2))
+    }
+
+    private fun emergencyBanner() = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(8), dp(12), dp(8))
+        val fill = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.rgb(150, 18, 26), Color.rgb(96, 10, 18), Color.rgb(120, 14, 22))).apply { cornerRadius = ui.dpf(12f); setStroke(dp(1), Color.rgb(255, 92, 96)) }
+        val halo = ui.rounded(Color.TRANSPARENT, 15, GaUi.withAlphaStatic(GaUi.RED, 90), 3f)
+        background = LayerDrawable(arrayOf(halo, fill)).apply { setLayerInset(1, dp(3), dp(3), dp(3), dp(3)) }
+        isClickable = true; setOnClickListener { actions.openEmergency() }; contentDescription = "Emergency Information"
+        addView(ui.icon(R.drawable.ga_ic_warning, Color.rgb(255, 120, 120), 34), LinearLayout.LayoutParams(dp(34), dp(34)).apply { rightMargin = dp(12) })
+        val col = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+        col.addView(ui.fit(ui.text("EMERGENCY INFORMATION", 15f, GaUi.WHITE, ui.sansBold), 9, 15), LinearLayout.LayoutParams(-1, -2))
+        col.addView(ui.fit(ui.text("Get immediate help and important resources.", 11f, Color.rgb(250, 214, 216)), 6, 11), LinearLayout.LayoutParams(-1, -2))
+        addView(col, LinearLayout.LayoutParams(0, -2, 1f))
+        addView(ui.text("Find help now", 11.5f, GaUi.WHITE, ui.sansMedium).apply { maxLines = 1; setPadding(dp(6), 0, 0, 0) })
+        addView(ui.icon(R.drawable.ga_ic_chevron_right, GaUi.WHITE, 22))
+    }
+
+    private fun quote() = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(0, dp(12), 0, dp(10))
+        addView(ui.fit(ui.text("\u201CJustice is not a privilege. It\u2019s a right.\u201D", 19f, Color.rgb(236, 242, 250), Typeface.create(Typeface.SERIF, Typeface.ITALIC), Gravity.CENTER), 12, 19), LinearLayout.LayoutParams(-1, -2))
+        addView(ui.text("GA.LAW.HELP", 11f, Color.rgb(200, 214, 230), null, Gravity.CENTER).apply { letterSpacing = 0.2f; setPadding(0, dp(8), 0, dp(8)) })
+        addView(View(context).apply { background = ui.rounded(GaUi.BLUE_BRIGHT, 1) }, LinearLayout.LayoutParams(dp(54), dp(2)))
+        addView(ui.text("INFORMATION\nEMPOWERS\nPEOPLE", 7.5f, GaUi.withAlphaStatic(GaUi.BLUE, 190)).apply { letterSpacing = 0.2f; setLineSpacing(0f, 1.25f) },
+            LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END; setMargins(0, dp(8), dp(4), 0) })
+    }
 }
