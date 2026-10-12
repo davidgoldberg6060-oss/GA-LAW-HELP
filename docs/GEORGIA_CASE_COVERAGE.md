@@ -1,3 +1,12 @@
+Last production check: 2026-10-12 12:03 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court other-codes-rules index (https://www.gasupreme.us/other-codes-rules/). Page bytes and robots.txt were hashed; PDFs were not downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | PDF links named |
+| --- | --- | ---: | ---: | --- | ---: |
+| other codes/rules index | https://www.gasupreme.us/other-codes-rules/ | 200 | 1,606,015 | `87a8f0873ec1ca02ae85e279051f47c680c211559dce2fd54a6410aa70244190` | 28 |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | 0 |
+
+robots.txt disallows `/wp-content/uploads/`, so none of the PDFs were fetched. Filenames are index labels only. Lexis was not opened. These counts are not persisted coverage. The label list is in `ops/legal-import/2026-10-12-other-codes-rules.md`.
+
 Last production check: 2026-10-10 11:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018). Metadata bytes were hashed; title ODT files and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
