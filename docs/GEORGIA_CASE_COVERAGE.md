@@ -1,3 +1,5 @@
+Last production check: 2026-10-12. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of Supreme Court of Georgia rules indexes (https://www.gasupreme.us/rules/ and https://www.gasupreme.us/other-court-rules/). Index HTML hashed; linked PDFs under /wp-content/uploads/ blocked by robots.txt and not downloaded; not stored rule text and not current-law verification. Court of Appeals rules index returned HTTP 405. Checkpoint: `ops/legal-import/2026-10-12-court-rules-indexes.md`.
+
 Last production check: 2026-10-10 11:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018). Metadata bytes were hashed; title ODT files and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
