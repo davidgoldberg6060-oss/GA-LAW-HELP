@@ -53,8 +53,75 @@ class GaUi(val context: Context) {
     data class NavItem(val key: String, val label: String, val icon: Int, val action: () -> Unit)
 
     val density = context.resources.displayMetrics.density
-    fun dp(v: Int) = (v * density).toInt()
-    fun dpf(v: Float) = v * density
+    /** The mockups are drawn on a ~360dp-wide phone; scale with the real width (bounded) so proportions hold. */
+    val k: Float = ((context.resources.displayMetrics.widthPixels / density) / 360f).coerceIn(0.9f, 1.12f)
+    fun dp(v: Int) = (v * density * k).toInt()
+    fun dpf(v: Float) = v * density * k
+
+    /** Mockup units: the approved mockups are 1024 px wide, so 1 unit = screenWidth / 1024. */
+    val screenW = context.resources.displayMetrics.widthPixels.toFloat().coerceAtLeast(1f)
+    fun uf(v: Float) = v * screenW / 1024f
+    fun u(v: Number) = Math.round(uf(v.toFloat()))
+
+    /**
+     * Single-line text sized and positioned so its ink box lands exactly on the mockup box
+     * (x0,y0)-(x1,…) given in mockup units relative to (originX, originY) of the parent frame.
+     */
+    fun placeText(parent: FrameLayout, value: String, face: Typeface, color: Int, x0: Int, y0: Int, x1: Int, originX: Int = 0, originY: Int = 0): TextView {
+        val paint = android.text.TextPaint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { typeface = face; textSize = 100f }
+        val b = android.graphics.Rect(); paint.getTextBounds(value, 0, value.length, b)
+        paint.textSize = 100f * uf((x1 - x0).toFloat()) / b.width().coerceAtLeast(1)
+        paint.getTextBounds(value, 0, value.length, b)
+        val fm = paint.fontMetrics
+        val tv = TextView(context).apply {
+            text = value; typeface = face; setTextColor(color); setTextSize(TypedValue.COMPLEX_UNIT_PX, paint.textSize)
+            includeFontPadding = false; setPadding(0, 0, 0, 0); maxLines = 1; isSingleLine = true
+        }
+        parent.addView(tv, FrameLayout.LayoutParams(-2, -2).apply {
+            leftMargin = Math.round(uf((x0 - originX).toFloat()) - b.left)
+            topMargin = Math.round(uf((y0 - originY).toFloat()) - (b.top - fm.ascent))
+        })
+        return tv
+    }
+
+    /** All-caps tracking text: height from the mockup box (y0..y1), letter spacing fitted to its width. */
+    fun placeSpaced(parent: FrameLayout, value: String, face: Typeface, color: Int, x0: Int, y0: Int, x1: Int, y1: Int, originY: Int = 0): TextView {
+        val paint = android.text.TextPaint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { typeface = face; textSize = 100f }
+        val b = android.graphics.Rect(); paint.getTextBounds(value, 0, value.length, b)
+        paint.textSize = 100f * uf((y1 - y0).toFloat()) / b.height().coerceAtLeast(1)
+        val target = uf((x1 - x0).toFloat())
+        repeat(3) {
+            paint.getTextBounds(value, 0, value.length, b)
+            paint.letterSpacing += (target - b.width()) / (paint.textSize * (value.length - 1).coerceAtLeast(1))
+        }
+        paint.getTextBounds(value, 0, value.length, b)
+        val fm = paint.fontMetrics
+        val tv = TextView(context).apply {
+            text = value; typeface = face; setTextColor(color); setTextSize(TypedValue.COMPLEX_UNIT_PX, paint.textSize); letterSpacing = paint.letterSpacing
+            includeFontPadding = false; setPadding(0, 0, 0, 0); maxLines = 1; isSingleLine = true
+        }
+        parent.addView(tv, FrameLayout.LayoutParams(-2, -2).apply {
+            leftMargin = Math.round(uf(x0.toFloat()) - b.left)
+            topMargin = Math.round(uf((y0 - originY).toFloat()) - (b.top - fm.ascent))
+        })
+        return tv
+    }
+
+    /** Transparent touch target with a ripple, placed at a mockup-unit box. */
+    fun hit(parent: FrameLayout, x0: Int, y0: Int, x1: Int, y1: Int, label: String, radius: Int = 12, originY: Int = 0, action: () -> Unit): View = View(context).apply {
+        contentDescription = label; isClickable = true; isFocusable = true; setOnClickListener { action() }
+        background = android.graphics.drawable.RippleDrawable(ColorStateList.valueOf(withAlpha(BLUE, 70)), null, rounded(Color.WHITE, radius))
+        parent.addView(this, FrameLayout.LayoutParams(u(x1 - x0), u(y1 - y0)).apply { leftMargin = u(x0); topMargin = u(y0 - originY) })
+    }
+
+    /** Full-width artwork strip cropped from the mockup, height in mockup units. */
+    fun artStrip(res: Int, heightUnits: Int, description: String? = null): FrameLayout = FrameLayout(context).apply {
+        addView(ImageView(context).apply {
+            setImageResource(res); scaleType = ImageView.ScaleType.FIT_XY
+            if (description != null) contentDescription = description else importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }, FrameLayout.LayoutParams(-1, -1))
+        layoutParams = LinearLayout.LayoutParams(-1, u(heightUnits))
+    }
 
     val serifBold: Typeface by lazy { runCatching { ResourcesCompat.getFont(context, R.font.cinzel_bold) }.getOrNull() ?: Typeface.create(Typeface.SERIF, Typeface.BOLD) }
     val serifMedium: Typeface by lazy { runCatching { ResourcesCompat.getFont(context, R.font.cinzel_medium) }.getOrNull() ?: Typeface.SERIF }
@@ -92,11 +159,11 @@ class GaUi(val context: Context) {
 
     // ---------- text ----------
     fun text(value: CharSequence, size: Float, color: Int = TEXT, face: Typeface? = null, gravity: Int = Gravity.START): TextView = TextView(context).apply {
-        text = value; textSize = size; setTextColor(color); this.gravity = gravity; if (face != null) typeface = face
+        text = value; textSize = size * k; setTextColor(color); this.gravity = gravity; if (face != null) typeface = face
         includeFontPadding = true
     }
 
-    fun title(value: String) = text(value, 28f, WHITE, sansBold).apply { setPadding(0, dp(14), 0, dp(2)) }
+    fun title(value: String) = text(value, 0f, WHITE, sansBold).apply { setTextSize(TypedValue.COMPLEX_UNIT_PX, uf(84f)); setPadding(0, u(32), 0, u(6)) }
     fun subtitle(value: String) = text(value, 14.5f, TEXT).apply { setPadding(0, 0, 0, dp(14)); setLineSpacing(0f, 1.1f) }
     fun sectionHeader(value: String) = text(value, 17f, WHITE, sansBold).apply { setPadding(0, dp(14), 0, dp(8)) }
 
@@ -116,29 +183,26 @@ class GaUi(val context: Context) {
     fun wordmark(size: Float): TextView = glowText(text("GA.LAW.HELP", size, Color.rgb(236, 244, 255), serifBold, Gravity.CENTER), BLUE, 18f)
     fun tagline(size: Float): TextView = text("CLEAR ANSWERS. A STRONGER GEORGIA.", size, GOLD, serifMedium, Gravity.CENTER).apply { letterSpacing = 0.04f }
 
-    fun ladyJustice(): View = FrameLayout(context).apply {
-        background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL; gradientType = GradientDrawable.RADIAL_GRADIENT; setGradientCenter(0.45f, 0.45f)
-            colors = intArrayOf(withAlpha(BLUE, 95), withAlpha(BLUE, 28), Color.TRANSPARENT)
-        }
-        addOnLayoutChangeListener { v, l, t, r, b, _, _, _, _ -> ((v.background as? GradientDrawable)?.gradientRadius = (minOf(r - l, b - t) / 2f)) }
-        addView(ImageView(context).apply { setImageResource(R.drawable.ga_lady_justice); scaleType = ImageView.ScaleType.FIT_CENTER; contentDescription = "Lady Justice holding the scales" },
-            FrameLayout.LayoutParams(-1, -1))
+    /** Painterly Lady Justice from the approved mockup (blue statue variant for inner screens). */
+    fun ladyJustice(painted: Boolean = false): View = ImageView(context).apply {
+        setImageResource(if (painted) R.drawable.ga_lady_justice_art else R.drawable.ga_lady_justice_blue)
+        scaleType = ImageView.ScaleType.FIT_CENTER; contentDescription = "Lady Justice holding the scales"
+    }
+
+    fun brandLockup(): View = ImageView(context).apply {
+        setImageResource(R.drawable.ga_brand_lockup); scaleType = ImageView.ScaleType.FIT_XY; contentDescription = "GA.LAW.HELP — Clear answers. A stronger Georgia."
     }
 
     /** Compact header used on every inner screen (Talk to Me, My Cases, Settings …). */
     fun pageHeader(onMenu: () -> Unit): View {
-        val bar = FrameLayout(context).apply { setPadding(dp(14), dp(6), dp(14), dp(6)) }
-        bar.addView(icon(R.drawable.ga_ic_menu, BLUE, 30).apply { contentDescription = "Open menu"; setOnClickListener { onMenu() } },
-            FrameLayout.LayoutParams(dp(34), dp(34), Gravity.START or Gravity.CENTER_VERTICAL))
-        bar.addView(ladyJustice(), FrameLayout.LayoutParams(dp(62), dp(74), Gravity.START or Gravity.CENTER_VERTICAL).apply { leftMargin = dp(40) })
-        val brand = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; tag = "brand" }
-        brand.addView(wordmark(25f))
-        brand.addView(tagline(8.5f))
-        bar.addView(brand, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER_VERTICAL or Gravity.START).apply { leftMargin = dp(104) })
-        val wrap = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
-        wrap.addView(bar, LinearLayout.LayoutParams(-1, dp(84)))
-        wrap.addView(View(context).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.TRANSPARENT, BLUE, Color.TRANSPARENT)) }, LinearLayout.LayoutParams(-1, dp(1)))
+        val bar = FrameLayout(context).apply { clipChildren = false }
+        bar.addView(ladyJustice(), FrameLayout.LayoutParams(u(262), u(196)).apply { leftMargin = u(96); topMargin = u(4) })
+        bar.addView(icon(R.drawable.ga_ic_menu, Color.rgb(74, 190, 253), 30).apply { contentDescription = "Open menu"; setOnClickListener { onMenu() } },
+            FrameLayout.LayoutParams(u(78), u(78)).apply { leftMargin = u(42); topMargin = u(51) })
+        bar.addView(brandLockup().apply { tag = "brand" }, FrameLayout.LayoutParams(u(530), u(119)).apply { leftMargin = u(326); topMargin = u(23) })
+        val wrap = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; clipChildren = false }
+        wrap.addView(bar, LinearLayout.LayoutParams(-1, u(196)))
+        wrap.addView(View(context).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(withAlpha(BLUE, 40), Color.rgb(40, 150, 245), withAlpha(BLUE, 40))) }, LinearLayout.LayoutParams(-1, u(4)))
         return wrap
     }
 
@@ -203,7 +267,8 @@ class GaUi(val context: Context) {
                 }
                 setPadding(dp(6), dp(11), dp(6), dp(11)); setOnClickListener { onSelect(i) }
             }
-            addView(chip, LinearLayout.LayoutParams(0, dp(44), 1f).apply { setMargins(if (i == 0) 0 else dp(4), 0, if (i == labels.lastIndex) 0 else dp(4), 0) })
+            chip.isSingleLine = true
+            addView(chip, LinearLayout.LayoutParams(0, dp(44), maxOf(label.length, 7).toFloat()).apply { setMargins(if (i == 0) 0 else dp(4), 0, if (i == labels.lastIndex) 0 else dp(4), 0) })
         }
     }
 
@@ -266,22 +331,56 @@ class GaUi(val context: Context) {
     }
 
     // ---------- navigation ----------
-    fun bottomNav(items: List<NavItem>, selectedKey: String): View {
-        val wrap = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.rgb(8, 22, 40), Color.rgb(4, 12, 24))) }
-        wrap.addView(View(context).apply { setBackgroundColor(withAlpha(BLUE, 90)) }, LinearLayout.LayoutParams(-1, dp(1)))
-        val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(4), 0, dp(4), dp(2)) }
+    fun bottomNav(items: List<NavItem>, selectedKey: String, large: Boolean = false): View {
+        if (large) return bottomNavLarge(items, selectedKey)
+        val wrap = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(0, 12, 29)) }
+        wrap.addView(View(context).apply { background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.rgb(10, 62, 125), Color.rgb(3, 30, 66))) }, LinearLayout.LayoutParams(-1, u(4)))
+        val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
         items.forEach { item ->
             val active = item.key == selectedKey
-            val cell = LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(0, dp(9), 0, 0); isClickable = true
-                contentDescription = item.label; setOnClickListener { item.action() }
-                addView(icon(item.icon, if (active) BLUE_BRIGHT else TEXT, 26))
-                addView(text(item.label, 11.5f, if (active) BLUE_BRIGHT else TEXT, if (active) sansMedium else null, Gravity.CENTER).apply { setPadding(0, dp(3), 0, dp(6)); maxLines = 1 })
-                addView(View(context).apply { background = if (active) rounded(BLUE_BRIGHT, 2) else null }, LinearLayout.LayoutParams(dp(48), dp(3)))
+            val cell = FrameLayout(context).apply {
+                isClickable = true; contentDescription = item.label; setOnClickListener { item.action() }
+                background = android.graphics.drawable.RippleDrawable(ColorStateList.valueOf(withAlpha(BLUE, 60)), null, null)
             }
-            row.addView(cell, LinearLayout.LayoutParams(0, -2, 1f))
+            val iconRes = if (active && item.icon == R.drawable.ga_ic_home) R.drawable.ga_ic_home_filled else item.icon
+            val ic = icon(iconRes, if (active) Color.rgb(64, 170, 255) else Color.rgb(176, 205, 240), 24)
+            if (active) ic.background = GradientDrawable().apply { gradientType = GradientDrawable.RADIAL_GRADIENT; gradientRadius = uf(34f); colors = intArrayOf(withAlpha(BLUE, 90), Color.TRANSPARENT) }
+            cell.addView(ic, FrameLayout.LayoutParams(u(46), u(46), Gravity.CENTER_HORIZONTAL).apply { topMargin = u(14) })
+            cell.addView(text(item.label, 0f, if (active) Color.rgb(240, 244, 250) else Color.rgb(186, 208, 238), if (active) sansMedium else null, Gravity.CENTER).apply {
+                setTextSize(TypedValue.COMPLEX_UNIT_PX, uf(23.5f)); includeFontPadding = false; maxLines = 1
+            }, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL).apply { topMargin = u(57) })
+            if (active) cell.addView(View(context).apply {
+                background = GradientDrawable().apply { setColor(Color.rgb(150, 210, 255)); cornerRadius = uf(4f); setStroke(u(2).coerceAtLeast(1), withAlpha(BLUE, 160)) }
+            }, FrameLayout.LayoutParams(u(57), u(8), Gravity.CENTER_HORIZONTAL).apply { topMargin = u(87) })
+            row.addView(cell, LinearLayout.LayoutParams(0, -1, 1f))
         }
-        wrap.addView(row)
+        wrap.addView(row, LinearLayout.LayoutParams(-1, u(139)))
+        return wrap
+    }
+
+    /** Inner-screen nav from the 16-screen mockup: taller, bigger icons/labels, blue active tab with an underline. */
+    private fun bottomNavLarge(items: List<NavItem>, selectedKey: String): View {
+        val wrap = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.rgb(4, 16, 32), Color.rgb(1, 9, 20))) }
+        wrap.addView(View(context).apply { background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(Color.rgb(16, 60, 112), Color.rgb(30, 92, 160), Color.rgb(16, 60, 112))) }, LinearLayout.LayoutParams(-1, u(4)))
+        val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+        items.forEach { item ->
+            val active = item.key == selectedKey
+            val cell = FrameLayout(context).apply {
+                isClickable = true; contentDescription = item.label; setOnClickListener { item.action() }
+                background = android.graphics.drawable.RippleDrawable(ColorStateList.valueOf(withAlpha(BLUE, 60)), null, null)
+            }
+            val ic = icon(item.icon, if (active) Color.rgb(52, 168, 255) else Color.rgb(226, 234, 244), 24)
+            if (active) ic.background = GradientDrawable().apply { gradientType = GradientDrawable.RADIAL_GRADIENT; gradientRadius = uf(46f); colors = intArrayOf(withAlpha(BLUE, 110), Color.TRANSPARENT) }
+            cell.addView(ic, FrameLayout.LayoutParams(u(72), u(72), Gravity.CENTER_HORIZONTAL).apply { topMargin = u(26) })
+            cell.addView(text(item.label, 0f, if (active) Color.rgb(64, 176, 255) else Color.rgb(222, 230, 240), if (active) sansMedium else sansMedium, Gravity.CENTER).apply {
+                setTextSize(TypedValue.COMPLEX_UNIT_PX, uf(36f)); includeFontPadding = false; maxLines = 1
+                if (active) setShadowLayer(uf(10f), 0f, 0f, BLUE)
+            }, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL).apply { topMargin = u(110) })
+            if (active) cell.addView(View(context).apply { background = GradientDrawable().apply { setColor(Color.rgb(40, 160, 255)); cornerRadius = uf(5f) } },
+                FrameLayout.LayoutParams(u(150), u(9), Gravity.CENTER_HORIZONTAL).apply { topMargin = u(168) })
+            row.addView(cell, LinearLayout.LayoutParams(0, -1, 1f))
+        }
+        wrap.addView(row, LinearLayout.LayoutParams(-1, u(180)))
         return wrap
     }
 

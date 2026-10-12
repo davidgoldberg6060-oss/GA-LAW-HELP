@@ -36,7 +36,7 @@ object GaScreens {
             GaUi.NavItem("home", "Home", R.drawable.ga_ic_home) { nav.home() },
             GaUi.NavItem("laws", "Laws", R.drawable.ga_ic_balance) { nav.laws() },
             GaUi.NavItem("ai", "AI Help", R.drawable.ga_ic_sms) { nav.aiHelp() },
-            fourth, fifth), key)
+            fourth, fifth), key, large = true)
     }
 
     /** Header + title + subtitle + scrolling body + bottom nav. Returns (root view, body). */
@@ -66,11 +66,10 @@ object GaScreens {
         val head = FrameLayout(ui.context)
         head.addView(ui.icon(R.drawable.ga_ic_menu, GaUi.BLUE_BRIGHT, 30), FrameLayout.LayoutParams(dp(30), dp(30), Gravity.START or Gravity.TOP).apply { setMargins(dp(16), dp(18), 0, 0) })
         head.addView(ui.icon(R.drawable.ga_ic_close, GaUi.WHITE, 30).apply { contentDescription = "Close menu"; setOnClickListener { onClose() } }, FrameLayout.LayoutParams(dp(30), dp(30), Gravity.END or Gravity.TOP).apply { setMargins(0, dp(18), dp(16), 0) })
-        head.addView(ui.ladyJustice(), FrameLayout.LayoutParams(dp(130), dp(150), Gravity.CENTER_HORIZONTAL or Gravity.TOP).apply { topMargin = dp(8) })
-        val brand = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
-        brand.addView(ui.wordmark(25f)); brand.addView(ui.tagline(9f))
-        head.addView(brand, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
-        panel.addView(head, LinearLayout.LayoutParams(-1, dp(212)))
+        val pw = ui.context.resources.displayMetrics.widthPixels * 0.86f
+        head.addView(ui.ladyJustice(), FrameLayout.LayoutParams((pw * 0.56f).toInt(), (pw * 0.42f).toInt(), Gravity.CENTER_HORIZONTAL or Gravity.TOP).apply { topMargin = (pw * 0.03f).toInt() })
+        head.addView(ui.brandLockup(), FrameLayout.LayoutParams((pw * 0.84f).toInt(), (pw * 0.84f * 178f / 796f).toInt(), Gravity.CENTER_HORIZONTAL or Gravity.TOP).apply { topMargin = (pw * 0.43f).toInt() })
+        panel.addView(head, LinearLayout.LayoutParams(-1, (pw * 0.64f).toInt()))
         val list = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(22), dp(10), dp(16), dp(16)) }
         items.forEach { item ->
             val red = item.id == "emergency"
@@ -142,7 +141,7 @@ object GaScreens {
         val send = FrameLayout(ui.context).apply {
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.rgb(38, 132, 255), Color.rgb(13, 86, 214))).apply { cornerRadii = floatArrayOf(0f, 0f, ui.dpf(10f), ui.dpf(10f), ui.dpf(10f), ui.dpf(10f), 0f, 0f) }
             contentDescription = "Send"; isClickable = true
-            addView(ui.icon(R.drawable.ga_ic_send, GaUi.WHITE, 26), FrameLayout.LayoutParams(dp(26), dp(26), Gravity.CENTER))
+            addView(ui.icon(R.drawable.ga_ic_chevron_right, GaUi.WHITE, 34), FrameLayout.LayoutParams(dp(34), dp(34), Gravity.CENTER))
             setOnClickListener { val q = input.text.toString().trim(); if (q.isNotEmpty()) onSend(q) }
         }
         inputRow.addView(send, LinearLayout.LayoutParams(dp(56), -1))
