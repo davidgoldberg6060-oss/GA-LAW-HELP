@@ -1,3 +1,12 @@
+Last production check: 2026-10-13 00:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia other-court-rules and rules indexes (https://www.gasupreme.us/other-court-rules/ and https://www.gasupreme.us/rules/). Page bytes and robots.txt were hashed; PDF files were not downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| other-court-rules index | https://www.gasupreme.us/other-court-rules/ | 200 | 1,592,719 | `f9d3b8d2ba2540906985bd01c763e5748006c5f684dd6984f9495c9f786d7748` | Index labels only; 7 PDF links |
+| Supreme Court rules index | https://www.gasupreme.us/rules/ | 200 | 1,592,694 | `c8be4f87eba017ac0fa2922693ab12ddccf8953ea4f2c678d1056476a74eb79b` | Index labels only; 3 PDF links |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallows `/wp-content/uploads/` |
+
+The other-court-rules page names Uniform Superior, State, Juvenile, Probate, Magistrate, Municipal, and Statewide Business Court rule PDFs. The rules page names SupremeCourtRules_eff-July-2-2026.pdf and two companions. robots.txt disallows `/wp-content/uploads/`, so none of those files were fetched. Direct curl of https://www.gaappeals.gov/court-rules/ returned an AWS WAF captcha (HTTP 405, SHA-256 `cf84034591b589b34238bf5ea479dd252e9a2dbf69601504cb73acf40562fc25`); rule pages were not fetched. https://www.gasupreme.us/other-codes-rules/ returned HTTP 403. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-13-court-rules-indexes.md`.
 Last production check: 2026-10-10 11:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018). Metadata bytes were hashed; title ODT files and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
