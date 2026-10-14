@@ -1,3 +1,12 @@
+Last production check: 2026-10-14 07:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals of Georgia opinion-search index and robots.txt was blocked by AWS WAF captcha (HTTP 405). Captcha page bytes were hashed; no opinion PDFs were named or downloaded; not stored opinions and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion-search index | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `0a431c3d159fffb3b68ad1fbcf047e9271e6fa4156adbbfbfdbc837b079e69a7` | WAF captcha; not the index HTML |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `09ba0beb1783510507e76a4c0a36fefa506ba9e0db5d2819d769b5bb010d724b` | WAF captcha |
+
+The importer's discover_index treats non-200 / captcha responses as not an opinion index. No PDF links were extracted. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-14-appeals-opinion-search-index.md`.
+
 Last production check: 2026-10-13 16:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia other-court-rules and rules indexes. Page bytes and robots.txt were hashed; rule PDFs were not downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
