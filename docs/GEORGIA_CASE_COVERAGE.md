@@ -1,3 +1,12 @@
+Last production check: 2026-10-14 22:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only attempt on Georgia Court of Appeals opinion-search index. Page returned WAF captcha / Human Verification (HTTP 405, x-amzn-waf-action: captcha); no opinion index or PDFs obtained; not stored opinions and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion-search | https://www.gaappeals.gov/opinion-search/ | 405 | n/a | n/a | WAF captcha; no index labels |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 (curl) | n/a | n/a | Captcha on direct fetch; prior accessible content listed in checkpoint |
+
+The opinion-search page is behind CloudFront WAF human verification for automated clients. robots.txt (when previously accessible) allows the path except /wp-admin/. No docket-labeled links or annual indexes were extracted. Lexis was not opened. These counts are not persisted coverage. The gap note is in `ops/legal-import/2026-10-14-coa-opinion-search.md`.
+
 Last production check: 2026-10-13 16:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia other-court-rules and rules indexes. Page bytes and robots.txt were hashed; rule PDFs were not downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
