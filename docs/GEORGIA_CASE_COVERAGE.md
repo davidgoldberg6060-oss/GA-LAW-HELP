@@ -1,3 +1,13 @@
+Last production check: 2026-10-15 04:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals of Georgia rules and opinion-search pages (https://www.gaappeals.gov/). Non-interactive fetches hit Amazon WAF captcha (HTTP 405, 2,511-byte challenge); interactive browse succeeded. Rule PDF and HTML rule pages were not stored; opinion search is interactive date-range only (no bulk annual index). Not stored rule or opinion text and not current-law verification:
+
+| Source | URL | Notes |
+| --- | --- | --- |
+| complete rules PDF | https://www.gaappeals.gov/wp-content/uploads/2026/03/COA-Rules-Complete-Eff-26-March-26.pdf | Effective March 26, 2026; not downloaded |
+| opinion search | https://www.gaappeals.gov/opinion-search/ | Date-range docket form only; no bulk PDF list |
+| robots.txt | https://www.gaappeals.gov/robots.txt | Allows except /wp-admin/ |
+
+The complete rules PDF and the rules HTML pages name Rules 1–46 effective March 26, 2026. Opinion search does not expose a downloadable year index. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-15-coa-rules-opinion-search.md`.
+
 Last production check: 2026-10-13 16:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia other-court-rules and rules indexes. Page bytes and robots.txt were hashed; rule PDFs were not downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
