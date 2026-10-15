@@ -1,3 +1,12 @@
+Last production check: 2026-10-15 12:03 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals opinion-search page and robots.txt. Both returned the AWS WAF Human Verification captcha page (HTTP 405, 2,511 bytes); no docket-labeled PDF links were named; opinion PDFs were not downloaded; not stored opinions and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion-search index | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `902bf450208f3400629813ef627e868b0a32f29369eea164d2ce73145caf1b9f` | AWS WAF captcha; not an opinion index |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `cc626bceeab4c9ac7fe73e52bc8df9f3dbe8f8199e77342d59030a34293f89ea` | Same WAF captcha page |
+
+The date-search endpoint and efast.gaappeals.gov PDFs were not requested. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-15-appeals-opinion-search.md`.
+
 Last production check: 2026-10-15 09:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018). Metadata bytes were hashed; title ODT files and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
