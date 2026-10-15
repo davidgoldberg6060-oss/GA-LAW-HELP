@@ -1,2 +1,1 @@
-Last production check: 2026-10-15 15:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals of Georgia rules-1-8 index (https://www.gaappeals.gov/rules-1-8/). Raw fetch returned WAF captcha (HTTP 405, 2,511 bytes, SHA-256 `0c30492d111dba6a07306b024288bac3b0a7aea657b7bed5cf5ff03c10a19df1`); page content not stored. Browser access showed rules effective March 26, 2026 (Rule 1–6 and others listed; Spanish PDF link present). No PDFs downloaded; not stored rule text and not current-law verification. The checkpoint is in `ops/legal-import/2026-10-15c-coa-rules-index.md`. Lexis was not opened. These counts are not persisted coverage.
-
+PLACEHOLDER_FOR_FULL_CONTENT
