@@ -10,7 +10,7 @@ from .motion_screen_service import motion_screen_response
 from .innocence_analysis_service import innocence_analysis_response
 from .case_chat_service import analyze_case_conversation, case_summary_from_case, parse_history
 from .internal_legal_search import search_internal
-from .authority_search_service import persisted_authority_hits, public_law_search
+from .authority_search_service import persisted_authority_hits, public_law_search, search_georgia_authorities
 from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload, safe_public_source_url
 from .ingestion.coverage import corpus_coverage
@@ -52,11 +52,37 @@ def public_georgia_cases(q:str='',page:int=1,page_size:int=25,db:Session=Depends
     q=q.strip()
     if len(q)>500: raise HTTPException(400,'Search query is too long.')
     if page<1 or page_size<1 or page_size>50: raise HTTPException(400,'page must be at least 1 and page_size must be between 1 and 50.')
-    query=_public_georgia_case_query(db)
+    filters = (
+        or_(models.LegalAuthority.authority_type.ilike('%case%'), models.LegalAuthority.authority_type.ilike('%opinion%')),
+        func.lower(models.LegalAuthority.status).notin_(EXCLUDED_PUBLIC_STATUSES),
+    )
     if q:
-        like=f'%{q}%';query=query.filter(or_(models.LegalAuthority.title.ilike(like),models.LegalAuthority.citation.ilike(like),models.LegalAuthority.text.ilike(like)))
-    total=query.count();rows=query.order_by(models.LegalAuthority.retrieved_at.desc(),models.LegalAuthority.id.desc()).offset((page-1)*page_size).limit(page_size).all()
-    return {'query':q,'page':page,'page_size':page_size,'total':total,'cases':[public_case_payload(row) for row in rows],'coverage_notice':'These are indexed public Georgia case-law records. Private user workspaces are never searched. Sealed, juvenile, expunged, restricted, private, and unavailable records are excluded. A missing case means it has not yet been indexed or cannot lawfully be displayed.'}
+        # Keyword / full-text retrieval (Postgres FTS or portable keyword fallback).
+        # Ranked results are paginated in memory for the requested window.
+        ranked = search_georgia_authorities(db, q, limit=page * page_size, filters=filters)
+        start = (page - 1) * page_size
+        page_hits = ranked[start:start + page_size]
+        total = len(ranked)
+        ids = [hit.id for hit in page_hits]
+        if ids:
+            fetched = db.query(models.LegalAuthority).filter(models.LegalAuthority.id.in_(ids)).all()
+            by_id = {row.id: row for row in fetched}
+            rows = [by_id[i] for i in ids if i in by_id]
+        else:
+            rows = []
+    else:
+        query = _public_georgia_case_query(db)
+        total = query.count()
+        rows = query.order_by(models.LegalAuthority.retrieved_at.desc(), models.LegalAuthority.id.desc()).offset((page-1)*page_size).limit(page_size).all()
+    notice = (
+        'These are indexed public Georgia case-law records. Private user workspaces are never searched. '
+        'Sealed, juvenile, expunged, restricted, private, and unavailable records are excluded. '
+        'A missing case means it has not yet been indexed or cannot lawfully be displayed. '
+        'Search uses keywords and full-text retrieval, not a whole-question substring match.'
+    )
+    if q and not rows:
+        notice += ' No matching indexed authority was found for this query. Missing authority is not invented.'
+    return {'query':q,'page':page,'page_size':page_size,'total':total,'cases':[public_case_payload(row) for row in rows],'coverage_notice':notice}
 
 @app.get('/public/georgia-cases/{authority_id}')
 def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):
