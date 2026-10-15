@@ -1,3 +1,14 @@
+Last production check: 2026-10-15 19:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only attempt on Court of Appeals opinion search and Georgia Secretary of State constitution page. Both returned interactive challenges (WAF captcha / Cloudflare); no page bytes, hashes, or documents were stored; not ingested authorities and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| Court of Appeals opinion search | https://www.gaappeals.gov/opinion-search/ | 405 | — | — | WAF captcha; raw and browser blocked |
+| Court of Appeals robots.txt | https://www.gaappeals.gov/robots.txt | 405 | — | — | Same WAF |
+| Georgia Constitution (SOS) | https://sos.ga.gov/georgia-constitution-revised-2025 | 403 | — | — | Cloudflare challenge |
+| SOS robots.txt | https://sos.ga.gov/robots.txt | 403 | — | — | Same Cloudflare challenge |
+
+No citation or text obtained. Prior gasupreme.us indexes remain the accessible appellate source. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-15c-waf-gaps.md`.
+
 Last production check: 2026-10-15 13:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018). Metadata bytes were hashed; title ODT files and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
