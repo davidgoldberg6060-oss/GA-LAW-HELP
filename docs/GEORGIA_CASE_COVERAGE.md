@@ -1,3 +1,14 @@
+Last production check: 2026-10-16 09:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only re-read of the Supreme Court of Georgia rules and other-court-rules indexes, robots.txt, and the Court of Appeals rules index. Page bytes were hashed; rule PDFs were not downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| supreme rules index | https://www.gasupreme.us/rules/ | 200 | 1,586,194 | `942d14fe8d1bc1a602138148ca490a4d6bb07afffae60522adf49403cbe40b56` | Index labels only; prior 2026-10-13 hash differed |
+| other-court-rules index | https://www.gasupreme.us/other-court-rules/ | 200 | 1,586,232 | `869fff748b5e96fcbbf5db9bcbefa92fc2a6a048ed0267764211818f14bcb32b` | Index labels only; prior 2026-10-13 hash differed |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallows `/wp-content/uploads/` |
+| CoA rules index | https://www.gaappeals.gov/rules/ | 405 | 2,511 | `0aa265838c365b8a3f2775b00b3b8d762c05989aee29d0e8eb1904125a332318` | WAF captcha; not a rules index |
+
+The supreme rules index names three PDF links (current rules effective July 2, 2026, chart, quick reference). The other-court-rules index names seven Uniform/other rule PDF links. robots.txt disallows `/wp-content/uploads/`, so none were fetched. Court of Appeals rules index returned AWS WAF captcha on raw fetch. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-16-court-rules-indexes.md`.
+
 Last production check: 2026-10-16 06:19 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Secretary of State Rules and Regulations download page (https://rules.sos.ga.gov/Download_pdf.aspx) and robots.txt. Page bytes were hashed; department PDFs were not downloaded; not stored regulation text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -564,4 +575,5 @@ because it was once accessible. Public case histories, docket metadata,
 published opinions and full trial-court filings are distinct coverage goals.
 The OCGA, including annotations, may be stored (Georgia v. Public.Resource.Org, 2020) with source and release-date provenance; keep annotations separate from statutory text. Do not dump private trial dockets.
 Do not present unverified citations as current Georgia law.
+
 
