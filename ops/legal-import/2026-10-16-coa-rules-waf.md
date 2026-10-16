@@ -1,14 +1,14 @@
-# Court of Appeals rules pages — discover-only WAF checkpoint
+# 2026-10-16 Court of Appeals rules indexes (WAF captcha)
 
-**Date:** 2026-10-16 07:01 UTC
-**DATABASE_URL:** unset (no corpus rows written)
+DATABASE_URL was unset, so no corpus rows were written and no authority versions were stored.
 
-Raw fetch of Court of Appeals rules index and sample rules page returned AWS WAF captcha (HTTP 405). No rule text was extracted or stored. Not current-law verification.
+Discover-only raw fetches of Court of Appeals rules pages and robots.txt. All returned the AWS WAF Human Verification captcha (HTTP 405). Page bytes were hashed; no rule PDFs or HTML rule text were downloaded. Not stored rule text and not current-law verification. Lexis was not opened.
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
 | --- | --- | ---: | ---: | --- | --- |
-| court-rules index | https://www.gaappeals.gov/court-rules/ | 405 | 2,511 | `61c944bfd27c54635cf43ec1b41adf5be88deaabe915aba0f17a1cc87d52ad64` | WAF captcha |
-| rules 1-8 | https://www.gaappeals.gov/rules-1-8/ | 405 | 2,511 | `b3bde0399c2932e8526799f26170298e0755cbe0c30a93f4b3630fde0ad99819` | WAF captcha |
-| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `7c988552f39fdedd431795b602137ab985d9ea13d056d809ec4de497d8e35cb8` | Same WAF page |
+| rules-1-8 | https://www.gaappeals.gov/rules-1-8/ | 405 | 2,511 | `6c3f5ea029797a7d7562b1ab1756e502b41d10e969276d496cf7360de1f3e090` | WAF captcha; not rule text |
+| /rules/ | https://www.gaappeals.gov/rules/ | 405 | 2,511 | `093b352a891acb836db56f3674a3064f078c310cc6979be4606458398ed9d943` | WAF captcha; not an index |
+| homepage | https://www.gaappeals.gov/ | 405 | 2,511 | `c7e0e2807eb44504343ecf4c9e983dcc2f2f708650e0d062f505f477d287226f` | WAF captcha |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `e489a32ea4d5e6317e9d50f0cf4fde07e0720783e9b930baea2e27152214b5c2` | Same WAF captcha page |
 
-A browser-based fetch of https://www.gaappeals.gov/rules-1-8/ returned the published rules text (effective March 26, 2026) including Rule 1–8 general provisions. That text was not persisted. Lexis was not opened. These counts are not persisted coverage.
+Captcha pages are dynamic; later fetches produce different hashes of the same challenge template. No docket or rule PDF anchors were named. These counts are not persisted coverage. Opinion-search remains blocked the same way (see 2026-10-15 checkpoint).
