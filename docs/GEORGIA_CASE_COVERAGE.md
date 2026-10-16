@@ -1,3 +1,12 @@
+Last production check: 2026-10-16 10:03 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court other-court-rules index and robots.txt. Index bytes were hashed; 7 PDF anchors named; uploads are robots-disallowed so no PDFs were downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| other-court-rules index | https://www.gasupreme.us/other-court-rules/ | 200 | 1,586,219 | `69e215fd674431e26889eec29e466d92ab09fbfe0ae4c063a84250aaf6086e80` | HTML index; 7 PDF anchors named |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/ |
+
+The index names 7 rule PDF labels (Uniform Superior, State, Juvenile, Probate, Magistrate, Municipal, and Statewide Business Court). None were fetched. Lexis was not opened. Court of Appeals rules index returned AWS WAF captcha (HTTP 405) on raw fetch. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-16-uniform-court-rules-index.md`.
+
 Last production check: 2026-10-16 06:19 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Secretary of State Rules and Regulations download page (https://rules.sos.ga.gov/Download_pdf.aspx) and robots.txt. Page bytes were hashed; department PDFs were not downloaded; not stored regulation text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
