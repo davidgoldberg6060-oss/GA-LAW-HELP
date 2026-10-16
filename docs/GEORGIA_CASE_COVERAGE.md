@@ -1,3 +1,12 @@
+Last production check: 2026-10-16 20:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals rules 1-8 index and robots.txt. Both returned the AWS WAF captcha (HTTP 405); rule text and PDFs were not downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| rules 1-8 index | https://www.gaappeals.gov/rules-1-8/ | 405 | 2,511 | `763bca091158ed1cb14c85a6cc370162003d139d525f847c9fd660e5436c9fa0` | WAF captcha; not rule text |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `8005a1393efcb2598289124f7af85ade39e0b5223bdd54c8b1181c728825f96b` | Same WAF captcha page |
+
+Raw fetch returned the Human Verification challenge. No rule section anchors or PDF links were named. The complete rulebook PDF was not fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-16-coa-rules.md`.
+
 Last production check: 2026-10-16 14:10 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules amendments index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no order PDFs were downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
