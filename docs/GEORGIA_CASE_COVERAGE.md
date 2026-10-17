@@ -1,3 +1,11 @@
+Last production check: 2026-10-17 12:05 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org / Internet Archive OCGA 2024 item metadata (https://archive.org/metadata/gov.ga.ocga.2024). Metadata bytes were hashed; content files (PDF/TXT extracts for titles, constitution, and companions) were not downloaded; not stored statute text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| item metadata | https://archive.org/metadata/gov.ga.ocga.2024 | 200 | 240,236 | `048ae7332e07d692ca1f81332459c9b211947a61d21635811441c6787c5d72c0` | Manifest only; 629 files named; metadata date 2024-08-30 |
+
+Identifier `gov.ga.ocga.2024` names 629 files. None of the content files were downloaded. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-17-ocga-2024-manifest.md`.
+
 Last production check: 2026-10-16 14:10 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules amendments index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no order PDFs were downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
