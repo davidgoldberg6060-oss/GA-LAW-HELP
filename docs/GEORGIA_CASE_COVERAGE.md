@@ -1,3 +1,12 @@
+Last production check: 2026-10-16 23:05 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia Attorney General opinions index (https://law.georgia.gov/opinions) and robots.txt. Page bytes were hashed; opinion documents were not downloaded; not stored opinions and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinions index | https://law.georgia.gov/opinions | 200 | 146,785 | `63296dc2a4289111f509fcb43b94b6f03e56f1108a8ba935027ef358fd852630` | Index labels only; prior 2026-10-10 hash differed (146,783 bytes) |
+| robots.txt | https://law.georgia.gov/robots.txt | 200 | 1,677 | `1ec8e6c4fed3dc4f55da7a82412fc7bb6649941ba44ccc6b47ba7968604d1c1b` | Allows /opinions |
+
+The index names opinion citation links. No `.pdf` document download links were extracted in this raw fetch. Category indexes and later pagination were not walked. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-16-ag-opinions-index.md`.
+
 Last production check: 2026-10-16 14:10 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules amendments index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no order PDFs were downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
