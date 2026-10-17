@@ -1,3 +1,12 @@
+Last production check: 2026-10-17 08:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia other-court-rules index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no rule PDFs were downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| other-court-rules index | https://www.gasupreme.us/other-court-rules/ | 200 | 1,586,219 | `6436075184a97aff80328d5654f85fd8dec8659c489c4361bb63d2eef018a988` | 7 PDF anchors (7 unique) for Uniform Magistrate, Probate, State, Municipal, Superior, Statewide Business Court, and Juvenile Court Rules |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/ |
+
+The other-court-rules index names the current Uniform Rules PDFs. None of those PDFs were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-17-other-court-rules.md`.
+
 Last production check: 2026-10-16 14:10 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules amendments index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no order PDFs were downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
