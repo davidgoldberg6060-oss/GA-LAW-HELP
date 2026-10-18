@@ -1,3 +1,11 @@
+Last production check: 2026-10-18 08:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the CourtListener REST metadata for the Supreme Court of Georgia. JSON bytes were hashed; no bulk opinion files were downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| court metadata | https://www.courtlistener.com/api/rest/v4/courts/ga/ | 200 | 581 | `8ccd21dd1c4749379ef63a95e57cd5f7f82bc77f7e2bdd3654f7238a70857e0c` | Supreme Court of Georgia; start 1841-01-01; in_use=true |
+
+Public metadata only. Bulk data from Free Law Project remains available under their published terms; none was fetched. Lexis was not opened. Court of Appeals pages continue to return AWS WAF captcha on raw fetch. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-18-courtlistener-ga.md`.
+
 Last production check: 2026-10-16 14:10 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules amendments index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no order PDFs were downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
