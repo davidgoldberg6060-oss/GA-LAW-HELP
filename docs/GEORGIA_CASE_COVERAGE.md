@@ -1,3 +1,13 @@
+Last production check: 2026-10-19 12:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018) and a Court of Appeals rules page. Metadata and captcha bytes were hashed; title ODT files and rule pages were not downloaded; not stored statute or rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| item metadata | https://archive.org/metadata/gov.ga.ocga.2018 | 200 | 834,800 | `7a047293f105af680f396c22235faca706a474e1be37ab5a2e545a1ac45a9b50` | Manifest only; prior 2026-10-15 13:02 hash differed |
+| Court of Appeals rules page | https://www.gaappeals.gov/rules-1-8/ | 405 | 2,511 | `e6d9e0d7075bab113b04a6bc7b60742a6c40d281884938c81c8f5e3d43be7564` | WAF captcha; not rule text |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `d0fc39bc760afead628ac9ecc5e15715d6e83e7ed0e85af143bfaf935e7eb380` | Same WAF captcha page |
+
+Release `release86.2022.11` names 53 title ODT files (01–53) plus companions (AG opinions, court rules, constitutions, index), all with published SHA-1. None were downloaded. Lexis was not opened. Court of Appeals rules pages continue to return AWS WAF captcha on raw fetch. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-19-ocga-release86-manifest.md`.
+
 Last production check: 2026-10-19 05:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia forthcoming opinions index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no opinion PDFs were downloaded; not stored opinion text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
