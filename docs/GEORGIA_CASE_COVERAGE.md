@@ -1,3 +1,12 @@
+Last production check: 2026-10-19 05:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia forthcoming opinions index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no opinion PDFs were downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| forthcoming opinions index | https://www.gasupreme.us/forthcoming-opinions/ | 200 | 1,588,959 | `9a6445236c97be8e0f3065d64e53d10b91416775c4fb586a254fd42deaf83f27` | 20 PDF anchors (20 unique, all docket-labeled); robots disallow /wp-content/uploads/ |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/ |
+
+The forthcoming index names 20 unique docket-labeled PDF links (examples S25G1209, S26A0699, S26Y0645; announcement date Wednesday, October 14, 2026). All point under /wp-content/uploads/. robots.txt disallows that path, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-19-supreme-forthcoming.md`.
+
 Last production check: 2026-10-16 14:10 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules amendments index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no order PDFs were downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
