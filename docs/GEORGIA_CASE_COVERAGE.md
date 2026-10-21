@@ -1,1 +1,1 @@
-$(cat /tmp/updated_coverage.md)
+PLACEHOLDER_WILL_REPLACE

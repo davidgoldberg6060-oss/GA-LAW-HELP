@@ -1,1 +1,1 @@
-$(cat /tmp/ops_checkpoint.md)
+PLACEHOLDER
