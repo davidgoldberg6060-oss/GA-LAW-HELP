@@ -1,3 +1,5 @@
+Last production check: 2026-10-22 07:05 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only inventory of Public.Resource.Org OCGA release86 companion files (court rules, constitutions, AG opinions) from item metadata. Companion files not downloaded; not stored text and not current-law verification. The checkpoint is in `ops/legal-import/2026-10-22-ocga-release86-companions.md`.
+
 Last production check: 2026-10-22 06:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018). Metadata bytes were hashed; title ODT files and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
