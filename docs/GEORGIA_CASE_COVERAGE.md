@@ -1,3 +1,11 @@
+Last production check: 2026-10-22 09:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA 2024 item metadata (https://archive.org/metadata/gov.ga.ocga.2024). Metadata bytes were hashed; volume PDFs and TXT extracts were not downloaded; not stored statute text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| item metadata | https://archive.org/metadata/gov.ga.ocga.2024 | 200 | 240,237 | `5c1a6d7978346b2ee3ee3c084bf0db8ddfca50a77ec678abfa00e6e1fb07f61e` | Manifest only; identifier gov.ga.ocga.2024 |
+
+Item lists 629 files total, including 52 original PDF volumes and 52 matching TXT extracts (US Constitution, GA Constitution, and title volumes T01 through T52-T53, various edition years through 2024). None of the volume files were downloaded. The item description states the data is current as of August 2024 and was received pursuant to an Open Records Act request; U.S. Supreme Court has held the annotations are not copyrightable. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-22-ocga-2024-manifest.md`.
+
 Last production check: 2026-10-22 06:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA release manifest (https://archive.org/metadata/gov.ga.ocga.2018). Metadata bytes were hashed; title ODT files and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
