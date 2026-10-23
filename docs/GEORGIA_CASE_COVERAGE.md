@@ -1,3 +1,12 @@
+Last production check: 2026-10-23 23:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia 2024 opinions index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no opinion PDFs were downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| 2024 opinions index | https://www.gasupreme.us/2024-opinions/ | 200 | 1,623,716 | `c410bafc8444ccb76665340d78711bd522fc1bdc8f59d74f31d607e50ff9b932` | 262 PDF anchors (252 unique), all under /wp-content/uploads/; robots disallow |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/; Disallow: /readme.html |
+
+The 2024 index names opinion and summary PDF links under /wp-content/uploads/ (examples s24y1164.pdf, s23a0936.pdf, s24a1065.pdf). robots.txt disallows that path, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-2024.md`.
+
 Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no rule PDFs were downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
