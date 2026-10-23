@@ -1,3 +1,12 @@
+Last production check: 2026-10-23 04:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals rules index and robots.txt. Both returned AWS WAF captcha pages; rule text was not retrieved; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| rules index | https://www.gaappeals.gov/rules/ | 405 | 2,511 | `f0c75beaadfb037f717393aa7cfaa6fe268ccbe2e696487c752e0a7df52f8445` | AWS WAF captcha; not rules text |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `49a20f08bdc9f413f8a6bbfd9f9ed078dc4ee7646e421957d6190b19b27553b3` | Same WAF captcha page |
+
+Raw fetch returned the Human Verification / AWS WAF challenge for both. No rule text was retrieved. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-appeals-rules.md`.
+
 Last production check: 2026-10-22 23:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Secretary of State Georgia Constitution revised 2025 page and robots.txt. Both returned Cloudflare challenge pages; constitution text was not retrieved; not stored constitution text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
