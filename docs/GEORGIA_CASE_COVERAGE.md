@@ -1,3 +1,12 @@
+Last production check: 2026-10-23 18:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only raw fetch of the Court of Appeals of Georgia rules index and robots.txt. Both returned the AWS WAF captcha page; no rule text was retrieved; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| rules index | https://www.gaappeals.gov/rules/ | 405 | 2,511 | `fd81368fa8330b904f8ae1ad4d0d9726536f9b9f856bc30ceb5ab64361ac4e03` | AWS WAF captcha page; not a rules index |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `c77ae1ec4f48588c7ba32cfae55137a47b9840ba684dd5e5db3cd146e51eb0d2` | Same WAF captcha page |
+
+Raw fetch returned the Human Verification challenge. No rule HTML or PDF links were named. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-appeals-rules-waf.md`.
+
 Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no rule PDFs were downloaded; not stored rule text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
