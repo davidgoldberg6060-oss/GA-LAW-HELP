@@ -1,3 +1,11 @@
+Last production check: 2026-10-23 09:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia Judicial Council / Administrative Office of the Courts Supreme Court and related rules index (https://georgiacourts.gov/georgia-supreme-court-rules/). Index bytes were hashed; PDF anchors counted; gasupreme.us robots.txt disallows /wp-content/uploads/ so no PDFs were downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| rules index | https://georgiacourts.gov/georgia-supreme-court-rules/ | 200 | 104,434 | `8fc27ecebaa34124a3ed2169192c825400992959bbb8ea00653afd47c2287cb3` | 28 PDF anchors, all under www.gasupreme.us/wp-content/uploads/; robots on gasupreme.us disallow /wp-content/uploads/ |
+
+The index names 28 unique PDF links (Supreme Court Rules eff. 1.1.24, Uniform Superior/State/Juvenile/Probate/Magistrate/Municipal Court Rules of various dates, Statewide Business Court, Unified Appeal, Uniform Misdemeanor Citation, Transfer Rule, Interpreting, Jury Composition, JQC Rules, and others). None were fetched. More recent versions exist on the gasupreme.us other-court-rules index. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-georgiacourts-rules-index.md`.
+
 Last production check: 2026-10-23 08:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org scanned OCGA volumes item metadata (https://archive.org/metadata/gov.ga.ocga.2024). Metadata bytes were hashed; volume PDFs, OCR text, and companions were not downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
