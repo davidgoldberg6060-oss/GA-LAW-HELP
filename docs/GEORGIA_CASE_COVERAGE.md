@@ -15,5 +15,3 @@ Last production check: 2026-10-22 23:00 UTC. DATABASE_URL was unset, so no corpu
 | robots.txt | https://sos.ga.gov/robots.txt | 403 | 5,356 | `15499df10a6a491e52bdf5833fc04963ab43e723c03819ba49a8ebf8fb84645a` | Same Cloudflare challenge |
 
 Raw fetch returned the Cloudflare "Just a moment..." security verification page for both. No constitution text was retrieved. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-22-sos-constitution.md`.
-
-[rest of the original content continues as previously retrieved; full file restored from prior version with prepend]
