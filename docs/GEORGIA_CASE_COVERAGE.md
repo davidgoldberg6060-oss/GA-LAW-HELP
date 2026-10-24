@@ -1,3 +1,12 @@
+Last production check: 2026-10-24 12:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only raw fetch of the Court of Appeals rules page and robots.txt on the new gaappeals.gov domain. Both returned AWS WAF captcha; no rule text stored; not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| rules page (raw) | https://www.gaappeals.gov/rules-1-8/ | 405 | 2,511 | `376ac71b06f16c50fc095522048fe45441fa033b37849e582074de2af2314007` | AWS WAF captcha (Human Verification) |
+| robots.txt (raw) | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `b353987e97eb3949a643473365254c95caf52a23ba938adcaf3be3e71674feaa` | Same AWS WAF captcha |
+
+The Court of Appeals transitioned to gaappeals.gov. Rules are published as HTML pages effective March 26, 2026. Raw unauthenticated fetch is captcha-blocked. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-24-gaappeals-rules-index.md`.
+
 Last production check: 2026-10-24 08:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia General Assembly homepage for official OCGA access point. Raw homepage bytes hashed; LexisNexis portal not opened or scraped; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
