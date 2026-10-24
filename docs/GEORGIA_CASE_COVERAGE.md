@@ -1,3 +1,12 @@
+Last production check: 2026-10-24 16:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals of Georgia page on georgiacourts.gov. Raw page bytes hashed; no PDFs downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| COA index page | https://georgiacourts.gov/court-of-appeals/ | 200 | 76,152 | `a838f778d4d53545f051162d8a7a6fd07c0973d09c083ccc1e4de5f38d88e0f7` | Official Court of Appeals gateway. No direct PDF anchors in static HTML. |
+| robots.txt | https://georgiacourts.gov/robots.txt | 200 | 118 | `a9dffa4bb5c0fc6ea8aa71450e41d843e36033a7bce006356850dad36c3e33c0` | Disallow /wp-admin/; sitemap present. |
+
+The page is the Judicial Council gateway for the Court of Appeals. No bulk opinion texts fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-24-court-of-appeals-index.md`.
+
 Last production check: 2026-10-24 08:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia General Assembly homepage for official OCGA access point. Raw homepage bytes hashed; LexisNexis portal not opened or scraped; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -6,13 +15,4 @@ Last production check: 2026-10-24 08:01 UTC. DATABASE_URL was unset, so no corpu
 
 The site provides the official free OCGA portal via LexisNexis (annotations included post-2020). Lexis was not scraped. Preferred bulk source remains Public.Resource.Org. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-24-legis-ocga-access.md`.
 
-Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no rule PDFs were downloaded; not stored rule text and not current-law verification:
-
-| Source | URL | HTTP | Bytes | SHA-256 | Notes |
-| --- | --- | ---: | ---: | --- | --- |
-| rules index | https://www.gasupreme.us/rules/ | 200 | 1,586,244 | `4ffe25395619943f6f19c943932272c97907748dc7e9a389964676693a308729` | 3 PDF anchors under /wp-content/uploads/ (Supreme Court Rules eff. July 2, 2026; chart; quick-reference); robots disallow |
-| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/; Disallow: /readme.html |
-
-The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
-
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-24 entry at the top.)
+(See full historical inventory in prior commits; this update prepends the 2026-10-24 COA entry.)
