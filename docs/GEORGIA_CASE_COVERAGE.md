@@ -1,3 +1,12 @@
+Last production check: 2026-10-24 23:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia 2026 opinions index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no opinion PDFs were downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| 2026 opinions index | https://www.gasupreme.us/2026-opinions/ | 200 | 1,625,460 | `61a654e0e0908aca218d62b63888713f493a9a991f91e9081a1ff37e4ecc5868` | 283 PDF anchors under /wp-content/uploads/ (recent opinions by date); robots disallow |
+| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/; Disallow: /readme.html |
+
+The index lists 2026 opinions with PDF links under the robots-disallowed uploads path. No PDFs were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-24-supreme-2026-opinions.md`.
+
 Last production check: 2026-10-24 08:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia General Assembly homepage for official OCGA access point. Raw homepage bytes hashed; LexisNexis portal not opened or scraped; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
