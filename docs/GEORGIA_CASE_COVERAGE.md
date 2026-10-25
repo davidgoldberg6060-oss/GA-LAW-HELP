@@ -1,3 +1,11 @@
+Last production check: 2026-10-25 13:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of Public.Resource.Org OCGA item metadata for release86.2022.11. Metadata bytes hashed; no title ODTs downloaded; Lexis not opened; not stored statute text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| item metadata | https://archive.org/metadata/gov.ga.ocga.2018 | 200 | 834,800 | `18ee6bd3eaa4fd0eabfc47f2898291a402e2f706b4b7775325e2cccdc9a310b6` | Manifest only; 53 title ODTs named; hash differs from 2026-10-22 |
+
+Release still lists 53 title ODT files plus companions. None downloaded. Court of Appeals site probe failed with expired SSL certificate; no index fetched. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-25-ocga-release86-manifest.md`.
+
 Last production check: 2026-10-24 08:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia General Assembly homepage for official OCGA access point. Raw homepage bytes hashed; LexisNexis portal not opened or scraped; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -15,4 +23,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-24 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
