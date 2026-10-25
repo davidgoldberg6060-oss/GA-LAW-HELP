@@ -1,3 +1,11 @@
+Last production check: 2026-10-25 02:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals of Georgia homepage (gaappeals.us) which serves the docket-search shell linking to official .gov opinion-search and rules. Raw homepage bytes hashed; opinion-search and rules pages behind AWS WAF captcha so not retrieved; no PDFs downloaded; not stored opinion or rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| homepage (raw) | https://gaappeals.us/ | 200 | 39,314 | `4c92b0d07ca7b0a76fd30ecdb37fbdfebaa77cb8e4a05685b4768b7f710d3d15` | Docket-search shell; links to https://www.gaappeals.gov/opinion-search/ and /rules-1-8/; TLS cert chain verify failed, fetch continued. |
+
+Opinion-search and rules URLs returned Human Verification captcha. No private dockets fetched. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-25-coa-access.md`.
+
 Last production check: 2026-10-24 08:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia General Assembly homepage for official OCGA access point. Raw homepage bytes hashed; LexisNexis portal not opened or scraped; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -15,4 +23,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-24 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
