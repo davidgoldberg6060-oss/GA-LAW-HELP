@@ -1,3 +1,11 @@
+Last production check: 2026-10-25 06:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Public.Resource.Org OCGA metadata endpoint. Raw metadata body hashed; no title files downloaded; not stored statute text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| metadata (raw body) | https://archive.org/metadata/gov.ga.ocga.2018 | 200 | 834,800 | `14a12996b7ef949a4f0c4c25a7d65d9a8a78ddaaffaa94508ca252af238f2a03` | Preferred bulk unannotated OCGA source; lists release86.2022.11 ODTs and earlier HTML. |
+
+Preferred bulk source remains this Archive.org item. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-25-ocga-pro-manifest.md`.
+
 Last production check: 2026-10-24 08:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia General Assembly homepage for official OCGA access point. Raw homepage bytes hashed; LexisNexis portal not opened or scraped; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -15,4 +23,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-24 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
