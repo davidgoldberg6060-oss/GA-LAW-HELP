@@ -1,3 +1,12 @@
+Last production check: 2026-10-25 10:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals of Georgia homepage and robots.txt. Raw fetches returned AWS WAF captcha (HTTP 405); browser-capable retrieval of robots.txt succeeded. No opinion or rule PDFs downloaded; Lexis not opened; not stored text and not current-law verification:
+
+| Source | URL | HTTP (raw) | Bytes (raw) | SHA-256 (raw captcha) | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| homepage | https://www.gaappeals.gov/ | 405 | 2,511 | `76ba51182f7bdf9bd88e83906c52fb8cc7595ca28aaf7199273f7d6086858873` | WAF captcha; not homepage content |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `790a24b56942592c1680472cea5e942287407eb29848dfca30fe2ab7f527e04d` | WAF captcha; browser retrieval shows Disallow: /wp-admin/ and Sitemap |
+
+Rules pages remain published (effective 2026-03-26) but raw-fetch blocked by WAF. Prior opinion-search checkpoint also recorded WAF. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-25-coa-homepage-robots.md`.
+
 Last production check: 2026-10-24 08:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia General Assembly homepage for official OCGA access point. Raw homepage bytes hashed; LexisNexis portal not opened or scraped; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
