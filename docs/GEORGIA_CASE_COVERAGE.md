@@ -1,3 +1,11 @@
+Last production check: 2026-10-26 19:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| item metadata | https://archive.org/metadata/gov.ga.ocga.2018 | 200 | 834,800 | `def2b1797272e976086d46cc361ebe47ce41f9126b81cb5a3ffb69f9f519d478` | Manifest only; files_count noted; prior 2026-10-25 hash differed |
+
+Preferred bulk unannotated source remains this archive. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-26-ocga-release86-metadata.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
