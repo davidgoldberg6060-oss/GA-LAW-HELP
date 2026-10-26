@@ -1,3 +1,11 @@
+Last production check: 2026-10-25 21:01 UTC (homepage). DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of the Supreme Court of Georgia homepage. Homepage bytes hashed; no opinion or rules PDFs downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| homepage | https://www.gasupreme.us/ | 200 | 1,599,142 | `10ee5d4427b4e6d9e36b0c84c9d4b15422473a90940ff4641853b16679792fb2` | Official court site; links to opinions indexes, rules, docket search |
+
+The homepage provides navigation to materials inventoried in prior checkpoints. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-25-supreme-homepage.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +31,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entries at the top.)
