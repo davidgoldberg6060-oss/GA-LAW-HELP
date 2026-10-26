@@ -1,3 +1,12 @@
+Last production check: 2026-10-26. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of the Georgia Court of Appeals rules index. Index page accessed; no individual rule pages or PDFs downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Notes |
+| --- | --- | ---: | --- |
+| rules index | https://www.gaappeals.gov/court-rules/ | 200 | 20+ rule-group HTML links (Rules 1-8 through Rule 46); robots.txt allows path |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 200 | Disallow: /wp-admin/ only |
+
+The rules index names official Court of Appeals Rules pages. None beyond the index were fetched. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-26-ga-coa-rules-index.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-26 entry at the top.)
