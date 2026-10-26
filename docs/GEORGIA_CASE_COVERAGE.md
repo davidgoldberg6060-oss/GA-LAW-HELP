@@ -1,8 +1,8 @@
-Last production check: 2026-10-26 04:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia 2026 opinions index. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no opinion PDFs were downloaded; not stored opinion text and not current-law verification:
+Last production check: 2026-10-26 15:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only re-fetch of the Supreme Court of Georgia 2026 opinions index. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no opinion PDFs were downloaded; not stored opinion text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
 | --- | --- | ---: | ---: | --- | --- |
-| 2026 opinions index | https://www.gasupreme.us/2026-opinions/ | 200 | 1,625,460 | `d6961e3875be10b2ac73d2b3db2f4146b77556104de41068b0b70cec8da7dae5` | 283 PDF anchors under /wp-content/uploads/; includes October 14, 2026 opinions; robots disallow |
+| 2026 opinions index | https://www.gasupreme.us/2026-opinions/ | 200 | 1,625,460 | `ffeb50a36c0bbd960f2b53c51ca7c0b11d7b03c74adcaa7718aacd4d225ee9f9` | Re-fetch; prior same-day hash d6961e38... differed (same size); 283 PDF anchors under /wp-content/uploads/; includes October 14, 2026 opinions; robots disallow |
 | robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/; Disallow: /readme.html |
 
 The index lists opinions through October 14, 2026. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-26-supreme-2026-opinions.md`.
@@ -32,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-26 entry at the top.)
