@@ -1,3 +1,11 @@
+Last production check: 2026-10-27 08:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Georgia Attorney General official opinions index. Index bytes hashed; no opinion PDFs downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| official opinions index | https://law.georgia.gov/opinions/official | 200 | 144,468 | `ef6953aefe1f8ee40898c8e538eeb83b98d6dba230e6144c8a4a99813d9fcf40` | Index page only; PDF links not fetched |
+
+The page lists recent official opinions (examples: 2026-2, 2026-1, 2024-3). Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-27-ag-official-opinions.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +31,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-27 entry at the top.)
