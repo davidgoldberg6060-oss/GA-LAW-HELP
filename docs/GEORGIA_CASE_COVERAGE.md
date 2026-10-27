@@ -1,3 +1,12 @@
+Last production check: 2026-10-27 16:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only raw fetch of the Court of Appeals of Georgia opinion-search index and robots.txt. Captcha bytes hashed; no opinion PDFs or text downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion-search index | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `19ffe132a7d144ee14fcdd6536efeba5c127d01d2807a5278089985c2afab71c` | AWS WAF Human Verification / captcha page; not an opinion index |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `5d022b9008d8785cc18148c88b2c82cb07591a9f5ee0363ac8cd6e69a75ed599` | Same WAF captcha page |
+
+Raw non-browser fetch returned the AWS WAF captcha (HTTP 405). A browser-rendered view of the opinion-search page showed a date-range form, but no PDFs or text were stored. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-27-appeals-opinion-search.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-27 entry at the top.)
