@@ -1,3 +1,13 @@
+Last production check: 2026-10-27 07:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only attempt on Georgia Court of Appeals opinion-search, rules index, homepage, and robots.txt. All returned HTTP 405 CloudFront WAF captcha; challenge pages hashed; no PDFs or opinion text downloaded; not stored authority text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion-search | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `ff788173ba10443d401d464526b8ecb4f4c0f8f44970def87a8e89933f19eb9a` | WAF captcha; no PDF anchors |
+| rules | https://www.gaappeals.gov/rules/ | 405 | 2,511 | `b9c7bb983c28c77963d6f5ac0329594288201359b27599a96a05ccd5f9240d7a` | WAF captcha |
+| homepage | https://www.gaappeals.gov/ | 405 | 2,511 | `a75a657817b183544a8427ee592910f193403133e014f1166aaf6c93e925d271` | WAF captcha |
+
+Official appellate opinion indexes and Court of Appeals rules remain behind WAF captcha. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-27-coa-opinion-rules-index.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +33,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-27 entry at the top.)
