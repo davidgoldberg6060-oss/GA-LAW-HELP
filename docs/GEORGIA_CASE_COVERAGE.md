@@ -1,3 +1,12 @@
+Last production check: 2026-10-27 12:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only raw fetch of the Court of Appeals opinion-search index and robots.txt. Both returned AWS WAF Human Verification (HTTP 405). No opinion PDFs or rule texts downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion-search index | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `9d0addae10d0b33d6c5e2a3a6b2fe2b31fd3979f531350a0a7227ee675d46884` | WAF captcha page; not an opinion index |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `45d83b84606250f71823e88c68a7e7e4a9f27913b01f725f319d65381c38f5d8` | Same WAF captcha response |
+
+Opinion indexes and PDFs remain unfetched from non-browser clients due to WAF. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-27-appeals-opinion-search-waf.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-27 entry at the top.)
