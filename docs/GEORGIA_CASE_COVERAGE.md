@@ -1,3 +1,13 @@
+Last production check: 2026-10-27 20:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only attempts on Court of Appeals of Georgia opinion search and rules indexes returned AWS WAF/CloudFront captcha challenge pages (HTTP 405). Challenge page bytes hashed; no opinion indexes, rule text, or PDFs retrieved; not stored authority text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion search | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `6e7ca7453976a37958e2bf8be13988d4d82977808ae86ff38a8da8dfd56b1766` | Captcha challenge; no content fetched |
+| rules index | https://www.gaappeals.gov/rules/ | 405 | 2,511 | `e26015e979b9884f402ebfa6b45e26ef466c64203f2710e26557346885c215fc` | Captcha challenge; no content fetched |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `8f2d122df1d485ffc32b9c6c0c6b163e361a79721341ae4789914624d4784ee1` | Captcha challenge; robots not retrieved |
+
+The official Court of Appeals sites are currently protected by AWS WAF captcha, preventing automated discover-only inventory of opinion indexes and rules. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-27-coa-opinion-rules-indexes.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -6,21 +16,4 @@ Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpu
 
 Preferred bulk unannotated source remains this archive. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-25-ocga-release86-metadata.md`.
 
-Last production check: 2026-10-24 08:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Georgia General Assembly homepage for official OCGA access point. Raw homepage bytes hashed; LexisNexis portal not opened or scraped; not stored statute text and not current-law verification:
-
-| Source | URL | HTTP | Bytes | SHA-256 | Notes |
-| --- | --- | ---: | ---: | --- | --- |
-| homepage (raw) | https://www.legis.ga.gov/ | 200 | 1,492 | `301e217dc5d384b4243ee12b56ae51d5ecf1d0b0becedae1da952a1d361bac65` | Minimal HTML shell; JS-rendered content links to http://www.lexisnexis.com/hottopics/gacode for free official OCGA. |
-
-The site provides the official free OCGA portal via LexisNexis (annotations included post-2020). Lexis was not scraped. Preferred bulk source remains Public.Resource.Org. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-24-legis-ocga-access.md`.
-
-Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia rules index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no rule PDFs were downloaded; not stored rule text and not current-law verification:
-
-| Source | URL | HTTP | Bytes | SHA-256 | Notes |
-| --- | --- | ---: | ---: | --- | --- |
-| rules index | https://www.gasupreme.us/rules/ | 200 | 1,586,244 | `4ffe25395619943f6f19c943932272c97907748dc7e9a389964676693a308729` | 3 PDF anchors under /wp-content/uploads/ (Supreme Court Rules eff. July 2, 2026; chart; quick-reference); robots disallow |
-| robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/; Disallow: /readme.html |
-
-The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
-
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-27 entry at the top.)
