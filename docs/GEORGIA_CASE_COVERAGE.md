@@ -1,3 +1,12 @@
+Last production check: 2026-10-28 00:04 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of the Georgia Court of Appeals opinion search page. Raw response was an AWS WAF captcha challenge (HTTP 405, 2,511 bytes); no opinion index, PDFs, or text retrieved; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion search (challenge) | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `65bc3127dc7649677d4e6d67cde793e31d0caf2223efd141ba1a6f9704afbbef` | AWS WAF captcha HTML; x-amzn-waf-action: captcha; no index or opinions |
+| robots.txt (challenge) | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `8eabaf12719857c91da1063338f4ed4953e7d6b9cea5da4cbbd6b955a2aabba4` | Same captcha page |
+
+The official opinion search is behind a captcha. No opinions were downloaded. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-28-coa-opinion-search.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-28 entry at the top.)
