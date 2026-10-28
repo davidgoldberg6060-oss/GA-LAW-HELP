@@ -1,3 +1,12 @@
+Last production check: 2026-10-28 15:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only raw fetch of the Court of Appeals of Georgia opinion-search index and robots.txt. Both returned the AWS WAF Human Verification captcha page (HTTP 405). No opinion PDFs were downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion-search index | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `5acb7f2c445aaf6a8045c2f7a541e9fe991ac7e6b364a10c9d1d660176391dbe` | WAF captcha (Human Verification / awsWafCookieDomainList / x-amzn-waf-action: captcha); not an opinion index |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `38e521dd207f2180465d88a005a9e77c673f06f3ff7a629ff3676d2beba55960` | Same WAF captcha page |
+
+Raw fetch of both URLs returned the AWS WAF Human Verification challenge (HTTP 405, 2,511 bytes). No docket-labeled PDF links were named or downloaded. The date-search endpoint was not called. Lexis was not opened. These counts are not persisted coverage. Prior 2026-10-15 checkpoint recorded a different hash for the same captcha response. The checkpoint is in `ops/legal-import/2026-10-28-appeals-opinion-search.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-28 entry at the top.)
