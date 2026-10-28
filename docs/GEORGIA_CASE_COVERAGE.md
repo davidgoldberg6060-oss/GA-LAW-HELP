@@ -1,3 +1,12 @@
+Last production check: 2026-10-28 08:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of the Georgia Attorney General official opinions category index. Index bytes hashed; citation labels and PDF anchors counted; no opinion PDFs downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| official opinions index (page 0) | https://law.georgia.gov/opinions/official | 200 | 144,468 | `ef6953aefe1f8ee40898c8e538eeb83b98d6dba230e6144c8a4a99813d9fcf40` | Index labels only; 47 unique citation paths named; 4 PDF download links named (one DO-NOT-SHARE); robots allows /opinions |
+| robots.txt | https://law.georgia.gov/robots.txt | 200 | 1,677 | `1ec8e6c4fed3dc4f55da7a82412fc7bb6649941ba44ccc6b47ba7968604d1c1b` | Allows /opinions |
+
+The official index names 47 citation labels. Four PDF download links were named on the page; none were fetched. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-28-ag-official-index.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-28 entry at the top.)
