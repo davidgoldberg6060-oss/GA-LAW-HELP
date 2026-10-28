@@ -1,3 +1,12 @@
+Last production check: 2026-10-28 19:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of the Court of Appeals of Georgia index landing (www.gaappeals.us redirected to links.gaappeals.us). Final page bytes hashed; no opinion PDFs, dockets, or text downloaded; not stored authority and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| index landing (final) | https://www.gaappeals.us/ → https://links.gaappeals.us | 200 | 39,314 | `4c92b0d07ca7b0a76fd30ecdb37fbdfebaa77cb8e4a05685b4768b7f710d3d15` | Docket Search title; links to gaappeals.gov opinion-search and docket-search; no PDFs fetched |
+| robots.txt | https://www.gaappeals.us/robots.txt | 404 | 146 | `55f7d9e99b8e2d4e0e193b2f0275501e6d9c1ebd29cadbea6a0da48a8587e3e0` | nginx 404 |
+
+Links to official opinion-search and docket-search observed. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-28-appeals-index.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-28 entry at the top.)
