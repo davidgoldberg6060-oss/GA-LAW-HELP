@@ -10,6 +10,7 @@ from .motion_screen_service import motion_screen_response
 from .innocence_analysis_service import innocence_analysis_response
 from .case_chat_service import analyze_case_conversation, case_summary_from_case, parse_history
 from .internal_legal_search import search_internal
+from .loophole_analysis_service import SUGGESTED_TOPICS, analyze_loopholes
 from .authority_search_service import persisted_authority_hits, public_law_search, search_georgia_authorities
 from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload, safe_public_source_url
@@ -173,6 +174,18 @@ def private_case_chat(case_id:int,body:dict,user=Depends(require_paid),db:Sessio
     except ValueError as error: raise HTTPException(400,str(error))
     except RuntimeError: raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
     audit(db,user.id,'RUN_CASE_CHAT','case',case_id);db.commit();return response
+
+@app.post('/loopholes/analyze')
+def loopholes_analyze(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
+    """Legal Loopholes: grounded contradictions, gaps, ambiguities and exceptions for a topic."""
+    try: response=analyze_loopholes(str(body.get('topic','')),ask_openai,db=db)
+    except ValueError as error: raise HTTPException(400,str(error))
+    except RuntimeError: raise HTTPException(503,'The legal analysis assistant is temporarily unavailable.')
+    audit(db,user.id,'RUN_LOOPHOLE_ANALYSIS','topic',None);db.commit();return response
+
+@app.get('/loopholes/topics')
+def loopholes_topics():
+    return {'suggested_topics':list(SUGGESTED_TOPICS)}
 
 @app.post('/internal/legal-search')
 def internal_legal_search(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
