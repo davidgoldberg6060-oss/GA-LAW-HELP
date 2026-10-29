@@ -1,8 +1,12 @@
-Last production check: 2026-10-29 05:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only access attempt to the official Court of Appeals of Georgia opinion search page. Response bytes hashed; WAF/captcha blocked full content; no opinion PDFs or indexes downloaded; not stored opinion text and not current-law verification.
+# Court of Appeals opinion-search index checkpoint (2026-10-29)
+
+Fetch date: 2026-10-29 12:00 UTC. DATABASE_URL is unset. No opinion PDFs were downloaded. No authority rows were written. This is not stored opinion text and not current-law verification.
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
 | --- | --- | ---: | ---: | --- | --- |
-| opinion search (captcha) | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `9f6a6bdbee15a3fc82c9754899d3c72902c9fefccc5d86221822a664885cc651` | CloudFront WAF captcha; no opinion list retrieved |
-| homepage (captcha) | https://www.gaappeals.gov/ | 200? | 2,511 | `814d9422ab13ae94c1047d240a0abb12ffb689f4796e1e8433814076bb631770` | Same WAF response size; site moved from gaappeals.us |
+| opinion-search index | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `4d50bc2bc1c8fe81a34964596c7c061ba5f7e2ec80c56c2ad349fbc9d540cc61` | AWS WAF Human Verification captcha (awsWafCookieDomainList / challenge.js); not an opinion index |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `baa0848d145763f5c975f1495167ef2d7ab772aa2d0f9a28111f125b5f4b0992` | Same WAF captcha page |
 
-The Court of Appeals site hosts an opinion search and docket tools. Access was blocked by captcha/WAF in this run. No Lexis scraped. Preferred bulk sources for opinions remain CourtListener or official PDF releases when accessible. These counts are not persisted coverage. Gap: full opinion index not retrieved due to access control; historical coverage incomplete without DATABASE_URL and successful fetch.
+Raw fetch of both URLs returned the AWS WAF Human Verification challenge page (HTTP 405). No docket-labeled PDF links were named or downloaded. The date-search endpoint was not called. Lexis was not opened. These counts are not persisted coverage.
+
+Gap notes: inventory of the captcha response only. Court of Appeals opinion indexes and PDFs remain unfetched from non-browser clients due to WAF. Missing DATABASE_URL means no corpus rows can be written. Hash differs from the 2026-10-15 checkpoint for the same URLs.
