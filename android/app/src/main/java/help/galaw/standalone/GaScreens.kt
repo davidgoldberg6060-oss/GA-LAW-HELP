@@ -494,15 +494,19 @@ object GaScreens {
                 citeViews(ui, this, f.citations, onCite)
             }, ui.lp(5, 5))
         }
-        if (lawyer != null) {
-            container.addView(LinearLayout(ui.context).apply {
-                orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
-                background = ui.glowCard(Color.argb(235, 22, 30, 44), GaUi.GOLD, 14, glow = true)
-                addView(ui.text(lawyer.label, 18f, GaUi.GOLD, ui.serifBold))
-                addView(ui.text(lawyer.text, 14.5f, GaUi.WHITE).apply { setPadding(0, dp(8), 0, dp(4)); setLineSpacing(0f, 1.15f); setTextIsSelectable(true) })
-                citeViews(ui, this, lawyer.citations, onCite)
-                addView(ui.text(lawyer.disclaimer, 12.5f, GaUi.MUTED, ui.sansMedium).apply { setPadding(0, dp(10), 0, 0) })
-            }, ui.lp(10, 6))
+        if (lawyer != null) container.addView(lawyerCard(ui, lawyer, onCite), ui.lp(10, 6))
+    }
+
+    /** Gold "If I Was Your Lawyer, I Would Say" card shared by Legal Loopholes and Case Chat. */
+    fun lawyerCard(ui: GaUi, lawyer: LawyerTake, onCite: (LoopholeCite) -> Unit): LinearLayout {
+        val dp = ui::dp
+        return LinearLayout(ui.context).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
+            background = ui.glowCard(Color.argb(235, 22, 30, 44), GaUi.GOLD, 14, glow = true)
+            addView(ui.text(lawyer.label, 18f, GaUi.GOLD, ui.serifBold))
+            addView(ui.text(lawyer.text, 14.5f, GaUi.WHITE).apply { setPadding(0, dp(8), 0, dp(4)); setLineSpacing(0f, 1.15f); setTextIsSelectable(true) })
+            citeViews(ui, this, lawyer.citations, onCite)
+            addView(ui.text(lawyer.disclaimer, 12.5f, GaUi.MUTED, ui.sansMedium).apply { setPadding(0, dp(10), 0, 0) })
         }
     }
 }

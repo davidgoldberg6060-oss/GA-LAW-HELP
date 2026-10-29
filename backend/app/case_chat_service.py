@@ -10,7 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .grounded_legal_assistant import grounded_legal_response
+from .grounded_legal_assistant import _authority_context, _verified_hits, grounded_legal_response
+from .loophole_analysis_service import _parse_obj, is_unsafe_topic, validate_lawyer_take
 
 MAX_REQUEST_CHARS = 12_000
 MAX_MESSAGE_CHARS = 4_000
@@ -84,7 +85,43 @@ def analyze_case_conversation(*, user_message: str, history: list[CaseChatMessag
     result = grounded_legal_response(request, "case_analysis", ask_ai, db=db)
     result["conversation"] = True
     result["user_message"] = (user_message or "").strip()
+    result["lawyer_take"] = case_lawyer_take(result, user_message=user_message, ask_ai=ask_ai)
     return result
+
+
+def _lawyer_prompt(question: str, analysis: str, context: str) -> str:
+    return f"""GA.LAW.HELP "If I Was Your Lawyer, I Would Say" note for a Georgia case chat answer.
+
+USER MESSAGE (unverified):
+{question[:MAX_MESSAGE_CHARS]}
+
+ANSWER ALREADY GIVEN:
+{str(analysis or '')[:4000]}
+
+TRACEABLE VERIFIED INDEXED AUTHORITIES (the only law you may rely on):
+{context}
+
+Write 3-6 plain-English sentences on what this person should consider and practical lawful next steps (gather documents, deadlines the cited authorities mention, when to get a real Georgia attorney). Ground it only in the supplied authorities and cite them by their exact Citation. Never invent a citation, case, statute, rule, or deadline. Never suggest breaking the law, deceiving anyone, or evading police. Do not predict or guarantee outcomes.
+Return ONLY JSON: {{"lawyer_take":{{"text":"3-6 sentences","citations":["exact citation"]}}}}"""
+
+
+def case_lawyer_take(result: dict, *, user_message: str, ask_ai):
+    """Optional lawyer note grounded only in the verified authorities this answer already used.
+
+    Returns None when the request is unsafe, no verified authority was retrieved, or the model's
+    note cites anything outside that verified set. Never raises (the chat answer still returns).
+    """
+    question = (user_message or "").strip()
+    if not question or is_unsafe_topic(question):
+        return None
+    verified = _verified_hits({"hits": result.get("authorities") or []})
+    if not verified or not result.get("grounded_authority_count"):
+        return None
+    try:
+        raw = ask_ai(_lawyer_prompt(question, result.get("analysis"), _authority_context(verified)))
+        return validate_lawyer_take(_parse_obj(raw).get("lawyer_take"), verified)
+    except Exception:  # noqa: BLE001 - the note is optional; never break the chat answer
+        return None
 
 
 def parse_history(raw) -> list[CaseChatMessage]:
