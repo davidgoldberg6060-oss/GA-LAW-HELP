@@ -1,3 +1,12 @@
+Last production check: 2026-10-29 05:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only access attempt to the official Court of Appeals of Georgia opinion search page. Response bytes hashed; WAF/captcha blocked full content; no opinion PDFs or indexes downloaded; not stored opinion text and not current-law verification.
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion search (captcha) | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `9f6a6bdbee15a3fc82c9754899d3c72902c9fefccc5d86221822a664885cc651` | CloudFront WAF captcha; no opinion list retrieved |
+| homepage (captcha) | https://www.gaappeals.gov/ | ~ | 2,511 | `814d9422ab13ae94c1047d240a0abb12ffb689f4796e1e8433814076bb631770` | Same WAF response size; site moved from gaappeals.us |
+
+The Court of Appeals site hosts an opinion search and docket tools. Access was blocked by captcha/WAF in this run. No Lexis scraped. Preferred bulk sources for opinions remain CourtListener or official PDF releases when accessible. These counts are not persisted coverage. Gap: full opinion index not retrieved due to access control. The checkpoint is in `ops/legal-import/2026-10-29-coa-opinion-search.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-29 entry at the top.)
