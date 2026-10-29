@@ -57,7 +57,7 @@ class HomeActivity : AppCompatActivity() {
     private fun requireSignedIn():Boolean{ if(api.token!=null)return true; toast("Sign in to use private case tools."); startActivity(Intent(this, AuthActivity::class.java)); return false }
     private fun showMenu(){ closeDrawer(); val items=HomeDrawerCatalog.items; val overlay=GaScreens.drawer(ui,items,BuildConfig.VERSION_NAME,{item->closeDrawer();onDrawerItem(item)},{closeDrawer()}); drawerView=overlay; addContentView(overlay,ViewGroup.LayoutParams(-1,-1)) }
     private fun closeDrawer(){ drawerView?.let{(it.parent as? ViewGroup)?.removeView(it)}; drawerView=null }
-    private fun onDrawerItem(item:HomeDrawerItem){if(item.requiresSignIn&&!requireSignedIn())return;when(item.id){"home"->showHome();"cases"->showCases();"ai"->showTalkToMe();"laws"->showGeorgiaLaws();"motions"->showMotionsHub();"forms"->showLegalForms();"court"->showCourtInfo();"rights"->showKnowYourRights();"resources"->showResources();"emergency"->showEmergency();"payments"->showPayment();"settings"->showSettings();"profile"->showAccount();"help"->showMore()}}
+    private fun onDrawerItem(item:HomeDrawerItem){if(item.requiresSignIn&&!requireSignedIn())return;when(item.id){"home"->showHome();"cases"->showCases();"ai"->showTalkToMe();"laws"->showGeorgiaLaws();"loopholes"->showLoopholes();"motions"->showMotionsHub();"forms"->showLegalForms();"court"->showCourtInfo();"rights"->showKnowYourRights();"resources"->showResources();"emergency"->showEmergency();"payments"->showPayment();"settings"->showSettings();"profile"->showAccount();"help"->showMore()}}
 
     // ---------- Talk to Me ----------
     private data class ChatLine(val mine:Boolean,val text:String,val time:String)
@@ -77,6 +77,17 @@ class HomeActivity : AppCompatActivity() {
         catch(e:Exception){ runOnUiThread{ c.messages.removeView(waiting); val bot=ChatLine(false,e.message?:"Something went wrong. Please try again.",now()); talkLines.add(bot); if(chat===c)c.bot(bot.text,bot.time) } } } }
     private fun languageCode():String { val saved=getSharedPreferences("ga_settings",MODE_PRIVATE).getString("language","English")?:"English"; return when { saved.startsWith("Español")->"es"; saved.startsWith("中文")->"zh"; saved.startsWith("Français")->"fr"; saved.startsWith("العربية")->"ar"; saved.startsWith("Tiếng Việt")->"vi"; else->"en" } }
     private fun languageInstruction():String = when(languageCode()){"es"->"Respond in Spanish.";"zh"->"Respond in Simplified Chinese.";"fr"->"Respond in French.";"ar"->"Respond in Arabic.";"vi"->"Respond in Vietnamese.";else->"Respond in English."}
+
+    // ---------- Legal Loopholes ----------
+    private val loopholeChips = listOf("Self-defense","Landlord security deposits","DUI","Traffic stops","Expungement","Eviction notice")
+    private fun showLoopholes(){ if(!requireSignedIn())return; lateinit var form:GaScreens.LoopholesForm; form=GaScreens.loopholes(ui,nav,loopholeChips){t->analyzeLoopholes(form,t)}; show(form.root) }
+    private fun cites(arr:JSONArray?)=(0 until (arr?.length()?:0)).mapNotNull{i->arr!!.optJSONObject(i)?.let{o->GaScreens.LoopholeCite(o.optString("citation"),clean(o.optString("title")),clean(o.optString("source_url")).ifBlank{null})}}
+    private fun analyzeLoopholes(form:GaScreens.LoopholesForm,raw:String){ val topic=raw.trim(); if(topic.isEmpty())return toast("Enter a Georgia legal topic."); if(topic.length>300)return toast("Topic is too long. Use 300 characters or fewer."); GaScreens.loopholesLoading(ui,form.results)
+        thread{ try{ val r=api.loopholes(topic); val arr=r.optJSONArray("findings"); val findings=(0 until (arr?.length()?:0)).mapNotNull{i->arr!!.optJSONObject(i)?.let{o->GaScreens.LoopholeFinding(o.optString("type_label"),o.optString("title"),o.optString("explanation"),cites(o.optJSONArray("citations")))}}
+            val lt=r.optJSONObject("lawyer_take")?.let{o->GaScreens.LawyerTake(o.optString("label","If I Was Your Lawyer, I Would Say"),o.optString("text"),o.optString("disclaimer","Not legal advice — this app is not your lawyer."),cites(o.optJSONArray("citations")))}
+            val msg=clean(r.optString("message")).ifBlank{null}
+            runOnUiThread{ GaScreens.renderLoopholes(ui,form.results,findings,msg,lt){c->c.sourceUrl?.let{openUrl(it)}?:toast("No official source link is stored for ${c.citation}.")} } }
+        catch(e:Exception){ runOnUiThread{ form.results.removeAllViews(); form.results.addView(ui.emptyCard(R.drawable.ga_ic_error,"Couldn’t analyze that",e.message?:"Something went wrong. Please try again."),ui.lp(4,4)) } } } }
 
     // ---------- My Cases ----------
     private var casesFilter = 0

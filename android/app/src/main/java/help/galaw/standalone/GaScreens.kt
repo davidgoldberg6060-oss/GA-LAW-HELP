@@ -53,7 +53,7 @@ object GaScreens {
         "laws" -> R.drawable.ga_ic_balance; "motions" -> R.drawable.ga_ic_edit_square; "forms" -> R.drawable.ga_ic_description
         "court" -> R.drawable.ga_ic_account_balance; "rights" -> R.drawable.ga_ic_groups; "resources" -> R.drawable.ga_ic_support
         "emergency" -> R.drawable.ga_ic_warning; "payments" -> R.drawable.ga_ic_payments; "settings" -> R.drawable.ga_ic_settings
-        "profile" -> R.drawable.ga_ic_person; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
+        "profile" -> R.drawable.ga_ic_person; "loopholes" -> R.drawable.ga_ic_search; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
     }
 
     fun drawer(ui: GaUi, items: List<HomeDrawerItem>, versionName: String, onSelect: (HomeDrawerItem) -> Unit, onClose: () -> Unit): View {
@@ -431,6 +431,78 @@ object GaScreens {
                 if (h.excerpt.isNotBlank()) addView(ui.text(h.excerpt, 13f, GaUi.MUTED).apply { maxLines = 4; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(0, dp(4), 0, 0) })
                 if (h.sourceUrl != null) addView(ui.text("Open official source ›", 13.5f, Color.rgb(60, 190, 255)).apply { setPadding(0, dp(6), 0, 0) })
             }, ui.lp(5, 5))
+        }
+    }
+
+    // ---------------- Legal Loopholes ----------------
+    class LoopholesForm(val root: View, val topic: EditText, val results: LinearLayout)
+    data class LoopholeCite(val citation: String, val title: String, val sourceUrl: String?)
+    data class LoopholeFinding(val typeLabel: String, val title: String, val explanation: String, val citations: List<LoopholeCite>)
+    data class LawyerTake(val label: String, val text: String, val disclaimer: String, val citations: List<LoopholeCite>)
+
+    const val LOOPHOLE_DISCLAIMER = "This is legal information, not legal advice; talk to a Georgia attorney."
+
+    fun loopholes(ui: GaUi, nav: Nav, chips: List<String>, onAnalyze: (String) -> Unit): LoopholesForm {
+        val dp = ui::dp
+        val (root, body) = page(ui, nav, Tab.LAWS, "Legal Loopholes", "Find contradictions, gaps, unclear wording and exceptions in Georgia law, cited to verified sources.")
+        val (box, topic) = ui.searchField("Enter a topic, e.g. self-defense...", glowing = true, height = 52, showButton = false) { onAnalyze(it) }
+        body.addView(box, ui.lp(0, 10, dp(52)))
+        val chipRow = LinearLayout(ui.context).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(2), 0, dp(8)) }
+        chips.forEachIndexed { i, label ->
+            chipRow.addView(ui.text(label, 13.5f, GaUi.TEXT, null, Gravity.CENTER).apply {
+                background = ui.rounded(Color.argb(220, 10, 26, 45), 20, GaUi.STROKE_SOFT, 1.2f); setPadding(dp(12), dp(9), dp(12), dp(9)); isClickable = true
+                setOnClickListener { topic.setText(label); onAnalyze(label) }
+            }, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(8) })
+        }
+        body.addView(android.widget.HorizontalScrollView(ui.context).apply { isHorizontalScrollBarEnabled = false; addView(chipRow) })
+        body.addView(ui.primaryButton("Analyze the Law") { onAnalyze(topic.text.toString()) }, ui.lp(4, 8))
+        val results = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL }
+        body.addView(results)
+        body.addView(ui.note(LOOPHOLE_DISCLAIMER))
+        return LoopholesForm(root, topic, results)
+    }
+
+    fun loopholesLoading(ui: GaUi, container: LinearLayout) {
+        container.removeAllViews()
+        container.addView(LinearLayout(ui.context).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(ui.dp(14), ui.dp(14), ui.dp(14), ui.dp(14))
+            background = ui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 12, glow = false)
+            addView(android.widget.ProgressBar(ui.context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(GaUi.GOLD) }, LinearLayout.LayoutParams(ui.dp(26), ui.dp(26)).apply { rightMargin = ui.dp(12) })
+            addView(ui.text("Comparing verified Georgia laws and cases…", 14.5f, GaUi.TEXT))
+        }, ui.lp(6, 6))
+    }
+
+    private fun citeViews(ui: GaUi, card: LinearLayout, cites: List<LoopholeCite>, onCite: (LoopholeCite) -> Unit) {
+        cites.forEach { c ->
+            card.addView(ui.text("${c.citation} ›", 13.5f, Color.rgb(60, 190, 255)).apply {
+                setPadding(0, ui.dp(6), 0, 0); isClickable = true; contentDescription = "Open ${c.citation}"; setOnClickListener { onCite(c) }
+            })
+        }
+    }
+
+    fun renderLoopholes(ui: GaUi, container: LinearLayout, findings: List<LoopholeFinding>, message: String?, lawyer: LawyerTake?, onCite: (LoopholeCite) -> Unit) {
+        val dp = ui::dp
+        container.removeAllViews()
+        container.addView(ui.sectionHeader("Findings (${findings.size})"))
+        if (findings.isEmpty()) container.addView(ui.emptyCard(R.drawable.ga_ic_search, "Nothing found", message ?: "No findings could be supported by verified Georgia sources. GA.LAW.HELP never invents a citation."), ui.lp(4, 4))
+        findings.forEach { f ->
+            container.addView(LinearLayout(ui.context).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 12, glow = false)
+                addView(ui.text(f.typeLabel.uppercase(), 11f, GaUi.BLUE_BRIGHT, ui.sansBold))
+                addView(ui.text(f.title, 15.5f, GaUi.GOLD, ui.sansMedium).apply { setPadding(0, dp(3), 0, dp(3)) })
+                addView(ui.text(f.explanation, 14f, GaUi.TEXT).apply { setLineSpacing(0f, 1.12f); setTextIsSelectable(true) })
+                citeViews(ui, this, f.citations, onCite)
+            }, ui.lp(5, 5))
+        }
+        if (lawyer != null) {
+            container.addView(LinearLayout(ui.context).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
+                background = ui.glowCard(Color.argb(235, 22, 30, 44), GaUi.GOLD, 14, glow = true)
+                addView(ui.text(lawyer.label, 18f, GaUi.GOLD, ui.serifBold))
+                addView(ui.text(lawyer.text, 14.5f, GaUi.WHITE).apply { setPadding(0, dp(8), 0, dp(4)); setLineSpacing(0f, 1.15f); setTextIsSelectable(true) })
+                citeViews(ui, this, lawyer.citations, onCite)
+                addView(ui.text(lawyer.disclaimer, 12.5f, GaUi.MUTED, ui.sansMedium).apply { setPadding(0, dp(10), 0, 0) })
+            }, ui.lp(10, 6))
         }
     }
 }
