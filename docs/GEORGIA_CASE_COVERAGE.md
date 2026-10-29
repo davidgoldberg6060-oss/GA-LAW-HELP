@@ -1,3 +1,11 @@
+Last production check: 2026-10-29 16:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of the Free Law Project CourtListener REST API court record for the Court of Appeals of Georgia (gactapp). Metadata bytes hashed; no opinion text, PDFs, or bulk files downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| court metadata | https://www.courtlistener.com/api/rest/v4/courts/gactapp/ | 200 | 607 | `5fb097c0a36c7f9cc938329afe196f6658dba2f3d05aca587343709e9abe38be` | id=gactapp; short_name=Court of Appeals of Georgia; has_opinion_scraper=true; start_date=1906-11-06; jurisdiction=SA; in_use=true |
+
+Public search listing reports approximately 130,000 opinions for court=gactapp. Official https://www.gaappeals.gov/opinion-search/ continues to return WAF captcha (HTTP 405) to raw clients. Lexis was not opened. Preferred bulk path for appellate opinions remains CourtListener. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-29-gactapp-courtlistener-metadata.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +31,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-29 entry at the top.)
