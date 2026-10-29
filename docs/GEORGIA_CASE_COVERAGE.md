@@ -1,3 +1,14 @@
+Last production check: 2026-10-29 04:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only raw fetches of the Court of Appeals of Georgia opinion-search index, rules index, homepage, and robots.txt. All returned AWS WAF Human Verification captcha (HTTP 405). No PDF anchors named or downloaded; not stored opinion or rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion-search index | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `a88cb53115405897ca2e525d62b840a6c00a33f0dc34e87e5e5e0278414e5972` | WAF captcha; prior 2026-10-15 hash differed |
+| rules index | https://www.gaappeals.gov/rules/ | 405 | 2,511 | `7985a13242ce0f755e3a27f2d65c41d1a7f3afa60be4b23fd9eabd143971d3cb` | WAF captcha |
+| homepage | https://www.gaappeals.gov/ | 405 | 2,511 | `83417105c4d74270a73c4354b4aa65080b70ed8490a2876a5f631644b5b5a5e8` | WAF captcha |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `d9d5a87109f7094f3db7761908780142e334a3d7c2c61495e91c28f6fe975c25` | WAF captcha; prior hash differed |
+
+Court of Appeals opinion indexes, rules pages, and PDFs remain unfetched from non-browser clients due to persistent WAF. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-29-coa-opinion-search-waf.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +34,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-29 entry at the top.)
