@@ -498,11 +498,17 @@ object GaScreens {
         }
     }
 
-    fun renderLoopholes(ui: GaUi, container: LinearLayout, findings: List<LoopholeFinding>, message: String?, lawyer: LawyerTake?, onCite: (LoopholeCite) -> Unit) {
+    const val COVERAGE_HINT = "GA.LAW.HELP is still adding Georgia laws and court opinions to its library, so more topics will have results soon. Try again later or try a related topic."
+
+    fun renderLoopholes(ui: GaUi, container: LinearLayout, findings: List<LoopholeFinding>, message: String?, lawyer: LawyerTake?, refused: Boolean = false, share: Pair<() -> Unit, () -> Unit>? = null, onCite: (LoopholeCite) -> Unit) {
         val dp = ui::dp
         container.removeAllViews()
         container.addView(ui.sectionHeader("Findings (${findings.size})"))
-        if (findings.isEmpty()) container.addView(ui.emptyCard(R.drawable.ga_ic_search, "Nothing found", message ?: "No findings could be supported by verified Georgia sources. GA.LAW.HELP never invents a citation."), ui.lp(4, 4))
+        if (findings.isEmpty()) {
+            val base = message ?: "No findings could be supported by verified Georgia sources. GA.LAW.HELP never invents a citation."
+            if (refused) container.addView(ui.emptyCard(R.drawable.ga_ic_error, "Can’t help with that", base), ui.lp(4, 4))
+            else container.addView(ui.emptyCard(R.drawable.ga_ic_search, "Nothing found yet", if (base.contains("still adding")) base else base + "\n\n" + COVERAGE_HINT), ui.lp(4, 4))
+        }
         findings.forEach { f ->
             container.addView(LinearLayout(ui.context).apply {
                 orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 12, glow = false)
@@ -513,6 +519,7 @@ object GaScreens {
             }, ui.lp(5, 5))
         }
         if (lawyer != null) container.addView(lawyerCard(ui, lawyer, onCite), ui.lp(10, 6))
+        if (share != null && (findings.isNotEmpty() || lawyer != null)) container.addView(shareRow(ui, share.first, share.second))
     }
 
     /** Gold "If I Was Your Lawyer, I Would Say" card shared by Legal Loopholes and Case Chat. */
