@@ -1,3 +1,11 @@
+Last production check: 2026-10-29 15:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only raw automated fetch of the Court of Appeals of Georgia opinion search index. Raw bytes hashed; no opinion PDFs or text downloaded; not stored opinion text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| opinion search (raw) | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `1003128ea5fd7f53d98c3fcb3df3835df72f3a6df1381edf49b161b4be6dc6c1` | AWS WAF captcha challenge; domain migrated from .us to .gov |
+
+The intermediate appellate court site is now at gaappeals.gov with an opinion search index. Automated fetch hits WAF. Lexis was not scraped. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-29-coa-opinion-search.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +31,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-29 entry at the top.)
