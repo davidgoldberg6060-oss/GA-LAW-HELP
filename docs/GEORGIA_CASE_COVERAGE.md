@@ -1,3 +1,12 @@
+Last production check: 2026-10-29 22:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only raw fetch of the Georgia Courts Supreme Court rules index. Index bytes hashed; PDF anchors counted; uploads are robots-disallowed on gasupreme.us so no rule PDFs were downloaded; not stored rule text and not current-law verification:
+
+| Source | URL | HTTP | Bytes | SHA-256 | Notes |
+| --- | --- | ---: | ---: | --- | --- |
+| rules index | https://georgiacourts.gov/georgia-supreme-court-rules/ | 200 | 104,434 | `3fa91dbbbf410191d3a9b02c2949582944d9fd051f4e6f575a6a418bad10ca43` | 28 PDF anchors under gasupreme.us/wp-content/uploads/; also links to https://www.gaappeals.us/rules-1-8/ (legacy) and gasupreme.us/rules/; prior 2026-10-23 hash differed |
+| robots.txt (gasupreme.us) | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/; Disallow: /readme.html |
+
+The index names current Supreme Court Rules PDFs, charts, uniform court rules, and a Court of Appeals rules link. robots.txt on gasupreme.us disallows /wp-content/uploads/, so none of the PDFs were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-29-georgiacourts-rules-index.md`.
+
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
@@ -23,4 +32,4 @@ Last production check: 2026-10-23 17:01 UTC. DATABASE_URL was unset, so no corpu
 
 The rules index names the Supreme Court Rules PDF effective July 2, 2026, a chart, and a quick-reference PDF. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-23-supreme-rules-index.md`.
 
-(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-25 entry at the top.)
+(See full historical inventory in prior commits; this update restores the complete report with the new 2026-10-29 entry at the top.)
