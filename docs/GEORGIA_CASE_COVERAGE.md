@@ -1,11 +1,11 @@
-Last production check: 2026-10-29 12:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of the Court of Appeals of Georgia opinion-search index and robots.txt. Both returned the AWS WAF Human Verification captcha page; not an opinion index and not stored opinion text:
+Last production check: 2026-10-29 13:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Court of Appeals of Georgia opinion-search index and robots.txt. Both returned AWS WAF captcha pages; no opinion indexes or PDFs were downloaded; not stored opinion text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
 | --- | --- | ---: | ---: | --- | --- |
-| opinion-search index | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `4d50bc2bc1c8fe81a34964596c7c061ba5f7e2ec80c56c2ad349fbc9d540cc61` | AWS WAF captcha; not an opinion index |
-| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `baa0848d145763f5c975f1495167ef2d7ab772aa2d0f9a28111f125b5f4b0992` | Same WAF captcha |
+| opinion-search index | https://www.gaappeals.gov/opinion-search/ | 405 | 2,511 | `b09e908b8b345e72f05922a613ccbbc2e2c42d9a495cd6b10fcc8a17ef0164f6` | AWS WAF Human Verification captcha (x-amzn-waf-action: captcha); not an opinion index |
+| robots.txt | https://www.gaappeals.gov/robots.txt | 405 | 2,511 | `e1fd777ded4530251777852cab742d4233e1d30e0c06638a314b94a69c759ea0` | Same WAF captcha page |
 
-No docket-labeled PDF links were named or downloaded. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-29-coa-opinion-search.md`.
+The opinion-search index and robots.txt are behind WAF captcha for non-browser clients. No PDF anchors were extracted. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-29-coa-opinion-search.md`.
 
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
