@@ -212,3 +212,47 @@ def internal_grounded_legal_assistant(body:dict,user=Depends(require_paid),db:Se
     if mode not in {'case_analysis','rights','motions','talk_to_me'}: raise HTTPException(400,'Unsupported grounded legal-assistant mode.')
     try: return grounded_legal_response(query,mode,ask_openai,db=db)
     except RuntimeError: raise HTTPException(503,'The grounded legal assistant is temporarily unavailable.')
+
+
+# ---------- Privacy policy and account deletion (Google Play requirements) ----------
+from pathlib import Path as _Path
+import html as _html
+from fastapi.responses import HTMLResponse
+from .account_deletion import CONFIRM_WORD, delete_account
+from .auth import verify_password as _verify_password
+
+PRIVACY_POLICY_MD = (_Path(__file__).with_name('privacy_policy.md')).read_text(encoding='utf-8')
+
+def _inline(text: str) -> str:
+    out = _html.escape(text)
+    parts = out.split('**')
+    return ''.join(f'<strong>{p}</strong>' if i % 2 else p for i, p in enumerate(parts))
+
+def render_policy_html(md: str) -> str:
+    body, in_list = [], False
+    for line in md.splitlines():
+        if line.startswith('- '):
+            if not in_list: body.append('<ul>'); in_list = True
+            body.append(f'<li>{_inline(line[2:])}</li>'); continue
+        if in_list: body.append('</ul>'); in_list = False
+        if line.startswith('### '): body.append(f'<h3>{_inline(line[4:])}</h3>')
+        elif line.startswith('## '): body.append(f'<h2>{_inline(line[3:])}</h2>')
+        elif line.startswith('# '): body.append(f'<h1>{_inline(line[2:])}</h1>')
+        elif line.strip(): body.append(f'<p>{_inline(line)}</p>')
+    if in_list: body.append('</ul>')
+    style = 'body{font-family:system-ui,sans-serif;max-width:760px;margin:2rem auto;padding:0 1rem;line-height:1.5;color:#e8f0f8;background:#04121f}h1,h2,h3{color:#d4af37}'
+    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GA.LAW.HELP Privacy Policy</title><style>{style}</style></head><body>{"".join(body)}</body></html>'
+
+@app.get('/privacy', include_in_schema=False, response_class=HTMLResponse)
+def privacy_policy_page():
+    return HTMLResponse(render_policy_html(PRIVACY_POLICY_MD))
+
+@app.get('/privacy.md', include_in_schema=False)
+def privacy_policy_markdown():
+    return PlainTextResponse(PRIVACY_POLICY_MD, media_type='text/markdown; charset=utf-8')
+
+@app.post('/me/delete')
+def delete_my_account(body: schemas.AccountDeleteRequest, user=Depends(current_user), db: Session=Depends(get_db)):
+    if body.confirm.strip().upper() != CONFIRM_WORD: raise HTTPException(422, f'Type {CONFIRM_WORD} to confirm account deletion')
+    if not _verify_password(body.password, user.password_hash): raise HTTPException(403, 'Password is incorrect')
+    return delete_account(db, user)
