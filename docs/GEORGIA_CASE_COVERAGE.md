@@ -1,11 +1,11 @@
-Last production check: 2026-10-29 10:02 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia 2026 opinions index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no opinion PDFs were downloaded; not stored opinion text and not current-law verification:
+Last production check: 2026-10-29 01:00 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only read of the Supreme Court of Georgia 2026 opinions index and robots.txt. Index bytes were hashed; PDF anchors counted; uploads are robots-disallowed so no opinion PDFs were downloaded; not stored opinion text and not current-law verification:
 
 | Source | URL | HTTP | Bytes | SHA-256 | Notes |
 | --- | --- | ---: | ---: | --- | --- |
-| 2026 opinions index | https://www.gasupreme.us/2026-opinions/ | 200 | 1,634,295 | `dad7eb72cd9dc72db225b0239918962679377f7cd456339baaae42dbd8a018cf` | 294 PDF anchors under /wp-content/uploads/; robots disallow |
+| 2026 opinions index | https://www.gasupreme.us/2026-opinions/ | 200 | 1,634,293 | `68004d735a018e08dccf06bdbbb4bb2778dde887b67bca267088768ce7732029` | 294 PDF anchors under /wp-content/uploads/ (recent October 2026 opinions and earlier months); robots disallow |
 | robots.txt | https://www.gasupreme.us/robots.txt | 200 | 71 | `2c3d50be784b56de8c6cbdc174817ab688c3b9892494616d3a414a115aa85196` | Disallow: /wp-content/uploads/; Disallow: /readme.html |
 
-The 2026 opinions index names 294 PDF anchors (285 unique docket-like tokens). robots.txt disallows /wp-content/uploads/, so none were fetched. Prior 2026-10-16 checkpoint had 1,625,440 bytes / 283 anchors. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-29-supreme-2026-opinions.md`.
+The 2026 opinions index lists opinions by month with case citations and PDF links. robots.txt disallows /wp-content/uploads/, so none were fetched. Lexis was not opened. These counts are not persisted coverage. The checkpoint is in `ops/legal-import/2026-10-29-supreme-2026-opinions-index.md`.
 
 Last production check: 2026-10-25 21:01 UTC. DATABASE_URL was unset, so no corpus rows were written. Discover-only fetch of Public.Resource.Org OCGA item metadata. Metadata bytes hashed; no ODT/RTF/HTML statute files downloaded; not stored statute text and not current-law verification:
 
