@@ -46,7 +46,7 @@ Connections to the server use HTTPS. Passwords are hashed, sign-in tokens are ha
 ## Keeping and deleting your data
 Your data is kept until you delete it or delete your account.
 - You can delete individual saved research notes inside a case.
-- **Delete your account:** in the app, open Settings › Delete Account. You must enter your password and type DELETE. This permanently removes your account, all of your cases, notes, timeline events, analyses, uploaded files and sign-in tokens from our server. It cannot be undone. One anonymous record that an account was deleted is kept for security, with no user ID or email.
+- **Delete your account:** in the app, open Settings › Privacy & Security › Delete Account. You must enter your password and type DELETE. This permanently removes your account, all of your cases, notes, timeline events, analyses, uploaded files and sign-in tokens from our server. It cannot be undone. One anonymous record that an account was deleted is kept for security, with no user ID or email.
 - **Clear App Data** in Settings removes the information stored on your phone but does not delete your account.
 
 Copies held by service providers (for example AI provider request logs, or standard server logs kept by our host, which may include IP addresses) are kept under those providers' own retention policies.
