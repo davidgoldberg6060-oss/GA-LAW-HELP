@@ -93,3 +93,7 @@ class CaseNoteCreate(BaseModel):
     content: str = Field(min_length=1, max_length=100_000)
     note_type: str = Field(default="LEGAL_RESEARCH", max_length=40)
     language: str = Field(default="en", max_length=12)
+
+class AccountDeleteRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=1024)
+    confirm: str = Field(min_length=1, max_length=20)

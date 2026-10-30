@@ -91,6 +91,10 @@ object GaScreens {
     class Chat(val root: View, val messages: LinearLayout, val input: EditText, private val ui: GaUi, private val scroll: ScrollView) {
         fun bot(text: String, time: String) = add(text, time, false)
         fun user(text: String, time: String) = add(text, time, true)
+        /** Append an extra card (e.g. the lawyer take) under the latest answer. */
+        fun attach(v: View) { messages.addView(v, ui.lp(8, 2)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
+        /** Share / Copy row under the latest answer. */
+        fun actions(onShare: () -> Unit, onCopy: () -> Unit) { messages.addView(shareRow(ui, onShare, onCopy, indent = true)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
         private fun add(text: String, time: String, mine: Boolean) {
             val dp = ui::dp
             val row = LinearLayout(ui.context).apply { orientation = LinearLayout.HORIZONTAL; gravity = if (mine) Gravity.END else Gravity.START }
@@ -112,13 +116,27 @@ object GaScreens {
         }
     }
 
-    fun talkToMe(ui: GaUi, nav: Nav, onSend: (String) -> Unit, chips: List<Pair<String, () -> Unit>>): Chat {
+    fun talkToMe(ui: GaUi, nav: Nav, onSend: (String) -> Unit, chips: List<Pair<String, () -> Unit>>): Chat =
+        chatScreen(ui, nav, Tab.AI, "Talk to Me", "Get trusted legal information, case analysis, and step-by-step guidance.", "Type your question...", onSend, chips)
+
+    /** Case Chat uses the same mockup chat layout as Talk to Me, scoped to one saved case. */
+    fun caseChat(ui: GaUi, nav: Nav, caseTitle: String, onSend: (String) -> Unit, chips: List<Pair<String, () -> Unit>>): Chat =
+        chatScreen(ui, nav, Tab.DOCUMENTS, "Case Chat", (if (caseTitle.isNotBlank()) "$caseTitle · " else "") + "Answers use your case file and verified Georgia authority only.", "Ask about this case...", onSend, chips)
+
+    /** Share · Copy text actions (blue, small) used under answers and loophole results. */
+    fun shareRow(ui: GaUi, onShare: () -> Unit, onCopy: () -> Unit, indent: Boolean = false): View = LinearLayout(ui.context).apply {
+        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(if (indent) ui.dp(48) else 0, ui.dp(6), 0, ui.dp(2))
+        fun action(label: String, f: () -> Unit) = ui.text(label, 13.5f, Color.rgb(60, 190, 255), ui.sansMedium).apply { setPadding(0, ui.dp(4), ui.dp(18), ui.dp(4)); isClickable = true; contentDescription = label; setOnClickListener { f() } }
+        addView(action("Share") { onShare() }); addView(action("Copy") { onCopy() })
+    }
+
+    private fun chatScreen(ui: GaUi, nav: Nav, tab: Tab, title: String, subtitle: String, hintText: String, onSend: (String) -> Unit, chips: List<Pair<String, () -> Unit>>): Chat {
         val dp = ui::dp
         val shell = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; background = ui.screenBackground() }
         shell.addView(ui.pageHeader { nav.menu() })
         val body = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(4), dp(18), dp(12)) }
-        body.addView(ui.title("Talk to Me"))
-        body.addView(ui.subtitle("Get trusted legal information, case analysis, and step-by-step guidance."))
+        body.addView(ui.title(title))
+        body.addView(ui.subtitle(subtitle))
         val messages = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL }
         body.addView(messages)
         val scroll = ScrollView(ui.context).apply { isFillViewport = true; addView(body) }
@@ -134,7 +152,7 @@ object GaScreens {
             orientation = LinearLayout.HORIZONTAL; background = ui.glowCard(Color.argb(220, 8, 22, 40), GaUi.STROKE, 10, glow = false)
         }
         val input = android.widget.EditText(ui.context).apply {
-            hint = "Type your question..."; setHintTextColor(GaUi.MUTED); setTextColor(GaUi.WHITE); textSize = 15.5f; background = null
+            hint = hintText; setHintTextColor(GaUi.MUTED); setTextColor(GaUi.WHITE); textSize = 15.5f; background = null
             setPadding(dp(16), dp(12), dp(8), dp(12)); maxLines = 4
         }
         inputRow.addView(input, LinearLayout.LayoutParams(0, -1, 1f))
@@ -146,7 +164,7 @@ object GaScreens {
         }
         inputRow.addView(send, LinearLayout.LayoutParams(dp(56), -1))
         shell.addView(inputRow, LinearLayout.LayoutParams(-1, dp(54)).apply { setMargins(dp(16), 0, dp(16), dp(10)) })
-        shell.addView(bottomNav(ui, nav, Tab.AI))
+        shell.addView(bottomNav(ui, nav, tab))
         return Chat(shell, messages, input, ui, scroll)
     }
 
@@ -480,11 +498,17 @@ object GaScreens {
         }
     }
 
-    fun renderLoopholes(ui: GaUi, container: LinearLayout, findings: List<LoopholeFinding>, message: String?, lawyer: LawyerTake?, onCite: (LoopholeCite) -> Unit) {
+    const val COVERAGE_HINT = "GA.LAW.HELP is still adding Georgia laws and court opinions to its library, so more topics will have results soon. Try again later or try a related topic."
+
+    fun renderLoopholes(ui: GaUi, container: LinearLayout, findings: List<LoopholeFinding>, message: String?, lawyer: LawyerTake?, refused: Boolean = false, share: Pair<() -> Unit, () -> Unit>? = null, onCite: (LoopholeCite) -> Unit) {
         val dp = ui::dp
         container.removeAllViews()
         container.addView(ui.sectionHeader("Findings (${findings.size})"))
-        if (findings.isEmpty()) container.addView(ui.emptyCard(R.drawable.ga_ic_search, "Nothing found", message ?: "No findings could be supported by verified Georgia sources. GA.LAW.HELP never invents a citation."), ui.lp(4, 4))
+        if (findings.isEmpty()) {
+            val base = message ?: "No findings could be supported by verified Georgia sources. GA.LAW.HELP never invents a citation."
+            if (refused) container.addView(ui.emptyCard(R.drawable.ga_ic_error, "Can’t help with that", base), ui.lp(4, 4))
+            else container.addView(ui.emptyCard(R.drawable.ga_ic_search, "Nothing found yet", if (base.contains("still adding")) base else base + "\n\n" + COVERAGE_HINT), ui.lp(4, 4))
+        }
         findings.forEach { f ->
             container.addView(LinearLayout(ui.context).apply {
                 orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 12, glow = false)
@@ -494,15 +518,20 @@ object GaScreens {
                 citeViews(ui, this, f.citations, onCite)
             }, ui.lp(5, 5))
         }
-        if (lawyer != null) {
-            container.addView(LinearLayout(ui.context).apply {
-                orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
-                background = ui.glowCard(Color.argb(235, 22, 30, 44), GaUi.GOLD, 14, glow = true)
-                addView(ui.text(lawyer.label, 18f, GaUi.GOLD, ui.serifBold))
-                addView(ui.text(lawyer.text, 14.5f, GaUi.WHITE).apply { setPadding(0, dp(8), 0, dp(4)); setLineSpacing(0f, 1.15f); setTextIsSelectable(true) })
-                citeViews(ui, this, lawyer.citations, onCite)
-                addView(ui.text(lawyer.disclaimer, 12.5f, GaUi.MUTED, ui.sansMedium).apply { setPadding(0, dp(10), 0, 0) })
-            }, ui.lp(10, 6))
+        if (lawyer != null) container.addView(lawyerCard(ui, lawyer, onCite), ui.lp(10, 6))
+        if (share != null && (findings.isNotEmpty() || lawyer != null)) container.addView(shareRow(ui, share.first, share.second))
+    }
+
+    /** Gold "If I Was Your Lawyer, I Would Say" card shared by Legal Loopholes and Case Chat. */
+    fun lawyerCard(ui: GaUi, lawyer: LawyerTake, onCite: (LoopholeCite) -> Unit): LinearLayout {
+        val dp = ui::dp
+        return LinearLayout(ui.context).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
+            background = ui.glowCard(Color.argb(235, 22, 30, 44), GaUi.GOLD, 14, glow = true)
+            addView(ui.text(lawyer.label, 18f, GaUi.GOLD, ui.serifBold))
+            addView(ui.text(lawyer.text, 14.5f, GaUi.WHITE).apply { setPadding(0, dp(8), 0, dp(4)); setLineSpacing(0f, 1.15f); setTextIsSelectable(true) })
+            citeViews(ui, this, lawyer.citations, onCite)
+            addView(ui.text(lawyer.disclaimer, 12.5f, GaUi.MUTED, ui.sansMedium).apply { setPadding(0, dp(10), 0, 0) })
         }
     }
 }

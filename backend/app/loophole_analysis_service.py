@@ -20,6 +20,7 @@ DISCLAIMER = "This is legal information, not legal advice; talk to a Georgia att
 NONE_FOUND = "No contradictions, gaps, ambiguities or exceptions could be supported by the verified Georgia authorities retrieved for this topic."
 REFUSAL = ("GA.LAW.HELP can't help with evading law enforcement, avoiding detection, or committing a crime. "
            "You can ask about how a Georgia law is written, its exceptions and defenses, or where courts have disagreed.")
+COVERAGE_NOTE = "GA.LAW.HELP is still adding Georgia laws and court opinions to its library, so try again later or try a related topic."
 SUGGESTED_TOPICS = ("Self-defense", "Landlord security deposits", "DUI", "Traffic stops", "Expungement / record restriction", "Eviction notice")
 
 _UNSAFE = re.compile(
@@ -144,7 +145,7 @@ def analyze_loopholes(topic: str, ask_ai, db=None) -> dict:
     retrieval = _hybrid_retrieval(topic, "case_analysis", db, 15)
     verified = _verified_hits(retrieval)
     if not verified:
-        return {**base, "refused": False, "message": "No verified Georgia authority was retrieved for this topic, so no findings can be shown. " + NONE_FOUND,
+        return {**base, "refused": False, "message": "No verified Georgia authority was retrieved for this topic, so no findings can be shown. " + NONE_FOUND + " " + COVERAGE_NOTE,
                 "findings": [], "authorities": [], "dropped_findings": 0, "grounded_authority_count": 0, "lawyer_take": None}
     raw = ask_ai(_prompt(topic, _authority_context(verified)))
     findings, dropped = validate_findings(_parse(raw), verified)

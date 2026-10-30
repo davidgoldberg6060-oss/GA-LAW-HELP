@@ -142,3 +142,46 @@ def test_signed_billing_webhook_activates_membership():
         assert client.get("/cases", headers=headers).status_code == 200
         bad = client.post("/billing/webhook", content=payload, headers={"Stripe-Signature":f"t={timestamp},v1=bad"})
         assert bad.status_code == 400
+
+
+def test_privacy_policy_is_served_and_matches_docs():
+    root = Path(__file__).resolve().parents[3]
+    assert (root / "docs/PRIVACY_POLICY.md").read_text(encoding="utf-8") == (root / "backend/app/privacy_policy.md").read_text(encoding="utf-8")
+    with TestClient(app) as client:
+        page = client.get("/privacy")
+        assert page.status_code == 200 and page.headers["content-type"].startswith("text/html")
+        assert "<h1>GA.LAW.HELP Privacy Policy</h1>" in page.text and "Delete Account" in page.text
+        assert client.get("/privacy.md").text.startswith("# GA.LAW.HELP Privacy Policy")
+
+
+def test_account_deletion_removes_user_cases_files_and_tokens():
+    from app import models
+    from app.database import SessionLocal
+    with TestClient(app) as client:
+        reg = client.post("/auth/register", json={"email": "delete-me@example.com", "password": "delete-me-correct-password"}).json()
+        if "dev_verification_token" in reg:
+            client.post("/auth/verify-email", json={"token": reg["dev_verification_token"]})
+        reg.update(client.post("/auth/login", json={"email": "delete-me@example.com", "password": "delete-me-correct-password"}).json())
+        headers = auth_header(reg["access_token"])
+        case_id = client.post("/cases", json={"title": "Case to delete"}, headers=headers).json()["id"]
+        up = client.post(f"/cases/{case_id}/evidence", files={"file": ("doc.txt", b"evidence bytes", "text/plain")}, headers=headers)
+        assert up.status_code == 200
+        with SessionLocal() as db:
+            key = db.query(models.Evidence).filter_by(case_id=case_id).one().storage_key
+        stored = Path(os.environ["EVIDENCE_DIR"]) / "staging" / key
+        assert stored.exists()
+
+        assert client.post("/me/delete", json={"password": "delete-me-correct-password", "confirm": "nope"}, headers=headers).status_code == 422
+        assert client.post("/me/delete", json={"password": "wrong-password-here", "confirm": "DELETE"}, headers=headers).status_code == 403
+        done = client.post("/me/delete", json={"password": "delete-me-correct-password", "confirm": "DELETE"}, headers=headers)
+        assert done.status_code == 200 and done.json() == {"deleted": True, "cases_deleted": 1, "files_deleted": 1}
+
+        assert not stored.exists()
+        assert client.get("/me", headers=headers).status_code == 401
+        assert client.post("/auth/refresh", json={"refresh_token": reg["refresh_token"]}).status_code == 401
+        assert client.post("/auth/login", json={"email": "delete-me@example.com", "password": "delete-me-correct-password"}).status_code == 401
+        with SessionLocal() as db:
+            assert db.query(models.Case).filter_by(id=case_id).count() == 0
+            assert db.query(models.CaseNote).filter_by(case_id=case_id).count() == 0
+            assert db.query(models.Evidence).filter_by(case_id=case_id).count() == 0
+            assert db.query(models.AuditLog).filter_by(user_id=reg["user"]["id"]).count() == 0

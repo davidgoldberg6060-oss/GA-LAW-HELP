@@ -97,3 +97,12 @@ def finalize_chunks(user_id,case_id,upload_id,filename,total_chunks,expected_byt
         dest.unlink(missing_ok=True); raise ValueError('assembled size does not match declared total_bytes')
     shutil.rmtree(src,ignore_errors=True); put_file(dest,key)
     return key,h.hexdigest(),size
+def delete_stored(key:str):
+    """Permanently remove one stored evidence object (used by account deletion)."""
+    if BACKEND=='s3':
+        if BUCKET: _s3().delete_object(Bucket=BUCKET,Key=_cloud_key(key))
+        return
+    (ROOT/'staging'/key).unlink(missing_ok=True)
+
+def delete_upload_sessions(user_id:int, case_id:int):
+    shutil.rmtree(ROOT/'uploads'/private_storage_prefix(user_id,case_id),ignore_errors=True)

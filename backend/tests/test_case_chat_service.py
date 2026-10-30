@@ -139,8 +139,9 @@ def test_android_case_chat_screen_is_wired_to_the_route():
     api = (root / "ApiClient.kt").read_text(encoding="utf-8")
     home = (root / "HomeActivity.kt").read_text(encoding="utf-8")
     assert 'execute("/cases/$id/chat","POST",JSONObject().put("message",message).put("history",history))' in api
-    assert 'addButton(root,"Case Chat"){showCaseChat(caseId)}' in home
-    chat = home.split("private fun showCaseChat(caseId:Int)", 1)[1].split("private fun ", 1)[0]
+    assert 'addButton(root,"Case Chat"){showCaseChat(caseId,detail.optString("title"))}' in home
+    assert "GaScreens.caseChat(ui,nav," in home
+    chat = home.split("private fun sendCaseChat(", 1)[1].split("private fun ", 1)[0]
     assert "api.caseChat(caseId,text,history)" in chat
     assert "GroundedLegalResult.answer(result)" in chat and "GroundedLegalResult.authoritySummary(result)" in chat
     assert 'put("role","user")' in chat and 'put("role","assistant")' in chat
