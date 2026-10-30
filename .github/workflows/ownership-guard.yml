@@ -1,0 +1,42 @@
+name: Ownership files guard
+on:
+  push:
+    branches: [main]
+    paths:
+      - LICENSE
+      - OWNERSHIP.md
+      - PROJECT_CONTROL.md
+      - CREDITS_AND_REVENUE_SHARE.md
+      - .github/CODEOWNERS
+permissions:
+  contents: read
+  issues: write
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check who changed ownership files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          FILES="LICENSE OWNERSHIP.md PROJECT_CONTROL.md CREDITS_AND_REVENUE_SHARE.md .github/CODEOWNERS"
+          bad=""
+          for sha in $(gh api "repos/$REPO/compare/$BEFORE...$AFTER" --jq '.commits[].sha'); do
+            login=$(gh api "repos/$REPO/commits/$sha" --jq '.author.login // "unknown"')
+            changed=$(gh api "repos/$REPO/commits/$sha" --jq '.files[].filename')
+            for f in $FILES; do
+              if echo "$changed" | grep -qx "$f" && [ "$login" != "davidgoldberg6060-oss" ]; then
+                bad="$bad\n- $sha by $login changed $f"
+              fi
+            done
+          done
+          if [ -n "$bad" ]; then
+            body=$(printf "Ownership files were changed by someone other than davidgoldberg6060-oss:%b\n\nReview and revert if not approved." "$bad")
+            gh issue create -R "$REPO" --title "Ownership files changed without owner approval" --body "$body"
+            echo "::error::Unapproved change to ownership files"; exit 1
+          fi
+          echo "Ownership file changes authored by owner only."
