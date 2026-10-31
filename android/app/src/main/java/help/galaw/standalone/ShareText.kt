@@ -29,4 +29,14 @@ object ShareText {
         append(lawyerBlock(lawyer))
         append("\n\n").append(NOTE)
     }
+
+    fun chargeCheck(situation: String, r: GaScreens.ChargeCheckResult): String = buildString {
+        append("Charge Check (Georgia) — estimate\n").append(r.estimateNote).append("\n\nWhat happened: ").append(situation.trim())
+        if (r.charges.isNotEmpty()) { append("\n\nLIKELY CHARGES"); r.charges.forEach { c -> append("\n• ").append(c.charge).append(" — ").append(c.cite.citation).append(" (").append(c.levelLabel).append(")"); c.penalty?.let { append("\n  Penalty text: “").append(it).append("”") } } }
+        listOf("POSSIBLE DEFENSES & WEAK SPOTS" to r.defenses, "WAYS TO GET THE LOWEST OUTCOME" to r.lowest).forEach { (h, list) ->
+            if (list.isNotEmpty()) { append("\n\n").append(h); list.forEach { o -> append("\n• ").append(o.title).append(": ").append(o.explanation.trim()); if (o.citations.isNotEmpty()) append("\n").append(cites(o.citations)) } }
+        }
+        append(lawyerBlock(r.lawyer))
+        append("\n\n").append(r.rightsReminder).append("\n").append(r.disclaimer)
+    }
 }

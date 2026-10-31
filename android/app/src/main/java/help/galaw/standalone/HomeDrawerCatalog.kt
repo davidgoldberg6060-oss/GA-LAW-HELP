@@ -13,6 +13,7 @@ object HomeDrawerCatalog {
         HomeDrawerItem("ai", "Talk to Me (AI)", false),
         HomeDrawerItem("laws", "Georgia Laws", false),
         HomeDrawerItem("loopholes", "Legal Loopholes", true),
+        HomeDrawerItem("charges", "Charge Check", true),
         HomeDrawerItem("motions", "Motions & Legal Work", true),
         HomeDrawerItem("forms", "Legal Forms", false),
         HomeDrawerItem("court", "Court Information", false),

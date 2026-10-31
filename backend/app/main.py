@@ -11,6 +11,7 @@ from .innocence_analysis_service import innocence_analysis_response
 from .case_chat_service import analyze_case_conversation, case_summary_from_case, parse_history
 from .internal_legal_search import search_internal
 from .loophole_analysis_service import SUGGESTED_TOPICS, analyze_loopholes
+from .charge_check_service import analyze_charge_check, charge_check_note_text
 from .authority_search_service import persisted_authority_hits, public_law_search, search_georgia_authorities
 from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload, safe_public_source_url
@@ -182,6 +183,38 @@ def loopholes_analyze(body:dict,user=Depends(require_paid),db:Session=Depends(ge
     except ValueError as error: raise HTTPException(400,str(error))
     except RuntimeError: raise HTTPException(503,'The legal analysis assistant is temporarily unavailable.')
     audit(db,user.id,'RUN_LOOPHOLE_ANALYSIS','topic',None);db.commit();return response
+
+def save_charge_check_note(db,case_id,user_id,text):
+    db.add(models.CaseNote(case_id=case_id,owner_id=user_id,note_type='CHARGE_CHECK',title='Charge Check',content=text,language='en'))
+
+@app.post('/charge-check')
+def charge_check(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
+    """Charge Check: likely Georgia charges, defenses and lawful lowest-outcome paths for a situation.
+
+    Attaches to ``case_id`` when given (must be owned); otherwise creates a new criminal case
+    unless ``save_case`` is false. Refused or empty-input requests never create a case.
+    """
+    case=None; raw_id=body.get('case_id')
+    if raw_id not in (None,''):
+        try: case=owned_case(int(raw_id),user,db)
+        except (TypeError,ValueError): raise HTTPException(400,'Invalid case id.')
+    situation=str(body.get('situation','')).strip() or (str(case.narrative or '').strip() if case is not None else '')
+    try: response=analyze_charge_check(situation,ask_openai,db=db,case_summary=case_summary_from_case(case) if case else None)
+    except ValueError as error: raise HTTPException(400,str(error))
+    except RuntimeError: raise HTTPException(503,'The charge check assistant is temporarily unavailable.')
+    if not response.get('refused'):
+        if case is None and body.get('save_case',True) is not False:
+            case=models.Case(owner_id=user.id,title=('Charge Check: '+situation)[:120],case_type='criminal',stage='Pre-charge / investigation',narrative=situation)
+            db.add(case);db.flush();audit(db,user.id,'CREATE_CASE','case',case.id)
+        if case is not None:
+            save_charge_check_note(db,case.id,user.id,charge_check_note_text(response))
+    response['case_id']=case.id if case is not None else None
+    audit(db,user.id,'RUN_CHARGE_CHECK','case',case.id if case is not None else None);db.commit();return response
+
+@app.post('/cases/{case_id}/charge-check')
+def case_charge_check(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
+    owned_case(case_id,user,db)
+    return charge_check({**body,'case_id':case_id},user,db)
 
 @app.get('/loopholes/topics')
 def loopholes_topics():

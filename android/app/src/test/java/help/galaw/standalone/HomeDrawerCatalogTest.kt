@@ -11,13 +11,13 @@ class HomeDrawerCatalogTest {
     fun drawerMatchesApprovedHomeItems() {
         assertEquals(
             listOf(
-                "Home", "My Cases", "Talk to Me (AI)", "Georgia Laws", "Legal Loopholes", "Motions & Legal Work", "Legal Forms",
+                "Home", "My Cases", "Talk to Me (AI)", "Georgia Laws", "Legal Loopholes", "Charge Check", "Motions & Legal Work", "Legal Forms",
                 "Court Information", "Know Your Rights", "Resources", "Emergency Information",
                 "Payments & Subscription", "Settings", "Profile", "Help & Support"
             ),
             HomeDrawerCatalog.items.map { it.label }
         )
-        assertEquals(setOf("cases", "loopholes", "motions", "profile"), HomeDrawerCatalog.items.filter { it.requiresSignIn }.map { it.id }.toSet())
+        assertEquals(setOf("cases", "loopholes", "charges", "motions", "profile"), HomeDrawerCatalog.items.filter { it.requiresSignIn }.map { it.id }.toSet())
         assertFalse(HomeDrawerCatalog.items.first { it.id == "rights" }.requiresSignIn)
     }
 
