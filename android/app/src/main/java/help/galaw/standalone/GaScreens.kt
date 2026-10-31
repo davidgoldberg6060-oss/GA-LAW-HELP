@@ -53,7 +53,7 @@ object GaScreens {
         "laws" -> R.drawable.ga_ic_balance; "motions" -> R.drawable.ga_ic_edit_square; "forms" -> R.drawable.ga_ic_description
         "court" -> R.drawable.ga_ic_account_balance; "rights" -> R.drawable.ga_ic_groups; "resources" -> R.drawable.ga_ic_support
         "emergency" -> R.drawable.ga_ic_warning; "payments" -> R.drawable.ga_ic_payments; "settings" -> R.drawable.ga_ic_settings
-        "profile" -> R.drawable.ga_ic_person; "loopholes" -> R.drawable.ga_ic_search; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
+        "profile" -> R.drawable.ga_ic_person; "loopholes" -> R.drawable.ga_ic_search; "charges" -> R.drawable.ga_ic_error; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
     }
 
     fun drawer(ui: GaUi, items: List<HomeDrawerItem>, versionName: String, onSelect: (HomeDrawerItem) -> Unit, onClose: () -> Unit): View {
@@ -533,5 +533,82 @@ object GaScreens {
             citeViews(ui, this, lawyer.citations, onCite)
             addView(ui.text(lawyer.disclaimer, 12.5f, GaUi.MUTED, ui.sansMedium).apply { setPadding(0, dp(10), 0, 0) })
         }
+    }
+
+    // ---------------- Charge Check ----------------
+    class ChargeCheckForm(val root: View, val situation: EditText, val results: LinearLayout)
+    data class ChargeItem(val charge: String, val levelLabel: String, val penalty: String?, val penaltyNote: String?, val why: String, val cite: LoopholeCite)
+    data class ChargeOption(val label: String?, val title: String, val explanation: String, val citations: List<LoopholeCite>)
+    data class ChargeCheckResult(
+        val charges: List<ChargeItem>, val defenses: List<ChargeOption>, val lowest: List<ChargeOption>, val lawyer: LawyerTake?,
+        val message: String?, val refused: Boolean, val estimateNote: String, val rightsReminder: String, val disclaimer: String,
+        val emergency: List<Pair<String, String>>, val caseId: Int?
+    )
+
+    const val CHARGE_DISCLAIMER = "This is legal information, not legal advice. Talk to a Georgia criminal defense lawyer or public defender before you decide anything."
+
+    fun chargeCheck(ui: GaUi, nav: Nav, caseTitle: String?, onCheck: (String) -> Unit): ChargeCheckForm {
+        val (root, body) = page(ui, nav, Tab.LAWS, "Charge Check", "Describe what happened. See what Georgia charges could apply, possible defenses, and lawful ways to get the lowest outcome.")
+        if (!caseTitle.isNullOrBlank()) body.addView(ui.text("Case: $caseTitle", 13.5f, GaUi.GOLD, ui.sansMedium), ui.lp(2, 4))
+        val situation = ui.input("What happened? Where, when, what police said or found…", true).apply { minLines = 5 }
+        body.addView(situation, ui.lp(8, 8))
+        body.addView(ui.primaryButton("Check Possible Charges") { onCheck(situation.text.toString()) }, ui.lp(4, 8))
+        body.addView(ui.note("Don’t talk to police about the case without a lawyer. If anyone is in danger, call 911."))
+        val results = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL }
+        body.addView(results)
+        body.addView(ui.note(CHARGE_DISCLAIMER))
+        return ChargeCheckForm(root, situation, results)
+    }
+
+    fun chargeCheckLoading(ui: GaUi, container: LinearLayout) {
+        loopholesLoading(ui, container)
+        ((container.getChildAt(0) as? LinearLayout)?.getChildAt(1) as? TextView)?.text = "Looking up Georgia Code sections…"
+    }
+
+    private fun optionCard(ui: GaUi, o: ChargeOption, onCite: (LoopholeCite) -> Unit) = LinearLayout(ui.context).apply {
+        val dp = ui::dp
+        orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 12, glow = false)
+        if (!o.label.isNullOrBlank()) addView(ui.text(o.label.uppercase(), 11f, GaUi.BLUE_BRIGHT, ui.sansBold))
+        addView(ui.text(o.title, 15.5f, GaUi.GOLD, ui.sansMedium).apply { setPadding(0, dp(3), 0, dp(3)) })
+        addView(ui.text(o.explanation, 14f, GaUi.TEXT).apply { setLineSpacing(0f, 1.12f); setTextIsSelectable(true) })
+        citeViews(ui, this, o.citations, onCite)
+    }
+
+    fun renderChargeCheck(ui: GaUi, container: LinearLayout, r: ChargeCheckResult, share: Pair<() -> Unit, () -> Unit>?, onDial: (String) -> Unit, onCite: (LoopholeCite) -> Unit) {
+        val dp = ui::dp
+        container.removeAllViews()
+        if (r.emergency.isNotEmpty()) {
+            container.addView(LinearLayout(ui.context).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(Color.argb(235, 70, 16, 22), Color.rgb(255, 90, 90), 12, glow = true)
+                addView(ui.text("If anyone is in danger right now, call 911.", 16f, GaUi.WHITE, ui.sansBold))
+                r.emergency.forEach { (label, contact) ->
+                    addView(ui.text("$label: $contact", 14f, GaUi.WHITE).apply { setPadding(0, dp(6), 0, 0); isClickable = true; setOnClickListener { onDial(contact.filter { it.isDigit() }) } })
+                }
+            }, ui.lp(6, 6))
+        }
+        if (r.refused) { container.addView(ui.emptyCard(R.drawable.ga_ic_error, "Can’t help with that", r.message ?: ""), ui.lp(4, 4)); return }
+        container.addView(ui.note(r.estimateNote))
+        container.addView(ui.sectionHeader("Likely Charges (${r.charges.size})"))
+        if (r.charges.isEmpty()) container.addView(ui.emptyCard(R.drawable.ga_ic_search, "No verified match yet", (r.message ?: "") + "\n\n" + COVERAGE_HINT), ui.lp(4, 4))
+        r.charges.forEach { c ->
+            container.addView(LinearLayout(ui.context).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 12, glow = false)
+                addView(ui.text(c.levelLabel.uppercase(), 11f, if (c.levelLabel.startsWith("Felony")) Color.rgb(255, 120, 120) else GaUi.BLUE_BRIGHT, ui.sansBold))
+                addView(ui.text(c.charge, 15.5f, GaUi.GOLD, ui.sansMedium).apply { setPadding(0, dp(3), 0, dp(3)) })
+                if (c.why.isNotBlank()) addView(ui.text(c.why, 14f, GaUi.TEXT).apply { setLineSpacing(0f, 1.12f); setTextIsSelectable(true) })
+                addView(ui.text(c.penalty?.let { "Penalty (from the law): “$it”" } ?: (c.penaltyNote ?: ""), 13.5f, GaUi.MUTED).apply { setPadding(0, dp(6), 0, 0); setTextIsSelectable(true) })
+                citeViews(ui, this, listOf(c.cite), onCite)
+            }, ui.lp(5, 5))
+        }
+        if (r.defenses.isNotEmpty()) { container.addView(ui.sectionHeader("Possible Defenses & Weak Spots")); r.defenses.forEach { container.addView(optionCard(ui, it, onCite), ui.lp(5, 5)) } }
+        if (r.lowest.isNotEmpty()) { container.addView(ui.sectionHeader("Ways to Get the Lowest Outcome")); r.lowest.forEach { container.addView(optionCard(ui, it, onCite), ui.lp(5, 5)) } }
+        if (r.lawyer != null) container.addView(lawyerCard(ui, r.lawyer, onCite), ui.lp(10, 6))
+        container.addView(LinearLayout(ui.context).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.GOLD, 12, glow = false)
+            addView(ui.text("Your Rights", 15.5f, GaUi.GOLD, ui.sansBold))
+            addView(ui.text(r.rightsReminder, 14f, GaUi.TEXT).apply { setPadding(0, dp(4), 0, 0) })
+        }, ui.lp(8, 6))
+        if (r.caseId != null) container.addView(ui.note("Saved to your case notes."))
+        if (share != null && (r.charges.isNotEmpty() || r.lawyer != null)) container.addView(shareRow(ui, share.first, share.second))
     }
 }
