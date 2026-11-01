@@ -615,5 +615,6 @@ export default function App(){
     {(mode==='forgot'||mode==='reset')&&<button type="button" className="authLink" onClick={()=>{if(mode==='reset')window.history.replaceState({},'', '/');setMode('login');setAuthError('');setPassword('')}}>Back to sign in</button>}
     {mode==='register'&&<small className="accountFinePrint">Public legal learning remains available without an account.</small>}
    </form></section></div>}
+  <footer className="appFooter" style={{padding:'16px',fontSize:'12px',opacity:.8,textAlign:'center'}}><p>GA.LAW.HELP gives general information about Georgia law. It is not legal advice and does not create an attorney-client relationship. Questions may be processed by third-party AI providers; do not enter sensitive personal information.</p><p><a href={API+'/privacy'} target="_blank" rel="noreferrer">Privacy policy</a> · <a href="mailto:davidgoldberg6060@gmail.com">Contact</a></p></footer>
  </main>
 }

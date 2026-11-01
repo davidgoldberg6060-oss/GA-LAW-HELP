@@ -140,8 +140,8 @@ def public_research(q:str='',user=Depends(require_paid)):
     lower=query.lower()
     resources=[
         {'title':'Georgia General Assembly — Georgia Code','url':'https://www.legis.ga.gov/legislation/georgia-code','kind':'Statutes','official':True},
-        {'title':'Supreme Court of Georgia — Opinions','url':'https://www.gasupreme.us/opinions/','kind':'Court opinions','official':True},
-        {'title':'Court of Appeals of Georgia — Opinions','url':'https://www.gaappeals.us/opinions/','kind':'Court opinions','official':True},
+        {'title':'Supreme Court of Georgia — Opinions','url':'https://www.gasupreme.us/','kind':'Court opinions','official':True},
+        {'title':'Court of Appeals of Georgia — Opinions','url':'https://www.gaappeals.gov/opinion-search/','kind':'Court opinions','official':True},
     ]
     topic='Georgia legal research'
     guidance='Start with the current Georgia Code, then check controlling Georgia appellate decisions and the rule in effect on the relevant date.'
@@ -151,7 +151,7 @@ def public_research(q:str='',user=Depends(require_paid)):
     elif any(x in lower for x in ('custody','divorce','child support','family','marriage')):
         topic='Georgia family law'
         guidance='Identify the county, existing orders, filing stage, and dates. Court forms and local rules may matter in addition to the Georgia Code.'
-        resources.append({'title':'Georgia Judicial Council — Self-Help Resources','url':'https://georgiacourts.gov/a2j/self-help-resources-highlighted-by-a2j/','kind':'Court resources','official':True})
+        resources.append({'title':'Georgia Judicial Council — Self-Help Resources','url':'https://georgiacourts.gov/a2j/','kind':'Court resources','official':True})
     elif any(x in lower for x in ('appeal','habeas','conviction','ineffective','plea')):
         topic='Georgia appeal or post-conviction research'
         guidance='Deadlines and procedural history are critical. Gather the docket, judgment, transcripts, motions, appellate decisions, and earlier habeas filings before relying on a remedy.'
@@ -205,8 +205,8 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(require_paid),db:Se
 @app.post('/admin/legal/sources/bootstrap-georgia')
 def bootstrap_georgia_sources(admin=Depends(require_admin),db:Session=Depends(get_db)):
     sources=[
-      {'name':'Supreme Court of Georgia — Opinions','jurisdiction':'Georgia','base_url':'https://www.gasupreme.us/opinions/','source_type':'COURT_OPINIONS','official':True,'enabled':True},
-      {'name':'Court of Appeals of Georgia — Opinions','jurisdiction':'Georgia','base_url':'https://www.gaappeals.us/opinions/','source_type':'COURT_OPINIONS','official':True,'enabled':True},
+      {'name':'Supreme Court of Georgia — Opinions','jurisdiction':'Georgia','base_url':'https://www.gasupreme.us/','source_type':'COURT_OPINIONS','official':True,'enabled':True},
+      {'name':'Court of Appeals of Georgia — Opinions','jurisdiction':'Georgia','base_url':'https://www.gaappeals.gov/opinion-search/','source_type':'COURT_OPINIONS','official':True,'enabled':True},
       {'name':'Georgia General Assembly — Georgia Code','jurisdiction':'Georgia','base_url':'https://www.legis.ga.gov/legislation/georgia-code','source_type':'STATUTES','official':True,'enabled':True},
       {'name':'Judicial Council of Georgia','jurisdiction':'Georgia','base_url':'https://georgiacourts.gov/','source_type':'COURT_RESOURCES','official':True,'enabled':True},
     ]

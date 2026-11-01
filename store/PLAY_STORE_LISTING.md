@@ -25,10 +25,12 @@ What's inside:
 This is a legal reference tool. It is not legal advice and not a substitute for an attorney. For anything involving your rights, obligations, or a dispute, talk to a licensed Georgia lawyer.
 
 ## Data Safety form answers
-Data collected: Account info you choose to provide (email, optional profile fields). No location, no contacts, no photos, no device identifiers beyond standard crash/analytics if enabled.
-Data shared: None. No data is sold or shared with third parties.
+Data collected: Email address (only if you create an optional account); user-generated content (questions you type, case details, files you choose to upload); an anonymous app-generated device ID (stored only as a hash) used for saving data and daily limits. No location, no contacts, no ads, no analytics trackers.
+Data shared: Question text and case details you submit are sent to AI providers (Google Gemini, Groq, OpenRouter; xAI/OpenAI as backup) to generate answers. Some free AI tiers may use submitted text to improve their models, so declare "User-generated content: shared" in the form. Nothing is sold.
+Privacy policy URL: https://api-production-60cc.up.railway.app/privacy
+Contact email: davidgoldberg6060@gmail.com
 Data encrypted in transit: Yes (HTTPS). Stored encrypted at rest: Yes.
-Data deletion: Users can delete their account and all associated data from in-app settings; deletion requests also honored by emailing support.
+Data deletion: Users can delete their account and all associated data from in-app settings; deletion requests also honored by emailing davidgoldberg6060@gmail.com.
 
 ## Screenshots needed
 1. Home screen with search bar
