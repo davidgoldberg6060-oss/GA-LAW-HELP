@@ -14,6 +14,8 @@ def test_plan_pins_rules_and_small_claims():
     assert "Unif. Mag. Ct. R. 5" in build_query_plan("Unif. Mag. Ct. R. 5").pinned_citations
     plan = build_query_plan("how do I file a small claims case in Georgia")
     assert "magistrate" in plan.expansion_terms
+    assert "Unif. Mag. Ct. R. 17" in plan.pinned_citations
+    assert "O.C.G.A. § 15-10-43" in plan.pinned_citations
 
 
 def test_law_search_includes_court_rules():
