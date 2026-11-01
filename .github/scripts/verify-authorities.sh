@@ -23,6 +23,8 @@ QUAL="
              AND a.citation LIKE 'Ga. Comp. R. & Regs.%' THEN 2
         WHEN lower(a.authority_type) IN ('case_law','case','opinion')
              AND a.source_url LIKE 'https://www.courtlistener.com/%' THEN 3
+        WHEN lower(a.authority_type) IN ('case_law','case','opinion')
+             AND a.source_url LIKE 'https://efast.gaappeals.gov/download?filingId=%' THEN 5
         WHEN lower(a.authority_type)='court_rule'
              AND a.source_url ~ '^https://([a-z0-9-]+\.)*(gasupreme\.us|gaappeals\.gov|georgiacourts\.gov|gasupreme\.gov)/' THEN 4
       END AS source_id
