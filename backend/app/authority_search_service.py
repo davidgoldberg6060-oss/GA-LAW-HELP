@@ -7,7 +7,9 @@ from dataclasses import dataclass
 from sqlalchemy import case, func, literal_column, or_
 from sqlalchemy.orm import Session
 
-from .models import LegalAuthority
+import logging
+
+from .models import AuthorityVerification, LegalAuthority, VerificationSource
 
 _NEGATIVE = {"overruled", "vacated", "superseded", "withdrawn", "repealed"}
 _VERIFIED = {"verified", "official", "validated", "confirmed"}
@@ -25,6 +27,13 @@ class AuthoritySearchResult:
     precedential_status: str
     text: str
     usable_as_support: bool
+    verification_source: str | None = None
+    verification_method: str | None = None
+    as_of: str | None = None
+
+    @property
+    def display_citation(self) -> str:
+        return with_as_of(self.citation, self.as_of)
 
 
 def _negative(authority: LegalAuthority) -> bool:
@@ -34,6 +43,67 @@ def _negative(authority: LegalAuthority) -> bool:
     }
     treatment = (authority.negative_treatment or "").lower()
     return bool(values & _NEGATIVE) or any(word in treatment for word in _NEGATIVE)
+
+
+_log = logging.getLogger(__name__)
+AMENDMENT_NOTE = ("Georgia Code text shown is from the official 2022 edition (Public.Resource.Org release); "
+                  "some sections may have been amended since. Check the current law or ask a lawyer before relying on it.")
+
+
+def with_as_of(citation: str | None, as_of: str | None) -> str:
+    """'O.C.G.A. § 44-7-34' + 'text as of 2022 edition' -> 'O.C.G.A. § 44-7-34 (text as of 2022 edition)'."""
+    citation = (citation or "").strip()
+    if not as_of or not citation or "(text as of" in citation or f"({as_of})" in citation:
+        return citation
+    return f"{citation} ({as_of})"
+
+
+def verification_overlay(db: Session, ids) -> dict[int, tuple[str, str, str | None]]:
+    """authority id -> (source name, method, as-of label) from the authority_verifications side table.
+
+    A missing table (migration not applied yet) or DB error yields {} so search keeps working.
+    """
+    ids = [i for i in dict.fromkeys(ids or []) if i is not None]
+    if not ids:
+        return {}
+    try:
+        with db.begin_nested():
+            rows = (
+                db.query(AuthorityVerification.authority_id, VerificationSource.source_name,
+                         VerificationSource.method, VerificationSource.as_of_label)
+                .join(VerificationSource, VerificationSource.id == AuthorityVerification.source_id)
+                .filter(AuthorityVerification.authority_id.in_(ids))
+                .all()
+            )
+    except Exception as exc:  # pragma: no cover - depends on deployment state
+        _log.warning("Verification overlay unavailable: %s", type(exc).__name__)
+        return {}
+    return {r[0]: (r[1], r[2], r[3]) for r in rows}
+
+
+def _as_of_label(row: LegalAuthority, label: str | None) -> str | None:
+    if (row.authority_type or "").lower() == "regulation" and row.retrieved_at:
+        return f"text as retrieved {row.retrieved_at:%Y-%m-%d}"
+    return label
+
+
+def _results(db: Session, rows) -> list[AuthoritySearchResult]:
+    rows = list(rows)
+    overlay = verification_overlay(db, [row.id for row in rows])
+    out = []
+    for row in rows:
+        ver = overlay.get(row.id)
+        status = "verified" if ver and (row.status or "").lower() not in _VERIFIED else row.status
+        usable = _usable(row) or bool(ver and not _negative(row) and (row.source_url or "").startswith("https://"))
+        out.append(AuthoritySearchResult(
+            id=row.id, citation=row.citation, title=row.title, authority_type=row.authority_type,
+            source_url=row.source_url, status=status, currency_status=row.currency_status or "unknown",
+            precedential_status=row.precedential_status or "unknown", text=(row.text or "")[:12000],
+            usable_as_support=usable,
+            verification_source=ver[0] if ver else None, verification_method=ver[1] if ver else None,
+            as_of=_as_of_label(row, ver[2]) if ver else None,
+        ))
+    return out
 
 
 def _usable(authority: LegalAuthority) -> bool:
@@ -363,21 +433,7 @@ def search_georgia_authorities(db: Session, query: str, *, limit: int = 8, filte
         rows = _postgres_rows(db, term, keywords, limit, filters)
     else:
         rows = _fallback_rows(db, term, keywords, limit, filters)
-    return [
-        AuthoritySearchResult(
-            id=row.id,
-            citation=row.citation,
-            title=row.title,
-            authority_type=row.authority_type,
-            source_url=row.source_url,
-            status=row.status,
-            currency_status=row.currency_status or "unknown",
-            precedential_status=row.precedential_status or "unknown",
-            text=(row.text or "")[:12000],
-            usable_as_support=_usable(row),
-        )
-        for row in rows
-    ]
+    return _results(db, rows)
 
 
 _PRIMARY_TYPES = ("statute", "court_rule", "regulation")
@@ -395,7 +451,7 @@ def _to_result(row: LegalAuthority) -> AuthoritySearchResult:
 def exact_citation_results(db: Session, citations) -> list[AuthoritySearchResult]:
     """Exact-citation lookup (btree on citation). Citations not in the database are dropped."""
     cites = [c for c in dict.fromkeys(citations or []) if c]
-    return [_to_result(row) for row in _pinned_rows(db, cites, ())] if cites else []
+    return _results(db, _pinned_rows(db, cites, ())) if cites else []
 
 
 def grounding_search(db: Session, query: str, *, limit: int = 12) -> list[AuthoritySearchResult]:
@@ -433,6 +489,10 @@ def authority_hit(row: AuthoritySearchResult) -> dict:
         "negative_treatment": [],
         "usable_as_support": row.usable_as_support,
         "authority_id": row.id,
+        "verification_source": row.verification_source,
+        "verification_method": row.verification_method,
+        "as_of": row.as_of,
+        "display_citation": row.display_citation,
     }
 
 
@@ -502,10 +562,4 @@ def public_law_search(db: Session, *, kind: str, keyword: str = "", title: str =
         .limit(limit)
         .all()
     )
-    return [
-        AuthoritySearchResult(id=row.id, citation=row.citation, title=row.title, authority_type=row.authority_type,
-                              source_url=row.source_url, status=row.status, currency_status=row.currency_status or "unknown",
-                              precedential_status=row.precedential_status or "unknown", text=(row.text or "")[:12000],
-                              usable_as_support=_usable(row))
-        for row in rows
-    ]
+    return _results(db, rows)
