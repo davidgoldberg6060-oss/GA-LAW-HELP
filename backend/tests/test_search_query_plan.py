@@ -33,7 +33,7 @@ def _db():
 
 def test_query_plan_expands_plain_english_and_pins_sections():
     plan = build_query_plan("tenant rights eviction notice")
-    assert "dispossessory" in plan.expansion_terms and "notice to quit" in plan.expansion_terms
+    assert "dispossessory" in plan.expansion_terms and "\"notice to quit\"" in plan.expansion_terms
     assert plan.pinned_citations[:2] == ("O.C.G.A. § 44-7-50", "O.C.G.A. § 44-7-51")
     assert "O.C.G.A. § 19-5-3" in build_query_plan("how to file for divorce in Georgia").pinned_citations
     assert "O.C.G.A. § 40-6-391" in build_query_plan("first DUI").pinned_citations

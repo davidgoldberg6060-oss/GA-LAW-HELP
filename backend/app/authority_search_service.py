@@ -108,35 +108,35 @@ _SV_TTL_SECONDS = 300.0
 # invented); they are retrieval hints, not legal text.
 QUERY_EXPANSIONS: tuple[tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]], ...] = (
     (("evict", "eviction", "evicted", "kicked out", "dispossessory"),
-     ("dispossessory", "landlord", "tenant", "notice to quit", "possession"),
+     ("dispossessory", '"notice to quit"', "landlord tenant", '"writ of possession"', "evict"),
      ("44-7-50", "44-7-51", "44-7-7")),
-    (("landlord", "tenant", "renter", "lease"), ("landlord", "tenant", "rent"), ()),
-    (("security deposit", "deposit back"), ("security deposit",), ("44-7-34", "44-7-35")),
-    (("landlord won't fix", "landlord will not fix", "mold", "habitab", "uninhabitable"), ("landlord", "repairs"), ("44-7-13",)),
+    (("landlord", "tenant", "renter", "lease"), ("landlord tenant",), ()),
+    (("security deposit", "deposit back"), ('"security deposit"',), ("44-7-34", "44-7-35")),
+    (("landlord won't fix", "landlord will not fix", "mold", "habitab", "uninhabitable"), ("landlord repair",), ("44-7-13",)),
     (("divorce", "divorced", "dissolution"), ("divorce", "alimony"), ("19-5-1", "19-5-2", "19-5-3", "19-5-5")),
     (("custody", "visitation", "parenting time"), ("custody", "visitation"), ("19-9-3",)),
-    (("child support",), ("child support",), ("19-6-15",)),
+    (('"child support"',), ('"child support"',), ("19-6-15",)),
     (("dui", "drunk driving", "driving drunk", "under the influence", "dwi"),
-     ("influence", "alcohol", "intoxicated"), ("40-6-391",)),
-    (("suspended license", "driving on suspended", "revoked license"), ("suspended", "license"), ("40-5-121",)),
+     ('"under the influence"', "alcohol drive"), ("40-6-391",)),
+    (("suspended license", "driving on suspended", "revoked license"), ("suspended license",), ("40-5-121",)),
     (("shoplift", "shoplifting", "stealing", "stole", "theft"), ("theft",), ("16-8-2", "16-8-14", "16-8-12")),
     (("assault",), ("assault",), ("16-5-20", "16-5-21")),
     (("battery", "hit someone", "punched"), ("battery",), ("16-5-23", "16-5-23.1")),
     (("domestic violence", "family violence", "protective order", "restraining order"),
-     ("family violence", "protective order"), ("19-13-1", "19-13-3", "19-13-4")),
-    (("trespass", "trespassing"), ("criminal trespass",), ("16-7-21",)),
-    (("disorderly",), ("disorderly conduct",), ("16-11-39",)),
-    (("obstruction", "resisting arrest", "resist arrest"), ("obstruction", "officer"), ("16-10-24",)),
-    (("gun", "firearm", "weapon", "pistol", "carry license", "concealed carry"), ("weapon", "firearm", "carry"), ("16-11-126", "16-11-127", "16-11-129")),
+     ('"family violence"', '"protective order"'), ("19-13-1", "19-13-3", "19-13-4")),
+    (("trespass", "trespassing"), ('"criminal trespass"',), ("16-7-21",)),
+    (("disorderly",), ('"disorderly conduct"',), ("16-11-39",)),
+    (("obstruction", "resisting arrest", "resist arrest"), ("obstruction officer",), ("16-10-24",)),
+    (("gun", "firearm", "weapon", "pistol", "carry license", "concealed carry"), ("weapon carry", "firearm carry"), ("16-11-126", "16-11-127", "16-11-129")),
     (("marijuana", "weed", "cannabis", "drugs", "possession of", "cocaine", "meth"),
-     ("controlled substance", "marijuana", "possession"), ("16-13-30", "16-13-2")),
+     ('"controlled substance"', "marijuana"), ("16-13-30", "16-13-2")),
     (("pulled over", "traffic stop", "search my car", "search the car", "search warrant", "searched"),
-     ("search", "warrant", "seizure"), ("17-5-1", "17-5-21", "17-5-30")),
-    (("first offender",), ("first offender",), ("42-8-60",)),
-    (("expunge", "expungement", "record restriction", "clear my record"), ("restriction", "record"), ("35-3-37",)),
-    (("self defense", "self-defense", "defend myself", "stand your ground"), ("justification", "force"), ("16-3-21", "16-3-23.1")),
-    (("workers comp", "workers' comp", "hurt at work", "injured at work"), ("workers compensation",), ("34-9-1",)),
-    (("statute of limitations", "too late to sue", "personal injury"), ("limitation",), ("9-3-33",)),
+     ("search warrant", "search seizure", '"probable cause"'), ("17-5-1", "17-5-21", "17-5-30")),
+    (('"first offender"',), ('"first offender"',), ("42-8-60",)),
+    (("expunge", "expungement", "record restriction", "clear my record"), ('"record restriction"', "expungement"), ("35-3-37",)),
+    (("self defense", "self-defense", "defend myself", "stand your ground"), ("justification force", "self defense"), ("16-3-21", "16-3-23.1")),
+    (("workers comp", "workers' comp", "hurt at work", "injured at work"), ('"workers compensation"',), ("34-9-1",)),
+    (("statute of limitations", "too late to sue", "personal injury"), ("limitation action", "personal injury"), ("9-3-33",)),
     (("speeding",), ("speed",), ("40-6-181",)),
 )
 _SECTION_IN_QUERY = re.compile(r"\b(\d{1,2}[A-Z]?-\d{1,3}[A-Z]?-\d{1,4}(?:\.\d+)?)\b")
@@ -160,8 +160,7 @@ def build_query_plan(query: str) -> QueryPlan:
     for triggers, terms, sections in QUERY_EXPANSIONS:
         if any(re.search(rf"\b{re.escape(t)}", lowered) for t in triggers):
             for term in terms:
-                if term not in keywords:
-                    extra[term] = None
+                extra[term] = None
             for section in sections:
                 pinned[f"O.C.G.A. § {section}"] = None
     return QueryPlan(tuple(keywords), tuple(extra), tuple(pinned))
@@ -235,12 +234,13 @@ def _vector_rows(db: Session, term: str, plan: QueryPlan, limit: int, filters: t
     weights = literal_column(f"'{_RANK_WEIGHTS}'::float4[]")
     words = list(plan.keywords)
     strict_text = _websearch_text(words, " ")
-    loose_text = _websearch_text(words + list(plan.expansion_terms), " or ")
+    # Expansion terms are trusted websearch syntax from QUERY_EXPANSIONS ("phrase", a b = AND).
+    loose_text = " or ".join([t for t in [_websearch_text(words, " or ")] if t] + list(plan.expansion_terms))
     loose_q = func.websearch_to_tsquery(cfg, loose_text)
     strict_q = func.websearch_to_tsquery(cfg, strict_text)
     if plan.expansion_terms:
         # The user's words all present, OR any of the legal-vocabulary expansions.
-        strict_q = strict_q.op("||")(func.websearch_to_tsquery(cfg, _websearch_text(plan.expansion_terms, " or ")))
+        strict_q = strict_q.op("||")(func.websearch_to_tsquery(cfg, " or ".join(plan.expansion_terms)))
     type_boost = case(
         *[(func.lower(LegalAuthority.authority_type) == k, v) for k, v in _TYPE_BOOST.items()], else_=0.8
     )
