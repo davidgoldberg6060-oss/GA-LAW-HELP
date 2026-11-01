@@ -1,5 +1,7 @@
 """Grounded legal-assistant response construction."""
 from __future__ import annotations
+import logging
+import os
 import re
 from .internal_legal_search import search_internal
 from .authority_search_service import persisted_authority_hits
@@ -24,10 +26,32 @@ def _verified_hits(result):return [h for h in result.get("hits",[]) if _is_trace
 def _authority_context(hits):
  return "\n\n".join(f"[{i}] {h.get('title') or 'Legal authority'}\nCitation: {h.get('citation')}\nVerification: {h.get('verification_status')}\nCurrency: {h.get('currency_status') or 'unknown'}\nPrecedential status: {h.get('precedential_status') or 'unknown'}\nStatus checked at: {h.get('status_checked_at') or 'not recorded'}\nStatus source: {h.get('status_source_url') or 'not recorded'}\nStored official/source URL: {h.get('source_url')}\nStored excerpt: {h.get('excerpt') or ''}" for i,h in enumerate(hits,1))
 
+_log=logging.getLogger(__name__)
+
+def _bounded_persisted_hits(db,query,limit):
+ """Run the persisted-authority search under a hard Postgres statement_timeout.
+ On timeout or DB error, return [] so callers fall back to no-citation guidance."""
+ try:dialect=db.get_bind().dialect.name
+ except Exception:dialect=""
+ if dialect!="postgresql":return persisted_authority_hits(db,query,limit=limit)
+ ms=int(os.getenv("RETRIEVAL_TIMEOUT_MS","4000"))
+ from sqlalchemy import text
+ try:
+  with db.begin_nested():
+   db.execute(text(f"SET LOCAL statement_timeout = {ms}"))
+   hits=persisted_authority_hits(db,query,limit=limit)
+   db.execute(text("SET LOCAL statement_timeout = 0"))
+  return hits
+ except Exception as exc:
+  _log.warning("Persisted authority retrieval skipped (timeout or DB error): %s",type(exc).__name__)
+  try:db.execute(text("SET LOCAL statement_timeout = 0"))
+  except Exception:pass
+  return []
+
 def _hybrid_retrieval(query,mode,db=None,limit=12):
  result=search_internal(query,mode,limit)
  if db is None:return result
- persisted=persisted_authority_hits(db,query,limit=limit)
+ persisted=_bounded_persisted_hits(db,query,limit)
  if not persisted:return result
  seen={(str(h.get('citation') or '').lower(),str(h.get('source_url') or '')) for h in persisted}
  file_hits=[h for h in result.get('hits',[]) if (str(h.get('citation') or '').lower(),str(h.get('source_url') or '')) not in seen]
