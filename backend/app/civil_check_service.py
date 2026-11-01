@@ -16,6 +16,9 @@ from .charge_check_service import (EMERGENCY, _cite_view, _match, _ws, is_emerge
 from .civil_topics import topic_sections
 from .grounded_legal_assistant import _authority_context, _verified_hits, used_in_text
 import json as _json
+import os as _os
+# Checks quote penalties/limits from the text, so they get longer excerpts than chat.
+CHECK_EXCERPT_CHARS = int(_os.getenv("AI_CHECK_EXCERPT_CHARS", "2500"))
 from .loophole_analysis_service import _parse_obj, validate_lawyer_take
 
 MAX_SITUATION_CHARS = 4000
@@ -167,7 +170,7 @@ def analyze_civil_check(situation: str, ask_ai, db=None, *, case_summary: str | 
     if not topical:
         return {**result, "message": NONE_FOUND, "authorities": [_cite_view(h) for h in verified],
                 "grounded_authority_count": len(verified)}
-    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(topical + [h for h in verified if h not in topical]))))
+    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(topical + [h for h in verified if h not in topical], excerpt_chars=CHECK_EXCERPT_CHARS))))
     kept, dropped = validate_civil_check(data, verified)
     take = validate_lawyer_take(data.get("lawyer_take"), verified)
     if take and is_evasion(take["text"]):

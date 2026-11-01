@@ -41,9 +41,9 @@ def used_in_text(hit,text):
  for k in _cite_keys(hit.get("citation")):
   if re.search(r"(?<![\d.-])"+re.escape(k.lower())+r"(?![\d]|\.\d)",low):return True
  return False
-def _authority_context(hits,limit=None):
+def _authority_context(hits,limit=None,excerpt_chars=None):
  hits=list(hits)[:limit or CONTEXT_MAX_SECTIONS]
- return "\n\n".join(f"[{i}] {h.get('title') or 'Legal authority'}\nCitation: {h.get('citation')}\nText as of: {h.get('as_of') or 'not recorded'}\nVerification: {h.get('verification_status')}{(' (' + h['verification_source'] + ')') if h.get('verification_source') else ''}\nCurrency: {h.get('currency_status') or 'unknown'}\nPrecedential status: {h.get('precedential_status') or 'unknown'}\nStatus checked at: {h.get('status_checked_at') or 'not recorded'}\nStatus source: {h.get('status_source_url') or 'not recorded'}\nStored official/source URL: {h.get('source_url')}\nStored excerpt: {_excerpt(h.get('excerpt'))}" for i,h in enumerate(hits,1))
+ return "\n\n".join(f"[{i}] {h.get('title') or 'Legal authority'}\nCitation: {h.get('citation')}\nText as of: {h.get('as_of') or 'not recorded'}\nVerification: {h.get('verification_status')}{(' (' + h['verification_source'] + ')') if h.get('verification_source') else ''}\nCurrency: {h.get('currency_status') or 'unknown'}\nPrecedential status: {h.get('precedential_status') or 'unknown'}\nStatus checked at: {h.get('status_checked_at') or 'not recorded'}\nStatus source: {h.get('status_source_url') or 'not recorded'}\nStored official/source URL: {h.get('source_url')}\nStored excerpt: {_excerpt(h.get('excerpt'),excerpt_chars)}" for i,h in enumerate(hits,1))
 
 _log=logging.getLogger(__name__)
 
