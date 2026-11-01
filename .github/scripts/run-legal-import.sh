@@ -37,13 +37,17 @@ case "$SOURCE" in
     args=(-m app.ingestion.import_ga_regulations --department "${SCOPE:-all}"
           --limit "$LIMIT" --offset "$OFFSET" --quiet) ;;
   court_rules)
-    # SCOPE: coa, supreme, superior, state, juvenile, probate, magistrate (comma list) or "all".
+    # SCOPE: coa, supreme, superior, state, juvenile, probate, magistrate, municipal, business (comma list) or "all".
     # PDFs that robots.txt disallows are reported as blocked_by_robots, never fetched.
     args=(-m app.ingestion.import_court_rules --set "${SCOPE:-all}"
           --limit "$LIMIT" --offset "$OFFSET" --quiet)
     if [ -n "${PAGES_DIR:-}" ]; then
       [ "$PAGES_DIR" = ".import-cache/court-rules-pages" ] || { echo "::error::bad PAGES_DIR"; exit 1; }
       args+=(--pages-dir "$PAGES_DIR")
+    fi
+    if [ -n "${PDF_DIR:-}" ]; then
+      [ "$PDF_DIR" = ".import-cache/court-rules-pdfs" ] || { echo "::error::bad PDF_DIR"; exit 1; }
+      args+=(--pdf-dir "$PDF_DIR" --pdf-manifest "$PDF_DIR/manifest.json")
     fi ;;
   *)
     echo "::error::unknown source: $SOURCE"; exit 1 ;;

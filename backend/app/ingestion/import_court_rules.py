@@ -15,6 +15,13 @@ their official URL. An operator may download them by hand and pass ``--pdf-dir``
 with the official file name is then parsed, and the official URL is recorded as provenance next
 to the local file's SHA-256.
 
+``--pdf-manifest`` (with ``--pdf-dir``) is the fully offline path used by the workflow's
+``court_rules_pdf_release`` input: a JSON manifest lists, per rule set, the official file name,
+its official gasupreme.us URL, SHA-256, the as-of date printed in the official file name, and the
+provenance ("official PDF supplied by user, downloaded from gasupreme.us"). PDF sets listed there
+are parsed from the local copies after their checksum is verified; gasupreme.us is never
+contacted for them (not even its index or robots.txt).
+
 Each rule becomes one ``legal_authorities`` row (``Ga. Ct. App. R. 16``, ``Unif. Super. Ct. R.
 6.4``, ...), ``authority_type`` ``court_rule``, ``official`` with ``unknown`` currency. The
 "Amended effective ..." history lines and the rule-set/part hierarchy go to
@@ -86,9 +93,11 @@ RULE_SETS = {
 DATE = r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s+(\d{4})"
 NOTE_LINE = re.compile(r"^(?:Amended|Adopted|Effective|Renumbered|Repealed|Revised|Approved)\b.*\b\d{4}\b", re.I)
 PLACEHOLDER = re.compile(r"^\[?(?:Reserved|Repealed)\b", re.I)
-PDF_HEAD = re.compile(r"^Rule (\d+(?:\.\d+)*[A-Z]?)\.?(?:\s+(.*\S))?\s*$")
+# "Rule 6.4. Heading", "RULE 13. HEADING" (Uniform Rules), "Rule 1-1. Heading" (Business Court Rules).
+# Text extraction sometimes splits "2-2" into "2 -2"; the space is dropped from the number.
+PDF_HEAD = re.compile(r"^(?:Rule|RULE) (\d+(?:(?:\.| ?-)\d+)*[A-Z]?)\.?(?:\s+(.*\S))?\s*$")
 TOC_LINE = re.compile(r"\.{5,}\s*[0-9ivxlc]+\s*$", re.I)
-FURNITURE = re.compile(r"^(?:[0-9]+|[ivxlc]+|_{5,})$", re.I)
+FURNITURE = re.compile(r"^(?:[0-9]+|[ivxlc]+|_{5,}|- ?[0-9]+ ?-)$", re.I)
 
 
 # ---------------------------------------------------------------- polite multi-host client
@@ -202,7 +211,10 @@ class CourtRule:
     @property
     def placeholder(self) -> bool:
         # Reserved/repealed rules, and parent headings with no text of their own ("Rule 24. DOMESTIC RELATIONS").
-        return not self.text.strip() or (bool(PLACEHOLDER.match(self.heading.strip())) and len(self.text.strip()) < 40)
+        heading, text = self.heading.strip(), self.text.strip()
+        reserved = bool(PLACEHOLDER.match(heading) or re.search(r"\[(?:RESERVED|REPEALED)\]\s*$", heading, re.I)
+                        or re.fullmatch(r"Rule [\d.-]+[A-Z]? is hereby (?:reserved|repealed)\.?", text, re.I))
+        return not text or (reserved and len(text) < 40)
 
 
 def latest_date(text: str) -> str | None:
@@ -221,29 +233,43 @@ def _key(number: str) -> tuple:
 
 def _plausible_next(candidate: tuple, last: tuple, heading: str) -> bool:
     """A real heading continues the numbering; line-initial cross references usually do not."""
-    if heading[:1].islower():
-        return False  # "Rule 25 of these rules ..." wrapped onto a new line
+    if heading[:1].islower() or heading[:1] in "(,;-–":
+        return False  # "Rule 25 of these rules ..." / "Rule 6.9 (A) above ..." wrapped onto a new line
     if not last:
         return True
     if candidate[0] == last[0]:
         return candidate > last
-    return isinstance(candidate[0], int) and isinstance(last[0], int) and 0 < candidate[0] - last[0] <= 5
+    return isinstance(candidate[0], int) and isinstance(last[0], int) and 0 < candidate[0] - last[0] <= 12
+
+
+def _undotted_toc_end(lines: list[str], toc_end: int) -> int:
+    """A contents list without dot leaders repeats the first heading; the body starts at its repeat."""
+    heads = [i for i in range(toc_end + 1, len(lines)) if PDF_HEAD.match(lines[i])]
+    if not heads:
+        return toc_end
+    first = re.sub(r"\s+", " ", lines[heads[0]]).strip().lower()
+    for i in heads[1:]:
+        if re.sub(r"\s+", " ", lines[i]).strip().lower() == first:
+            return i - 1
+    return toc_end
 
 
 def parse_pdf_rules(text: str, rule_set: RuleSet) -> list[CourtRule]:
     lines = [ln.strip() for ln in text.splitlines()]
     lines = [ln for ln in lines if ln and not FURNITURE.match(ln)]
     toc_end = max((i for i, ln in enumerate(lines) if TOC_LINE.search(ln)), default=-1)
+    toc_end = _undotted_toc_end(lines, toc_end)
     rules: list[CourtRule] = []
     current: dict | None = None
     last_key: tuple = ()
     for line in lines[toc_end + 1:]:
         head = PDF_HEAD.match(line)
-        if head and _plausible_next(_key(head.group(1)), last_key, head.group(2) or ""):
+        number = head.group(1).replace(" ", "") if head else ""
+        if head and _plausible_next(_key(number), last_key, head.group(2) or ""):
             if current:
                 rules.append(_finish(current, rule_set))
-            last_key = _key(head.group(1))
-            current = {"number": head.group(1), "heading": (head.group(2) or "").strip(), "lines": []}
+            last_key = _key(number)
+            current = {"number": number, "heading": (head.group(2) or "").strip(), "lines": []}
             continue
         if current:
             current["lines"].append(line)
@@ -380,7 +406,29 @@ def persist_rule(db, rule: CourtRule, rule_set: RuleSet, **kwargs) -> int:
                                    hierarchy=" > ".join(rule.hierarchy)[:1000], annotations=rule.notes or None,
                                    source_url=document.url))
     db.flush()
+    mark_official(db, saved.id, rule)
     return saved.id
+
+
+COURT_RULES_VERIFICATION_SOURCE = 4  # verification_sources row 'ga_court_rules' (migration 20261102)
+
+
+def mark_official(db, authority_id: int, rule: CourtRule) -> bool:
+    """Record official-source provenance in authority_verifications (same test as
+    .github/scripts/verify-authorities.sh: gasupreme.us/gaappeals.gov URL, >= 40 chars of text).
+    A database without that side table (migration not applied) is left alone."""
+    from ..models import AuthorityVerification
+
+    if len(rule.text.strip()) < 40:
+        return False
+    try:
+        with db.begin_nested():
+            if db.get(AuthorityVerification, authority_id) is None:
+                db.add(AuthorityVerification(authority_id=authority_id, source_id=COURT_RULES_VERIFICATION_SOURCE))
+                db.flush()
+        return True
+    except Exception:
+        return False
 
 
 
@@ -428,8 +476,54 @@ def discover_other_codes(index_html: str, *, source_url: str, fetched_at: str, s
 
 
 # ---------------------------------------------------------------- CLI
-def load_set(rule_set: RuleSet, client: Client, pdf_dir: str | None) -> dict:
+MANIFEST_PROVENANCE = "official PDF supplied by user, downloaded from gasupreme.us"
+UPLOADS = re.compile(r"^https://www\.gasupreme\.us/wp-content/uploads/\d{4}/\d{2}/([A-Za-z0-9_.-]+\.pdf)$")
+
+
+def read_manifest(path: str) -> dict[str, dict]:
+    """rule-set key -> manifest entry, validated (official URL, matching file name, sha256, date)."""
+    data = json.loads(Path(path).read_text())
+    out: dict[str, dict] = {}
+    for entry in data.get("files", []):
+        key = entry.get("set")
+        rule_set = RULE_SETS.get(key)
+        if rule_set is None or rule_set.pdf_pattern is None:
+            raise ValueError(f"manifest: unknown PDF rule set {key!r}")
+        url, name = entry.get("official_url", ""), entry.get("file", "")
+        m = UPLOADS.match(url)
+        if not m or m.group(1) != name or not re.fullmatch(rule_set.pdf_pattern, name):
+            raise ValueError(f"manifest: {key} file/URL is not the official {rule_set.title} PDF")
+        if not re.fullmatch(r"[0-9a-f]{64}", entry.get("sha256", "")):
+            raise ValueError(f"manifest: {key} sha256 missing")
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", entry.get("as_of", "")):
+            raise ValueError(f"manifest: {key} as_of must be YYYY-MM-DD")
+        out[key] = entry
+    return out
+
+
+def load_manifest_set(rule_set: RuleSet, entry: dict, pdf_dir: str) -> dict:
+    """Parse a user-supplied official PDF listed in the manifest. No network access."""
+    path = Path(pdf_dir) / entry["file"]
+    if not path.is_file():
+        return {"status": "error", "error": f"missing {entry['file']} in --pdf-dir"}
+    body = path.read_bytes()
+    digest = hashlib.sha256(body).hexdigest()
+    if digest != entry["sha256"]:
+        return {"status": "error", "error": f"sha256 mismatch for {entry['file']}"}
+    if not body.startswith(b"%PDF"):
+        return {"status": "error", "error": "not a PDF", "pdf_url": entry["official_url"]}
+    rules = parse_pdf_rules(pdf_text(body), rule_set)
+    for rule in rules:
+        rule.effective = rule.effective or entry["as_of"]
+    provenance = f"{entry.get('provenance') or MANIFEST_PROVENANCE}; {entry['file']}; as of {entry['as_of']}"
+    return {"status": "ok", "rules": rules, "url": entry["official_url"], "sha256": digest,
+            "provenance": provenance, "as_of": entry["as_of"]}
+
+
+def load_set(rule_set: RuleSet, client: Client, pdf_dir: str | None, manifest: dict | None = None) -> dict:
     """Rules of one set plus provenance, or a ``blocked``/``error`` description."""
+    if manifest and rule_set.key in manifest and pdf_dir:
+        return load_manifest_set(rule_set, manifest[rule_set.key], pdf_dir)
     index = client.get(rule_set.index)
     page = index.body.decode("utf-8", "replace")
     if rule_set.pdf_pattern is None:
@@ -473,6 +567,8 @@ def main(argv: list[str] | None = None, *, fetch=http_fetch, sleep=time.sleep, s
     parser.add_argument("--discover-other-codes", action="store_true",
                         help="Inventory https://www.gasupreme.us/other-codes-rules/ only. Do not download PDFs or open a database.")
     parser.add_argument("--pdf-dir", help="Folder with hand-downloaded official PDFs (robots-blocked sets)")
+    parser.add_argument("--pdf-manifest", help="JSON manifest of the --pdf-dir PDFs (official URL, sha256, as-of "
+                        "date); listed sets are parsed offline without contacting gasupreme.us")
     parser.add_argument("--save-pages", help="Also write every fetched official page (and robots.txt) to this folder, "
                         "so a runner whose IP the court site refuses can replay them with --pages-dir")
     parser.add_argument("--pages-dir", help="Replay official pages saved by --save-pages instead of the network")
@@ -487,6 +583,9 @@ def main(argv: list[str] | None = None, *, fetch=http_fetch, sleep=time.sleep, s
         fetch = replay_fetch(args.pages_dir)
     elif args.save_pages:
         fetch = saving_fetch(fetch, args.save_pages)
+    if args.pdf_manifest and not args.pdf_dir:
+        parser.error("--pdf-manifest needs --pdf-dir")
+    manifest = read_manifest(args.pdf_manifest) if args.pdf_manifest else None
     if args.discover_other_codes and args.commit:
         parser.error("--discover-other-codes cannot be combined with --commit")
     if args.discover_other_codes:
@@ -537,7 +636,7 @@ def main(argv: list[str] | None = None, *, fetch=http_fetch, sleep=time.sleep, s
         if key in state.get("sets_done", []) or handled >= args.limit:
             continue
         try:
-            loaded = load_set(rule_set, client, args.pdf_dir)
+            loaded = load_set(rule_set, client, args.pdf_dir, manifest)
         except Exception as exc:
             loaded = {"status": "error", "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
         if loaded["status"] != "ok":

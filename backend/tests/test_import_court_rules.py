@@ -198,3 +198,101 @@ def test_pause_is_respected_and_hosts_are_allowlisted():
     for argv in (["--set", "nope"], ["--pause", "1"], ["--offset", "1", "--state-file", "x"]):
         with pytest.raises(SystemExit):
             cr.main(argv, fetch=make_fetch(), sleep=no_sleep, session_factory=no_db)
+
+
+UPPER_TEXT = """CONTENTS
+RULE 1. PREAMBLE
+Rule 1.1 Repeal of Local Rules
+RULE 8. CALENDAR
+RULE 1. PREAMBLE
+Rule 1.1 Repeal of Local Rules
+All local rules are repealed.
+RULE 8. CALENDAR
+RULE 15. DEFAULT JUDGMENTS [RESERVED]
+Rule 15 is hereby reserved.
+"""
+SPLIT_TEXT = """Rule 2-1. Fees
+Fees are due on filing.
+Rule 2 -2. Certificate of Interested Persons
+Each party shall file a certificate.
+"""
+
+
+def test_uppercase_headings_undotted_contents_and_reserved_brackets():
+    rules = cr.parse_pdf_rules(UPPER_TEXT, cr.RULE_SETS["juvenile"])
+    assert [r.number for r in rules] == ["1", "1.1", "8", "15"]
+    by = {r.number: r for r in rules}
+    assert by["1.1"].text == "All local rules are repealed."
+    assert by["15"].placeholder and by["8"].placeholder and not by["1.1"].placeholder
+
+
+def test_business_court_hyphen_numbers_survive_split_extraction():
+    rules = cr.parse_pdf_rules(SPLIT_TEXT, cr.RULE_SETS["business"])
+    assert [r.citation(cr.RULE_SETS["business"]) for r in rules] == ["Statewide Bus. Ct. R. 2-1", "Statewide Bus. Ct. R. 2-2"]
+    assert rules[1].text == "Each party shall file a certificate."
+
+
+def _manifest(tmp_path, body=USC_PDF, sha=None):
+    import hashlib
+    pdfs = tmp_path / "pdfs"
+    pdfs.mkdir()
+    name = "UNIFORM-SUPERIOR-COURT-RULES-2026_04_09.pdf"
+    (pdfs / name).write_bytes(body)
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"files": [{
+        "set": "superior", "file": name, "as_of": "2026-04-09",
+        "official_url": f"https://www.gasupreme.us/wp-content/uploads/2026/04/{name}",
+        "sha256": sha or hashlib.sha256(body).hexdigest(),
+        "provenance": cr.MANIFEST_PROVENANCE}]}))
+    return str(pdfs), str(manifest)
+
+
+def never_fetch(url, limit):
+    raise AssertionError(f"offline manifest import must not fetch {url}")
+
+
+def test_manifest_pdfs_load_offline_with_official_url_checksum_and_provenance(tmp_path, capsys):
+    pdfs, manifest = _manifest(tmp_path)
+    assert cr.main(["--set", "superior", "--pdf-dir", pdfs, "--pdf-manifest", manifest],
+                   fetch=never_fetch, sleep=no_sleep, session_factory=no_db) == 0
+    lines = _lines(capsys)
+    assert [l["citation"] for l in lines if l.get("mode") == "preview"] == [
+        "Unif. Super. Ct. R. 1", "Unif. Super. Ct. R. 2.1", "Unif. Super. Ct. R. 6.4"]
+    attorney = next(l for l in lines if l.get("citation") == "Unif. Super. Ct. R. 2.1")
+    assert attorney["effective"] == "2026-04-09"  # no amendment date printed: as-of date of the official file
+    done = next(l for l in lines if l.get("set") == "superior")
+    assert done["url"].startswith("https://www.gasupreme.us/wp-content/uploads/2026/04/")
+    assert done["provenance"].startswith("official PDF supplied by user, downloaded from gasupreme.us")
+
+
+def test_manifest_checksum_mismatch_fails(tmp_path, capsys):
+    pdfs, manifest = _manifest(tmp_path, sha="0" * 64)
+    assert cr.main(["--set", "superior", "--pdf-dir", pdfs, "--pdf-manifest", manifest],
+                   fetch=never_fetch, sleep=no_sleep, session_factory=no_db) == 1
+    assert "sha256 mismatch" in capsys.readouterr().out
+
+
+def test_manifest_rejects_non_official_urls(tmp_path):
+    pdfs, manifest = _manifest(tmp_path)
+    data = json.loads(open(manifest).read())
+    data["files"][0]["official_url"] = "https://example.com/UNIFORM-SUPERIOR-COURT-RULES-2026_04_09.pdf"
+    open(manifest, "w").write(json.dumps(data))
+    with pytest.raises(ValueError):
+        cr.read_manifest(manifest)
+
+
+def test_manifest_commit_marks_rules_official_and_verified(tmp_path, capsys):
+    from app.models import AuthorityVerification, VerificationSource
+    pdfs, manifest = _manifest(tmp_path)
+    factory = _session()
+    with factory() as db:
+        db.add(VerificationSource(id=4, source_key="ga_court_rules", source_name="Georgia court rules",
+                                  source_url="https://www.gasupreme.us/"))
+        db.commit()
+    assert cr.main(["--set", "superior", "--pdf-dir", pdfs, "--pdf-manifest", manifest, "--commit"],
+                   fetch=never_fetch, sleep=no_sleep, session_factory=factory) == 0
+    with factory() as db:
+        rows = db.query(LegalAuthority).all()
+        assert {r.citation for r in rows} == {"Unif. Super. Ct. R. 1", "Unif. Super. Ct. R. 2.1", "Unif. Super. Ct. R. 6.4"}
+        assert all(r.source_url.startswith("https://www.gasupreme.us/wp-content/uploads/") for r in rows)
+        assert db.query(AuthorityVerification).count() == 1 + 1 + 1 - sum(len((r.text or "").strip()) < 40 for r in rows)
