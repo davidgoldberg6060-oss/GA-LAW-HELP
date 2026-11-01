@@ -100,7 +100,7 @@ def test_gemini_429_falls_back_to_openai(monkeypatch):
 
     monkeypatch.setattr(ai_assistant.urllib.request, "urlopen", fake_urlopen)
     assert ai_assistant.ask_openai("hi") == "openai answer"
-    assert len(calls) == 2
+    assert len(calls) == 3  # 429: one retry on the same model, then fallback
 
 
 def test_gemini_429_without_fallback_raises_runtime_error(monkeypatch):

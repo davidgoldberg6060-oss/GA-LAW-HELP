@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import threading
+import time
 import socket
 import urllib.error
 import urllib.request
@@ -186,15 +188,31 @@ def _gemini_profile(question: str, default_model: str, speed: str | None = None)
         }
     return {
         "model": os.getenv("GEMINI_FAST_MODEL", GEMINI_FAST_DEFAULT_MODEL).strip() or GEMINI_FAST_DEFAULT_MODEL,
-        "max_output_tokens": int(os.getenv("GEMINI_FAST_MAX_OUTPUT_TOKENS", "1400")),
+        "max_output_tokens": int(os.getenv("GEMINI_FAST_MAX_OUTPUT_TOKENS", "2400")),
         "thinking_level": os.getenv("GEMINI_FAST_THINKING_LEVEL", "low").strip(),
         "timeout": float(os.getenv("GEMINI_FAST_TIMEOUT_SECONDS", "20")),
     }
 
 
-def _ask_gemini(provider: dict, question: str, speed: str | None = None) -> str:
+def trim_to_last_sentence(text: str) -> str:
+    """End a truncated answer cleanly at its last complete sentence (or line)."""
+    text = (text or "").rstrip()
+    if not text or text[-1] in ".!?)\"”:":
+        return text
+    cut = max(text.rfind(". "), text.rfind(".\n"), text.rfind("! "), text.rfind("? "), text.rfind("?\n"), text.rfind("!\n"))
+    if cut >= len(text) * 0.4:
+        return text[: cut + 1].rstrip()
+    nl = text.rfind("\n")
+    return text[:nl].rstrip() if nl >= len(text) * 0.4 else text + "…"
+
+
+RATE_LIMIT_BACKOFF_SECONDS = float(os.getenv("AI_RATE_LIMIT_BACKOFF_SECONDS", "1.5"))
+last_model_used = threading.local()
+
+
+def _ask_gemini(provider: dict, question: str, speed: str | None = None, model_override: str | None = None) -> str:
     profile = _gemini_profile(question, provider["default_model"], speed)
-    model = profile["model"]
+    model = model_override or profile["model"]
     generation_config = {"maxOutputTokens": profile["max_output_tokens"]}
     if profile["thinking_level"]:
         generation_config["thinkingConfig"] = {"thinkingLevel": profile["thinking_level"]}
@@ -226,6 +244,10 @@ def _ask_gemini(provider: dict, question: str, speed: str | None = None) -> str:
             if part.get("text") and not part.get("thought"):
                 parts.append(part["text"])
     text = "".join(parts).strip()
+    finish_reason = ((data.get("candidates") or [{}])[0] or {}).get("finishReason", "")
+    if text and finish_reason == "MAX_TOKENS" and generation_config.get("responseMimeType") != "application/json":
+        logger.warning("AI answer hit MAX_TOKENS: provider=gemini model=%s; trimmed to last full sentence", model)
+        text = trim_to_last_sentence(text)
     if not text:
         finish = ((data.get("candidates") or [{}])[0] or {}).get("finishReason", "unknown")
         block = (data.get("promptFeedback") or {}).get("blockReason", "")
@@ -235,9 +257,32 @@ def _ask_gemini(provider: dict, question: str, speed: str | None = None) -> str:
 
 
 def _ask_provider(provider: dict, question: str, speed: str | None = None) -> str:
-    if provider["name"] == "gemini":
-        return _ask_gemini(provider, question, speed)
-    return _ask_responses_api(provider, question)
+    if provider["name"] != "gemini":
+        text = _ask_responses_api(provider, question)
+        last_model_used.value = provider["name"] + ":" + _request_profile(question, provider["default_model"])["model"]
+        logger.info("AI answered: provider=%s model=%s", provider["name"], last_model_used.value)
+        return text
+    primary = _gemini_profile(question, provider["default_model"], speed)["model"]
+    lite = os.getenv("GEMINI_FAST_MODEL", GEMINI_FAST_DEFAULT_MODEL).strip() or GEMINI_FAST_DEFAULT_MODEL
+    # On 429: retry the same model once after a short backoff, then the lite model (separate quota).
+    attempts = [(primary, 0.0), (primary, RATE_LIMIT_BACKOFF_SECONDS)]
+    if lite != primary:
+        attempts.append((lite, 0.0))
+    last = None
+    for model, delay in attempts:
+        if delay:
+            time.sleep(delay)
+        try:
+            text = _ask_gemini(provider, question, speed, model_override=model)
+            last_model_used.value = "gemini:" + model
+            logger.info("AI answered: provider=gemini model=%s", model)
+            return text
+        except ProviderHTTPError as exc:
+            last = exc
+            if exc.status != 429:
+                raise
+            logger.warning("Gemini 429 on model=%s; trying next option", model)
+    raise last
 
 
 def ask_openai(question: str, speed: str | None = None) -> str:

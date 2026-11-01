@@ -1,0 +1,75 @@
+import json
+from unittest import mock
+
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from app import ai_assistant, answer_cache
+from app.grounded_legal_assistant import used_in_text, _authority_context
+
+
+def test_trim_to_last_sentence():
+    assert ai_assistant.trim_to_last_sentence("One. Two is done. Three such as petition") == "One. Two is done."
+    assert ai_assistant.trim_to_last_sentence("Complete.") == "Complete."
+
+
+def _resp(text, finish="STOP"):
+    return {"candidates": [{"content": {"parts": [{"text": text}]}, "finishReason": finish}]}
+
+
+def test_max_tokens_answer_trimmed(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "k")
+    with mock.patch.object(ai_assistant, "_http_post_json", return_value=_resp("A full sentence here. And then a cut", "MAX_TOKENS")):
+        assert ai_assistant.ask_fast("what is a deposit") == "A full sentence here."
+
+
+def test_429_retries_then_lite(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "k")
+    for v in ("XAI_API_KEY", "OPENAI_API_KEY", "AI_PROVIDER", "GEMINI_FAST_MODEL", "GEMINI_LEGAL_MODEL", "GEMINI_MODEL"):
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setattr(ai_assistant, "RATE_LIMIT_BACKOFF_SECONDS", 0)
+    calls = []
+
+    def fake(provider, model, url, payload, headers, timeout):
+        calls.append(model)
+        if model == "gemini-3.5-flash":
+            raise ai_assistant.ProviderHTTPError("quota", 429)
+        return _resp("Answer.")
+
+    with mock.patch.object(ai_assistant, "_http_post_json", side_effect=fake):
+        assert ai_assistant.ask_openai("x", speed="quality") == "Answer."
+    assert calls == ["gemini-3.5-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
+    assert ai_assistant.last_model_used.value == "gemini:gemini-3.5-flash-lite"
+
+
+def test_used_in_text_matches_sections_exactly():
+    hit = {"citation": "O.C.G.A. § 44-7-34"}
+    assert used_in_text(hit, "See O.C.G.A. § 44-7-34 (text as of 2022).")
+    assert not used_in_text(hit, "See O.C.G.A. § 44-7-340.")
+    assert not used_in_text({"citation": "O.C.G.A. § 40-9-39"}, "deposit returned under 44-7-34")
+
+
+def test_context_is_capped_and_excerpted():
+    hits = [{"citation": f"O.C.G.A. § 1-1-{i}", "excerpt": "word " * 500} for i in range(20)]
+    ctx = _authority_context(hits)
+    assert ctx.count("Citation:") == 8 and len(ctx) < 8 * 1500
+
+
+def test_db_cache_shared_across_processes(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path}/c.db")
+    db = sessionmaker(bind=engine)()
+    answer_cache.clear(); answer_cache._table_ready = False
+    answer_cache.put("Deposit?", "general", {"answer": "x"}, now=100.0, db=db)
+    answer_cache.clear()  # simulate a different worker process
+    assert answer_cache.get("deposit", "general", now=200.0, db=db) == {"answer": "x"}
+    answer_cache.clear()
+    assert answer_cache.get("deposit", "general", now=100.0 + answer_cache.TTL_SECONDS + 1, db=db) is None
+    monkey_rows = answer_cache.DB_MAX_ROWS
+    answer_cache.DB_MAX_ROWS = 3
+    try:
+        for i in range(6):
+            answer_cache.put(f"q{i}", "general", {"answer": i}, now=300.0 + i, db=db)
+        assert db.execute(answer_cache.text("SELECT COUNT(*) FROM public_answer_cache")).scalar() == 3
+    finally:
+        answer_cache.DB_MAX_ROWS = monkey_rows

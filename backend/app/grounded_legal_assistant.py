@@ -26,8 +26,24 @@ def _is_negatively_treated(hit:dict)->bool:
  if isinstance(treatment,str):treatment=[treatment]
  return currency in NEGATIVE or precedent in NEGATIVE or bool({str(x).strip().lower() for x in treatment}&NEGATIVE)
 def _verified_hits(result):return [h for h in result.get("hits",[]) if _is_traceable(h) and not _is_negatively_treated(h)]
-def _authority_context(hits):
- return "\n\n".join(f"[{i}] {h.get('title') or 'Legal authority'}\nCitation: {h.get('citation')}\nText as of: {h.get('as_of') or 'not recorded'}\nVerification: {h.get('verification_status')}{(' (' + h['verification_source'] + ')') if h.get('verification_source') else ''}\nCurrency: {h.get('currency_status') or 'unknown'}\nPrecedential status: {h.get('precedential_status') or 'unknown'}\nStatus checked at: {h.get('status_checked_at') or 'not recorded'}\nStatus source: {h.get('status_source_url') or 'not recorded'}\nStored official/source URL: {h.get('source_url')}\nStored excerpt: {h.get('excerpt') or ''}" for i,h in enumerate(hits,1))
+CONTEXT_MAX_SECTIONS=int(__import__("os").getenv("AI_CONTEXT_MAX_SECTIONS","8"))
+CONTEXT_EXCERPT_CHARS=int(__import__("os").getenv("AI_CONTEXT_EXCERPT_CHARS","600"))
+def _excerpt(text,limit=None):
+ limit=limit or CONTEXT_EXCERPT_CHARS;text=re.sub(r"\s+"," ",str(text or "")).strip()
+ return text if len(text)<=limit else text[:limit].rsplit(" ",1)[0]+" …"
+_SECTION_RE=re.compile(r"\b\d{1,2}-\d{1,3}-\d+(?:\.\d+)?\b")
+def _cite_keys(citation):
+ c=str(citation or "");secs=_SECTION_RE.findall(c)
+ return secs or ([c.strip().lower()] if c.strip() else [])
+def used_in_text(hit,text):
+ """True when the answer text actually cites this authority (by Code section number or full citation)."""
+ low=str(text or "").lower()
+ for k in _cite_keys(hit.get("citation")):
+  if re.search(r"(?<![\d.-])"+re.escape(k.lower())+r"(?![\d]|\.\d)",low):return True
+ return False
+def _authority_context(hits,limit=None):
+ hits=list(hits)[:limit or CONTEXT_MAX_SECTIONS]
+ return "\n\n".join(f"[{i}] {h.get('title') or 'Legal authority'}\nCitation: {h.get('citation')}\nText as of: {h.get('as_of') or 'not recorded'}\nVerification: {h.get('verification_status')}{(' (' + h['verification_source'] + ')') if h.get('verification_source') else ''}\nCurrency: {h.get('currency_status') or 'unknown'}\nPrecedential status: {h.get('precedential_status') or 'unknown'}\nStatus checked at: {h.get('status_checked_at') or 'not recorded'}\nStatus source: {h.get('status_source_url') or 'not recorded'}\nStored official/source URL: {h.get('source_url')}\nStored excerpt: {_excerpt(h.get('excerpt'))}" for i,h in enumerate(hits,1))
 
 _log=logging.getLogger(__name__)
 
@@ -120,14 +136,21 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  verified=_verified_hits(retrieval);context=_authority_context(verified) if verified else "No matching traceable verified indexed Georgia authority was retrieved for this question."
  grounding="Base every material Georgia-law conclusion only on supplied authorities." if verified else "No verified indexed Georgia authority is available. You may give clearly labeled general legal information and issue-spotting, but MUST NOT present a Georgia-specific proposition as verified and MUST NOT invent a citation, case, statute, rule, deadline, sentence, or procedure."
  pack=encounter_prompt_block(mode, query)
- prompt=f"""GA.LAW.HELP legal analysis request.\nMode: {mode}\n\nUSER-SUPPLIED FACTS OR QUESTION (not independently verified; may include speech-to-text transcription errors):\n{query}\n\n{pack}\n\nTRACEABLE VERIFIED INDEXED AUTHORITIES:\n{context}\n\nRules:\n- Treat the user's narrative as allegations/facts to be verified, not established facts.\n- {grounding}\n- Cite only supplied authorities; never create a citation, case, statute, rule, deadline, sentence, or procedural requirement.\n- When citing an authority that has a 'Text as of' date, write the citation followed by that date in parentheses, e.g. "O.C.G.A. § 44-7-34 (text as of 2022 edition)"; Georgia Code text may have been amended since that edition, so never call it current.\n- Never call authority current, binding, controlling, or precedential unless supplied status metadata establishes it.\n- If Currency or Precedential status is unknown, explicitly label that limitation; do not fill it from memory.\n- Do not predict or guarantee outcomes.\n- Never claim to observe or hear facts not provided.\n\nFORMAT:\n{_mode_instructions(mode)}"""
+ prompt=f"""GA.LAW.HELP legal analysis request.\nMode: {mode}\n\nUSER-SUPPLIED FACTS OR QUESTION (not independently verified; may include speech-to-text transcription errors):\n{query}\n\n{pack}\n\nTRACEABLE VERIFIED INDEXED AUTHORITIES:\n{context}\n\nRules:\n- Treat the user's narrative as allegations/facts to be verified, not established facts.\n- {grounding}\n- Cite only supplied authorities, and only those that directly address the question (ignore off-topic ones); never create a citation, case, statute, rule, deadline, sentence, or procedural requirement.\n- When citing an authority that has a 'Text as of' date, write the citation followed by that date in parentheses, e.g. "O.C.G.A. § 44-7-34 (text as of 2022 edition)"; Georgia Code text may have been amended since that edition, so never call it current.\n- Never call authority current, binding, controlling, or precedential unless supplied status metadata establishes it.\n- If Currency or Precedential status is unknown, explicitly label that limitation; do not fill it from memory.\n- Do not predict or guarantee outcomes.\n- Never claim to observe or hear facts not provided.\n- Keep the whole answer under about 350 words and always finish your last sentence.\n\nFORMAT:\n{_mode_instructions(mode)}"""
  analysis=ask_ai(prompt);notice=retrieval.get("coverage_notice")
  if not verified:notice="No matching traceable verified indexed Georgia authority was found. General legal information may be shown, but GA.LAW.HELP will not invent or present an unverified citation as governing Georgia law."
- if any(h.get("as_of") for h in verified):
+ used=[h for h in verified if used_in_text(h,analysis)]
+ # Only list verified authorities the answer actually cites, so the citation list stays on topic.
+ # If the answer cites none, show just the top few retrieved records (verified or labeled unverified).
+ shown=used or retrieval.get("hits",[])[:3]
+ amendment=None
+ if any(h.get("as_of") for h in shown if h in verified):
+  amendment=AMENDMENT_NOTE
+  # Added server-side after the AI text so it always shows, even if the model's answer was trimmed.
   if analysis and AMENDMENT_NOTE not in analysis:analysis=f"{analysis.rstrip()}\n\nNote: {AMENDMENT_NOTE}"
   notice=f"{notice} {AMENDMENT_NOTE}".strip() if notice else AMENDMENT_NOTE
- authorities=[{**h,"citation":h.get("display_citation") or with_as_of(h.get("citation"),h.get("as_of")),"citation_raw":h.get("citation")} if h.get("as_of") else h for h in retrieval.get("hits",[])]
- response={"mode":mode,"analysis":analysis,"authorities":authorities,"grounded_authority_count":len(verified),"coverage_notice":notice,"used_encounter_pack":bool(pack)}
+ authorities=[{**h,"citation":h.get("display_citation") or with_as_of(h.get("citation"),h.get("as_of")),"citation_raw":h.get("citation")} if h.get("as_of") else h for h in shown]
+ response={"mode":mode,"analysis":analysis,"authorities":authorities,"amendment_note":amendment,"grounded_authority_count":len(verified),"cited_authority_count":len(used),"coverage_notice":notice,"used_encounter_pack":bool(pack)}
  specs={"talk_to_me":TALK_SECTIONS,"case_analysis":CASE_ANALYSIS_SECTIONS,"rights":RIGHTS_SECTIONS,"motions":MOTIONS_SECTIONS,"general":GENERAL_SECTIONS}
  response["sections"]=_extract_sections(analysis,specs[mode])
  return response
