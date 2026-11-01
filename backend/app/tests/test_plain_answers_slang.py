@@ -53,3 +53,11 @@ def test_laws_cited_compact():
     out = laws_cited([{"citation": "O.C.G.A. § 16-3-21 (text as of 2022 edition)", "citation_raw": "O.C.G.A. § 16-3-21",
                        "title": "O.C.G.A. § 16-3-21. Use of force in defense of self or others; evidence of belief", "id": 5}])
     assert out == [{"citation": "O.C.G.A. § 16-3-21", "title": "Use of force in defense of self or others", "id": 5}]
+
+
+def test_internal_labels_and_empty_plain_headings_removed():
+    raw = ("How it works in Georgia\n• Factual premise: Your PO reported a violation.\n• Unverified issues: We do not know why.\n"
+           "Deadlines and costs\nWhere to get help\n• Call legal aid.")
+    out = clean_answer(raw)
+    assert "Factual premise" not in out and "Unverified issues" not in out and "• Your PO reported" in out
+    assert "Deadlines and costs" not in out and "Where to get help" in out
