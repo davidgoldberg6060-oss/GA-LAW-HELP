@@ -11,7 +11,9 @@ _META = re.compile(
     r"|\bverified (indexed )?(georgia )?authorit"
     r"|\bthis system\b|\bthe system\b|\bgrounding\b|\bdatabase\b|\bcorpus\b|\bingestion\b"
     r"|\bin-app encounter pack\b|\bstatus metadata\b|\bprecedential status\b|\bcurrency (status )?(is )?unknown"
-    r"|\bnot (in|among) the (authorities|sources)\b|\bauthorities (list|provided|supplied)\b")
+    r"|\bnot (in|among) the (authorities|sources)\b|\bauthorities (list|provided|supplied)\b"
+    r"|\bfactual premise\b|\bcounter-?argument\b|\bneeds? (independent )?verification\b|\bthe provided text\b"
+    r"|\ballegations? that (need|require)|\bALWAYS include\b|\bas its own step\b")
 _NOTE_RE = re.compile(r"(?is)\n*\s*(note:\s*)?georgia code text (shown )?is from the (official )?2022 edition.*?(relying on it\.|$)")
 
 
@@ -109,6 +111,7 @@ def short_title(title: str, citation: str) -> str:
     c = str(citation or "").strip()
     if c and t.lower().startswith(c.lower()):
         t = t[len(c):].lstrip(" .:-—")
+    t = re.sub(r"^\[[^\]]*\]\s*", "", t)  # e.g. "[Effective July 1, 2023. See note.]"
     t = re.split(r";|\.\s", t)[0].strip().rstrip(".")
     return (t[:90] + "…") if len(t) > 90 else t
 

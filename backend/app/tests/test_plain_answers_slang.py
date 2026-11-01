@@ -69,3 +69,18 @@ def test_prison_answers_always_include_written_sick_call():
     out = ensure_sick_call(a, "I'm in prison I have no water no good food and no bed")
     assert out.split("\n")[1] == SICK_CALL_STEP
     assert ensure_sick_call(a, "my landlord shut off the water") == a
+
+
+def test_echoed_instructions_and_reasoning_labels_are_dropped():
+    raw = ("Short answer\nYou are stating serious issues, which are currently allegations that need verification. Georgia law requires meals.\n"
+           "Steps you can take\n• ALWAYS include as its own step: put in a written sick-call request.\n• File a grievance.\n"
+           "How it works\nThe factual premise is your report of no water. Under the law, meals are required.")
+    out = clean_answer(raw)
+    assert "ALWAYS" not in out and "factual premise" not in out and "need verification" not in out
+    assert "Georgia law requires meals." in out and "File a grievance" in out
+
+
+def test_sick_call_only_for_conditions_questions():
+    from app.grounded_legal_assistant import ensure_sick_call
+    a = "Steps you can take\n• Ask for the case file."
+    assert ensure_sick_call(a, "my brother is in prison doing 15 years, how can he get out early") == a
