@@ -21,6 +21,7 @@ object SystemBars {
     fun apply(activity: Activity) {
         val window = activity.window
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         @Suppress("DEPRECATION") run {
             window.statusBarColor = android.graphics.Color.TRANSPARENT
             window.navigationBarColor = android.graphics.Color.TRANSPARENT

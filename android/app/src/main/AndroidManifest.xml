@@ -2,17 +2,17 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <application android:supportsRtl="true" android:theme="@style/Theme.GALaw" android:label="GA.LAW.HELP" android:usesCleartextTraffic="false">
-        <activity android:name=".MainActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".HomeActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
+        <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".HomeActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".GeorgiaLawsActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".InternalLegalSearchActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".GuestRightsActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".FunnyLawsActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".AuthActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".GeorgiaLawsActivity" android:exported="false" />
+        <activity android:name=".InternalLegalSearchActivity" android:exported="false" />
+        <activity android:name=".GuestRightsActivity" android:exported="false" />
+        <activity android:name=".FunnyLawsActivity" android:exported="false" />
+        <activity android:name=".AuthActivity" android:exported="false" />
     </application>
 </manifest>
