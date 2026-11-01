@@ -208,8 +208,10 @@ QUERY_EXPANSIONS: tuple[tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]
     (("workers comp", "workers' comp", "hurt at work", "injured at work"), ('"workers compensation"',), ("34-9-1",)),
     (("statute of limitations", "too late to sue", "personal injury"), ("limitation action", "personal injury"), ("9-3-33",)),
     (("speeding",), ("speed",), ("40-6-181",)),
-    (("small claims", "small claim", "magistrate court", "sue someone", "sue my", "file a claim"),
-     ("magistrate", '"magistrate court"', '"statement of claim"'), ("15-10-2", "15-10-43")),
+    (("small claims", "small claim", "sue someone", "sue my", "file a claim"),
+     ("magistrate", '"magistrate court"', '"statement of claim"'),
+     ("15-10-2", "15-10-43", "Unif. Mag. Ct. R. 17", "Unif. Mag. Ct. R. 32", "Unif. Mag. Ct. R. 34")),
+    (("magistrate court",), ("magistrate",), ()),
 )
 # Court rule citations ("Unif. Mag. Ct. R. 5", "Uniform Magistrate Court Rule 5", "USCR 6.4",
 # "Ga. Sup. Ct. R. 22", "Supreme Court Rule 22") -> stored citation prefix.
@@ -262,8 +264,8 @@ def build_query_plan(query: str) -> QueryPlan:
         if any(re.search(rf"\b{re.escape(t)}", lowered) for t in triggers):
             for term in terms:
                 extra[term] = None
-            for section in sections:
-                pinned[f"O.C.G.A. § {section}"] = None
+            for section in sections:  # bare "15-10-2" -> O.C.G.A.; full rule citations as-is
+                pinned[section if section[0].isalpha() else f"O.C.G.A. § {section}"] = None
     return QueryPlan(tuple(keywords), tuple(extra), tuple(pinned))
 
 
@@ -346,7 +348,7 @@ def _vector_rows(db: Session, term: str, plan: QueryPlan, limit: int, filters: t
     if _RULES_WORD.search(term):  # "small claims court rules" -> rules outrank statutes
         boosts["court_rule"] = 2.2
     elif re.search(r"small claim|magistrate", term, re.I):  # procedure questions: rules alongside 15-10-x
-        boosts["court_rule"] = 1.7
+        boosts["court_rule"] = 2.0
     type_boost = case(
         *[(func.lower(LegalAuthority.authority_type) == k, v) for k, v in boosts.items()], else_=0.8
     )
