@@ -38,6 +38,16 @@ def _drop_meta(line: str) -> str:
     return " ".join(kept).strip()
 
 
+_KNOWN_HEADINGS = {h.lower() for h in (
+    "Short answer", "How it works in Georgia", "Steps you can take", "Deadlines and costs", "Where to get help",
+    "What's happening", "Stay safe right now", "Your rights", "What police can and can't do", "What to say or do",
+    "Facts to confirm", "Legal issues", "The other side's arguments", "Your side's arguments", "Possible motions",
+    "Next steps", "Your situation", "Rights that may apply", "What police can do", "What police can't do",
+    "Your options", "The issue", "Facts or evidence needed", "Questions to check")}
+_INTERNAL_LABEL = re.compile(r"(?i)^(\s*•?\s*)(?:factual premises?|governing authority|counter-?arguments?|unverified issues?|"
+                             r"verified (?:facts|law)|legal analysis|analysis|limitations?)\s*:\s*")
+
+
 def clean_answer(text: str, *, add_note: bool = False, max_words: int = 420) -> str:
     """Plain text: friendly headings, '•' bullets, no markdown, no meta language, note once."""
     raw = _NOTE_RE.sub("", str(text or ""))
@@ -51,7 +61,8 @@ def clean_answer(text: str, *, add_note: bool = False, max_words: int = 420) -> 
                 out.append("")
             continue
         m = _HEADING_LINE.match(s)
-        is_heading = bool(m) and (s.lstrip().startswith(("#", "**", "__")) or m.group(1).isupper())
+        is_heading = bool(m) and (s.lstrip().startswith(("#", "**", "__")) or m.group(1).isupper()
+                                  or m.group(1).strip().rstrip(":").lower() in _KNOWN_HEADINGS)
         if is_heading:
             h = friendly_heading(m.group(1))
             # The sources list is shown separately as 'Laws cited'.
@@ -68,6 +79,8 @@ def clean_answer(text: str, *, add_note: bool = False, max_words: int = 420) -> 
         s = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda mm: mm.group(1) or mm.group(2), s)  # bold
         s = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?!\w)", r"\1", s)  # italics
         s = re.sub(r"`([^`]*)`", r"\1", s).replace("#", "")
+        s = _INTERNAL_LABEL.sub(lambda mm: mm.group(1), s)              # 'Factual premise:' etc.
+        s = re.sub(r"^(•\s*)?We (?:must|need to) verify\b", lambda mm: (mm.group(1) or "") + "It is important to confirm", s)
         s = _drop_meta(s)
         if s.strip() and s.strip() != "•":
             out.append(s)
