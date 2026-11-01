@@ -3,8 +3,10 @@ from __future__ import annotations
 import logging
 import os
 import re
+import time
 from .internal_legal_search import search_internal
-from .authority_search_service import persisted_authority_hits
+from .authority_search_service import persisted_authority_hits, exact_citation_results, authority_hit
+from . import citation_proposer
 from .encounter_prompt import encounter_prompt_block
 
 VERIFIED={"verified","official","validated","confirmed"}
@@ -49,10 +51,37 @@ def _bounded_persisted_hits(db,query,limit):
   except Exception:pass
   return []
 
+def _proposed_hits(db,sections,have):
+ """Exact-citation lookup of model-proposed sections; anything not in the database is dropped."""
+ if not sections:return []
+ cites=[f"O.C.G.A. \u00a7 {s}" for s in sections]
+ try:
+  with db.begin_nested():rows=exact_citation_results(db,cites)
+ except Exception as exc:
+  _log.warning("Proposed-citation lookup skipped: %s",type(exc).__name__);return []
+ return [authority_hit(r) for r in rows if (r.citation or "").lower() not in have]
+
 def _hybrid_retrieval(query,mode,db=None,limit=12):
  result=search_internal(query,mode,limit)
  if db is None:return result
+ # (a) indexed DB search and (b) a quick model step proposing O.C.G.A. sections run in parallel.
+ future=None;pool=None
+ if citation_proposer.enabled():
+  from concurrent.futures import ThreadPoolExecutor
+  pool=ThreadPoolExecutor(max_workers=1);future=pool.submit(citation_proposer.propose_sections,query)
+ started=time.monotonic()
  persisted=_bounded_persisted_hits(db,query,limit)
+ proposed=[]
+ if future is not None:
+  budget=max(0.0,citation_proposer.timeout_seconds()-(time.monotonic()-started))
+  try:sections=future.result(timeout=budget+0.2)
+  except Exception:sections=[]
+  pool.shutdown(wait=False,cancel_futures=True)
+  proposed=_proposed_hits(db,sections,{str(h.get('citation') or '').lower() for h in persisted})
+ if proposed:
+  room=max(1,limit//3);primary=[h for h in persisted if str(h.get('record_type') or '').lower() in ('statute','court_rule','regulation')]
+  others=[h for h in persisted if h not in primary]
+  persisted=(primary+proposed[:room]+others)[:limit]
  if not persisted:return result
  seen={(str(h.get('citation') or '').lower(),str(h.get('source_url') or '')) for h in persisted}
  file_hits=[h for h in result.get('hits',[]) if (str(h.get('citation') or '').lower(),str(h.get('source_url') or '')) not in seen]
