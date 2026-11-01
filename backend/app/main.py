@@ -172,7 +172,20 @@ def _decorate_public(response:dict,query:str,mode:str)->dict:
     if not response.get('answer') and response.get('analysis'): response['answer']=response['analysis']
     response.setdefault('follow_ups',follow_ups(query))
     response.setdefault('help_links',HELP_LINKS)
+    from .case_guide import detect_stage,STAGE_LABELS
+    stage=detect_stage(query)
+    if stage and not re.search(r"(?i)landlord|tenant|evict|deposit|divorce|custody|child support|debt|wage",query):
+        response['case_stage']=stage;response['case_stage_label']=STAGE_LABELS[stage]
     return response
+
+@app.post('/public/case-guide')
+def public_case_guide(body:dict,db:Session=Depends(get_db)):
+    """'My Case' guide for a criminal-case stage: next steps, motions/filings with stored Georgia law, deadlines."""
+    from .case_guide import build_guide
+    details=body.get('details') if isinstance(body.get('details'),dict) else {}
+    details={k:str(v)[:2000] for k,v in details.items() if isinstance(k,str)}
+    try: return build_guide(db,stage=str(body.get('stage','')).strip(),details=details)
+    except ValueError as e: raise HTTPException(400,str(e))
 
 @app.post('/public/rights-assistant')
 def public_rights_assistant(body:dict,db:Session=Depends(get_db)):

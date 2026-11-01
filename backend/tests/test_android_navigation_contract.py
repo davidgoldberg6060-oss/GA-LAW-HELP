@@ -25,7 +25,7 @@ def test_visible_home_actions_are_wired():
         'openGeorgiaLaws() = showGeorgiaLaws()',
         'openCourtInfo() = showCourtInfo()',
         'openLegalForms() = showLegalForms()',
-        'openCaseAnalysis() = showCaseAnalysis()',
+        'openCaseAnalysis() = showMyCase()',  # Case Analysis tile opens the My Case hub
         'openKnowYourRights() = showKnowYourRights()',
         'openResources() = showResources()',
         'openEmergency() = showEmergency()',

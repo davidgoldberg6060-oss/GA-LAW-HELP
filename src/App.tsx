@@ -6,8 +6,9 @@ import FunnyGeorgia from './FunnyGeorgia';
 import './approvedScreens.css';
 
 import {LawAccordion} from './LawAccordion';
+import MyCase,{detectStageLabel} from './MyCase';
 /** Every citation object in a Charge/Civil Check result, de-duplicated, for the inline law accordion. */
-function citesOf(r:any):{citation:string;title?:string;source_url?:string}[]{const out=new Map<string,any>();const walk=(v:any)=>{if(!v||typeof v!=='object')return;if(Array.isArray(v)){v.forEach(walk);return}if(typeof v.citation==='string'&&!out.has(v.citation))out.set(v.citation,{citation:v.citation,title:v.title,source_url:v.source_url});Object.values(v).forEach(walk)};walk(r);return[...out.values()]}
+function citesOf(r:any):{citation:string;title?:string;source_url?:string}[]{const out=new Map<string,any>();const walk=(v:any)=>{if(!v||typeof v!=='object')return;if(Array.isArray(v)){v.forEach(walk);return}if(typeof v.citation==='string'&&!out.has(v.citation))out.set(v.citation,{citation:v.citation.replace(/\s*\(text as of[^)]*\)/,''),title:v.title,source_url:v.source_url});Object.values(v).forEach(walk)};walk(r);return[...out.values()]}
 const API='https://api-production-60cc.up.railway.app';
 const ACCESS_KEY='ga_access_token',REFRESH_KEY='ga_refresh_token';
 class ApiError extends Error{status:number;constructor(status:number,message:string){super(message);this.status=status}}
@@ -24,7 +25,7 @@ function migrateLegacySession(){
 
 type Resource={title:string;url:string;kind:string;official:boolean};
 type Research={query:string;topic:string;guidance:string;resources:Resource[];laws?:{citation:string;title?:string|null;id?:number|null}[];notice:string};
-type AIAnswer={question:string;answer:string;notice:string};
+type AIAnswer={question:string;answer:string;notice:string;case_stage?:string|null};
 type User={id:number;email:string;role:string};
 type CaseSummary={id:number;title:string;case_number:string|null;county:string|null;case_type:string;stage:string|null};
 type CaseForm={title:string;case_number:string;county:string;case_type:string;stage:string;narrative:string};
@@ -171,7 +172,7 @@ export default function App(){
  const[email,setEmail]=useState('');const[password,setPassword]=useState('');const[showPassword,setShowPassword]=useState(false);const[authError,setAuthError]=useState('');const[authBusy,setAuthBusy]=useState(false);
  const passwordAccepted=password.length>=15&&password.length<=128;
  const[user,setUser]=useState<User|null>(null);const paid=FREE_LAUNCH||!!user&&(user.role==='paid'||user.role==='admin');const[notice,setNotice]=useState('');
- const[tool,setTool]=useState<'avoid'|'police'|'case'|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
+ const[tool,setTool]=useState<'avoid'|'police'|'case'|null>(null);const[caseStart,setCaseStart]=useState<{stage:string;situation:string}|null>(null);const[scenario,setScenario]=useState<ScenarioKey>('traffic');
  const[transcript,setTranscript]=useState('');const[listening,setListening]=useState(false);const recognitionRef=useRef<any>(null);const[encounterReply,setEncounterReply]=useState('');const[encounterBusy,setEncounterBusy]=useState(false);const encounterTimerRef=useRef<number|null>(null);const[cameraOn,setCameraOn]=useState(false);const cameraVideoRef=useRef<HTMLVideoElement|null>(null);const cameraStreamRef=useRef<MediaStream|null>(null);
  const[recording,setRecording]=useState(false);const[recordings,setRecordings]=useState<LocalRecording[]>([]);
  const[retentionDays,setRetentionDays]=useState<180|365|400>(()=>{const saved=Number(localStorage.getItem('ga_audio_retention_days'));return saved===180||saved===400?saved:365});
@@ -500,7 +501,7 @@ export default function App(){
   </section>
   <ApprovedScreens signedIn={!!user} onSignIn={()=>setAuthOpen(true)} onCases={openCaseWorkspace} onAnalysis={openCaseWorkspace} onLogout={logout} onRights={openRights} onAsk={(text)=>{if(text.trim())setQ(text);}} askGuest={async(text)=>{const packed=await guestRightsAndEncounter(API,api,text);return{answer:packed.answer.answer,notice:packed.answer.notice};}} />
   {(aiAnswer||research)&&<section className="results" id="research-results">
-   {aiAnswer&&<><div className="resultHead"><MessageSquare/><div><span>Ask GA.LAW.HELP</span><h2>AI legal information</h2></div></div><p className="question">“{aiAnswer.question}”</p><div className="aiAnswer" style={{whiteSpace:'pre-wrap'}}>{aiAnswer.answer}</div><small>{aiAnswer.notice}</small></>}
+   {aiAnswer&&<><div className="resultHead"><MessageSquare/><div><span>Ask GA.LAW.HELP</span><h2>AI legal information</h2></div></div><p className="question">“{aiAnswer.question}”</p><div className="aiAnswer" style={{whiteSpace:'pre-wrap'}}>{aiAnswer.answer}</div>{aiAnswer.case_stage&&detectStageLabel(aiAnswer.case_stage)&&<p><button type="button" className="mcRun" onClick={()=>{setCaseStart({stage:aiAnswer.case_stage!,situation:aiAnswer.question});setTimeout(()=>document.getElementById('my-case')?.scrollIntoView({behavior:'smooth'}),50)}}>Open My Case: {detectStageLabel(aiAnswer.case_stage)} ›</button></p>}<small>{aiAnswer.notice}</small></>}
    {research&&<><div className="resultHead" style={{marginTop:'1.5rem'}}><Search/><div><span>Verify and research</span><h2>{research.topic}</h2></div></div><p>{research.guidance}</p>{research.laws&&research.laws.length>0&&<><h3>Laws cited</h3><LawAccordion api={API} items={research.laws}/></>}<div className="sources">{research.resources.map(r=><a key={r.url} href={r.url} target="_blank" rel="noreferrer"><div><b>{r.title}</b><span>{r.official===false?r.kind+' · not a verified current citation':r.kind+' · Official source'}</span></div><ExternalLink size={18}/></a>)}</div><small>{research.notice}</small></>}
   </section>}
   <section className="homeDashboard" aria-label="Quick legal help">
@@ -522,6 +523,7 @@ export default function App(){
    <button className="toolCard" onClick={()=>openRights()}><ShieldAlert/><span><h3>Know My Rights</h3><p>Choose a situation and see calm, practical safety steps in plain language.</p></span><ChevronRight/></button>
    <button className="toolCard premiumCard" onClick={openPolice}><Car/><span><b className="premiumLabel"><ShieldCheck size={13}/> FREE WITH ACCOUNT</b><h3>Help Me Talk to Police</h3><p>Listen, suggest and read respectful responses aloud.</p></span><ChevronRight/></button>
   </section>
+  <MyCase api={API} initial={caseStart} onCivil={()=>setTool('case')} onAsk={()=>setTool('avoid')}/>
   <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse free as a guest: real Georgia laws and court cases that sound made up, each with its citation and source.</p></div></div>
    <FunnyGeorgia/></section>
   <button className="encounterFab" onClick={()=>{setScenario('traffic');openPolice()}}><ShieldAlert size={20}/><span><b>Encounter Help</b><small>Open safety mode</small></span></button>

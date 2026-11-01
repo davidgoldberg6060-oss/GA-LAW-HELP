@@ -167,9 +167,10 @@ def test_civil_check_endpoint_creates_civil_case(monkeypatch):
 
 def test_android_civil_check_reachable_from_drawer_and_case():
     home = (SRC / "HomeActivity.kt").read_text()
+    # Civil Case Check is reached from the My Case hub ("Civil") and from a case.
     assert '"civil"->showCivilCheck(null,null)' in home and "showCivilCheck(caseId," in home
     assert 'text="Civil"' in home and "caseType" in home
-    assert 'HomeDrawerItem("civil", "Civil Case Check", false)' in (SRC / "HomeDrawerCatalog.kt").read_text()
+    assert 'HomeDrawerItem("mycase", "My Case (start here)", false)' in (SRC / "HomeDrawerCatalog.kt").read_text()
     assert "/civil-check" in (SRC / "ApiClient.kt").read_text()
 
 

@@ -45,6 +45,9 @@ object GuestPublicApi {
     fun law(baseUrl: String, citation: String, id: Long? = null): JSONObject =
         JSONObject(get(baseUrl, "/public/georgia-laws/law?citation=" + URLEncoder.encode(citation.trim().take(250), "UTF-8") + (id?.let { "&id=$it" } ?: "")))
 
+    fun caseGuide(baseUrl: String, stage: String, details: JSONObject): JSONObject =
+        JSONObject(post(baseUrl, "/public/case-guide", JSONObject().put("stage", stage).put("details", details)))
+
     /** AI answers can take a while on a slow phone network; reads wait up to 60 s. */
     const val AI_READ_TIMEOUT_MS = 60_000
     const val READ_TIMEOUT_MS = 30_000

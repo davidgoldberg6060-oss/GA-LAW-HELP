@@ -3,6 +3,8 @@ export type GuestRightsAnswer = {
   question: string;
   answer: string;
   notice: string;
+  /** Criminal-case stage detected in the question; links to the My Case guide. */
+  case_stage?: string | null;
 };
 
 export type GuestResource = {title: string; url: string; kind: string; official: boolean};
@@ -80,6 +82,7 @@ export async function guestRightsAndEncounter(
     question: q,
     answer: answerText,
     notice: assistant.coverage_notice || pack.disclaimer || '',
+    case_stage: (assistant as {case_stage?: string}).case_stage || null,
   };
   const research: GuestResearch = {
     query: q,

@@ -61,3 +61,11 @@ def test_internal_labels_and_empty_plain_headings_removed():
     out = clean_answer(raw)
     assert "Factual premise" not in out and "Unverified issues" not in out and "• Your PO reported" in out
     assert "Deadlines and costs" not in out and "Where to get help" in out
+
+
+def test_prison_answers_always_include_written_sick_call():
+    from app.grounded_legal_assistant import ensure_sick_call, SICK_CALL_STEP
+    a = "Steps you can take\n• File a grievance.\n\nNote: x"
+    out = ensure_sick_call(a, "I'm in prison I have no water no good food and no bed")
+    assert out.split("\n")[1] == SICK_CALL_STEP
+    assert ensure_sick_call(a, "my landlord shut off the water") == a

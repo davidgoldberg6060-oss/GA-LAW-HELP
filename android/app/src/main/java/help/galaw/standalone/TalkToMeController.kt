@@ -10,7 +10,9 @@ object TalkToMeController {
         val answer: String,
         val authoritySummary: String,
         val followUps: List<String> = emptyList(),
-        val cached: Boolean = false
+        val cached: Boolean = false,
+        val caseStage: String = "",
+        val caseStageLabel: String = ""
     )
 
     fun reply(
@@ -26,7 +28,9 @@ object TalkToMeController {
             answer = turn.answer,
             authoritySummary = turn.authoritySummary,
             followUps = followUps(turn.result),
-            cached = turn.result.optBoolean("cached")
+            cached = turn.result.optBoolean("cached"),
+            caseStage = turn.result.optString("case_stage"),
+            caseStageLabel = turn.result.optString("case_stage_label")
         )
     }
 

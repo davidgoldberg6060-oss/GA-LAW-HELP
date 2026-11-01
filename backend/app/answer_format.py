@@ -143,6 +143,8 @@ def sanitize_result(obj, key: str | None = None):
         return {k: sanitize_result(v, k) for k, v in obj.items()}
     if isinstance(obj, list):
         return [sanitize_result(v, key) for v in obj]
+    if isinstance(obj, str) and key in ("citation", "title"):
+        return re.sub(r"\s*\(text as of[^)]*\)", "", obj).strip()
     if isinstance(obj, str) and key in _TEXT_KEYS:
         return clean_answer(obj) if key in ("analysis", "answer") else plain_text(obj)
     return obj
