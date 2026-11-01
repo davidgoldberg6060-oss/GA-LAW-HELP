@@ -12,6 +12,8 @@ export type GuestResearch = {
   topic: string;
   guidance: string;
   resources: GuestResource[];
+  /** Laws the answer relies on; each expands inline to its full text. */
+  laws?: {citation: string; title?: string | null; id?: number | null}[];
   notice: string;
 };
 
@@ -83,7 +85,9 @@ export async function guestRightsAndEncounter(
     query: q,
     topic: 'Georgia rights and encounter information',
     guidance: pack.prompt || pack.disclaimer || '',
-    resources: [...guestOfficialIndexes(pack), ...indexedAuthorityLinks(assistant)],
+    // Cited laws open inline (full text in the app) instead of linking out to downloads.
+    resources: guestOfficialIndexes(pack),
+    laws: Array.isArray((assistant as {laws_cited?: unknown}).laws_cited) ? (assistant as {laws_cited: {citation: string; title?: string; id?: number}[]}).laws_cited : [],
     notice: [pack.disclaimer, pack.coverage_limit, assistant.coverage_notice, 'Index links are official court pages, not a complete code and not a claim that any citation is current.']
       .filter((part) => typeof part === 'string' && part.trim())
       .join(' '),

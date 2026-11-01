@@ -105,15 +105,27 @@ def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):
     return {'case':public_case_payload(row,include_text=True),'coverage_notice':'Verify the opinion and current precedential status against the linked official source before legal reliance.'}
 
 @app.get('/public/georgia-laws/law')
-def public_georgia_law(citation:str='',db:Session=Depends(get_db)):
-    """One law's stored text by exact citation, for opening a cited law inside the app."""
-    citation=re.sub(r"\s*\(text as of[^)]*\)","",citation.strip())
-    if not citation or len(citation)>120: raise HTTPException(400,'Citation required.')
-    row=db.query(models.LegalAuthority).filter(models.LegalAuthority.citation==citation).first()
+def public_georgia_law(citation:str='',id:int|None=None,db:Session=Depends(get_db)):
+    """One law, rule, regulation or case: FULL stored text by id or citation, for the in-app accordion."""
+    from .authority_search_service import _PUBLIC_EXCLUDED_STATUSES
+    Q=db.query(models.LegalAuthority).filter(func.lower(func.coalesce(models.LegalAuthority.status,'')).notin_(_PUBLIC_EXCLUDED_STATUSES))
+    row=None
+    if id is not None: row=Q.filter(models.LegalAuthority.id==id).first()
+    if row is None:
+        citation=re.sub(r"\s*\(text as of[^)]*\)","",citation.strip())
+        if not citation and id is None: raise HTTPException(400,'Citation required.')
+        if len(citation)>255: raise HTTPException(400,'Citation is too long.')
+        if citation:
+            row=Q.filter(models.LegalAuthority.citation==citation).first()
+            if row is None:
+                bare=re.sub(r"^(?:O\.?C\.?G\.?A\.?\s*)?§*\s*","",citation).strip()
+                if bare: row=Q.filter(models.LegalAuthority.citation.ilike('%'+bare)).order_by(func.length(models.LegalAuthority.citation)).first()
     if row is None: raise HTTPException(404,'That law is not in GA.LAW.HELP yet.')
     from .answer_format import short_title
     note=SHORT_AMENDMENT_NOTE if (row.citation or '').startswith('O.C.G.A.') else None
-    return {'citation':row.citation,'title':short_title(row.title,row.citation),'text':(row.text or '')[:30000],'note':note}
+    src=(row.source_url or '') if (row.source_url or '').startswith('https://') else None
+    return {'id':row.id,'citation':row.citation,'title':short_title(row.title,row.citation),'type':row.authority_type,
+            'text':row.text or '','note':note,'source_url':src}
 
 @app.get('/public/georgia-laws/search')
 def public_georgia_law_search(kind:str='statutes',q:str='',title:str='',chapter:str='',limit:int=25,db:Session=Depends(get_db)):

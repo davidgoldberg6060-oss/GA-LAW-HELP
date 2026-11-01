@@ -59,8 +59,8 @@ class GuestRightsActivity : AppCompatActivity() {
                     try {
                         GuestPublicApi.encounter(BuildConfig.API_BASE_URL, q)
                         val raw = GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, q, "rights")
-                        val text = AnswerFormat.styled(GroundedLegalResult.answer(raw).ifBlank { "No answer was returned. Please try again." } + GroundedLegalResult.authoritySummary(raw).let { if (it.isBlank()) "" else "\n\n" + it })
-                        runOnUiThread { answer.text = text }
+                        val text = AnswerFormat.styled(GroundedLegalResult.answer(raw).ifBlank { "No answer was returned. Please try again." } + GroundedLegalResult.authoritySummary(raw).let { if (it.isBlank()) "" else "\n\n" + it }, GaUi.GOLD) { }
+                        runOnUiThread { answer.text = text; answer.movementMethod = android.text.method.LinkMovementMethod.getInstance() }
                     } catch (error: Exception) {
                         runOnUiThread { Toast.makeText(this@GuestRightsActivity, error.message ?: "Guest rights help is unavailable.", Toast.LENGTH_LONG).show() }
                     }

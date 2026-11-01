@@ -81,7 +81,7 @@ object AnswerFormat {
                     if (inLaws && onLaw != null) {
                         val cite = line.removePrefix("• ").substringBefore(" — ").trim()
                         sb.setSpan(object : android.text.style.ClickableSpan() {
-                            override fun onClick(widget: android.view.View) { onLaw(cite) }
+                            override fun onClick(widget: android.view.View) { LawAccordion.toggle(widget, cite) }
                             override fun updateDrawState(ds: android.text.TextPaint) { ds.color = GaUi.BLUE_BRIGHT; ds.isUnderlineText = false }
                         }, start + 2, start + 2 + cite.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }

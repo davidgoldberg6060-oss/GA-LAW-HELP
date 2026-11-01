@@ -99,3 +99,16 @@
 .paywallModal{width:min(540px,100%);background:linear-gradient(150deg,#10243a,#091421);border-color:#477ba8}.paywallModal>.eyebrow{display:block;margin-top:12px}.paywallActions{display:flex;gap:9px;margin-top:18px}.paywallActions button{flex:1}.membershipStatus{display:flex;align-items:flex-start;gap:11px;background:#0a1929;border:1px solid #315a7d;border-radius:12px;padding:14px;margin:18px 0}.membershipStatus>svg{color:#78bcff;flex:0 0 auto}.membershipStatus span{display:grid;gap:4px}.membershipStatus small{color:#8298ad;line-height:1.4}
 @media(max-width:520px){.paywallActions{flex-direction:column}}
 .funnySearch{width:100%;background:#07111e;border:1px solid #2e4a67;color:white;border-radius:10px;padding:12px;font-size:16px;margin:0 0 16px}.funGrid small{color:#7fbaff;text-transform:uppercase;font-size:11px;letter-spacing:.08em}.funGrid a{color:#67adf6;display:inline-block;margin-top:10px}.funnyNote{color:#718398;font-size:13px;margin-top:16px}
+
+/* Inline law accordion: one open at a time, full text in-app */
+.lawAccordion{list-style:none;padding:0;margin:.75rem 0;display:grid;gap:.5rem}
+.lawAccordion li{border:1px solid rgba(77,171,255,.35);border-radius:10px;background:rgba(10,26,45,.85)}
+.lawAccordion button{all:unset;cursor:pointer;display:flex;gap:.25rem;align-items:baseline;width:calc(100% - 1.5rem);padding:.65rem .75rem;color:#e2eaf3}
+.lawAccordion button b{color:#4dabff}.lawAccordion button i{margin-left:auto;font-style:normal;color:#e6be5c}
+.lawText{padding:0 .75rem .75rem}.lawText h4{margin:.25rem 0 .5rem;color:#fff}
+.lawScroll{max-height:420px;overflow-y:auto;padding-right:.5rem;line-height:1.55}
+.lawScroll p{margin:0 0 .6rem}.lawText small{display:block;color:#a0b4c9;margin-top:.5rem}
+.lawSource{display:inline-block;margin-top:.5rem;font-size:.82rem;color:#4dabff}
+.lawLoading{display:flex;align-items:center;gap:.5rem;color:#a0b4c9}
+.lawSpinner{width:16px;height:16px;border:2px solid #e6be5c;border-top-color:transparent;border-radius:50%;animation:lawspin .8s linear infinite}
+@keyframes lawspin{to{transform:rotate(360deg)}}
