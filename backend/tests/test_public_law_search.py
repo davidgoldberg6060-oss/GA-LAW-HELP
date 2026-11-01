@@ -35,7 +35,8 @@ def test_tabs_filter_by_authority_type_and_exclude_restricted_records():
     db = session()
     statutes = {r.citation for r in public_law_search(db, kind="statutes", keyword="weapon")}
     assert "O.C.G.A. § 16-11-126" in statutes and "Ga. Comp. R. & Regs. 570-1-1" in statutes
-    assert all(not c.startswith(("S26", "Ct.")) for c in statutes)
+    assert all(not c.startswith("S26") for c in statutes)
+    assert "Ct. App. R. 1" in statutes  # Laws tab includes court rules (labelled by type)
     cases = [r.citation for r in public_law_search(db, kind="case_law", keyword="weapon")]
     assert cases == ["S26A0001"]
     rules = [r.citation for r in public_law_search(db, kind="court_rules", keyword="weapon")]
