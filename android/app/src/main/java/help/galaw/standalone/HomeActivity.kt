@@ -37,7 +37,7 @@ class HomeActivity : AppCompatActivity() {
         if (uri == null || caseId == null) return@registerForActivityResult
         runTask("Uploading document…", { showDocuments() }) { api.upload(caseId, uri); runOnUiThread { toast("Document uploaded securely."); showDocuments() } }
     }
-    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); api = ApiClient(this); ui = GaUi(this); window.statusBarColor = GaUi.NAVY_TOP; window.navigationBarColor = GaUi.NAVY_DEEP; showHome(); thread { runCatching { api.ensureSession() } } }
+    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); SystemBars.apply(this); api = ApiClient(this); ui = GaUi(this); showHome(); thread { runCatching { api.ensureSession() } } }
     @Deprecated("Deprecated in Java") override fun onBackPressed() { if (drawerView != null) { closeDrawer(); return }; if (!onHome) showHome() else super.onBackPressed() }
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private val homeActions = object : ApprovedHomeScreen.Actions {

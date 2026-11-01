@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
         val id=selectedCase ?: return@registerForActivityResult toast("Open a case first")
         busy("Uploading evidence…") { api.upload(id,uri); runOnUiThread { toast("Evidence uploaded and integrity hash created"); showCase(id) } }
     }
-    override fun onCreate(savedInstanceState:Bundle?){ super.onCreate(savedInstanceState); api=ApiClient(this); showHome() }
+    override fun onCreate(savedInstanceState:Bundle?){ super.onCreate(savedInstanceState); SystemBars.apply(this); api=ApiClient(this); showHome() }
     private val blue = Color.rgb(40,169,255)
     private val navy = Color.rgb(4,18,31)
     private val card = Color.rgb(11,35,54)

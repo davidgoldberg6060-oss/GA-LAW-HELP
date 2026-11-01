@@ -48,8 +48,8 @@ class InternalLegalSearchActivity : AppCompatActivity() {
     private val microphonePermission=registerForActivityResult(ActivityResultContracts.RequestPermission()){granted->if(granted)startSpeechCapture()else Toast.makeText(this,"Microphone permission is needed only when you choose Listen.",Toast.LENGTH_LONG).show()}
 
     override fun onCreate(savedInstanceState:Bundle?){
-        super.onCreate(savedInstanceState);api=ApiClient(this);val mode=intent.getStringExtra("mode")?:"case_lookup";activeMode=mode;val title=intent.getStringExtra("title")?:titleFor(mode)
-        window.statusBarColor=GaUi.NAVY_TOP;val gui=GaUi(this);val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=gui.screenBackground()};shell.addView(gui.pageHeader{finish()});val body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(4),dp(18),dp(28))}
+        super.onCreate(savedInstanceState); SystemBars.apply(this);api=ApiClient(this);val mode=intent.getStringExtra("mode")?:"case_lookup";activeMode=mode;val title=intent.getStringExtra("title")?:titleFor(mode)
+val gui=GaUi(this);val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=gui.screenBackground()};shell.addView(gui.pageHeader{finish()});val body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(4),dp(18),dp(28))}
         body.addView(gui.title(title).apply{setOnClickListener{finish()}});body.addView(gui.subtitle(descriptionFor(mode)))
         val query=gui.input(hintFor(mode),grounded(mode)).apply{minLines=if(grounded(mode))4 else 1};body.addView(query,LinearLayout.LayoutParams(-1,-2))
         if(mode=="talk_to_me"){speechTarget=query;body.addView(Button(this).apply{text="🎙 Listen & transcribe";isAllCaps=false;setTextColor(Color.WHITE);background=kit.glowCard(GaUi.CARD,GaUi.STROKE,10,false);setOnClickListener{requestSpeechCapture()}},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(10),0,0)});body.addView(text("Listening starts only when you tap the microphone. Review or edit the transcript before sending it for AI legal analysis.",muted,11f))}

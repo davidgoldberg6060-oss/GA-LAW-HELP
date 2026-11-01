@@ -17,9 +17,7 @@ import kotlin.concurrent.thread
 class GuestRightsActivity : AppCompatActivity() {
     companion object { const val EXTRA_SITUATION = "situation" }
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val gui = GaUi(this)
-        window.statusBarColor = GaUi.NAVY_TOP
+        super.onCreate(savedInstanceState); SystemBars.apply(this);val gui = GaUi(this)
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(gui.dp(18), gui.dp(4), gui.dp(18), gui.dp(28))
