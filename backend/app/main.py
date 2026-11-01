@@ -132,7 +132,10 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db)):
     try:
         response = grounded_legal_response(query, mode, ask_openai, db=db)
     except RuntimeError:
-        raise HTTPException(503,'The rights assistant is temporarily unavailable.')
+        # AI provider unavailable: return the static encounter pack instead of failing the guest.
+        fallback = _guest_rights_without_corpus(query, mode)
+        fallback['ai_unavailable'] = True
+        return fallback
     except SQLAlchemyError:
         db.rollback()
         return _guest_rights_without_corpus(query, mode)
