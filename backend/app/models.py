@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, date
-from sqlalchemy import String, Text, DateTime, Date, ForeignKey, Integer, BigInteger, Boolean, CheckConstraint, Index, UniqueConstraint, text as sql_text
+from sqlalchemy import String, Text, DateTime, Date, ForeignKey, Integer, BigInteger, SmallInteger, Boolean, CheckConstraint, Index, UniqueConstraint, text as sql_text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 from .legal_status_vocabulary import CURRENCY_STATUSES, PRECEDENTIAL_STATUSES, sql_in_list
@@ -111,6 +111,30 @@ class LegalAuthority(Base):
     status_source_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     superseding_authority: Mapped[str | None] = mapped_column(String(500), nullable=True)
     negative_treatment: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+class VerificationSource(Base):
+    """One official/primary provenance (e.g. the Public.Resource.Org O.C.G.A. release of Nov 2022).
+    See backend/migrations/20261102_authority_verifications.sql."""
+    __tablename__ = "verification_sources"
+    id: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
+    source_key: Mapped[str] = mapped_column(String(120), unique=True)
+    source_name: Mapped[str] = mapped_column(String(300))
+    source_url: Mapped[str] = mapped_column(String(1000))
+    edition: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    as_of_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    as_of_label: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    method: Mapped[str] = mapped_column(String(80), default="official_source_provenance")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class AuthorityVerification(Base):
+    """Small side table (no rewrite of legal_authorities): a row here means the authority's
+    provenance is an official/primary Georgia source and it passed the text-quality checks."""
+    __tablename__ = "authority_verifications"
+    authority_id: Mapped[int] = mapped_column(ForeignKey("legal_authorities.id", ondelete="CASCADE"), primary_key=True)
+    source_id: Mapped[int] = mapped_column(SmallInteger, ForeignKey("verification_sources.id"))
+    verified_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
 
 class IssueAnalysis(Base):
     __tablename__ = "issue_analyses"

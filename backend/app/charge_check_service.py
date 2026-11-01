@@ -99,6 +99,15 @@ def ocga_citation(section: str) -> str:
     return f"O.C.G.A. § {section}"
 
 
+def with_amendment_note(result: dict, verified: list[dict]) -> dict:
+    """Add the 2022-edition amendment note to estimate_note when any cited Code text carries an as-of date."""
+    from .authority_search_service import AMENDMENT_NOTE
+    if any(h.get("as_of") for h in verified) and AMENDMENT_NOTE not in (result.get("estimate_note") or ""):
+        result = {**result, "estimate_note": ((result.get("estimate_note") or "") + " " + AMENDMENT_NOTE).strip(),
+                  "currency_note": AMENDMENT_NOTE}
+    return result
+
+
 def lookup_sections(db, sections: list[str]) -> list[dict]:
     """Exact-citation lookup (uses the citation index). Returns grounded-hit dicts."""
     if db is None or not sections:
@@ -108,14 +117,20 @@ def lookup_sections(db, sections: list[str]) -> list[dict]:
     rows = db.query(LegalAuthority).filter(LegalAuthority.citation.in_(cites)).all()
     order = {c: i for i, c in enumerate(cites)}
     rows = sorted(rows, key=lambda r: order.get(r.citation, 999))
+    from .authority_search_service import _as_of_label, verification_overlay, with_as_of
+    overlay = verification_overlay(db, [r.id for r in rows])
     seen, hits = set(), []
     for row in rows:
         if row.citation in seen:
             continue
         seen.add(row.citation)
+        ver = overlay.get(row.id)
+        as_of = _as_of_label(row, ver[2]) if ver else None
         hits.append({
             "title": row.title or row.citation, "citation": row.citation, "source_url": row.source_url,
-            "verification_status": (row.status or "").lower(), "excerpt": (row.text or "")[:1800],
+            "verification_status": "verified" if ver else (row.status or "").lower(),
+            "verification_source": ver[0] if ver else None, "as_of": as_of,
+            "display_citation": with_as_of(row.citation, as_of), "excerpt": (row.text or "")[:1800],
             "full_text": row.text or "", "record_type": row.authority_type,
             "currency_status": row.currency_status or "unknown", "precedential_status": row.precedential_status or "unknown",
             "negative_treatment": [row.negative_treatment] if row.negative_treatment else [],
@@ -167,7 +182,8 @@ def _ws(s: str) -> str:
 
 
 def _cite_view(h: dict) -> dict:
-    return {"citation": h.get("citation"), "title": h.get("title"), "source_url": h.get("source_url"),
+    return {"citation": h.get("display_citation") or h.get("citation"), "as_of": h.get("as_of"),
+            "verification_source": h.get("verification_source"), "title": h.get("title"), "source_url": h.get("source_url"),
             "record_type": h.get("record_type"), "currency_status": h.get("currency_status") or "unknown"}
 
 
@@ -251,6 +267,7 @@ def analyze_charge_check(situation: str, ask_ai, db=None, *, case_summary: str |
     take = validate_lawyer_take(data.get("lawyer_take"), verified)
     if take and is_evasion(take["text"]):
         take = None
+    result = with_amendment_note(result, verified)
     return {**result, **kept, "message": None if kept["charges"] else NONE_FOUND, "lawyer_take": take,
             "authorities": [_cite_view(h) for h in verified], "dropped_items": dropped,
             "grounded_authority_count": len(verified)}

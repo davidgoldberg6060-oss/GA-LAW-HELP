@@ -11,7 +11,8 @@ from __future__ import annotations
 import re
 
 from .charge_check_service import (EMERGENCY, _cite_view, _match, _ws, is_emergency, is_evasion,
-                                   is_evasion_request, lookup_sections, normalize_section)
+                                   is_evasion_request, lookup_sections, normalize_section,
+                                   with_amendment_note)
 from .civil_topics import topic_sections
 from .grounded_legal_assistant import _authority_context, _verified_hits
 from .loophole_analysis_service import _parse_obj, validate_lawyer_take
@@ -170,6 +171,7 @@ def analyze_civil_check(situation: str, ask_ai, db=None, *, case_summary: str | 
     take = validate_lawyer_take(data.get("lawyer_take"), verified)
     if take and is_evasion(take["text"]):
         take = None
+    result = with_amendment_note(result, verified)
     return {**result, **kept, "message": None if kept["claims"] else NONE_FOUND, "lawyer_take": take,
             "authorities": [_cite_view(h) for h in verified], "dropped_items": dropped,
             "grounded_authority_count": len(verified)}
