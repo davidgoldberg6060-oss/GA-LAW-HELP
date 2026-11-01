@@ -184,7 +184,22 @@ def public_case_guide(body:dict,db:Session=Depends(get_db)):
     from .case_guide import build_guide
     details=body.get('details') if isinstance(body.get('details'),dict) else {}
     details={k:str(v)[:2000] for k,v in details.items() if isinstance(k,str)}
-    try: return build_guide(db,stage=str(body.get('stage','')).strip(),details=details)
+    answers=body.get('answers') if isinstance(body.get('answers'),dict) else {}
+    answers={str(k)[:40]:str(v)[:40].lower() for k,v in list(answers.items())[:20]}
+    try: return build_guide(db,stage=str(body.get('stage','')).strip(),details=details,answers=answers)
+    except ValueError as e: raise HTTPException(400,str(e))
+
+@app.post('/public/motion-draft')
+def public_motion_draft(body:dict,db:Session=Depends(get_db)):
+    """Fill-in-the-blank motion template from case details (Georgia Code citations from the library only; no case law)."""
+    from .motions import draft
+    from .answer_format import short_title
+    details=body.get('details') if isinstance(body.get('details'),dict) else {}
+    details={k:str(v)[:2000] for k,v in details.items() if isinstance(k,str)}
+    def lookup(c):
+        row=db.query(models.LegalAuthority).filter(models.LegalAuthority.citation==c).first()
+        return None if row is None else {'citation':c,'title':short_title(row.title or '',c),'id':row.id}
+    try: return draft(str(body.get('key','')),details,lookup)
     except ValueError as e: raise HTTPException(400,str(e))
 
 @app.post('/public/rights-assistant')

@@ -18,6 +18,8 @@ const DATE_FIELDS: Record<string, [string, string][]> = {
 type Cite = {citation: string; title?: string; id?: number};
 type Guide = {stage_label: string; next_steps: string[]; family_tips: string[]; timeline: {title: string; due: string; label: string; passed: boolean}[];
   options: {key: string; title: string; what: string; deadline?: string | null; where?: string | null; highlight: boolean; deadline_status?: {label: string; passed: boolean} | null; citations: Cite[]}[];
+  motions?: {key: string; title: string; goal_label: string; what: string; fits?: string | null; score: number; deadline?: string | null; deadline_status?: {label: string; passed: boolean; due: string} | null; citations: Cite[]; draftable: boolean}[];
+  questions?: {id: string; q: string; options: string[]}[];
   laws_cited: Cite[]; resources: {title: string; url: string}[]; disclaimer: string};
 type Saved = {id: string; name: string; stage: string; details: Record<string, string>; saved_at: string};
 const KEY = 'ga_my_cases';
@@ -34,10 +36,19 @@ export default function MyCase({api, onCivil, onAsk, initial}: {api: string; onC
   const [err, setErr] = useState('');
   const [saved, setSaved] = useState<Saved[]>(load);
   useEffect(() => { if (initial?.stage) { setStage(initial.stage); setDetails({situation: initial.situation}); setGuide(null); setStep('form'); } }, [initial]);
-  async function run(st = stage, d = details) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  async function draftMotion(key: string, title: string) {
+    const r = await fetch(api + '/public/motion-draft', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key, details})});
+    if (!r.ok) { setErr('Could not create the draft.'); return; }
+    const d = await r.json();
+    const w = window.open('', '_blank');
+    if (w) { w.document.title = title; const pre = w.document.createElement('pre'); pre.style.whiteSpace = 'pre-wrap'; pre.style.font = '13px monospace'; pre.textContent = d.text; w.document.body.appendChild(pre); }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([d.text], {type: 'text/plain'})); a.download = title.replace(/[^A-Za-z0-9]+/g, '_') + '.txt'; a.click();
+  }
+  async function run(st = stage, d = details, ans = answers) {
     setBusy(true); setErr(''); setGuide(null);
     try {
-      const r = await fetch(api + '/public/case-guide', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({stage: st, details: d})});
+      const r = await fetch(api + '/public/case-guide', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({stage: st, details: d, answers: ans})});
       if (!r.ok) throw new Error('Could not load the guide. Please try again.');
       setGuide(await r.json());
     } catch (e) { setErr((e as Error).message); }
@@ -77,8 +88,16 @@ export default function MyCase({api, onCivil, onAsk, initial}: {api: string; onC
         {guide && <div className="mcResult">
           <h3>Next steps</h3><ul>{guide.next_steps.map((s) => <li key={s}>{s}</li>)}</ul>
           {guide.family_tips.length > 0 && <><h4>Family and friends can help</h4><ul>{guide.family_tips.map((s) => <li key={s}>{s}</li>)}</ul></>}
+          {(guide.questions || []).length > 0 && <div className="mcOption"><h4>A few quick questions</h4>{guide.questions!.map((q) => <p key={q.id}>{q.q} {q.options.map((o) => <button key={o} type="button" className="mcChip" onClick={() => { const a = {...answers, [q.id]: o}; setAnswers(a); run(stage, details, a); }}>{o}</button>)}</p>)}</div>}
+          {(guide.motions || []).length > 0 && <><h3>Motions that could help</h3>{guide.motions!.map((m, i) => <article key={m.key} className={'mcOption' + (m.score >= 3 ? ' gold' : '')}>
+            <small className="mcMatch">{m.goal_label}{m.score >= 3 ? ' · STRONG FIT' : ''}</small><h4>{i + 1}. {m.title}</h4><p>{m.what}</p>
+            {m.fits && <p className="mcWhere">Why it fits: {m.fits}</p>}
+            {m.deadline && <p className={'mcDeadline' + (m.deadline_status?.passed ? ' passed' : '')}>⏰ Deadline: {m.deadline}{m.deadline_status ? ` (${m.deadline_status.due}: ${m.deadline_status.label})` : ''}</p>}
+            <LawAccordion api={api} items={m.citations}/>
+            {m.draftable && <button type="button" className="mcRun" onClick={() => draftMotion(m.key, m.title)}>Draft this motion</button>}
+          </article>)}<small>Drafts are fill-in-the-blank templates to review with a lawyer. They never include case law.</small></>}
           {guide.timeline.length > 0 && <div className="mcTimeline"><h3>Deadline timeline</h3>{guide.timeline.map((t) => <p key={t.title}><b>{t.due}</b> · {t.title} <span className={t.passed ? 'passed' : ''}>{t.label}</span></p>)}<small>Estimates from the dates entered. Confirm every deadline with a lawyer.</small></div>}
-          <h3>Motions &amp; filings that may apply</h3>
+          <h3>Other filings and options</h3>
           {guide.options.map((o) => <article key={o.key} className={'mcOption' + (o.highlight ? ' gold' : '')}>
             {o.highlight && <small className="mcMatch">MATCHES THE DESCRIPTION</small>}
             <h4>{o.title}</h4><p>{o.what}</p>

@@ -84,3 +84,11 @@ def test_sick_call_only_for_conditions_questions():
     from app.grounded_legal_assistant import ensure_sick_call
     a = "Steps you can take\n• Ask for the case file."
     assert ensure_sick_call(a, "my brother is in prison doing 15 years, how can he get out early") == a
+
+
+def test_self_defense_homicide_routes_to_justification_and_homicide_laws():
+    for q in ("self defense murder", "I shot someone defending myself", "killed someone in self defense",
+              "my cousin caught a body defending himself", "he smoked him when dude pulled a gun on him", "charged with felony murder, he attacked me first"):
+        t = _topics(q)
+        for s in ("16-3-21", "16-3-24.2", "16-3-23.1", "16-5-1", "16-5-2", "16-5-3", "17-6-1"):
+            assert s in t, (q, s)

@@ -75,15 +75,25 @@ object MyCaseScreens {
         }
         val dates = fields.associate { (k, h) -> k to ui.input(h).apply { setText(prefill?.optString(k) ?: ""); inputType = android.text.InputType.TYPE_CLASS_DATETIME } }
         dates.values.forEach { body.addView(it, ui.lp(2, 4)) }
+        val extra = listOf("county" to "County (for drafts, optional)", "defendant" to "Defendant's full name (for drafts, optional)", "case_number" to "Case number (optional)")
+            .associate { (k, h) -> k to ui.input(h).apply { setText(prefill?.optString(k) ?: "") } }
+        extra.values.forEach { body.addView(it, ui.lp(2, 4)) }
         body.addView(ui.primaryButton("Show next steps") { onRun() }, ui.lp(6, 8))
         val results = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL }
         body.addView(results)
-        return StageForm(root, situation, dates, results)
+        return StageForm(root, situation, dates + extra, results)
     }
 
     private fun cites(arr: JSONArray?) = (0 until (arr?.length() ?: 0)).mapNotNull { arr!!.optJSONObject(it) }.map { GaScreens.LoopholeCite(it.optString("citation"), it.optString("title"), null) }
 
-    fun render(ui: GaUi, box: LinearLayout, g: JSONObject, stage: String, onCharges: () -> Unit, onDefenses: () -> Unit, onSave: () -> Unit, onLink: (String) -> Unit) {
+    class Callbacks(val onCharges: () -> Unit, val onDefenses: () -> Unit, val onSave: () -> Unit, val onLink: (String) -> Unit,
+                    val onAnswer: (String, String) -> Unit = { _, _ -> }, val onDraft: (String, String) -> Unit = { _, _ -> }, val onRemind: (String, String) -> Unit = { _, _ -> })
+
+    fun render(ui: GaUi, box: LinearLayout, g: JSONObject, stage: String, onCharges: () -> Unit, onDefenses: () -> Unit, onSave: () -> Unit, onLink: (String) -> Unit) =
+        render(ui, box, g, stage, Callbacks(onCharges, onDefenses, onSave, onLink))
+
+    fun render(ui: GaUi, box: LinearLayout, g: JSONObject, stage: String, cb: Callbacks) {
+        val onCharges = cb.onCharges; val onDefenses = cb.onDefenses; val onSave = cb.onSave; val onLink = cb.onLink
         val dp = ui::dp
         box.removeAllViews()
         fun card(gold: Boolean = false) = LinearLayout(ui.context).apply {
@@ -97,17 +107,64 @@ object MyCaseScreens {
             box.addView(ui.sectionHeader("Family and friends can help"))
             box.addView(card().apply { for (i in 0 until tips.length()) addView(ui.text("• " + tips.optString(i), 14.5f, GaUi.TEXT).apply { setPadding(0, dp(2), 0, dp(2)) }) }, ui.lp(2, 6))
         }
+        val qs = g.optJSONArray("questions")
+        if (qs != null && qs.length() > 0) {
+            box.addView(ui.sectionHeader("A few quick questions"))
+            box.addView(card().apply {
+                for (i in 0 until qs.length()) { val q = qs.getJSONObject(i)
+                    addView(ui.text(q.optString("q"), 14.5f, GaUi.WHITE, ui.sansMedium).apply { setPadding(0, dp(6), 0, dp(4)) })
+                    val opts = q.optJSONArray("options")
+                    if (opts != null && opts.length() > 0) addView(LinearLayout(ui.context).apply { orientation = LinearLayout.HORIZONTAL
+                        for (j in 0 until opts.length()) { val o = opts.getString(j)
+                            addView(ui.text(o.replaceFirstChar { it.uppercase() }, 14f, GaUi.TEXT, null, Gravity.CENTER).apply {
+                                background = ui.rounded(Color.argb(220, 10, 26, 45), 18, GaUi.STROKE_SOFT, 1.2f); setPadding(dp(14), dp(7), dp(14), dp(7)); isClickable = true
+                                contentDescription = q.optString("q") + " " + o; setOnClickListener { cb.onAnswer(q.optString("id"), o) }
+                            }, LinearLayout.LayoutParams(-2, -2).apply { rightMargin = dp(8) }) } })
+                    else addView(ui.note("Add this to the description above, then tap Show next steps again."))
+                }
+            }, ui.lp(2, 6))
+        }
+        val ms = g.optJSONArray("motions")
+        if (ms != null && ms.length() > 0) {
+            box.addView(ui.sectionHeader("Motions that could help"))
+            var lastGoal = ""
+            for (i in 0 until ms.length()) { val m = ms.getJSONObject(i)
+                val goalLabel = m.optString("goal_label")
+                if (goalLabel != lastGoal) { box.addView(ui.text(goalLabel.uppercase(), 11.5f, GaUi.BLUE_BRIGHT, ui.sansBold).apply { setPadding(0, dp(10), 0, dp(2)) }); lastGoal = goalLabel }
+                val strong = m.optInt("score") >= 3
+                box.addView(card(strong).apply {
+                    if (strong) addView(ui.text("STRONG FIT FOR THESE FACTS", 11f, GaUi.GOLD, ui.sansBold))
+                    addView(ui.text("${i + 1}. " + m.optString("title"), 16f, GaUi.WHITE, ui.sansMedium))
+                    addView(ui.text(m.optString("what"), 14f, GaUi.TEXT).apply { setPadding(0, dp(4), 0, 0) })
+                    m.optString("fits").takeIf { it.isNotBlank() && it != "null" }?.let { addView(ui.text("Why it fits: $it", 13.5f, GaUi.MUTED).apply { setPadding(0, dp(4), 0, 0) }) }
+                    val st = m.optJSONObject("deadline_status")
+                    m.optString("deadline").takeIf { it.isNotBlank() && it != "null" }?.let { d ->
+                        addView(ui.text("⏰ Deadline: $d" + (st?.let { "  (${it.optString("due")}: ${it.optString("label")})" } ?: ""), 13.5f, if (st?.optBoolean("passed") == true) Color.rgb(245, 150, 150) else GaUi.GOLD, ui.sansMedium).apply { setPadding(0, dp(6), 0, 0) }) }
+                    GaScreens.citeViews(ui, this, cites(m.optJSONArray("citations"))) {}
+                    val row = LinearLayout(ui.context).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(8), 0, 0) }
+                    if (m.optBoolean("draftable")) row.addView(ui.text("Draft this motion", 14f, GaUi.WHITE, ui.sansMedium, Gravity.CENTER).apply {
+                        background = ui.rounded(Color.rgb(29, 111, 224), 10); setPadding(dp(14), dp(9), dp(14), dp(9)); isClickable = true
+                        contentDescription = "Draft " + m.optString("title"); setOnClickListener { cb.onDraft(m.optString("key"), m.optString("title")) } }, LinearLayout.LayoutParams(-2, -2).apply { rightMargin = dp(8) })
+                    if (st != null && !st.optBoolean("passed")) row.addView(ui.text("Remind me", 14f, GaUi.GOLD, ui.sansMedium, Gravity.CENTER).apply {
+                        background = ui.rounded(Color.argb(220, 10, 26, 45), 10, GaUi.GOLD, 1.2f); setPadding(dp(14), dp(9), dp(14), dp(9)); isClickable = true
+                        contentDescription = "Remind me about " + m.optString("title"); setOnClickListener { cb.onRemind(m.optString("title"), st.optString("due")) } })
+                    if (row.childCount > 0) addView(row)
+                }, ui.lp(4, 5))
+            }
+            box.addView(ui.note("Drafts are fill-in-the-blank templates to review with a lawyer. They never include case law."))
+        }
         val tl = g.optJSONArray("timeline")
         if (tl != null && tl.length() > 0) {
             box.addView(ui.sectionHeader("Deadline timeline"))
             box.addView(card(true).apply {
                 for (i in 0 until tl.length()) { val t = tl.getJSONObject(i); val passed = t.optBoolean("passed")
                     addView(ui.text("${t.optString("due")}  •  ${t.optString("title")}", 14.5f, GaUi.WHITE, ui.sansMedium).apply { setPadding(0, dp(4), 0, 0) })
-                    addView(ui.text(t.optString("label"), 13f, if (passed) Color.rgb(245, 150, 150) else GaUi.GOLD)) }
+                    addView(ui.text(t.optString("label"), 13f, if (passed) Color.rgb(245, 150, 150) else GaUi.GOLD))
+                    if (!passed) addView(ui.text("Remind me ›", 13f, GaUi.BLUE_BRIGHT).apply { isClickable = true; contentDescription = "Remind me about " + t.optString("title"); setOnClickListener { cb.onRemind(t.optString("title"), t.optString("due")) } }) }
                 addView(ui.note("Dates are estimates from what you entered. Confirm every deadline with a lawyer."))
             }, ui.lp(2, 6))
         }
-        box.addView(ui.sectionHeader("Motions & filings that may apply"))
+        box.addView(ui.sectionHeader("Other filings and options"))
         val opts = g.optJSONArray("options") ?: JSONArray()
         for (i in 0 until opts.length()) { val o = opts.getJSONObject(i)
             box.addView(card(o.optBoolean("highlight")).apply {
