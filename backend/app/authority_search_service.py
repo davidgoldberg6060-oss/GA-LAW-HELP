@@ -99,7 +99,7 @@ _RANK_WEIGHTS = "{0.05, 0.2, 0.5, 1.0}"  # D, C, B, A
 _STRICT_CANDIDATES = 1500   # bound ranking work on very common words (opinions)
 _LOOSE_CANDIDATES = 600
 _TYPE_BOOST = {"statute": 1.6, "court_rule": 1.3, "regulation": 1.0}
-_SV_STATE: dict = {"checked_at": 0.0, "ready": False}
+_SV_STATE: dict = {"checked_at": None, "ready": False}
 _SV_TTL_SECONDS = 300.0
 
 # Plain-English -> Georgia legal vocabulary. Each entry: trigger words/phrases found in the
@@ -186,7 +186,7 @@ def search_vector_ready(db: Session) -> bool:
     """True once the search_vector GIN index exists and is valid (backfill finished)."""
     import time
     now = time.monotonic()
-    if now - _SV_STATE["checked_at"] < _SV_TTL_SECONDS:
+    if _SV_STATE["checked_at"] is not None and now - _SV_STATE["checked_at"] < _SV_TTL_SECONDS:
         return _SV_STATE["ready"]
     from sqlalchemy import text as sql_text
     try:
