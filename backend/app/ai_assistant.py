@@ -48,21 +48,62 @@ def _is_complex_legal_request(question: str) -> bool:
     return len(question) >= 2500 or any(marker in lowered for marker in LEGAL_COMPLEXITY_MARKERS)
 
 
-def _provider() -> dict:
-    xai_key = os.getenv("XAI_API_KEY", "").strip()
-    if xai_key:
-        return {
-            "name": "xai",
-            "url": os.getenv("XAI_API_URL", XAI_URL).strip() or XAI_URL,
-            "api_key": xai_key,
-            "default_model": os.getenv("XAI_MODEL", "grok-4").strip() or "grok-4",
-        }
+GEMINI_URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+GEMINI_DEFAULT_MODEL = "gemini-3.5-flash"
+FALLBACK_STATUS_CODES = {401, 402, 403, 429}
+
+
+class ProviderHTTPError(RuntimeError):
+    def __init__(self, message: str, status: int):
+        super().__init__(message)
+        self.status = status
+
+
+def _openai_provider() -> dict:
     return {
         "name": "openai",
         "url": os.getenv("OPENAI_API_URL", OPENAI_URL).strip() or OPENAI_URL,
         "api_key": os.getenv("OPENAI_API_KEY", "").strip(),
         "default_model": os.getenv("OPENAI_MODEL", "gpt-5.6").strip() or "gpt-5.6",
     }
+
+
+def _xai_provider() -> dict:
+    return {
+        "name": "xai",
+        "url": os.getenv("XAI_API_URL", XAI_URL).strip() or XAI_URL,
+        "api_key": os.getenv("XAI_API_KEY", "").strip(),
+        "default_model": os.getenv("XAI_MODEL", "grok-4").strip() or "grok-4",
+    }
+
+
+def _gemini_provider() -> dict:
+    return {
+        "name": "gemini",
+        "url": os.getenv("GEMINI_API_URL", GEMINI_URL_BASE).strip().rstrip("/") or GEMINI_URL_BASE,
+        "api_key": os.getenv("GEMINI_API_KEY", "").strip(),
+        "default_model": os.getenv("GEMINI_MODEL", GEMINI_DEFAULT_MODEL).strip() or GEMINI_DEFAULT_MODEL,
+    }
+
+
+_PROVIDER_BUILDERS = {"gemini": _gemini_provider, "xai": _xai_provider, "openai": _openai_provider}
+_DEFAULT_ORDER = ("gemini", "xai", "openai")
+
+
+def _providers() -> list:
+    """Configured providers in priority order: AI_PROVIDER first, then gemini, xai, openai."""
+    preferred = os.getenv("AI_PROVIDER", "").strip().lower()
+    order = list(_DEFAULT_ORDER)
+    if preferred in _PROVIDER_BUILDERS:
+        order.remove(preferred)
+        order.insert(0, preferred)
+    configured = [p for p in (_PROVIDER_BUILDERS[name]() for name in order) if p["api_key"]]
+    return configured
+
+
+def _provider() -> dict:
+    providers = _providers()
+    return providers[0] if providers else _openai_provider()
 
 
 def _request_profile(question: str, default_model: str) -> dict:
@@ -81,34 +122,15 @@ def _request_profile(question: str, default_model: str) -> dict:
     }
 
 
-def ask_openai(question: str) -> str:
-    provider = _provider()
-    api_key = provider["api_key"]
-    if not api_key:
-        logger.error("AI provider configuration failure: XAI_API_KEY and OPENAI_API_KEY are missing")
-        raise RuntimeError("AI service is not configured")
-    profile = _request_profile(question, provider["default_model"])
-    model = profile["model"]
-    payload = json.dumps({
-        "model": model,
-        "instructions": SYSTEM_INSTRUCTIONS,
-        "input": question,
-        "max_output_tokens": profile["max_output_tokens"],
-        "reasoning": profile["reasoning"],
-    }).encode("utf-8")
-    request = urllib.request.Request(
-        provider["url"],
-        data=payload,
-        headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
-        method="POST",
-    )
+def _http_post_json(provider: dict, model: str, url: str, payload: dict, headers: dict, timeout: float) -> dict:
+    request = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(request, timeout=profile["timeout"]) as response:
-            data = json.loads(response.read().decode("utf-8"))
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")
         logger.error("AI provider HTTP failure: provider=%s status=%s model=%s %s", provider["name"], exc.code, model, _provider_error_summary(detail))
-        raise RuntimeError("AI provider request failed") from exc
+        raise ProviderHTTPError("AI provider request failed", exc.code) from exc
     except urllib.error.URLError as exc:
         reason_type = type(getattr(exc, "reason", None)).__name__
         logger.error("AI provider network failure: provider=%s model=%s reason_type=%s", provider["name"], model, reason_type)
@@ -120,6 +142,22 @@ def ask_openai(question: str) -> str:
         logger.error("AI provider returned invalid JSON: provider=%s model=%s", provider["name"], model)
         raise RuntimeError("AI provider returned an invalid response") from exc
 
+
+def _ask_responses_api(provider: dict, question: str) -> str:
+    profile = _request_profile(question, provider["default_model"])
+    model = profile["model"]
+    data = _http_post_json(
+        provider, model, provider["url"],
+        {
+            "model": model,
+            "instructions": SYSTEM_INSTRUCTIONS,
+            "input": question,
+            "max_output_tokens": profile["max_output_tokens"],
+            "reasoning": profile["reasoning"],
+        },
+        {"Authorization": "Bearer " + provider["api_key"], "Content-Type": "application/json"},
+        profile["timeout"],
+    )
     text = (data.get("output_text") or "").strip()
     if not text:
         parts = []
@@ -132,3 +170,77 @@ def ask_openai(question: str) -> str:
         logger.error("AI provider returned no output text: provider=%s model=%s response_status=%s", provider["name"], model, data.get("status", "unknown"))
         raise RuntimeError("AI provider returned an empty response")
     return text
+
+
+def _gemini_profile(question: str, default_model: str) -> dict:
+    if _is_complex_legal_request(question):
+        return {
+            "model": os.getenv("GEMINI_LEGAL_MODEL", default_model).strip() or default_model,
+            "max_output_tokens": int(os.getenv("GEMINI_LEGAL_MAX_OUTPUT_TOKENS", "4096")),
+            "thinking_level": os.getenv("GEMINI_LEGAL_THINKING_LEVEL", "medium").strip(),
+            "timeout": float(os.getenv("GEMINI_LEGAL_TIMEOUT_SECONDS", "55")),
+        }
+    return {
+        "model": os.getenv("GEMINI_FAST_MODEL", default_model).strip() or default_model,
+        "max_output_tokens": int(os.getenv("GEMINI_FAST_MAX_OUTPUT_TOKENS", "2048")),
+        "thinking_level": os.getenv("GEMINI_FAST_THINKING_LEVEL", "low").strip(),
+        "timeout": float(os.getenv("GEMINI_FAST_TIMEOUT_SECONDS", "25")),
+    }
+
+
+def _ask_gemini(provider: dict, question: str) -> str:
+    profile = _gemini_profile(question, provider["default_model"])
+    model = profile["model"]
+    generation_config = {"maxOutputTokens": profile["max_output_tokens"]}
+    if profile["thinking_level"]:
+        generation_config["thinkingConfig"] = {"thinkingLevel": profile["thinking_level"]}
+    stripped = question.lstrip()
+    if stripped.startswith("{") or "return only json" in question.lower() or "respond with json" in question.lower():
+        generation_config["responseMimeType"] = "application/json"
+    data = _http_post_json(
+        provider, model, f"{provider['url']}/{model}:generateContent",
+        {
+            "systemInstruction": {"parts": [{"text": SYSTEM_INSTRUCTIONS}]},
+            "contents": [{"role": "user", "parts": [{"text": question}]}],
+            "generationConfig": generation_config,
+        },
+        {"x-goog-api-key": provider["api_key"], "Content-Type": "application/json"},
+        profile["timeout"],
+    )
+    parts = []
+    for candidate in (data.get("candidates") or [])[:1]:
+        for part in (candidate.get("content") or {}).get("parts") or []:
+            if part.get("text") and not part.get("thought"):
+                parts.append(part["text"])
+    text = "".join(parts).strip()
+    if not text:
+        finish = ((data.get("candidates") or [{}])[0] or {}).get("finishReason", "unknown")
+        block = (data.get("promptFeedback") or {}).get("blockReason", "")
+        logger.error("AI provider returned no output text: provider=gemini model=%s finish=%s block=%s", model, finish, block)
+        raise RuntimeError("AI provider returned an empty response")
+    return text
+
+
+def _ask_provider(provider: dict, question: str) -> str:
+    if provider["name"] == "gemini":
+        return _ask_gemini(provider, question)
+    return _ask_responses_api(provider, question)
+
+
+def ask_openai(question: str) -> str:
+    """Ask the active AI provider; falls back to the next configured provider on quota/auth errors."""
+    providers = _providers()
+    if not providers:
+        logger.error("AI provider configuration failure: GEMINI_API_KEY, XAI_API_KEY and OPENAI_API_KEY are missing")
+        raise RuntimeError("AI service is not configured")
+    last_error = None
+    for index, provider in enumerate(providers):
+        try:
+            return _ask_provider(provider, question)
+        except ProviderHTTPError as exc:
+            last_error = exc
+            if exc.status in FALLBACK_STATUS_CODES and index + 1 < len(providers):
+                logger.warning("AI provider fallback: from=%s status=%s to=%s", provider["name"], exc.status, providers[index + 1]["name"])
+                continue
+            raise
+    raise last_error  # pragma: no cover
