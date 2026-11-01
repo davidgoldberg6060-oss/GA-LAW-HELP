@@ -247,6 +247,8 @@ def _ask_gemini(provider: dict, question: str, speed: str | None = None, model_o
                 parts.append(part["text"])
     text = "".join(parts).strip()
     finish_reason = ((data.get("candidates") or [{}])[0] or {}).get("finishReason", "")
+    if finish_reason == "MAX_TOKENS" and generation_config.get("responseMimeType") == "application/json":
+        logger.warning("AI JSON answer hit MAX_TOKENS: provider=gemini model=%s (may be incomplete)", model)
     if text and finish_reason == "MAX_TOKENS" and generation_config.get("responseMimeType") != "application/json":
         logger.warning("AI answer hit MAX_TOKENS: provider=gemini model=%s; trimmed to last full sentence", model)
         text = trim_to_last_sentence(text)
@@ -305,6 +307,8 @@ def _try_model(key: str, call):
             raise RuntimeError("AI provider rejected the request") from exc
         elif exc.status in (401, 403):
             ai_models.mark_cooldown(key, ai_models.UNAVAILABLE_COOLDOWN_SECONDS, f"auth error {exc.status}")
+        elif exc.status >= 500:
+            ai_models.mark_cooldown(key, 30.0, f"server error {exc.status}")
         else:
             logger.warning("AI model failed: model=%s status=%s", key, exc.status)
         return None
