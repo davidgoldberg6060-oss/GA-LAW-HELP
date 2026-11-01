@@ -1,8 +1,8 @@
 # GA.LAW.HELP Privacy Policy
 
-Last updated: October 31, 2026
+Last updated: November 1, 2026
 
-GA.LAW.HELP is an app that gives general information about Georgia law. It is not a law firm and does not give legal advice. This policy explains what the Android app, the website and the GA.LAW.HELP server collect, why, and how you can delete it.
+GA.LAW.HELP is an app that gives general information about Georgia law. It is not a law firm and does not give legal advice. Nothing in the app is legal advice, and using it does not create an attorney-client relationship. For advice about your situation, talk to a licensed Georgia attorney. This policy explains what the Android app, the website and the GA.LAW.HELP server collect, why, and how you can delete it.
 
 ## What we collect
 
@@ -35,7 +35,7 @@ We do not sell your information, show ads, or use advertising or analytics track
 
 ## Who we share it with
 We share information only with the service providers needed to run the app:
-- **AI provider (OpenAI or xAI, depending on configuration):** the text of your question, and for case features the relevant case details you entered, to generate an answer.
+- **AI providers:** the text of your question, and for case features the relevant case details you entered, to generate an answer. To keep the app free, questions may be sent to one of several AI providers, tried in order when one is busy: Google Gemini (including its free tier), Groq, OpenRouter (including free models hosted by third parties), and as a backup xAI or OpenAI. **Some free AI services, including the Google Gemini free tier and some OpenRouter free models, may keep and use submitted text to improve their models, and humans at those companies may review it.** Do not type sensitive personal information (Social Security numbers, account numbers, medical details, full names of other people, or anything you would not want stored by a third party) into questions or case descriptions.
 - **Hosting and database (Railway) and file storage:** to store your account, cases and files.
 - **Email delivery:** your email address and the message, to send account emails.
 - **Payments (Stripe), only if paid plans are offered:** checkout is handled on Stripe's site; GA.LAW.HELP never sees or stores your card number. Paid plans are not offered during the free launch.
@@ -62,4 +62,4 @@ GA.LAW.HELP is not directed to children under 13 and we do not knowingly collect
 If this policy changes, we will update the date at the top and show the new version in the app.
 
 ## Contact
-Questions or deletion requests: [contact email to be added by the app owner before publishing].
+Questions or deletion requests: davidgoldberg6060@gmail.com
