@@ -167,9 +167,22 @@ jobs:
           import os
           from app.database import SessionLocal
           from app.authority_search_service import search_georgia_authorities
+          import time
+          from sqlalchemy import func
+          from app.models import LegalAuthority
+          from app.authority_search_service import public_law_search, search_vector_ready
           query = os.environ["SEARCH_QUERY"]
           with SessionLocal() as db:
+              print("search_vector_ready:", search_vector_ready(db))
+              for label, fn in (
+                  ("laws", lambda: public_law_search(db, kind="statutes", keyword=query, limit=25)),
+                  ("cases", lambda: search_georgia_authorities(db, query, limit=25, filters=(func.lower(LegalAuthority.authority_type).notin_(("statute", "regulation", "court_rule")),))),
+              ):
+                  t = time.perf_counter(); rows = fn()
+                  print(f"{label}: {len(rows)} rows in {time.perf_counter() - t:.3f}s; top: {[r.citation for r in rows[:5]]}")
+              t = time.perf_counter()
               hits = search_georgia_authorities(db, query, limit=10)
+              print(f"all-types: {time.perf_counter() - t:.3f}s")
           print(f"query={query!r} hits={len(hits)}")
           for h in hits:
               print(f"- [{h.authority_type}] {h.citation} | {(h.title or '')[:80]} | {h.source_url}")
