@@ -25,6 +25,7 @@ are counted, not stored. Preview by default; ``--commit`` persists; ``--state-fi
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import html
 import json
@@ -111,6 +112,37 @@ def http_fetch(url: str, limit: int) -> Fetched:
     if len(body) > limit:
         raise ValueError("document exceeds size limit")
     return Fetched(final, ctype, body)
+
+
+def _page_name(url: str) -> str:
+    return hashlib.sha256(url.encode("utf-8")).hexdigest() + ".json"
+
+
+def saving_fetch(fetch, folder: str):
+    """Wrap ``fetch`` so each official response is also saved verbatim (base64) under ``folder``."""
+    Path(folder).mkdir(parents=True, exist_ok=True)
+
+    def run(url: str, limit: int) -> Fetched:
+        got = fetch(url, limit)
+        Path(folder, _page_name(url)).write_text(json.dumps({
+            "url": url, "final_url": got.url, "content_type": got.content_type,
+            "sha256": hashlib.sha256(got.body).hexdigest(), "body_b64": base64.b64encode(got.body).decode()}))
+        return got
+    return run
+
+
+def replay_fetch(folder: str):
+    """Serve pages saved by ``saving_fetch``; verifies each body's sha256. Missing pages raise 404."""
+    def run(url: str, limit: int) -> Fetched:
+        path = Path(folder, _page_name(url))
+        if not path.is_file():
+            raise urllib.error.HTTPError(url, 404, "not in saved pages", None, None)
+        data = json.loads(path.read_text())
+        body = base64.b64decode(data["body_b64"])
+        if data["url"] != url or hashlib.sha256(body).hexdigest() != data["sha256"] or len(body) > limit:
+            raise ValueError(f"saved page failed integrity check: {url}")
+        return Fetched(data["final_url"], data["content_type"], body)
+    return run
 
 
 class Client:
@@ -441,6 +473,9 @@ def main(argv: list[str] | None = None, *, fetch=http_fetch, sleep=time.sleep, s
     parser.add_argument("--discover-other-codes", action="store_true",
                         help="Inventory https://www.gasupreme.us/other-codes-rules/ only. Do not download PDFs or open a database.")
     parser.add_argument("--pdf-dir", help="Folder with hand-downloaded official PDFs (robots-blocked sets)")
+    parser.add_argument("--save-pages", help="Also write every fetched official page (and robots.txt) to this folder, "
+                        "so a runner whose IP the court site refuses can replay them with --pages-dir")
+    parser.add_argument("--pages-dir", help="Replay official pages saved by --save-pages instead of the network")
     parser.add_argument("--limit", type=int, default=2000, help="Max rules this run (1-20000)")
     parser.add_argument("--offset", type=int, default=0, help="Skip this many rules first")
     parser.add_argument("--state-file", help="JSON checkpoint for resuming (commit mode only)")
@@ -448,6 +483,10 @@ def main(argv: list[str] | None = None, *, fetch=http_fetch, sleep=time.sleep, s
     parser.add_argument("--commit", action="store_true", help="Persist rules (default: preview only)")
     parser.add_argument("--quiet", action="store_true", help="Only print per-set and summary lines")
     args = parser.parse_args(argv)
+    if args.pages_dir:
+        fetch = replay_fetch(args.pages_dir)
+    elif args.save_pages:
+        fetch = saving_fetch(fetch, args.save_pages)
     if args.discover_other_codes and args.commit:
         parser.error("--discover-other-codes cannot be combined with --commit")
     if args.discover_other_codes:

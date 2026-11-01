@@ -40,7 +40,11 @@ case "$SOURCE" in
     # SCOPE: coa, supreme, superior, state, juvenile, probate, magistrate (comma list) or "all".
     # PDFs that robots.txt disallows are reported as blocked_by_robots, never fetched.
     args=(-m app.ingestion.import_court_rules --set "${SCOPE:-all}"
-          --limit "$LIMIT" --offset "$OFFSET" --quiet) ;;
+          --limit "$LIMIT" --offset "$OFFSET" --quiet)
+    if [ -n "${PAGES_DIR:-}" ]; then
+      [ "$PAGES_DIR" = ".import-cache/court-rules-pages" ] || { echo "::error::bad PAGES_DIR"; exit 1; }
+      args+=(--pages-dir "$PAGES_DIR")
+    fi ;;
   *)
     echo "::error::unknown source: $SOURCE"; exit 1 ;;
 esac
