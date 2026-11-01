@@ -31,7 +31,8 @@ case "$SOURCE" in
       echo "::error::For appeals, scope must be YYYY-MM-DD..YYYY-MM-DD"; exit 1
     fi
     args=(-m app.ingestion.import_appeals_opinions --start "${SCOPE%%..*}" --end "${SCOPE##*..}"
-          --limit "$LIMIT" --offset "$OFFSET") ;;
+          --limit "$LIMIT" --offset "$OFFSET")
+    if [[ -n "${APPEALS_PAGES_DIR:-}" ]]; then args+=(--pages-dir "$APPEALS_PAGES_DIR" --pause 0.5); fi ;;
   regulations)
     # SCOPE: rules.sos.ga.gov department numbers ("40", "40,111") or "all"
     args=(-m app.ingestion.import_ga_regulations --department "${SCOPE:-all}"

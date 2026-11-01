@@ -15,6 +15,8 @@ skipped and reported for review instead of guessing which filing is the opinion.
 from __future__ import annotations
 
 import argparse
+import base64
+from pathlib import Path
 from dataclasses import dataclass
 from datetime import date, timedelta
 from html.parser import HTMLParser
@@ -25,6 +27,7 @@ import re
 import time
 from urllib.parse import urlencode, urljoin, urlparse
 
+from .acquisition import FetchResponse
 from .http_transport import production_transport
 from .security import assert_public_official_url
 from .source_acquisition import OfficialDocumentRequest, acquire_ingestion_item
@@ -240,6 +243,43 @@ def _merge_consolidated(opinions: list[AppealsOpinion]) -> list[AppealsOpinion]:
     return merged
 
 
+def _page_name(url: str) -> str:
+    return hashlib.sha256(url.encode("utf-8")).hexdigest() + ".json"
+
+
+def saving_transport(transport, folder: str):
+    """Wrap ``transport`` so each official response is also saved verbatim (base64) under ``folder``.
+
+    Used on an operator machine when the court refuses CI runner IPs; the folder is then
+    published as a release and replayed by ``replay_transport`` in the import workflow."""
+    Path(folder).mkdir(parents=True, exist_ok=True)
+
+    def run(url: str) -> FetchResponse:
+        got = transport(url)
+        if got.status_code == 200:
+            Path(folder, _page_name(url)).write_text(json.dumps({
+                "url": url, "final_url": got.url, "status_code": got.status_code, "headers": dict(got.headers),
+                "sha256": hashlib.sha256(got.body).hexdigest(), "body_b64": base64.b64encode(got.body).decode()}))
+        return got
+    return run
+
+
+def replay_transport(folder: str):
+    """Serve responses saved by ``saving_transport``; verifies each body's sha256 and official URL."""
+    def run(url: str) -> FetchResponse:
+        assert_public_official_url(url)
+        path = Path(folder, _page_name(url))
+        if not path.is_file():
+            return FetchResponse(url=url, status_code=404, headers={}, body=b"")
+        data = json.loads(path.read_text())
+        body = base64.b64decode(data["body_b64"])
+        if data["url"] != url or hashlib.sha256(body).hexdigest() != data["sha256"]:
+            raise ValueError(f"saved page failed integrity check: {url}")
+        assert_public_official_url(data["final_url"])
+        return FetchResponse(url=data["final_url"], status_code=data["status_code"], headers=data["headers"], body=body)
+    return run
+
+
 def prepare_opinion(opinion: AppealsOpinion, *, transport=production_transport):
     """Acquire one opinion PDF; always retained under the docket-labeled unverified ID."""
     request = OfficialDocumentRequest(
@@ -261,7 +301,15 @@ def main(argv: list[str] | None = None, *, transport=production_transport, sessi
     parser.add_argument("--pause", type=float, default=1.0, help="Seconds between court requests")
     parser.add_argument("--include-orders", action="store_true", help="Also import application rulings, dismissals, withdrawals and transfers")
     parser.add_argument("--commit", action="store_true", help="Persist each acquired document")
+    parser.add_argument("--save-pages", help="Also save every fetched official response to this folder (for runner-blocked sites)")
+    parser.add_argument("--pages-dir", help="Replay official responses saved by --save-pages instead of the network")
     args = parser.parse_args(argv)
+    if args.save_pages and args.pages_dir:
+        parser.error("--save-pages and --pages-dir cannot be combined")
+    if args.pages_dir:
+        transport = replay_transport(args.pages_dir)
+    elif args.save_pages:
+        transport = saving_transport(transport, args.save_pages)
     if args.commit and args.discover_only:
         parser.error("--commit cannot be combined with --discover-only")
     if args.discover_only:
