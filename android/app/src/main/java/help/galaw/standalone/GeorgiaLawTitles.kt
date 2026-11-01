@@ -20,7 +20,7 @@ object GeorgiaLawTitles {
 
     const val CODE_REVISION_URL = "https://www.legis.ga.gov/joint-offices/code-revision"
     const val UNANNOTATED_RELEASE_URL = "https://archive.org/details/gov.ga.ocga.2018"
-    const val SUPREME_OPINIONS_URL = "https://www.gasupreme.us/opinions/"
+    const val SUPREME_OPINIONS_URL = "https://www.gasupreme.us/"
     const val APPEALS_OPINIONS_URL = "https://www.gaappeals.us/"
 
     val titles: List<GeorgiaLawTitle> = listOf(

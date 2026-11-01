@@ -45,7 +45,7 @@ export type LawTitle = { number: number; name: string; codeIndexUrl: string; cas
 
 export const CODE_REVISION_URL = "https://www.legis.ga.gov/joint-offices/code-revision";
 export const UNANNOTATED_RELEASE_URL = "https://archive.org/details/gov.ga.ocga.2018";
-export const SUPREME_OPINIONS_URL = "https://www.gasupreme.us/opinions/";
+export const SUPREME_OPINIONS_URL = "https://www.gasupreme.us/";
 export const APPEALS_OPINIONS_URL = "https://www.gaappeals.us/";
 
 export const lawTitles: LawTitle[] = [
