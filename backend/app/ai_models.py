@@ -28,7 +28,7 @@ PACIFIC = ZoneInfo("America/Los_Angeles")
 # Extra ones can be added with OPENAI_COMPAT_PROVIDERS='[{"name":..,"url":..,"key_env":..,"models":[..]}]'.
 COMPAT_PROVIDERS = (
     {"name": "groq", "key_env": "GROQ_API_KEY", "url": "https://api.groq.com/openai/v1/chat/completions",
-     "models_env": "GROQ_MODELS", "models": "llama-3.3-70b-versatile"},
+     "models_env": "GROQ_MODELS", "models": "openai/gpt-oss-120b,openai/gpt-oss-20b,qwen/qwen3-32b"},
     {"name": "openrouter", "key_env": "OPENROUTER_API_KEY", "url": "https://openrouter.ai/api/v1/chat/completions",
      "models_env": "OPENROUTER_MODELS", "models": "meta-llama/llama-3.3-70b-instruct:free"},
     {"name": "cerebras", "key_env": "CEREBRAS_API_KEY", "url": "https://api.cerebras.ai/v1/chat/completions",
