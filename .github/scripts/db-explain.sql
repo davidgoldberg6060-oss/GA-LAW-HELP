@@ -27,3 +27,8 @@ SELECT id, citation FROM legal_authorities
  ORDER BY ts_rank_cd(to_tsvector('english'::regconfig, ((COALESCE(citation,'') || ' ') || COALESCE(title,'') || ' ') || COALESCE(text,'')),
           websearch_to_tsquery('english'::regconfig, 'tenant or rights or eviction or notice')) DESC
  LIMIT 25;
+SELECT version();
+SELECT pg_size_pretty(sum(size)) AS wal_size, count(*) AS wal_files FROM pg_ls_waldir();
+SELECT slot_name, active, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) AS retained FROM pg_replication_slots;
+SELECT name, setting, unit FROM pg_settings WHERE name IN ('max_wal_size','min_wal_size','wal_keep_size','maintenance_work_mem','max_parallel_maintenance_workers','temp_file_limit','archive_mode','temp_tablespaces');
+SELECT pg_size_pretty(sum((pg_stat_file('base/pgsql_tmp/' || f)).size)) AS tmp FROM pg_ls_dir('base/pgsql_tmp', true, false) f;
