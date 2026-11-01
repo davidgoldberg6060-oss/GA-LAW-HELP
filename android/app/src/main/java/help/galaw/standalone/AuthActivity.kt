@@ -20,8 +20,7 @@ class AuthActivity : AppCompatActivity() {
     private val card = Color.rgb(11,35,54)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        api = ApiClient(this)
+        super.onCreate(savedInstanceState); SystemBars.apply(this);api = ApiClient(this)
         // Sign-in is optional (Account tab). Anonymous device sessions stay on this screen.
         if (api.token != null && !api.isAnonymous) openApp() else showAuth()
     }
@@ -53,7 +52,6 @@ class AuthActivity : AppCompatActivity() {
     }
 
     private fun base(){
-        window.statusBarColor=GaUi.NAVY_TOP; window.navigationBarColor=GaUi.NAVY_DEEP
         root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(22),dp(24),dp(22),dp(30)) }
         setContentView(ScrollView(this).apply { background=ui.screenBackground(); isFillViewport=true; addView(root) })
     }

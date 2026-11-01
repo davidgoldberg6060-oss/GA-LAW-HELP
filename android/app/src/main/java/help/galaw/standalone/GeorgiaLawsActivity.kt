@@ -29,8 +29,7 @@ class GeorgiaLawsActivity : AppCompatActivity() {
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        render()
+        super.onCreate(savedInstanceState); SystemBars.apply(this);render()
     }
 
     private fun render() {

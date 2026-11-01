@@ -71,8 +71,7 @@ class FunnyGeorgiaScreen(private val ui:GaUi, private val laws:List<FunnyLaw>, p
 
 class FunnyLawsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState:Bundle?){
-        super.onCreate(savedInstanceState)
-        val (laws,cases)=FunnyGeorgiaData.parse(assets.open("funny_georgia.json").bufferedReader().use{it.readText()})
+        super.onCreate(savedInstanceState); SystemBars.apply(this);val (laws,cases)=FunnyGeorgiaData.parse(assets.open("funny_georgia.json").bufferedReader().use{it.readText()})
         setContentView(FunnyGeorgiaScreen(GaUi(this),laws,cases,{finish()},{url->
             if(url.startsWith("https://")) runCatching{startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url)))}.onFailure{Toast.makeText(this,"No browser is available.",Toast.LENGTH_SHORT).show()}
         },intent.getBooleanExtra("cases",false)).build())
