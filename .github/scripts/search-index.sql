@@ -51,8 +51,17 @@ END $$;
 -- The old expression index is superseded (the app no longer uses that expression). Drop it
 -- first so its space is free for the new index build (the volume is small).
 DROP INDEX CONCURRENTLY IF EXISTS ix_legal_authorities_fulltext;
--- Recycle WAL left by the backfill (frees up to max_wal_size of disk before the build).
+-- The volume is small: cap retained WAL (default max_wal_size 1GB) so the index build has room,
+-- then checkpoint twice so surplus WAL segments are removed. Reversible with ALTER SYSTEM RESET.
+ALTER SYSTEM SET max_wal_size = '256MB';
+ALTER SYSTEM SET min_wal_size = '64MB';
+SELECT pg_reload_conf();
 CHECKPOINT;
+SELECT pg_switch_wal();
+CHECKPOINT;
+SELECT pg_size_pretty(sum(size)) AS wal_size FROM pg_ls_waldir();
+SELECT pg_size_pretty(pg_database_size(current_database())) AS database,
+       pg_size_pretty(sum(pg_column_size(search_vector))) AS search_vector_bytes FROM legal_authorities;
 -- Serial build, in memory: a parallel GIN build spills large temp files.
 SET max_parallel_maintenance_workers = 0;
 SET maintenance_work_mem = '512MB';
