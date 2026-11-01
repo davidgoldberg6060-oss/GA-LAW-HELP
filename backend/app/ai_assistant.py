@@ -267,7 +267,7 @@ def _ask_compat(provider: dict, model: str, question: str, speed: str | None) ->
         provider, model, provider["url"],
         {"model": model, "max_tokens": 2400 if fast else 4096,
          "messages": [{"role": "system", "content": SYSTEM_INSTRUCTIONS}, {"role": "user", "content": question}]},
-        {"Authorization": "Bearer " + provider["api_key"], "Content-Type": "application/json"},
+        {"Authorization": "Bearer " + provider["api_key"], "Content-Type": "application/json", **(provider.get("headers") or {})},
         20.0 if fast else 55.0,
     )
     choice = (data.get("choices") or [{}])[0] or {}
@@ -351,8 +351,30 @@ def ask_openai(question: str, speed: str | None = None) -> str:
     raise RuntimeError("AI provider is temporarily unavailable")
 
 
+def refresh_listed_models() -> None:
+    """For providers with a public model list (OpenRouter), cool down configured ids that have disappeared."""
+    for provider in ai_models.compat_providers():
+        if not provider.get("list_url"):
+            continue
+        try:
+            req = urllib.request.Request(provider["list_url"], headers={"User-Agent": "GA.LAW.HELP"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                listed = {m.get("id") for m in json.loads(resp.read().decode("utf-8")).get("data", [])}
+        except Exception as exc:  # list check is best-effort
+            logger.warning("Model list check failed: provider=%s error=%s", provider["name"], type(exc).__name__)
+            continue
+        for model in provider["models"]:
+            key = provider["name"] + ":" + model
+            if model in listed:
+                ai_models.record_probe(key, True, "listed")
+            else:
+                ai_models.record_probe(key, False, "not listed")
+                ai_models.mark_cooldown(key, ai_models.UNAVAILABLE_COOLDOWN_SECONDS, "model no longer listed")
+
+
 def probe_models() -> None:
     """1-token liveness check of every configured Gemini model (run once in the background at startup)."""
+    refresh_listed_models()
     gemini = _gemini_provider()
     if not gemini["api_key"]:
         return
@@ -373,3 +395,11 @@ def probe_models() -> None:
 def ask_fast(question: str) -> str:
     """Chat-style answers: always the fast profile (lite model, low thinking, capped output)."""
     return ask_openai(question, speed="fast")
+
+
+def background_model_checks() -> None:
+    """Startup probe, then re-check listed (OpenRouter :free) models every 6 hours."""
+    probe_models()
+    while True:
+        time.sleep(float(os.getenv("AI_MODEL_LIST_REFRESH_SECONDS", "21600")))
+        refresh_listed_models()

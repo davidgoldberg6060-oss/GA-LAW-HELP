@@ -100,3 +100,21 @@ def test_db_cache_shared_across_processes(tmp_path):
         assert db.execute(answer_cache.text("SELECT COUNT(*) FROM public_answer_cache")).scalar() == 3
     finally:
         answer_cache.DB_MAX_ROWS = monkey_rows
+
+
+def test_openrouter_free_only_with_headers_and_last(monkeypatch):
+    from app import ai_models
+    monkeypatch.setenv("GROQ_API_KEY", "g")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "o")
+    monkeypatch.setenv("OPENROUTER_MODELS", "paid/model,a/b:free")
+    provs = ai_models.compat_providers()
+    assert [p["name"] for p in provs][-1] == "openrouter"
+    orp = provs[-1]
+    assert orp["models"] == ["a/b:free"] and orp["headers"]["X-Title"] == "GA.LAW.HELP"
+    seen = {}
+    def fake(provider, model, url, payload, headers, timeout):
+        seen.update(headers); seen["model"] = model
+        return {"choices": [{"message": {"content": "Ok."}, "finish_reason": "stop"}]}
+    with mock.patch.object(ai_assistant, "_http_post_json", side_effect=fake):
+        assert ai_assistant._ask_compat(orp, "a/b:free", "x", "fast") == "Ok."
+    assert seen["HTTP-Referer"].startswith("https://ga-law-help") and seen["model"] == "a/b:free"
