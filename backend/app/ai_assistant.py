@@ -295,7 +295,7 @@ def _try_model(key: str, call):
         return call()
     except ProviderHTTPError as exc:
         detail = str(getattr(exc, "detail", ""))
-        if exc.status == 429 or "RESOURCE_EXHAUSTED" in detail:
+        if exc.status == 429 or (exc.status != 400 and "RESOURCE_EXHAUSTED" in detail):
             seconds, reason = ai_models.cooldown_seconds(detail, getattr(exc, "retry_after", None))
             ai_models.mark_cooldown(key, seconds, reason)
         elif exc.status in (404,) or (exc.status == 400 and "not found" in detail.lower()):
