@@ -9,6 +9,11 @@ name: Database maintenance
 #             and additive; nothing is dropped or truncated. Prints status afterwards.
 #   search-check - read-only: runs the app's own search_georgia_authorities() for the
 #             search_query input and prints the top citations.
+#   explain - read-only: EXPLAIN (ANALYZE) of the search queries plus index sizes
+#             (.github/scripts/db-explain.sql, default_transaction_read_only=on).
+#   search-index - applies migrations, then backfills legal_authorities.search_vector in
+#             batches and builds its GIN indexes CONCURRENTLY (.github/scripts/search-index.sql),
+#             so the live app is never locked. Idempotent; prints index sizes afterwards.
 #   init-schema - for a brand-new empty database only: creates every application table from the
 #             SQLAlchemy models (Base.metadata.create_all, the same thing non-production startup
 #             does), then applies backend/migrations in order. create_all only creates missing
@@ -29,6 +34,8 @@ on:
           - migrate
           - init-schema
           - search-check
+          - explain
+          - search-index
       search_query:
         description: "search-check only: question to search"
         required: false
@@ -45,7 +52,7 @@ concurrency:
 jobs:
   db:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - name: Install PostgreSQL 17 client
@@ -62,6 +69,14 @@ jobs:
         run: |
           source .github/scripts/db-url.sh
           PGCONNECT_TIMEOUT=30 psql "$LIBPQ_URL" -X -f .github/scripts/db-status.sql
+
+      - name: Explain search queries (read-only)
+        if: ${{ inputs.action == 'explain' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          source .github/scripts/db-url.sh
+          PGOPTIONS='-c default_transaction_read_only=on' psql "$LIBPQ_URL" -X -f .github/scripts/db-explain.sql
 
       - name: Backup
         if: ${{ inputs.action == 'backup' || inputs.action == 'migrate' }}
@@ -111,7 +126,7 @@ jobs:
           PY
 
       - name: Apply backend migrations
-        if: ${{ inputs.action == 'migrate' || inputs.action == 'init-schema' }}
+        if: ${{ inputs.action == 'migrate' || inputs.action == 'init-schema' || inputs.action == 'search-index' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
@@ -121,6 +136,15 @@ jobs:
             psql "$LIBPQ_URL" -X -v ON_ERROR_STOP=1 --single-transaction -f "$f"
             echo "::endgroup::"
           done
+
+      - name: Build search index (batched backfill + CREATE INDEX CONCURRENTLY)
+        if: ${{ inputs.action == 'search-index' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          source .github/scripts/db-url.sh
+          psql "$LIBPQ_URL" -X -v ON_ERROR_STOP=1 -f .github/scripts/search-index.sql
+          PGOPTIONS='-c default_transaction_read_only=on' psql "$LIBPQ_URL" -X -f .github/scripts/db-explain.sql
 
       - name: Status (after)
         if: ${{ inputs.action == 'migrate' || inputs.action == 'init-schema' }}
