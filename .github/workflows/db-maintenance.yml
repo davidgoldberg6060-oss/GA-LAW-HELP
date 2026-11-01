@@ -41,6 +41,7 @@ on:
           - explain
           - search-index
           - verify-authorities
+          - space-report
       dry_run:
         description: "verify-authorities only: report counts without inserting"
         required: false
@@ -87,6 +88,18 @@ jobs:
         run: |
           source .github/scripts/db-url.sh
           PGOPTIONS='-c default_transaction_read_only=on' psql "$LIBPQ_URL" -X -f .github/scripts/db-explain.sql
+
+      - name: Space report (read-only)
+        if: ${{ inputs.action == 'space-report' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          source .github/scripts/db-url.sh
+          PGOPTIONS='-c default_transaction_read_only=on' psql "$LIBPQ_URL" -X -f .github/scripts/db-space.sql
+          for t in legal_authorities authority_versions legal_sources; do
+            cols=$(psql "$LIBPQ_URL" -XAt -c "select string_agg(format('sum(pg_column_size(%I))/1048576 as %I',attname,attname),',') from pg_attribute where attrelid='$t'::regclass and attnum>0 and not attisdropped" 2>/dev/null) || continue
+            echo "== column MB in $t"; PGOPTIONS='-c default_transaction_read_only=on' psql "$LIBPQ_URL" -X -x -c "select $cols from $t" || true
+          done
 
       - name: Backup
         if: ${{ inputs.action == 'backup' || inputs.action == 'migrate' }}
