@@ -16,3 +16,4 @@ SELECT sum((pg_stat_file('base/'||(SELECT oid FROM pg_database WHERE datname=cur
 SELECT name, (pg_stat_file(name)).size/1048576 mb, (pg_stat_file(name)).isdir FROM pg_ls_dir('.') name;
 SELECT name, (pg_stat_file('/var/lib/postgresql/data/'||name)).size/1048576 mb, (pg_stat_file('/var/lib/postgresql/data/'||name)).isdir FROM pg_ls_dir('/var/lib/postgresql/data') name;
 SELECT d, (SELECT sum((pg_stat_file(d||'/'||n)).size) FROM pg_ls_dir(d) n)/1048576 mb FROM unnest(array['pg_xact','pg_multixact/members','pg_multixact/offsets','pg_subtrans','pg_stat','pg_commit_ts','pg_logical','global']) d;
+SELECT pid, backend_type, state, backend_start, xact_start, left(query,60) q FROM pg_stat_activity ORDER BY backend_start;
