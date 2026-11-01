@@ -489,7 +489,7 @@ object GaScreens {
         return LawsForm(root, search, keyword, results)
     }
 
-    data class LawHit(val citation: String, val title: String, val type: String, val excerpt: String, val sourceUrl: String?)
+    data class LawHit(val citation: String, val title: String, val type: String, val excerpt: String, val sourceUrl: String?, val id: Long? = null)
 
     fun renderLawResults(ui: GaUi, container: LinearLayout, hits: List<LawHit>?, message: String?, onOpen: (LawHit) -> Unit) {
         val dp = ui::dp
@@ -501,12 +501,12 @@ object GaScreens {
         hits.forEach { h ->
             container.addView(LinearLayout(ui.context).apply {
                 orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 12, glow = false)
-                isClickable = true; setOnClickListener { onOpen(h) }
+                isClickable = true; contentDescription = "Show full text of ${h.citation}"; setOnClickListener { LawAccordion.toggle(this, h.citation, h.id, h.sourceUrl) }
                 addView(ui.text(when (h.type.lowercase()) { "statute" -> "GEORGIA STATUTE"; "regulation" -> "GEORGIA REGULATION"; "court_rule" -> "COURT RULE"; "case_law", "case", "opinion" -> "GEORGIA CASE"; else -> h.type.uppercase() }, 11f, GaUi.BLUE_BRIGHT, ui.sansBold))
                 addView(ui.text(h.citation, 15f, GaUi.GOLD, ui.sansMedium).apply { setPadding(0, dp(3), 0, dp(2)) })
                 if (h.title.isNotBlank() && h.title != h.citation) addView(ui.text(h.title.removePrefix(h.citation).trimStart('.', ' '), 15f, GaUi.WHITE))
                 if (h.excerpt.isNotBlank()) addView(ui.text(h.excerpt, 13f, GaUi.MUTED).apply { maxLines = 4; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(0, dp(4), 0, 0) })
-                if (h.sourceUrl != null) addView(ui.text("Open official source ›", 13.5f, Color.rgb(60, 190, 255)).apply { setPadding(0, dp(6), 0, 0) })
+                addView(ui.text("Tap to read the full text ▾", 12.5f, Color.rgb(60, 190, 255)).apply { setPadding(0, dp(6), 0, 0) })
             }, ui.lp(5, 5))
         }
     }
@@ -552,7 +552,7 @@ object GaScreens {
     private fun citeViews(ui: GaUi, card: LinearLayout, cites: List<LoopholeCite>, onCite: (LoopholeCite) -> Unit) {
         cites.forEach { c ->
             card.addView(ui.text("${c.citation} ›", 13.5f, Color.rgb(60, 190, 255)).apply {
-                setPadding(0, ui.dp(6), 0, 0); isClickable = true; contentDescription = "Open ${c.citation}"; setOnClickListener { onCite(c) }
+                setPadding(0, ui.dp(6), 0, 0); isClickable = true; contentDescription = "Show full text of ${c.citation}"; setOnClickListener { LawAccordion.toggle(this, c.citation, null, c.sourceUrl) }
             })
         }
     }

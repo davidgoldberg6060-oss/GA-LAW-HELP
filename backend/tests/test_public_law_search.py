@@ -11,7 +11,8 @@ from app.authority_search_service import public_law_search
 
 
 def session():
-    engine = create_engine("sqlite:///:memory:")
+    from sqlalchemy.pool import StaticPool
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
     db = sessionmaker(bind=engine)()
     rows = [
@@ -61,3 +62,24 @@ def test_public_law_route_is_guest_and_never_reads_private_tables():
     assert "public_law_search(" in route
     assert "Depends(current_user)" not in route and "Depends(require_paid)" not in route
     assert "models.Case" not in route and "owned_case(" not in route
+
+
+def test_full_law_text_endpoint_by_id_and_citation_hides_restricted():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.database import get_db
+    db = session()
+    db.add(LegalAuthority(jurisdiction="Georgia", authority_type="statute", citation="O.C.G.A. § 16-3-21", title="O.C.G.A. § 16-3-21. Use of force",
+                          text="(a) A person is justified... " + "x" * 40000, status="OFFICIAL", source_url="https://archive.org/x.odt",
+                          currency_status="current", precedential_status="unknown"))
+    db.commit()
+    app.dependency_overrides[get_db] = lambda: db
+    try:
+        c = TestClient(app)
+        r = c.get("/public/georgia-laws/law", params={"citation": "O.C.G.A. § 16-3-21 (text as of 2022 edition)"}).json()
+        assert r["title"] == "Use of force" and len(r["text"]) > 40000 and r["source_url"].startswith("https://")
+        assert c.get("/public/georgia-laws/law", params={"id": r["id"]}).json()["citation"] == "O.C.G.A. § 16-3-21"
+        assert c.get("/public/georgia-laws/law", params={"citation": "16-3-21"}).json()["id"] == r["id"]
+        assert c.get("/public/georgia-laws/law", params={"citation": "S26A0002"}).status_code == 404
+    finally:
+        app.dependency_overrides.clear()

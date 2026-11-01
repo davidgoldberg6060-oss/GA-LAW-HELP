@@ -42,8 +42,8 @@ object GuestPublicApi {
     }
 
     /** One law's stored text by exact citation (GET /public/georgia-laws/law). */
-    fun law(baseUrl: String, citation: String): JSONObject =
-        JSONObject(get(baseUrl, "/public/georgia-laws/law?citation=" + URLEncoder.encode(citation.trim().take(120), "UTF-8")))
+    fun law(baseUrl: String, citation: String, id: Long? = null): JSONObject =
+        JSONObject(get(baseUrl, "/public/georgia-laws/law?citation=" + URLEncoder.encode(citation.trim().take(250), "UTF-8") + (id?.let { "&id=$it" } ?: "")))
 
     /** AI answers can take a while on a slow phone network; reads wait up to 60 s. */
     const val AI_READ_TIMEOUT_MS = 60_000
