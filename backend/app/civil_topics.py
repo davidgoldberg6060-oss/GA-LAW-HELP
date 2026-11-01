@@ -10,7 +10,29 @@ import re
 
 _log = logging.getLogger(__name__)
 
+PRISON = (r"(i'?m|i am|currently|been|still|son is|husband is|brother is|loved one is) (in|locked up in|stuck in) (prison|jail|the county|a cell)|incarcerat|\binmates?\b|\bmy cell\b|cell ?block|"
+          r"correctional officers?|\bco'?s\b|\bguards?\b|solitary|the hole|commissary|grievance|department of corrections|state pen|penitentiary|"
+          r"(prison|jail).{0,60}(no water|no food|no bed|no mattress|medical|cold|sick|conditions|mold)")
+# Topics that must not fire when the person is talking about jail/prison conditions.
+_NOT_IN_PRISON = ("evict", "contract", "neighbor", "wage")
+
 TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    # Jail / prison conditions (sections confirmed present in the DB 2026-11-01).
+    (PRISON, ("42-4-4", "42-4-32", "42-5-2", "42-5-58", "42-5-52", "42-4-31")),
+    # Criminal / everyday questions (matched on the question plus slang-derived plain terms).
+    (r"self defense|justification|use of force|stand your ground", ("16-3-21", "16-3-24.2", "16-3-23.1", "16-3-20")),
+    (r"fight|battery|assault|affray", ("16-5-20", "16-5-21", "16-5-23", "16-5-23.1", "16-5-24", "16-11-32")),
+    (r"shoplift", ("16-8-14", "16-8-2")),
+    (r"robbery", ("16-8-40", "16-8-41", "16-8-2")),
+    (r"controlled substance|marijuana|drugs?\b|cocaine|meth", ("16-13-30", "16-13-2")),
+    (r"probation", ("42-8-38", "42-8-34.1")),
+    (r"bail|bond", ("17-6-1",)),
+    (r"warrant", ("17-4-40", "17-4-20")),
+    (r"\barrest", ("17-4-20", "17-6-1")),
+    (r"under the influence|\bdui\b", ("40-6-391", "40-5-67.1", "40-6-392")),
+    (r"firearm|weapon", ("16-11-126", "16-11-127", "16-11-129")),
+    (r"traffic citation|speeding", ("40-6-181", "40-13-1")),
+    (r"repossession", ("11-9-609",)),
     (r"expung|record restrict|seal(ed|ing)? (my )?record|clear my record|criminal record", ("35-3-37", "42-8-62", "17-10-21")),
     (r"first offender", ("42-8-60", "42-8-62")),
     (r"security deposit|deposit back", ("44-7-30", "44-7-33", "44-7-34", "44-7-35")),
@@ -34,7 +56,10 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
 def topic_sections(text: str, limit: int = 12) -> list[str]:
     low = (text or "").lower()
     out: list[str] = []
+    in_prison = bool(re.search(PRISON, low))
     for pattern, sections in TOPICS:
+        if in_prison and any(k in pattern for k in _NOT_IN_PRISON):
+            continue
         if re.search(pattern, low):
             out.extend(s for s in sections if s not in out)
     return out[:limit]
@@ -61,6 +86,7 @@ def topic_hits(db, query: str, retrieval: dict, limit: int = 12) -> dict:
 
 
 FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (PRISON, ("How do I file a grievance in a Georgia prison or jail?", "How can my family report conditions to the Georgia Department of Corrections?", "Can I get free legal help while incarcerated?")),
     (r"expung|record restrict|criminal record", ("Which charges can be restricted in Georgia?", "How do I request record restriction from the prosecutor?", "Does First Offender status help my record?")),
     (r"security deposit|deposit back", ("How long does my landlord have to return my deposit?", "Can I sue for my deposit in small claims court?", "What can a landlord deduct from a deposit?")),
     (r"evict|dispossessory|landlord|tenant", ("How much notice does a Georgia landlord have to give?", "What happens at a dispossessory hearing?", "Can my landlord lock me out?")),

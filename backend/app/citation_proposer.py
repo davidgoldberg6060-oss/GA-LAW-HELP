@@ -20,7 +20,7 @@ MAX_SECTIONS = 8
 
 def enabled() -> bool:
     return os.getenv("CITATION_PROPOSALS", "on").strip().lower() not in {"0", "off", "false", "no"} and bool(
-        os.getenv("GEMINI_API_KEY", "").strip())
+        os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GROQ_API_KEY", "").strip())
 
 
 def timeout_seconds() -> float:
@@ -32,12 +32,28 @@ def timeout_seconds() -> float:
 
 def _prompt(question: str) -> str:
     return (
-        "You help a Georgia legal research tool find statutes. Do not give advice.\n"
+        "You help a Georgia legal research tool find laws. Do not give advice.\n"
+        "The user may write in slang or street language (e.g. 'fade'/'scrap'/'jumped' = fight/battery, "
+        "'12'/'opps'/'feds' = police, 'locked up'/'booked' = arrested/jail, 'strap'/'blick'/'pole' = gun, "
+        "'loud'/'gas'/'za' = marijuana, 'plug'/'trap'/'serving' = selling drugs, 'hit a lick' = robbery/theft, "
+        "'boosting' = shoplifting, 'PO'/'violated' = probation violation, 'BM'/'baby mama' = child custody/support, "
+        "'put out' = eviction).\n"
         f"QUESTION (user supplied, unverified):\n{question[-2500:]}\n\n"
-        f"List up to {MAX_SECTIONS} Official Code of Georgia Annotated section numbers most relevant to this "
-        "question (offense, procedure, rights, or civil sections). Use only section numbers you are confident exist.\n"
-        'Return ONLY JSON: {"sections":["44-7-50","17-5-1"]}'
+        "1) Rewrite the question as 4-10 plain legal search words (e.g. 'self defense justification battery arrest').\n"
+        f"2) List up to {MAX_SECTIONS} Official Code of Georgia Annotated section numbers most relevant to it "
+        "(offense, defense, procedure, rights, or civil sections). Use only section numbers you are confident exist.\n"
+        'Return ONLY JSON: {"search_terms":"...","sections":["16-3-21","17-6-1"]}'
     )
+
+
+def parse_terms(raw: str) -> str:
+    try:
+        match = re.search(r"\{.*\}", raw or "", re.S)
+        data = json.loads(match.group(0)) if match else {}
+    except (ValueError, AttributeError):
+        return ""
+    terms = re.sub(r"[^A-Za-z0-9 \-]", " ", str(data.get("search_terms") or ""))
+    return " ".join(terms.split()[:12])
 
 
 def parse_sections(raw: str) -> list[str]:
@@ -55,29 +71,14 @@ def parse_sections(raw: str) -> list[str]:
 
 
 def propose_sections(question: str, timeout: float | None = None) -> list[str]:
-    """Ask a small fast Gemini model for likely sections. Returns [] on any failure."""
+    return propose(question, timeout)[0]
+
+
+def propose(question: str, timeout: float | None = None) -> tuple[list[str], str]:
+    """Quick model step: (likely O.C.G.A. sections, plain legal search terms). ([], "") on failure.
+    Uses the fastest free model that is not cooling down (Gemini lite, then Groq)."""
     if not enabled() or not (question or "").strip():
-        return []
+        return [], ""
     from . import ai_assistant
-    provider = ai_assistant._gemini_provider()
-    model = os.getenv("GEMINI_CITATION_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
-    try:
-        data = ai_assistant._http_post_json(
-            provider, model, f"{provider['url']}/{model}:generateContent",
-            {
-                "contents": [{"role": "user", "parts": [{"text": _prompt(question)}]}],
-                "generationConfig": {"maxOutputTokens": 200, "responseMimeType": "application/json", "temperature": 0},
-            },
-            {"x-goog-api-key": provider["api_key"], "Content-Type": "application/json"},
-            timeout if timeout is not None else timeout_seconds(),
-        )
-    except Exception as exc:  # network, quota, timeout: grounding continues without proposals
-        logger.warning("Citation proposal skipped: %s", type(exc).__name__)
-        return []
-    text = "".join(
-        part.get("text", "")
-        for cand in (data.get("candidates") or [])[:1]
-        for part in (cand.get("content") or {}).get("parts") or []
-        if not part.get("thought")
-    )
-    return parse_sections(text)
+    text = ai_assistant.ask_quick_json(_prompt(question), timeout if timeout is not None else timeout_seconds())
+    return parse_sections(text), parse_terms(text)

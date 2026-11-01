@@ -32,7 +32,7 @@ def test_general_mode_prompt_is_not_police_encounter():
         seen["p"] = prompt
         return "SHORT ANSWER\nYes.\nHOW IT WORKS IN GEORGIA\nRecord restriction."
     r = grounded_legal_response("how can I get a felony expunged on my record", "general", ai)
-    assert "SHORT ANSWER" in seen["p"] and "NOT a police encounter" in seen["p"]
+    assert "Short answer" in seen["p"] and "NOT a police encounter" in seen["p"]
     assert "WHAT LAW ENFORCEMENT MAY" not in seen["p"]
     assert r["sections"]["short_answer"] == "Yes."
 

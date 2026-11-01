@@ -8,22 +8,18 @@ MODE_FIELDS = {
     "talk_to_me": (
         "what_appears_to_be_happening", "safest_immediate_steps", "your_rights",
         "law_enforcement_limits", "lawful_things_to_say_or_do",
-        "verified_georgia_authority", "important_limitations",
     ),
     "case_analysis": (
         "facts_to_verify", "legal_issues", "prosecution_arguments", "defense_arguments",
-        "possible_motions", "practical_next_steps", "verified_georgia_authority",
-        "important_limitations",
+        "possible_motions", "practical_next_steps",
     ),
     "rights": (
         "situation", "rights_that_may_apply", "law_enforcement_authority",
-        "law_enforcement_limits", "lawful_options", "verified_georgia_authority",
-        "important_limitations",
+        "law_enforcement_limits", "lawful_options",
     ),
     "motions": (
         "case_issue", "potential_motions", "required_facts_or_evidence",
         "opposing_arguments", "procedural_questions_to_verify",
-        "verified_georgia_authority", "important_limitations",
     ),
 }
 
@@ -48,8 +44,8 @@ def test_backend_and_android_share_all_grounded_section_names():
 
 def test_android_keeps_verified_authorities_separate_from_guidance_cards():
     source = ANDROID.read_text(encoding="utf-8")
-    assert 'Verified Supporting Authorities' in source
-    assert 'renderAuthorities(root,response.optJSONArray("authorities"),true)' in source
+    assert 'Laws cited' in source
+    assert 'GroundedLegalResult.lawsCited(response)' in source
 
 
 def test_native_renderers_exist_for_every_grounded_mode():

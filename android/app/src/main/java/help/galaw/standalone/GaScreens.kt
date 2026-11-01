@@ -94,6 +94,8 @@ object GaScreens {
         var onMessageLongPress: ((Long) -> Unit)? = null
         /** "Clear chat" action in the chat header. */
         var onClearChat: (() -> Unit)? = null
+        /** Tap on a citation in an answer's "Laws cited" list. */
+        var onLawTap: ((String) -> Unit)? = null
         private var last: LinearLayout? = null
         fun bot(text: String, time: String, id: Long = 0L) = add(text, time, false, id)
         fun user(text: String, time: String, id: Long = 0L) = add(text, time, true, id)
@@ -152,7 +154,9 @@ object GaScreens {
                 }
                 row.addView(avatar, LinearLayout.LayoutParams(dp(38), dp(38)).apply { rightMargin = dp(10) })
             }
-            val bubble = ui.text(text, 15f, GaUi.TEXT).apply {
+            val shown: CharSequence = if (mine) text else AnswerFormat.styled(text, GaUi.GOLD, onLawTap)
+            val bubble = ui.text(shown, 15f, GaUi.TEXT).apply {
+                if (!mine && onLawTap != null) movementMethod = android.text.method.LinkMovementMethod.getInstance()
                 setPadding(dp(14), dp(11), dp(14), dp(11)); setLineSpacing(0f, 1.15f)
                 background = if (mine) ui.glowCard(Color.argb(235, 14, 34, 58), GaUi.STROKE_SOFT, 12, glow = false) else ui.glowCard(Color.argb(235, 12, 40, 72), GaUi.STROKE, 12, glow = false)
                 if (id != 0L) { isLongClickable = true; contentDescription = (if (mine) "Your message" else "GA.LAW.HELP answer") + ". Long-press for Copy, Share or Delete."; setOnLongClickListener { onMessageLongPress?.invoke(id); true } }

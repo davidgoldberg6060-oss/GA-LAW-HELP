@@ -38,7 +38,7 @@ def test_unverified_only_results_offer_general_guidance_without_citing_hit(monke
     assert "general legal information" in prompts[0]
     assert result["analysis"] == "general guidance"
     assert result["grounded_authority_count"] == 0
-    assert "will not invent" in result["coverage_notice"]
+    assert result["coverage_notice"] is None
 
 
 def test_verified_label_without_citation_is_not_grounding_authority(monkeypatch):
@@ -83,7 +83,7 @@ def test_overruled_currency_never_enters_grounding_context(monkeypatch):
     result = service.grounded_legal_response("Question", "case_analysis", ask_ai)
     assert called is True
     assert result["grounded_authority_count"] == 0
-    assert "No matching traceable verified" in result["coverage_notice"]
+    assert result["coverage_notice"] is None
 
 
 def test_negative_treatment_list_blocks_authority(monkeypatch):

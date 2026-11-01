@@ -74,6 +74,7 @@ Rules:
 - Low-cost paths: lawful options only (demand letter, negotiation/settlement, mediation, small claims in magistrate court, legal aid, court self-help), citing a section where one supports it.
 - NEVER suggest lying, faking or destroying evidence, hiding or moving assets, ignoring court papers, or pressuring witnesses.
 - Also write lawyer_take: 3-6 sentences, "If I Was Your Lawyer, I Would Say", lawful steps only, citing the authorities.
+Write every text field in plain, friendly English with no markdown. Never mention the list of authorities, what sources were or were not supplied, the system, a database, or verification; talk to the user directly.
 Return ONLY JSON:
 {{"claims":[{{"side":"you|other_side","claim":"name","citation":"exact","why":"1-2 sentences tying facts to the law"}}],
 "court":{{"court":"magistrate|state|superior|probate|juvenile|unknown","why":"1-2 sentences","citation":"exact or empty","limit_quote":"verbatim or empty"}},
@@ -164,7 +165,8 @@ def analyze_civil_check(situation: str, ask_ai, db=None, *, case_summary: str | 
     raw = _parse_obj(ask_ai(_candidate_prompt(situation, case_summary)))
     proposed = raw.get("sections") if isinstance(raw.get("sections"), list) else []
     sections = [s for s in (normalize_section(x) for x in proposed[:MAX_CANDIDATES]) if s]
-    sections += [s for s in topic_sections(situation) if s not in sections]
+    from .slang import plain_terms
+    sections += [s for s in topic_sections(situation + " " + plain_terms(situation)) if s not in sections]
     verified = _verified_hits({"hits": lookup(sections + [s for s in BASE_SECTIONS if s not in sections])})
     topical = [h for h in verified if normalize_section(h.get("citation")) in sections]
     if not topical:

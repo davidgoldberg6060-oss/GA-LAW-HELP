@@ -60,6 +60,7 @@ def test_grounded_answer_cites_with_as_of_and_note():
     out = grounded_legal_response("my landlord won't return my security deposit", "general", ask, db=_db())
     assert out["grounded_authority_count"] >= 1
     assert "Text as of: text as of 2022 edition" in prompts[0]
-    assert AMENDMENT_NOTE in out["analysis"]
+    from app.answer_format import SHORT_AMENDMENT_NOTE
+    assert out["analysis"].count(SHORT_AMENDMENT_NOTE) == 1
     cited = [a for a in out["authorities"] if a.get("as_of")]
     assert cited and all("(text as of 2022 edition)" in a["citation"] for a in cited)

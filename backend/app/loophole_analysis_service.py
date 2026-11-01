@@ -56,6 +56,7 @@ Rules:
 - Do not invent text, holdings, deadlines or outcomes. If nothing is supported, return an empty list.
 - If currency or precedential status is unknown, say so in the explanation.
 Also write "lawyer_take": a plain-English "If I Was Your Lawyer, I Would Say" note of 3-6 sentences on what someone facing this topic should consider and practical lawful next steps (gather documents, deadlines the cited authorities mention, when to get a real Georgia attorney). Ground it only in the supplied authorities and cite them. Never suggest breaking the law, deceiving anyone, or evading police.
+Write every text field in plain, friendly English with no markdown. Never mention the list of authorities, what sources were or were not supplied, the system, a database, or verification; talk to the user directly.
 Return ONLY JSON: {{"findings":[{{"type":"contradiction|gap|ambiguity|exception","title":"short","explanation":"2-4 sentences","citations":["exact citation"]}}],"lawyer_take":{{"text":"3-6 sentences","citations":["exact citation"]}}}}"""
 
 

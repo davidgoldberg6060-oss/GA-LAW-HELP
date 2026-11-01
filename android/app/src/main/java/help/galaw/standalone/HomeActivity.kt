@@ -80,7 +80,16 @@ class HomeActivity : AppCompatActivity() {
     /** Free and low-cost Georgia legal help (URLs checked to load). */
     private val helpLinks=listOf("Georgia Legal Aid (Georgia Legal Services Program)" to "https://www.glsp.org/","Atlanta Legal Aid Society" to "https://atlantalegalaid.org/","Georgia Courts self-help (forms and court help)" to "https://georgiacourts.gov/a2j/","State Bar of Georgia — find a lawyer" to "https://www.gabar.org/public/find-a-lawyer")
     private fun showFindHelp(){ AlertDialog.Builder(this).setTitle("Find legal help").setItems(helpLinks.map{it.first}.toTypedArray()){_,i->openUrl(helpLinks[i].second)}.setNegativeButton("Close",null).show() }
-    private fun wireChatDelete(c:GaScreens.Chat,t:ChatTranscript){
+    /** Opens a cited law inside the app (stored text; no external archive links). */
+    private fun showLaw(citation:String){ toast("Opening $citation…")
+        thread{ try{ val law=GuestPublicApi.law(BuildConfig.API_BASE_URL,citation); runOnUiThread{
+                val body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),dp(8))}
+                val t=law.optString("title"); if(t.isNotBlank()&&t!="null")body.addView(label(t,16f,true))
+                body.addView(label(law.optString("text").ifBlank{"No text is stored for this law yet."},14f).apply{setTextIsSelectable(true)})
+                law.optString("note").takeIf{it.isNotBlank()&&it!="null"}?.let{body.addView(label("Note: "+it,12.5f).apply{setTextColor(GaUi.MUTED)})}
+                AlertDialog.Builder(this).setTitle(law.optString("citation",citation)).setView(ScrollView(this).apply{addView(body)}).setPositiveButton("Close",null).show() } }
+        catch(e:Exception){ runOnUiThread{ toast(if(e is ApiException&&e.statusCode==404)"That law isn't in GA.LAW.HELP yet." else AiErrors.message(e)) } } } }
+    private fun wireChatDelete(c:GaScreens.Chat,t:ChatTranscript){ c.onLawTap={cite->showLaw(cite)}
         c.onMessageLongPress={id->val m=t.messages.firstOrNull{it.id==id}; if(m!=null) AlertDialog.Builder(this).setTitle(if(m.mine)"Your message" else "GA.LAW.HELP answer").setItems(arrayOf("Copy","Share","Delete")){_,i->when(i){0->copyOut(m.shareText);1->shareOut(m.shareText);else->AlertDialog.Builder(this).setTitle("Delete this message?").setMessage("It will be removed from this chat and won't be sent to the AI again. This can't be undone.").setPositiveButton("Delete"){_,_->t.delete(id);c.remove(id);toast("Message deleted.")}.setNegativeButton("Cancel",null).show()}}.show()}
         c.onClearChat={ if(t.messages.isEmpty()) toast("This chat is already empty.") else AlertDialog.Builder(this).setTitle("Clear this chat?").setMessage("All messages in this chat will be deleted from this phone and won't be sent to the AI again. This can't be undone.").setPositiveButton("Clear chat"){_,_->t.clear();c.clearMessages();toast("Chat cleared.")}.setNegativeButton("Cancel",null).show() } }
     private fun languageCode():String { val saved=getSharedPreferences("ga_settings",MODE_PRIVATE).getString("language","English")?:"English"; return when { saved.startsWith("Español")->"es"; saved.startsWith("中文")->"zh"; saved.startsWith("Français")->"fr"; saved.startsWith("العربية")->"ar"; saved.startsWith("Tiếng Việt")->"vi"; else->"en" } }
@@ -95,7 +104,7 @@ class HomeActivity : AppCompatActivity() {
             val em=r.optJSONObject("emergency")?.optJSONArray("resources"); val emergency=(0 until (em?.length()?:0)).mapNotNull{i->em!!.optJSONObject(i)?.let{o->o.optString("label") to o.optString("contact")}}
             val result=GaScreens.ChargeCheckResult(charges,options(r.optJSONArray("defenses"),"kind_label"),options(r.optJSONArray("lowest_outcome"),null),lawyerTake(r),clean(r.optString("message")).ifBlank{null},r.optBoolean("refused"),r.optString("estimate_note"),r.optString("rights_reminder"),r.optString("disclaimer",GaScreens.CHARGE_DISCLAIMER),emergency,if(r.isNull("case_id"))null else r.optInt("case_id"))
             val shareText=ShareText.chargeCheck(situation,result)
-            runOnUiThread{ GaScreens.renderChargeCheck(ui,form.results,result,{shareOut(shareText)} to {copyOut(shareText)},{n->dial(n)}){c->c.sourceUrl?.let{openUrl(it)}?:toast("No official source link is stored for ${c.citation}.")} }
+            runOnUiThread{ GaScreens.renderChargeCheck(ui,form.results,result,{shareOut(shareText)} to {copyOut(shareText)},{n->dial(n)}){c->showLaw(c.citation.replace(Regex("\\s*\\(text as of[^)]*\\)"),""))} }
         }catch(e:Exception){ runOnUiThread{ form.results.removeAllViews(); form.results.addView(ui.emptyCard(R.drawable.ga_ic_error,"Couldn’t check charges",AiErrors.message(e)),ui.lp(4,4)); if(AiErrors.isRetryable(e)) form.results.addView(ui.primaryButton("Retry"){runChargeCheck(form,raw,caseId)},ui.lp(6,6)) } } } }
 
     // ---------- Civil Case Check ----------
@@ -112,7 +121,7 @@ class HomeActivity : AppCompatActivity() {
             val em=r.optJSONObject("emergency")?.optJSONArray("resources"); val emergency=(0 until (em?.length()?:0)).mapNotNull{i->em!!.optJSONObject(i)?.let{o->o.optString("label") to o.optString("contact")}}
             val result=GaScreens.CivilCheckResult(claims,court,deadlines,evidence,options(r.optJSONArray("weak_spots"),"side_label"),options(r.optJSONArray("low_cost_paths"),null),help,lawyerTake(r),clean(r.optString("message")).ifBlank{null},r.optBoolean("refused"),r.optString("estimate_note"),r.optString("disclaimer",GaScreens.CIVIL_DISCLAIMER),emergency,if(r.isNull("case_id"))null else r.optInt("case_id"))
             val shareText=ShareText.civilCheck(situation,result)
-            runOnUiThread{ GaScreens.renderCivilCheck(ui,form.results,result,{shareOut(shareText)} to {copyOut(shareText)},{n->dial(n)},{u->openUrl(u)}){c->c.sourceUrl?.let{openUrl(it)}?:toast("No official source link is stored for ${c.citation}.")} }
+            runOnUiThread{ GaScreens.renderCivilCheck(ui,form.results,result,{shareOut(shareText)} to {copyOut(shareText)},{n->dial(n)},{u->openUrl(u)}){c->showLaw(c.citation.replace(Regex("\\s*\\(text as of[^)]*\\)"),""))} }
         }catch(e:Exception){ runOnUiThread{ form.results.removeAllViews(); form.results.addView(ui.emptyCard(R.drawable.ga_ic_error,"Couldn’t check that",AiErrors.message(e)),ui.lp(4,4)); if(AiErrors.isRetryable(e)) form.results.addView(ui.primaryButton("Retry"){runCivilCheck(form,raw,caseId)},ui.lp(6,6)) } } } }
 
     // ---------- Legal Loopholes ----------
@@ -125,7 +134,7 @@ class HomeActivity : AppCompatActivity() {
             val lt=lawyerTake(r)
             val msg=clean(r.optString("message")).ifBlank{null}
             val refused=r.optBoolean("refused"); val shareText=ShareText.loopholes(topic,findings,lt)
-            runOnUiThread{ GaScreens.renderLoopholes(ui,form.results,findings,msg,lt,refused,{shareOut(shareText)} to {copyOut(shareText)}){c->c.sourceUrl?.let{openUrl(it)}?:toast("No official source link is stored for ${c.citation}.")} } }
+            runOnUiThread{ GaScreens.renderLoopholes(ui,form.results,findings,msg,lt,refused,{shareOut(shareText)} to {copyOut(shareText)}){c->showLaw(c.citation.replace(Regex("\\s*\\(text as of[^)]*\\)"),""))} } }
         catch(e:Exception){ runOnUiThread{ form.results.removeAllViews(); form.results.addView(ui.emptyCard(R.drawable.ga_ic_error,"Couldn’t analyze that",e.message?:"Something went wrong. Please try again."),ui.lp(4,4)) } } } }
 
     // ---------- My Cases ----------
@@ -234,7 +243,7 @@ class HomeActivity : AppCompatActivity() {
     private fun askCaseChat(c:GaScreens.Chat,caseId:Int,t:ChatTranscript,text:String,history:JSONArray){ val stop=c.progress(listOf("Reviewing your case","Looking up Georgia law","Writing your answer","Almost done — thanks for waiting"))
         thread{ try{ val result=api.caseChat(caseId,text,history); val answer=GroundedLegalResult.answer(result).ifBlank{"No grounded case analysis was returned. Add specific facts and try again."}; val authorities=GroundedLegalResult.authoritySummary(result); val lt=lawyerTake(result)
             runOnUiThread{ stop(); val full=answer+(if(authorities.isNotBlank())"\n\n"+authorities else ""); val st=ShareText.answer(text,full,lt); val bot=t.add(false,full,now(),st)
-                c.bot(full,bot.time,bot.id); if(lt!=null)c.attach(GaScreens.lawyerCard(ui,lt){x->x.sourceUrl?.let{openUrl(it)}?:toast("No official source link is stored for ${x.citation}.")}); c.actions({shareOut(st)},{copyOut(st)}); c.findHelp{showFindHelp()}; c.followUps(TalkToMeController.followUps(result)){f->sendCaseChat(c,caseId,t,f)} } }
+                c.bot(full,bot.time,bot.id); if(lt!=null)c.attach(GaScreens.lawyerCard(ui,lt){x->showLaw(x.citation.replace(Regex("\\s*\\(text as of[^)]*\\)"),""))}); c.actions({shareOut(st)},{copyOut(st)}); c.findHelp{showFindHelp()}; c.followUps(TalkToMeController.followUps(result)){f->sendCaseChat(c,caseId,t,f)} } }
         catch(e:Exception){ runOnUiThread{ stop(); val bot=t.add(false,AiErrors.message(e),now(),inContext=false); c.bot(bot.text,bot.time,bot.id); if(AiErrors.isRetryable(e)) c.retry{ t.delete(bot.id); c.remove(bot.id); askCaseChat(c,caseId,t,text,history) } } } } }
     private fun showTimeline(caseId:Int){val root=page("Case Timeline","Events from first to latest.");runTask("Loading timeline…",{showTimeline(caseId)}){val items=api.timeline(caseId);runOnUiThread{renderJsonArray(root,items,"No timeline events yet.")}}}
     private fun showCaseAnalysis(){if(!requireSignedIn())return; val root=page("Case Analysis","Choose a case, then tell GA.LAW.HELP details that may matter to innocence, reasonable doubt, motions, or post-conviction review.");runTask("Loading cases…",{showCaseAnalysis()}){val cases=api.cases();runOnUiThread{if(cases.length()==0)root.addView(label("Create a case first.",14f).apply{setTextColor(muted)});for(i in 0 until cases.length()){val item=cases.optJSONObject(i)?:continue;val id=item.optInt("id");addButton(root,item.optString("title","Case #$id")){showInnocenceAnalysis(id)}}}}}

@@ -31,16 +31,14 @@ def test_talk_to_me_prompt_requires_live_safety_sections(monkeypatch):
     prompt = captured["prompt"]
     assert result["analysis"] == "grounded response"
     for section in (
-        "WHAT APPEARS TO BE HAPPENING",
-        "SAFEST IMMEDIATE STEPS",
-        "YOUR RIGHTS",
-        "WHAT LAW ENFORCEMENT MAY / MAY NOT DO",
-        "WHAT TO SAY OR DO",
-        "VERIFIED GEORGIA AUTHORITY",
-        "IMPORTANT LIMITATIONS",
+        "What's happening",
+        "Stay safe right now",
+        "Your rights",
+        "What police can and can't do",
+        "What to say or do",
     ):
         assert section in prompt
-    assert "speech-to-text transcription errors" in prompt
+    assert "speech-to-text errors" in prompt.lower()
     assert "do not encourage resistance" in prompt
     assert "recording is lawful" in prompt
 
@@ -54,7 +52,7 @@ def test_talk_to_me_answers_without_traceable_authority_but_forbids_fake_citatio
 
     def fake_ai(prompt):
         captured["prompt"] = prompt
-        return "WHAT APPEARS TO BE HAPPENING\nGeneral explanation.\nSAFEST IMMEDIATE STEPS\nStay safe.\nYOUR RIGHTS\nNeeds Georgia verification.\nWHAT LAW ENFORCEMENT MAY / MAY NOT DO\nNeeds verification.\nWHAT TO SAY OR DO\nAsk for counsel.\nVERIFIED GEORGIA AUTHORITY\nNone retrieved.\nIMPORTANT LIMITATIONS\nGeneral information only."
+        return "### WHAT'S HAPPENING\nGeneral explanation.\nStay safe right now\nStay safe.\n**Your rights**\nNeeds Georgia verification.\nWhat police can and can't do\nNeeds verification.\nWhat to say or do\nAsk for counsel."
 
     result = gla.grounded_legal_response("What happens if I am charged with murder?", "talk_to_me", fake_ai)
     prompt = captured["prompt"]
@@ -62,8 +60,9 @@ def test_talk_to_me_answers_without_traceable_authority_but_forbids_fake_citatio
     assert result["grounded_authority_count"] == 0
     assert result["sections"]["your_rights"] == "Needs Georgia verification."
     assert "general legal information" in prompt
-    assert "MUST NOT invent a citation" in prompt
-    assert "will not invent" in result["coverage_notice"]
+    assert "never create a citation" in prompt
+    assert "###" not in result["analysis"] and "**" not in result["analysis"]
+    assert result["coverage_notice"] is None
 
 
 def test_talk_to_me_rejects_negative_authority_as_verified_support_but_still_answers(monkeypatch):
