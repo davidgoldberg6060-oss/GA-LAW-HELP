@@ -104,3 +104,14 @@ def test_commit_persists_unverified_records_with_unknown_status(monkeypatch):
     coa.main(["--start", "2026-09-28", "--end", "2026-10-02", "--commit"], transport=_transport([]), session_factory=Session)
     with Session() as db:
         assert db.query(LegalAuthority).count() == 2
+
+
+def test_saved_pages_round_trip(tmp_path):
+    from app.ingestion.acquisition import FetchResponse
+    from app.ingestion import import_appeals_opinions as m
+    url = "https://www.gaappeals.gov/opinion-search/"
+    live = lambda u: FetchResponse(url=u, status_code=200, headers={"Content-Type": "text/html"}, body=b"<html>ok</html>")
+    m.saving_transport(live, str(tmp_path))(url)
+    got = m.replay_transport(str(tmp_path))(url)
+    assert got.status_code == 200 and got.body == b"<html>ok</html>"
+    assert m.replay_transport(str(tmp_path))("https://www.gaappeals.gov/other/").status_code == 404

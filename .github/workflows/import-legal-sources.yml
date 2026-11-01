@@ -48,6 +48,11 @@ on:
         required: false
         default: ""
         type: string
+      appeals_release:
+        description: "appeals only: release tag holding official gaappeals.gov responses saved with --save-pages (appeals-pages-YYYY-MM-DD), because the court refuses runner IPs"
+        required: false
+        default: ""
+        type: string
       commit:
         description: "Persist to the database in secrets.DATABASE_URL (leave unchecked for preview)"
         required: true
@@ -130,6 +135,20 @@ jobs:
             -D .import-cache/court-rules-pdfs --clobber
           (cd .import-cache/court-rules-pdfs && sha256sum -c SHA256SUMS)
           echo "PDF_DIR=.import-cache/court-rules-pdfs" >> "$GITHUB_ENV"
+
+      - name: Fetch saved official Court of Appeals pages
+        if: ${{ inputs.source == 'appeals' && inputs.appeals_release != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.appeals_release }}
+        run: |
+          if [[ ! "$TAG" =~ ^appeals-pages-[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "::error::appeals_release must look like appeals-pages-YYYY-MM-DD"; exit 1
+          fi
+          mkdir -p .import-cache
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "appeals-pages.tar.gz" -D .import-cache --clobber
+          tar -xzf .import-cache/appeals-pages.tar.gz -C .import-cache
+          echo "APPEALS_PAGES_DIR=$PWD/.import-cache/appeals-pages" >> "$GITHUB_ENV"
 
       - name: Preview import (no database writes)
         if: ${{ !inputs.commit }}
