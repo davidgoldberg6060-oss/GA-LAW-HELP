@@ -48,3 +48,13 @@ def test_runner_script_rejects_bad_inputs_before_running_anything():
     assert "whole number" in _run(SOURCE="ocga", LIMIT="5 --commit").stdout
     assert "whole number" in _run(SOURCE="ocga", OFFSET="-1").stdout
     assert "YYYY-MM-DD..YYYY-MM-DD" in _run(SOURCE="appeals", SCOPE="2026-01-01;id").stdout
+
+
+def test_court_rules_pdf_release_is_validated_checksummed_and_offline():
+    text = WORKFLOW.read_text(encoding="utf-8")
+    step = text.split("- name: Fetch user-supplied official court-rules PDFs", 1)[1].split("- name:", 1)[0]
+    assert "TAG: ${{ inputs.court_rules_pdf_release }}" in step
+    assert "^court-rules-pdfs-[0-9]{4}-[0-9]{2}-[0-9]{2}$" in step
+    assert "sha256sum -c SHA256SUMS" in step and "gasupreme" not in step
+    assert "${{" not in step.split("run:", 1)[1]
+    assert "bad PDF_DIR" in _run(SOURCE="court_rules", PDF_DIR="/etc").stdout
