@@ -47,9 +47,10 @@ _AI_PATHS = (
     re.compile(r"^/public/rights-assistant/?$"),
     re.compile(r"^/public/ask/?$"),
     re.compile(r"^/charge-check/?$"),
+    re.compile(r"^/civil-check/?$"),
     re.compile(r"^/loopholes/analyze/?$"),
     re.compile(r"^/internal/legal-assistant/?$"),
-    re.compile(r"^/cases/\d+/(chat|charge-check|motion-screen|innocence-analysis|defense-analysis|analysis/run)/?$"),
+    re.compile(r"^/cases/\d+/(chat|charge-check|civil-check|motion-screen|innocence-analysis|defense-analysis|analysis/run)/?$"),
 )
 
 

@@ -23,7 +23,7 @@ def test_all_native_legal_ai_modes_use_dedicated_grounded_calls():
         'CASE_ANALYSIS("case_analysis")': "Mode.CASE_ANALYSIS -> api.caseAnalysisWithVerifiedAuthorities(clean)",
         'RIGHTS("rights")': 'Mode.RIGHTS -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "rights")',
         'MOTIONS("motions")': "Mode.MOTIONS -> api.motionsAnalysis(clean)",
-        'TALK_TO_ME("talk_to_me")': 'Mode.TALK_TO_ME -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "talk_to_me")',
+        'TALK_TO_ME("talk_to_me")': 'Mode.TALK_TO_ME -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "general")',
     }
     for mode, call in expected.items():
         assert mode in source
@@ -39,8 +39,9 @@ def test_guest_rights_modes_hit_the_grounded_public_endpoint():
     start = backend.index("@app.post('/public/rights-assistant')")
     end = backend.index("@app.", start + 1)
     route = backend[start:end]
-    assert "grounded_legal_response(query, mode, ask_openai, db=db)" in route
-    assert "if mode not in {'rights','talk_to_me'}" in route
+    assert "grounded_legal_response(query, mode, ask_fast, db=db)" in route
+    assert "if mode not in PUBLIC_ASSISTANT_MODES" in route
+    assert "PUBLIC_ASSISTANT_MODES={'rights','talk_to_me','general'}" in backend
     fallback_start = backend.index("def _guest_rights_without_corpus")
     fallback = backend[fallback_start:start]
     assert "'authorities': []" in fallback

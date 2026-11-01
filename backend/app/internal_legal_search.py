@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 ROOT=Path(__file__).resolve().parents[2]
 CORPUS=ROOT/'data'/'corpus'
 FILES={'cases':['georgia_supreme_opinions.jsonl','georgia_court_of_appeals.jsonl'],'statutes':['georgia_statutes.jsonl'],'motions_rules':['georgia_rules_motions.jsonl'],'law_enforcement':['law_enforcement_authorities.jsonl']}
-ROUTES={'case_lookup':['cases','statutes'],'case_analysis':['cases','statutes','motions_rules','law_enforcement'],'rights':['law_enforcement','cases','statutes'],'motions':['motions_rules','cases','statutes'],'talk_to_me':['law_enforcement','cases','statutes']}
+ROUTES={'case_lookup':['cases','statutes'],'case_analysis':['cases','statutes','motions_rules','law_enforcement'],'rights':['law_enforcement','cases','statutes'],'motions':['motions_rules','cases','statutes'],'talk_to_me':['law_enforcement','cases','statutes'],'general':['statutes','cases']}
 TOK=re.compile(r'[A-Za-z0-9§.-]+');STOP={'a','an','and','are','as','at','be','by','can','do','for','from','how','i','if','in','is','it','law','me','my','of','on','or','the','to','was','what','when','where','with'};NEGATIVE={'overruled','vacated','superseded','withdrawn','repealed'}
 def _normalize(s):
  s=(s or '').lower().replace('§',' ').replace('ocga',' ').replace('o.c.g.a.',' ')

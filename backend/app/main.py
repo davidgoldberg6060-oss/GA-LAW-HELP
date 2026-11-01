@@ -12,6 +12,10 @@ from .case_chat_service import analyze_case_conversation, case_summary_from_case
 from .internal_legal_search import search_internal
 from .loophole_analysis_service import SUGGESTED_TOPICS, analyze_loopholes
 from .charge_check_service import analyze_charge_check, charge_check_note_text
+from .civil_check_service import analyze_civil_check, civil_check_note_text
+from .civil_topics import HELP_LINKS, follow_ups
+from . import answer_cache
+from .ai_assistant import ask_fast
 from .authority_search_service import persisted_authority_hits, public_law_search, search_georgia_authorities
 from .grounded_legal_assistant import grounded_legal_response
 from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload, safe_public_source_url
@@ -108,7 +112,12 @@ def public_georgia_law_search(kind:str='statutes',q:str='',title:str='',chapter:
 
 def _guest_rights_without_corpus(query:str, mode:str) -> dict:
     """Encounter-pack fallback. Does not invent citations or claim current Georgia law."""
-    guidance = encounter_prompt_block(mode, query)
+    guidance = encounter_prompt_block(mode, query) or (
+        'GA.LAW.HELP could not reach its AI assistant just now, so here is general guidance. '
+        'For Georgia civil and criminal questions, free help is available from Georgia Legal Services Program (https://www.glsp.org/), '
+        'Atlanta Legal Aid (https://atlantalegalaid.org/), Georgia Courts self-help (https://georgiacourts.gov/a2j/) and the '
+        'State Bar of Georgia (https://www.gabar.org/public/find-a-lawyer). Do not miss any court date or deadline on papers you received. '
+        'Please try again in a minute.')
     notice = (
         'No indexed Georgia authority was available for this guest request. '
         'This is general encounter information, not a verified citation and not a claim that any rule is current Georgia law. '
@@ -126,27 +135,43 @@ def _guest_rights_without_corpus(query:str, mode:str) -> dict:
         'login_required': False,
     }
 
+PUBLIC_ASSISTANT_MODES={'rights','talk_to_me','general'}
+
+def _decorate_public(response:dict,query:str,mode:str)->dict:
+    response['guest']=True
+    response['login_required'] = False
+    response.setdefault('official_indexes',official_indexes())
+    if not response.get('answer') and response.get('analysis'): response['answer']=response['analysis']
+    response.setdefault('follow_ups',follow_ups(query))
+    response.setdefault('help_links',HELP_LINKS)
+    return response
+
 @app.post('/public/rights-assistant')
 def public_rights_assistant(body:dict,db:Session=Depends(get_db)):
+    """Guest grounded assistant. ``rights``/``talk_to_me`` = police encounter help; ``general`` = any
+    Georgia criminal or civil legal question (Talk to Me). Answers use the fast model and are cached
+    by normalized question + mode for 24 h (guest answers contain no account data)."""
     query=str(body.get('query','')).strip();mode=str(body.get('mode','rights')).strip()
     if not query: raise HTTPException(400,'Describe the encounter or rights question.')
     if len(query)>4000: raise HTTPException(400,'Question is too long.')
-    if mode not in {'rights','talk_to_me'}: raise HTTPException(400,'Guest mode is limited to rights and live-encounter help.')
+    if mode not in PUBLIC_ASSISTANT_MODES: raise HTTPException(400,'Guest mode is limited to rights, live-encounter and general Georgia legal help.')
+    cached=answer_cache.get(query,mode)
+    if cached is not None:
+        cached['cached']=True
+        return cached
     try:
-        response = grounded_legal_response(query, mode, ask_openai, db=db)
+        response = grounded_legal_response(query, mode, ask_fast, db=db)
     except RuntimeError:
         # AI provider unavailable: return the static encounter pack instead of failing the guest.
         fallback = _guest_rights_without_corpus(query, mode)
         fallback['ai_unavailable'] = True
-        return fallback
+        return _decorate_public(fallback,query,mode)
     except SQLAlchemyError:
         db.rollback()
-        return _guest_rights_without_corpus(query, mode)
-    response['guest'] = True
+        return _decorate_public(_guest_rights_without_corpus(query, mode),query,mode)
     response['login_required'] = False
-    response.setdefault('official_indexes', official_indexes())
-    if not response.get('answer') and response.get('analysis'):
-        response['answer'] = response['analysis']
+    response=_decorate_public(response,query,mode)
+    if response.get('answer'): answer_cache.put(query,mode,response)
     return response
 
 for _route in list(app.router.routes):
@@ -177,7 +202,7 @@ def private_case_chat(case_id:int,body:dict,user=Depends(require_paid),db:Sessio
     """Conversational grounded Case Analysis: case file + recent turns + current message."""
     case=owned_case(case_id,user,db)
     try:
-        response=analyze_case_conversation(user_message=str(body.get('message','')),history=parse_history(body.get('history')),case_summary=case_summary_from_case(case),ask_ai=ask_openai,db=db)
+        response=analyze_case_conversation(user_message=str(body.get('message','')),history=parse_history(body.get('history')),case_summary=case_summary_from_case(case),ask_ai=ask_fast,db=db)
     except ValueError as error: raise HTTPException(400,str(error))
     except RuntimeError: raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
     audit(db,user.id,'RUN_CASE_CHAT','case',case_id);db.commit();return response
@@ -222,6 +247,37 @@ def case_charge_check(case_id:int,body:dict,user=Depends(require_paid),db:Sessio
     owned_case(case_id,user,db)
     return charge_check({**body,'case_id':case_id},user,db)
 
+def save_civil_check_note(db,case_id,user_id,text):
+    db.add(models.CaseNote(case_id=case_id,owner_id=user_id,note_type='CIVIL_CHECK',title='Civil Case Check',content=text,language='en'))
+
+@app.post('/civil-check')
+def civil_check(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
+    """Civil Case Check: likely claims/defenses, court, deadlines, evidence and low-cost paths for a dispute.
+
+    Attaches to ``case_id`` when given (must be owned); otherwise creates a new civil case unless
+    ``save_case`` is false. Refused requests never create a case."""
+    case=None; raw_id=body.get('case_id')
+    if raw_id not in (None,''):
+        try: case=owned_case(int(raw_id),user,db)
+        except (TypeError,ValueError): raise HTTPException(400,'Invalid case id.')
+    situation=str(body.get('situation','')).strip() or (str(case.narrative or '').strip() if case is not None else '')
+    try: response=analyze_civil_check(situation,ask_openai,db=db,case_summary=case_summary_from_case(case) if case else None)
+    except ValueError as error: raise HTTPException(400,str(error))
+    except RuntimeError: raise HTTPException(503,'The civil case check assistant is temporarily unavailable.')
+    if not response.get('refused'):
+        if case is None and body.get('save_case',True) is not False:
+            case=models.Case(owner_id=user.id,title=('Civil Case Check: '+situation)[:120],case_type='civil',stage='Dispute / pre-filing',narrative=situation)
+            db.add(case);db.flush();audit(db,user.id,'CREATE_CASE','case',case.id)
+        if case is not None:
+            save_civil_check_note(db,case.id,user.id,civil_check_note_text(response))
+    response['case_id']=case.id if case is not None else None
+    audit(db,user.id,'RUN_CIVIL_CHECK','case',case.id if case is not None else None);db.commit();return response
+
+@app.post('/cases/{case_id}/civil-check')
+def case_civil_check(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
+    owned_case(case_id,user,db)
+    return civil_check({**body,'case_id':case_id},user,db)
+
 @app.get('/loopholes/topics')
 def loopholes_topics():
     return {'suggested_topics':list(SUGGESTED_TOPICS)}
@@ -230,7 +286,7 @@ def loopholes_topics():
 def internal_legal_search(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     query=str(body.get('query','')).strip();mode=str(body.get('mode','case_analysis')).strip()
     if len(query)>12000: raise HTTPException(400,'Search text is too long.')
-    if mode not in {'case_lookup','case_analysis','rights','motions','talk_to_me'}: raise HTTPException(400,'Unsupported legal-search mode.')
+    if mode not in {'case_lookup','case_analysis','rights','motions','talk_to_me','general'}: raise HTTPException(400,'Unsupported legal-search mode.')
     try: limit=int(body.get('limit',12))
     except (TypeError,ValueError): raise HTTPException(400,'Invalid result limit.')
     result=search_internal(query,mode,limit)
@@ -248,7 +304,7 @@ def internal_grounded_legal_assistant(body:dict,user=Depends(require_paid),db:Se
     query=str(body.get('query','')).strip();mode=str(body.get('mode','case_analysis')).strip()
     if not query: raise HTTPException(400,'Enter case facts, an encounter description, or a legal question.')
     if len(query)>12000: raise HTTPException(400,'Analysis text is too long.')
-    if mode not in {'case_analysis','rights','motions','talk_to_me'}: raise HTTPException(400,'Unsupported grounded legal-assistant mode.')
+    if mode not in {'case_analysis','rights','motions','talk_to_me','general'}: raise HTTPException(400,'Unsupported grounded legal-assistant mode.')
     try: return grounded_legal_response(query,mode,ask_openai,db=db)
     except RuntimeError: raise HTTPException(503,'The grounded legal assistant is temporarily unavailable.')
 

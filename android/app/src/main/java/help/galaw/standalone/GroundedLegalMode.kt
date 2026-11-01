@@ -38,7 +38,7 @@ object GroundedLegalMode {
             Mode.CASE_ANALYSIS -> api.caseAnalysisWithVerifiedAuthorities(clean)
             Mode.RIGHTS -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "rights")
             Mode.MOTIONS -> api.motionsAnalysis(clean)
-            Mode.TALK_TO_ME -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "talk_to_me")
+            Mode.TALK_TO_ME -> GuestPublicApi.rightsAssistant(BuildConfig.API_BASE_URL, clean, "general")
         }
         val answer = GroundedLegalResult.answer(raw).ifBlank {
             "No grounded legal analysis was returned. Add specific facts, the court, case stage, charge, or legal issue and try again."

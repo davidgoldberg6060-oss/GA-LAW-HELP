@@ -41,12 +41,16 @@ object GuestPublicApi {
         return JSONObject(get(baseUrl, path))
     }
 
-    private fun open(baseUrl: String, path: String, method: String): HttpURLConnection {
+    /** AI answers can take a while on a slow phone network; reads wait up to 60 s. */
+    const val AI_READ_TIMEOUT_MS = 60_000
+    const val READ_TIMEOUT_MS = 30_000
+
+    private fun open(baseUrl: String, path: String, method: String, readMs: Int = READ_TIMEOUT_MS): HttpURLConnection {
         val root = baseUrl.trimEnd('/')
         return (URL(root + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method
             connectTimeout = 8_000
-            readTimeout = 30_000
+            readTimeout = readMs
             setRequestProperty("Accept", "application/json")
         }
     }
@@ -57,20 +61,25 @@ object GuestPublicApi {
         return code to (stream?.bufferedReader()?.use { it.readText() }.orEmpty())
     }
 
-    private fun get(baseUrl: String, path: String): String {
+    /** Raw IO failures (OkHttp says just "timeout") become friendly [ApiNetworkException]s. */
+    private fun <T> friendly(block: () -> T): T = try { block() } catch (e: ApiException) { throw e } catch (e: Exception) {
+        throw ApiNetworkException(if (AiErrors.isTimeout(e)) AiErrors.TIMEOUT_MESSAGE else AiErrors.NETWORK_MESSAGE, e)
+    }
+
+    private fun get(baseUrl: String, path: String): String = friendly {
         val c = open(baseUrl, path, "GET")
         val (code, response) = read(c)
         if (code !in 200..299) throw ApiException(code, response)
-        return response
+        response
     }
 
-    private fun post(baseUrl: String, path: String, body: JSONObject): String {
-        val c = open(baseUrl, path, "POST")
+    private fun post(baseUrl: String, path: String, body: JSONObject): String = friendly {
+        val c = open(baseUrl, path, "POST", AI_READ_TIMEOUT_MS)
         c.doOutput = true
         c.setRequestProperty("Content-Type", "application/json")
         c.outputStream.use { it.write(body.toString().toByteArray()) }
         val (code, response) = read(c)
         if (code !in 200..299) throw ApiException(code, response)
-        return response
+        response
     }
 }
