@@ -7,7 +7,7 @@ import './approvedScreens.css';
 
 import {LawAccordion} from './LawAccordion';
 /** Every citation object in a Charge/Civil Check result, de-duplicated, for the inline law accordion. */
-function citesOf(r:any):{citation:string;title?:string;source_url?:string}[]{const out=new Map<string,any>();const walk=(v:any)=>{if(!v||typeof v!=='object')return;if(Array.isArray(v)){v.forEach(walk);return}if(typeof v.citation==='string'&&!out.has(v.citation))out.set(v.citation,{citation:v.citation,title:v.title,source_url:v.source_url});Object.values(v).forEach(walk)};walk(r);return[...out.values()]}
+function citesOf(r:any):{citation:string;title?:string;source_url?:string}[]{const out=new Map<string,any>();const walk=(v:any)=>{if(!v||typeof v!=='object')return;if(Array.isArray(v)){v.forEach(walk);return}if(typeof v.citation==='string'&&!out.has(v.citation))out.set(v.citation,{citation:v.citation.replace(/\s*\(text as of[^)]*\)/,''),title:v.title,source_url:v.source_url});Object.values(v).forEach(walk)};walk(r);return[...out.values()]}
 const API='https://api-production-60cc.up.railway.app';
 const ACCESS_KEY='ga_access_token',REFRESH_KEY='ga_refresh_token';
 class ApiError extends Error{status:number;constructor(status:number,message:string){super(message);this.status=status}}

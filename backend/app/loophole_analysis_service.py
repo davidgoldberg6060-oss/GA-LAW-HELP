@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import re
 
-from .grounded_legal_assistant import _authority_context, _hybrid_retrieval, _verified_hits
+from .grounded_legal_assistant import _authority_context, _hybrid_retrieval, _verified_hits, retrieve_verified
 
 MAX_TOPIC_CHARS = 300
 FINDING_TYPES = {"contradiction": "Contradiction", "gap": "Gap", "ambiguity": "Ambiguity", "exception": "Exception"}
@@ -143,8 +143,7 @@ def analyze_loopholes(topic: str, ask_ai, db=None) -> dict:
     base = {"topic": topic, "disclaimer": DISCLAIMER, "suggested_topics": list(SUGGESTED_TOPICS)}
     if is_unsafe_topic(topic):
         return {**base, "refused": True, "message": REFUSAL, "findings": [], "authorities": [], "dropped_findings": 0, "grounded_authority_count": 0, "lawyer_take": None}
-    retrieval = _hybrid_retrieval(topic, "case_analysis", db, 15)
-    verified = _verified_hits(retrieval)
+    verified = retrieve_verified(topic, "case_analysis", db, 15, retrieve=lambda *a: _hybrid_retrieval(*a))[:12]
     if not verified:
         return {**base, "refused": False, "message": "No verified Georgia authority was retrieved for this topic, so no findings can be shown. " + NONE_FOUND + " " + COVERAGE_NOTE,
                 "findings": [], "authorities": [], "dropped_findings": 0, "grounded_authority_count": 0, "lawyer_take": None}

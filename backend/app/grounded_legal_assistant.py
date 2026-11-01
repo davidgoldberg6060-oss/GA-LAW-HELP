@@ -117,7 +117,7 @@ _STYLE=("Write in plain, friendly English a non-lawyer understands (about 200-35
 
 _PRACTICAL=("Always give concrete, practical help even when no law section fits. Common situations: "
  "SELF-DEFENSE / FIGHT CHARGES: Georgia law recognizes self-defense and allows a pretrial hearing to ask for immunity from prosecution; get a criminal defense lawyer or public defender right away; don't discuss the incident with police or anyone else without your lawyer; save evidence (photos of injuries, witnesses, video). "
- "JAIL OR PRISON CONDITIONS (no water, food, bed, medical care): file a written grievance and keep copies; request medical help in writing; have family contact the facility and the Georgia Department of Corrections ombudsman; contact the Southern Center for Human Rights, ACLU of Georgia, or legal aid; in general terms, the U.S. Constitution's Eighth Amendment protects against inhumane conditions and federal civil-rights law (42 U.S.C. § 1983) can allow a lawsuit; in an emergency tell staff right away and have family call the facility. "
+ "JAIL OR PRISON CONDITIONS (no water, food, bed, medical care): file a written grievance and keep copies; ALWAYS include as its own step: put in a written sick-call (medical) request and keep a copy, and if it is ignored, file a grievance about it; have family contact the facility and the Georgia Department of Corrections ombudsman; contact the Southern Center for Human Rights, ACLU of Georgia, or legal aid; in general terms, the U.S. Constitution's Eighth Amendment protects against inhumane conditions and federal civil-rights law (42 U.S.C. § 1983) can allow a lawsuit; in an emergency tell staff right away and have family call the facility. "
  "You may mention these general federal protections by name, but never quote or number Georgia sections that are not listed.")
 
 def _headings(spec):return "; ".join(label for _,label in spec)
@@ -165,6 +165,29 @@ def search_text_for(query):
  extra=plain_terms(query)
  return f"{query}\n{extra}" if extra else query
 
+SICK_CALL_STEP="• Put in a written sick-call (medical) request and keep a copy. If nobody responds, file a grievance about it."
+def ensure_sick_call(analysis:str,query:str)->str:
+ """Jail/prison-conditions answers always carry the written medical-request step."""
+ from .civil_topics import PRISON
+ if not re.search(PRISON,query or "",re.I) or re.search(r"(?i)sick[- ]call|medical request|request medical",analysis):return analysis
+ lines=analysis.split("\n")
+ for i,l in enumerate(lines):
+  if l.strip().lower()=="steps you can take":lines.insert(i+1,SICK_CALL_STEP);return "\n".join(lines)
+ head,sep,note=analysis.partition("\n\nNote:")
+ return head.rstrip()+"\n"+SICK_CALL_STEP+(sep+note if sep else "")
+
+def retrieve_verified(query:str,mode:str,db=None,limit:int=12,retrieve=None)->list:
+ """Slang-aware hybrid + topic retrieval, relevance-filtered, verified only (shared by Loopholes)."""
+ from .civil_topics import topic_hits,topic_sections
+ from .authority_search_service import build_query_plan
+ search=search_text_for(query)
+ retrieval=(retrieve or _hybrid_retrieval)(search,mode,db,limit)
+ search=f"{search}\n{retrieval.get('rewrite_terms') or ''}".strip()
+ if db is not None:retrieval=topic_hits(db,search,retrieval)
+ trusted=set(topic_sections(search,limit=40))
+ for c in build_query_plan(search).pinned_citations:trusted.add(c);trusted.update(_SECTION_RE.findall(c))
+ return _verified_hits({"hits":relevant_hits(retrieval.get("hits",[]),search,trusted)})
+
 def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  if mode not in SUPPORTED_MODES:raise ValueError("Unsupported grounded legal-assistant mode.")
  from .civil_topics import topic_hits,topic_sections
@@ -190,6 +213,7 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  shown=used or verified[:3]
  amendment=SHORT_AMENDMENT_NOTE if any(h.get("as_of") for h in shown) else None
  analysis=clean_answer(analysis,add_note=bool(amendment))
+ analysis=ensure_sick_call(analysis,query)
  authorities=[{**h,"citation":h.get("display_citation") or with_as_of(h.get("citation"),h.get("as_of")),"citation_raw":h.get("citation")} if h.get("as_of") else h for h in shown]
  response={"mode":mode,"analysis":analysis,"authorities":authorities,"laws_cited":laws_cited(authorities),"amendment_note":amendment,"grounded_authority_count":len(verified),"cited_authority_count":len(used),"coverage_notice":None,"used_encounter_pack":bool(pack)}
  specs={"talk_to_me":TALK_SECTIONS,"case_analysis":CASE_ANALYSIS_SECTIONS,"rights":RIGHTS_SECTIONS,"motions":MOTIONS_SECTIONS,"general":GENERAL_SECTIONS}

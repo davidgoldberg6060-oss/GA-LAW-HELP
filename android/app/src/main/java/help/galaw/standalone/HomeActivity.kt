@@ -109,7 +109,8 @@ class HomeActivity : AppCompatActivity() {
 
     // ---------- Civil Case Check ----------
     private fun showCivilCheck(caseId:Int?,caseTitle:String?){ if(!requireSignedIn())return; lateinit var form:GaScreens.ChargeCheckForm; form=GaScreens.civilCheck(ui,nav,caseTitle){t->runCivilCheck(form,t,caseId)}; show(form.root) }
-    private fun cite1(o:JSONObject?)=o?.let{c->GaScreens.LoopholeCite(c.optString("citation"),clean(c.optString("title")),clean(c.optString("source_url")).ifBlank{null})}
+    private fun noAsOf(s:String)=s.replace(Regex("\\s*\\(text as of[^)]*\\)"),"").trim()
+    private fun cite1(o:JSONObject?)=o?.let{c->GaScreens.LoopholeCite(noAsOf(c.optString("citation")),clean(c.optString("title")),clean(c.optString("source_url")).ifBlank{null})}
     private fun runCivilCheck(form:GaScreens.ChargeCheckForm,raw:String,caseId:Int?){ val situation=raw.trim(); if(situation.isEmpty()&&caseId==null)return toast("Describe the dispute."); if(situation.length>4000)return toast("Description is too long. Use 4,000 characters or fewer."); GaScreens.chargeCheckLoading(ui,form.results)
         thread{ try{ val r=api.civilCheck(situation,caseId)
             fun arr(k:String)=r.optJSONArray(k)?.let{a->(0 until a.length()).mapNotNull{a.optJSONObject(it)}}?:emptyList()
@@ -127,7 +128,7 @@ class HomeActivity : AppCompatActivity() {
     // ---------- Legal Loopholes ----------
     private val loopholeChips = listOf("Self-defense","Landlord security deposits","DUI","Traffic stops","Expungement","Eviction notice")
     private fun showLoopholes(){ if(!requireSignedIn())return; lateinit var form:GaScreens.LoopholesForm; form=GaScreens.loopholes(ui,nav,loopholeChips){t->analyzeLoopholes(form,t)}; show(form.root) }
-    private fun cites(arr:JSONArray?)=(0 until (arr?.length()?:0)).mapNotNull{i->arr!!.optJSONObject(i)?.let{o->GaScreens.LoopholeCite(o.optString("citation"),clean(o.optString("title")),clean(o.optString("source_url")).ifBlank{null})}}
+    private fun cites(arr:JSONArray?)=(0 until (arr?.length()?:0)).mapNotNull{i->arr!!.optJSONObject(i)?.let{o->GaScreens.LoopholeCite(noAsOf(o.optString("citation")),clean(o.optString("title")),clean(o.optString("source_url")).ifBlank{null})}}
     private fun lawyerTake(r:JSONObject)=r.optJSONObject("lawyer_take")?.let{o->GaScreens.LawyerTake(o.optString("label","If I Was Your Lawyer, I Would Say"),o.optString("text"),o.optString("disclaimer","Not legal advice — this app is not your lawyer."),cites(o.optJSONArray("citations")))}?.takeIf{it.text.isNotBlank()}
     private fun analyzeLoopholes(form:GaScreens.LoopholesForm,raw:String){ val topic=raw.trim(); if(topic.isEmpty())return toast("Enter a Georgia legal topic."); if(topic.length>300)return toast("Topic is too long. Use 300 characters or fewer."); GaScreens.loopholesLoading(ui,form.results)
         thread{ try{ val r=api.loopholes(topic); val arr=r.optJSONArray("findings"); val findings=(0 until (arr?.length()?:0)).mapNotNull{i->arr!!.optJSONObject(i)?.let{o->GaScreens.LoopholeFinding(o.optString("type_label"),o.optString("title"),o.optString("explanation"),cites(o.optJSONArray("citations")))}}
