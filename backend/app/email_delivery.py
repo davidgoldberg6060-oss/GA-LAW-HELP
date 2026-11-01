@@ -18,9 +18,16 @@ def _public_link(path: str, token: str) -> str:
 def _send(to_email: str, subject: str, text: str) -> bool:
     if os.getenv("MAIL_DELIVERY_MODE", "disabled").lower() != "smtp":
         return False
-    host = os.environ["SMTP_HOST"]
-    port = int(os.getenv("SMTP_PORT", "587"))
-    sender = os.environ["SMTP_FROM"]
+    host = os.getenv("SMTP_HOST", "").strip()
+    sender = os.getenv("SMTP_FROM", "").strip()
+    if not host or not sender:
+        logger.warning("MAIL_DELIVERY_MODE=smtp but SMTP_HOST/SMTP_FROM is not set; skipping email delivery")
+        return False
+    try:
+        port = int(os.getenv("SMTP_PORT", "587"))
+    except ValueError:
+        logger.warning("Invalid SMTP_PORT; skipping email delivery")
+        return False
     username = os.getenv("SMTP_USERNAME")
     password = os.getenv("SMTP_PASSWORD")
     message = EmailMessage()
