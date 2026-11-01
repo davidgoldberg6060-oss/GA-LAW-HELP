@@ -40,7 +40,7 @@ def test_neutral_wording_and_family_tips():
     import re
     for stage in OPTIONS:
         g = build_guide(None, stage=stage, exists=_exists())
-        text = " ".join(g["next_steps"] + [o["what"] + " " + o["title"] for o in g["options"]])
+        text = " ".join(g["next_steps"] + [o["what"] + " " + o["title"] + " " + (o["where"] or "") for o in g["options"]])
         assert not re.search(r"\b(you|your|I|my)\b", text), (stage, text)
     g = build_guide(None, stage="arrested", exists=_exists())
     assert any("bond" in t for t in g["family_tips"]) and any("books" in t for t in g["family_tips"])
