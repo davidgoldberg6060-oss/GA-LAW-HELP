@@ -43,6 +43,16 @@ def _transport(calls, *, results=RESULTS, final_url=None):
     return transport
 
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _fake_pdf_text(monkeypatch):
+    """Fixture PDFs are placeholder bytes; pretend extraction returns their text."""
+    import app.ingestion.import_ga_regulations as regs
+    monkeypatch.setattr(regs, "pdf_text", lambda body: body.decode("utf-8", "replace") + "\x00")
+
+
 def test_search_url_uses_the_official_get_form():
     url = coa.search_url(date(2026, 9, 28), date(2026, 10, 2))
     assert url == coa.SEARCH_URL + "?OPstartDate=2026-09-28&OPendDate=2026-10-02&submit=Start+Opinions+Search"
@@ -115,3 +125,11 @@ def test_saved_pages_round_trip(tmp_path):
     got = m.replay_transport(str(tmp_path))(url)
     assert got.status_code == 200 and got.body == b"<html>ok</html>"
     assert m.replay_transport(str(tmp_path))("https://www.gaappeals.gov/other/").status_code == 404
+
+
+def test_pdf_text_is_stored_without_nul_bytes():
+    rows = []
+    from app.ingestion import import_appeals_opinions as m
+    op = m.AppealsOpinion("A26A0001", "A v. B", "October 1, 2026", "AFFIRMED", PDF + "9")
+    item = m.prepare_opinion(op, transport=_transport(rows))
+    assert item.document.extracted_text.startswith("%PDF-1.4 opinion") and "\x00" not in item.document.extracted_text

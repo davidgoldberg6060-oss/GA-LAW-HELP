@@ -288,7 +288,21 @@ def prepare_opinion(opinion: AppealsOpinion, *, transport=production_transport):
         title=opinion.title,
         external_id=opinion.docket,
     )
-    return acquire_ingestion_item(request, transport=transport, allow_unverified_identifier=True)
+    item = acquire_ingestion_item(request, transport=transport, allow_unverified_identifier=True)
+    return with_pdf_text(item)
+
+
+def with_pdf_text(item):
+    """Store the opinion's extracted text, not raw PDF bytes (which contain NULs Postgres rejects)."""
+    import dataclasses
+    from .import_ga_regulations import pdf_text
+    document = item.document
+    if document.extracted_text is not None or not document.body.startswith(b"%PDF"):
+        return item
+    text = pdf_text(document.body).replace("\x00", "").strip()
+    if not text:
+        raise ValueError("opinion PDF has no extractable text")
+    return dataclasses.replace(item, document=dataclasses.replace(document, extracted_text=text))
 
 
 def main(argv: list[str] | None = None, *, transport=production_transport, session_factory=None) -> int:
