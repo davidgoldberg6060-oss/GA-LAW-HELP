@@ -11,7 +11,7 @@ KEYS = ("AI_PROVIDER", "GEMINI_API_KEY", "XAI_API_KEY", "OPENAI_API_KEY", "GEMIN
 
 @pytest.fixture(autouse=True)
 def clean_env(monkeypatch):
-    for key in KEYS:
+    for key in KEYS + ("GROQ_API_KEY", "OPENROUTER_API_KEY", "CEREBRAS_API_KEY", "MISTRAL_API_KEY", "GITHUB_MODELS_TOKEN", "OPENAI_COMPAT_PROVIDERS"):
         monkeypatch.delenv(key, raising=False)
 
 
