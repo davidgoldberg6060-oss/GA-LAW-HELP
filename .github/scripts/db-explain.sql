@@ -4,7 +4,15 @@
 SET statement_timeout = '180s';
 SELECT indexrelid::regclass AS index, pg_size_pretty(pg_relation_size(indexrelid)) AS size, indisvalid
   FROM pg_index WHERE indrelid = 'legal_authorities'::regclass;
-SELECT pg_size_pretty(pg_total_relation_size('legal_authorities')) AS table_total;
+SELECT pg_size_pretty(pg_total_relation_size('legal_authorities')) AS table_total,
+       pg_size_pretty(pg_relation_size('legal_authorities')) AS heap,
+       pg_size_pretty(pg_total_relation_size(reltoastrelid)) AS toast,
+       pg_size_pretty(pg_indexes_size('legal_authorities')) AS indexes,
+       pg_size_pretty(pg_database_size(current_database())) AS database
+  FROM pg_class WHERE oid = 'legal_authorities'::regclass;
+SELECT relname, n_live_tup, n_dead_tup, pg_size_pretty(pg_total_relation_size(relid)) AS total
+  FROM pg_stat_user_tables ORDER BY pg_total_relation_size(relid) DESC LIMIT 8;
+SELECT pg_size_pretty(sum(pg_column_size(search_vector))) AS search_vector_bytes FROM legal_authorities;
 SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='legal_authorities' AND column_name='search_vector') AS has_search_vector;
 SELECT count(*) FILTER (WHERE search_vector IS NULL) AS sv_null, count(*) AS total FROM legal_authorities
   WHERE EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='legal_authorities' AND column_name='search_vector') \gset
