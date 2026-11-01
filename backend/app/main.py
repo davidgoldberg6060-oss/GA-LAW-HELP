@@ -365,6 +365,7 @@ def delete_my_account(body: schemas.AccountDeleteRequest, user=Depends(current_u
 # ---------- AI free-model rotation status ----------
 from . import ai_models as _ai_models
 import threading as _threading
+import os
 
 @app.get('/health/ai')
 def health_ai():
