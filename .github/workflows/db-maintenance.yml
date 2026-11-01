@@ -14,6 +14,10 @@ name: Database maintenance
 #   search-index - applies migrations, then backfills legal_authorities.search_vector in
 #             batches and builds its GIN indexes CONCURRENTLY (.github/scripts/search-index.sql),
 #             so the live app is never locked. Idempotent; prints index sizes afterwards.
+#   verify-authorities - applies migrations, then records official-source provenance for qualifying
+#             authorities in the small authority_verifications side table, in batches with a disk
+#             guard (.github/scripts/verify-authorities.sh). Never updates legal_authorities.
+#             dry_run=true (default) only reports counts.
 #   init-schema - for a brand-new empty database only: creates every application table from the
 #             SQLAlchemy models (Base.metadata.create_all, the same thing non-production startup
 #             does), then applies backend/migrations in order. create_all only creates missing
@@ -36,6 +40,12 @@ on:
           - search-check
           - explain
           - search-index
+          - verify-authorities
+      dry_run:
+        description: "verify-authorities only: report counts without inserting"
+        required: false
+        default: true
+        type: boolean
       search_query:
         description: "search-check only: question to search"
         required: false
@@ -126,7 +136,7 @@ jobs:
           PY
 
       - name: Apply backend migrations
-        if: ${{ inputs.action == 'migrate' || inputs.action == 'init-schema' || inputs.action == 'search-index' }}
+        if: ${{ inputs.action == 'migrate' || inputs.action == 'init-schema' || inputs.action == 'search-index' || (inputs.action == 'verify-authorities' && !inputs.dry_run) }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
@@ -145,6 +155,18 @@ jobs:
           source .github/scripts/db-url.sh
           psql "$LIBPQ_URL" -X -v ON_ERROR_STOP=1 -f .github/scripts/search-index.sql
           PGOPTIONS='-c default_transaction_read_only=on' psql "$LIBPQ_URL" -X -f .github/scripts/db-explain.sql
+
+      - name: Verify authorities (official-source provenance)
+        if: ${{ inputs.action == 'verify-authorities' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          source .github/scripts/db-url.sh
+          if [ "$DRY_RUN" = "true" ]; then export PGOPTIONS='-c default_transaction_read_only=on'; fi
+          bash .github/scripts/verify-authorities.sh
+          unset PGOPTIONS
+          psql "$LIBPQ_URL" -X -f .github/scripts/spot-check-sections.sql || true
 
       - name: Status (after)
         if: ${{ inputs.action == 'migrate' || inputs.action == 'init-schema' }}
