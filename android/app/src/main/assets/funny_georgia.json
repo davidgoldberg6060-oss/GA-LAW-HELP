@@ -1,0 +1,662 @@
+{
+ "version": 1,
+ "checked": "2026-10-31",
+ "note": "Every entry links to the source it was checked against. Laws can be amended, repealed, or limited by courts; the official text controls. Not legal advice.",
+ "laws": [
+  {
+   "title": "Georgia has an official state possum",
+   "summary": "Pogo 'Possum, the comic-strip character created by Walt Kelly, is the official Georgia State 'Possum. Yes, a cartoon possum has a law.",
+   "citation": "O.C.G.A. § 50-3-68",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-68/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Grits are the official prepared food",
+   "summary": "Georgia law officially recognizes grits as the state's prepared food. Breakfast is legally settled.",
+   "citation": "O.C.G.A. § 50-3-78",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-78/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Georgia is legally the Poultry Capital of the World",
+   "summary": "The Code designates the whole State of Georgia as the Poultry Capital of the World.",
+   "citation": "O.C.G.A. § 50-3-71",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-71/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "There are official state barbecue cookoffs",
+   "summary": "Hawkinsville's \"Shoot the Bull\" is the official beef barbecue championship, and Dooly County's \"Slosheye Trail Big Pig Jig\" is the official pork barbecue championship.",
+   "citation": "O.C.G.A. § 50-3-75",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-75/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Square dancing is the official folk dance",
+   "summary": "Grab your partner: square dancing is Georgia's official folk dance by statute.",
+   "citation": "O.C.G.A. § 50-3-73",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-73/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Georgia has an official tartan — with a thread count",
+   "summary": "The law names an official Georgia tartan and spells out its stripe pattern: 72 green, 4 black, 4 green, 4 black, 6 green, 24 black, 20 azure, 40 red.",
+   "citation": "O.C.G.A. § 50-3-76",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-76/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Colquitt is Georgia's First Mural City",
+   "summary": "A small town's murals got written into state law as Georgia's First Mural City.",
+   "citation": "O.C.G.A. § 50-3-84",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-84/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "The official state dog is ANY adoptable dog",
+   "summary": "Georgia didn't pick a breed. The official state dog is the 'adoptable dog' — any dog in a shelter or rescue available for adoption.",
+   "citation": "O.C.G.A. § 50-3-88",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-88/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "The pecan law comes with a history lesson",
+   "summary": "The state nut statute reads like a fun-facts page: it says 'pecan' comes from a word meaning 'nut requiring a stone to crack' and mentions the 1996 Olympics torch.",
+   "citation": "O.C.G.A. § 50-3-91",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-91/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "There is an official state peanut monument",
+   "summary": "The peanut is the state crop, and the peanut monument in Ashburn beside I-75 is the official state peanut monument.",
+   "citation": "O.C.G.A. § 50-3-72",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-72/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "The Vidalia Sweet Onion is the state vegetable",
+   "summary": "Georgia's official state vegetable is an onion — the Vidalia Sweet Onion.",
+   "citation": "O.C.G.A. § 50-3-65",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-65/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "The peach is the official state fruit",
+   "summary": "No surprise for the Peach State, but it's still a law: the peach is the official fruit.",
+   "citation": "O.C.G.A. § 50-3-70",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-70/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "There's also an official state grape",
+   "summary": "The muscadine grape is the official Georgia grape.",
+   "citation": "O.C.G.A. § 50-3-89",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-89/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "The green tree frog is the state amphibian",
+   "summary": "Georgia has an official amphibian: the green tree frog.",
+   "citation": "O.C.G.A. § 50-3-81",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-81/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "The gopher tortoise is the state reptile",
+   "summary": "Slow and steady: the gopher tortoise is the official state reptile.",
+   "citation": "O.C.G.A. § 50-3-63",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-63/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "A shark tooth is the state fossil",
+   "summary": "Georgia's official state fossil is the shark tooth.",
+   "citation": "O.C.G.A. § 50-3-56",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-56/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "The honeybee is the state insect",
+   "summary": "The honeybee is Georgia's official state insect.",
+   "citation": "O.C.G.A. § 50-3-58",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-58/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "\"Georgia on My Mind\" is the official song — lyrics included",
+   "summary": "The state song statute actually prints the lyrics of \"Georgia on My Mind\" right in the Code.",
+   "citation": "O.C.G.A. § 50-3-60",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-60/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Georgia has an official waltz",
+   "summary": "Besides a state song, Georgia has an official state waltz: \"Our Georgia.\"",
+   "citation": "O.C.G.A. § 50-3-61",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-61/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "The white-tailed deer is the state mammal",
+   "summary": "The white-tailed deer is Georgia's official state mammal.",
+   "citation": "O.C.G.A. § 50-3-87",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-87/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "There's an official 'riverine sport fish'",
+   "summary": "Georgia is so serious about fish it has several official ones, including the shoal bass as the official state riverine sport fish.",
+   "citation": "O.C.G.A. § 50-3-90",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-90/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "And an official cold water game fish",
+   "summary": "The Southern Appalachian brook trout is the official Georgia cold water game fish.",
+   "citation": "O.C.G.A. § 50-3-82",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-82/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "There's an official state folk festival",
+   "summary": "The Georgia Folk Festival is designated the official state folk festival.",
+   "citation": "O.C.G.A. § 50-3-67",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-67/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "There's an official state theater",
+   "summary": "The Springer Opera House is the official Georgia state theater.",
+   "citation": "O.C.G.A. § 50-3-66",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Official state symbols",
+   "source_url": "https://codes.findlaw.com/ga/title-50-state-government/ga-code-sect-50-3-66/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Honk on blind mountain curves",
+   "summary": "On a mountain highway, drivers must keep right and honk when approaching a curve where the view is blocked within 200 feet.",
+   "citation": "O.C.G.A. § 40-6-245",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-245/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No coasting downhill in neutral",
+   "summary": "Going down a hill? It's illegal to coast with your car in neutral. Trucks and buses can't coast with the clutch disengaged.",
+   "citation": "O.C.G.A. § 40-6-246",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-246/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No more than three people crowding the front seat",
+   "summary": "You can't drive with more than three people in the front seat if they block your view or your control of the car.",
+   "citation": "O.C.G.A. § 40-6-242",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-242/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No riding inside a house trailer while it's towed",
+   "summary": "Nobody may ride inside a house trailer while it's being towed on a public highway.",
+   "citation": "O.C.G.A. § 40-6-244",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-244/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Don't chase fire trucks",
+   "summary": "Following a fire truck on a call closer than 200 feet is illegal, and so is parking within 500 feet of one stopped at a fire.",
+   "citation": "O.C.G.A. § 40-6-247",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-247/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Don't drive over a fire hose",
+   "summary": "Driving over an unprotected fire department hose is illegal without the fire official's consent.",
+   "citation": "O.C.G.A. § 40-6-248",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-248/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No headphones while driving",
+   "summary": "You can't drive wearing headphones that impair your hearing (communication headsets are allowed).",
+   "citation": "O.C.G.A. § 40-6-250",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-250/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Driving too SLOW can be illegal",
+   "summary": "Georgia bans driving so slowly that you impede the normal flow of traffic.",
+   "citation": "O.C.G.A. § 40-6-184",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-184/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Gas-and-dash is its own crime",
+   "summary": "Driving off without paying for gas is a specific misdemeanor, with up to a $100 fine and up to 60 days in jail.",
+   "citation": "O.C.G.A. § 40-6-255",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-255/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Your horn can't be a whistle",
+   "summary": "Every car needs a horn audible from 200 feet, but it can't make an 'unreasonably loud or harsh sound or a whistle' — and you should only honk when needed for safety.",
+   "citation": "O.C.G.A. § 40-8-70",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-8-70/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No blue lights on your car",
+   "summary": "Regular drivers can't have devices that make blue lights; those are for police. Antique cars get a tiny one-inch exception.",
+   "citation": "O.C.G.A. § 40-8-90",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-8-90/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Kids can't ride in a pickup bed on the interstate",
+   "summary": "Under-18s can't ride in the uncovered bed of a pickup on an interstate highway.",
+   "citation": "O.C.G.A. § 40-8-79",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Roads & driving",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-8-79/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No riding on the handlebars",
+   "summary": "Bicyclists must sit on a real seat and can't let anyone ride on the handlebars.",
+   "citation": "O.C.G.A. § 40-6-292",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Bikes, skates & sleds",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-292/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Keep one hand on the handlebars",
+   "summary": "You can't carry a package on a bike if it keeps you from having at least one hand on the handlebars.",
+   "citation": "O.C.G.A. § 40-6-295",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Bikes, skates & sleds",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-295/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No hitching a ride on a sled or skates",
+   "summary": "People on bikes, roller skates, sleds or toy vehicles can't grab onto or attach themselves to a moving vehicle.",
+   "citation": "O.C.G.A. § 40-6-293",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Bikes, skates & sleds",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-293/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Motorcycle passengers need a real seat",
+   "summary": "A motorcycle rider must use the regular seat and can't carry a passenger unless the bike is built for two.",
+   "citation": "O.C.G.A. § 40-6-311",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Bikes, skates & sleds",
+   "source_url": "https://codes.findlaw.com/ga/title-40-motor-vehicles-and-traffic/ga-code-sect-40-6-311/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No masks to hide your identity — except Halloween and Mardi Gras",
+   "summary": "Wearing a mask in public to hide who you are is a misdemeanor, but the law exempts holiday costumes, Mardi Gras, masquerade balls, sports gear, gas masks and health masks.",
+   "citation": "O.C.G.A. § 16-11-38",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-11-38/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No tattoos within an inch of your eye socket",
+   "summary": "It's a misdemeanor to tattoo anyone within one inch of the eye socket (unless it's done by a licensed physician).",
+   "citation": "O.C.G.A. § 16-12-5",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-12-5/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No tattoos for anyone under 18",
+   "summary": "Tattooing someone under 18 is a misdemeanor, with an exception for licensed doctors doing medical or cosmetic work.",
+   "citation": "O.C.G.A. § 16-5-71",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-5-71/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Shoplifting AND using the emergency exit is an extra crime",
+   "summary": "If you shoplift and then run out the emergency exit door, using that door is a separate misdemeanor.",
+   "citation": "O.C.G.A. § 16-11-40",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-11-40/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Don't point lasers at airplanes",
+   "summary": "Aiming a laser pointer at an aircraft or its flight path is a misdemeanor in Georgia.",
+   "citation": "O.C.G.A. § 16-11-45",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-11-45/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Running a 'disorderly house' is a crime",
+   "summary": "Keeping 'a common, ill-governed, and disorderly house' that disturbs the neighborhood is a misdemeanor — the wording sounds like it's from the 1800s.",
+   "citation": "O.C.G.A. § 16-11-44",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-11-44/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Public drunkenness — with 'unbecoming language'",
+   "summary": "Being drunk in public is a crime when it shows by boisterousness or 'vulgar, profane, loud, or unbecoming language.'",
+   "citation": "O.C.G.A. § 16-11-41",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-11-41/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "An 'affray' is a public fight",
+   "summary": "Georgia still uses the old word 'affray': two or more people fighting in public and disturbing the peace.",
+   "citation": "O.C.G.A. § 16-11-32",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-11-32/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Don't block the sidewalk",
+   "summary": "Purposely or recklessly blocking a street or sidewalk so people can't pass without unreasonable inconvenience is a crime.",
+   "citation": "O.C.G.A. § 16-11-43",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-11-43/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Adultery is still a crime on the books",
+   "summary": "A married person who has sex with someone other than their spouse commits adultery, a misdemeanor, under the Code.",
+   "citation": "O.C.G.A. § 16-6-19",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-6-19/",
+   "status": "Still in the Code. Georgia Supreme Court privacy rulings (Powell v. State, 1998; In re J.M., 2003) may limit enforcement; current enforceability is uncertain."
+  },
+  {
+   "title": "Fornication is still written in the Code",
+   "summary": "The Code still says sex between unmarried people is 'fornication,' a misdemeanor.",
+   "citation": "O.C.G.A. § 16-6-18",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Crimes that sound funny",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-6-18/",
+   "status": "Text still in the Code, but the Georgia Supreme Court held it can't be used against private, consensual, non-commercial sex between people old enough to consent (In re J.M., 276 Ga. 88 (2003)): https://law.justia.com/cases/georgia/supreme-court/2003/s02a1432-1.html"
+  },
+  {
+   "title": "The law specifically mentions roosters with spurs",
+   "summary": "Georgia's dangerous-animal law says a leash-law shortcut for proving a vicious animal doesn't apply to 'domesticated fowl including roosters with spurs.'",
+   "citation": "O.C.G.A. § 51-2-7",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Animals",
+   "source_url": "https://codes.findlaw.com/ga/title-51-torts/ga-code-sect-51-2-7/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Keep your cows off the road",
+   "summary": "Owners can't let livestock run loose on public roads or stray onto someone else's land.",
+   "citation": "O.C.G.A. § 4-3-3",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Animals",
+   "source_url": "https://codes.findlaw.com/ga/title-4-animals/ga-code-sect-4-3-3/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "You need a license to keep wild animals",
+   "summary": "Owning or selling listed wild animals requires a wild animal license or permit from the state.",
+   "citation": "O.C.G.A. § 27-5-4",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Animals",
+   "source_url": "https://codes.findlaw.com/ga/title-27-game-and-fish/ga-code-sect-27-5-4/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Dogfighting is a felony",
+   "summary": "Training, owning or selling a dog to fight is a serious crime in Georgia.",
+   "citation": "O.C.G.A. § 16-12-37",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Animals",
+   "source_url": "https://codes.findlaw.com/ga/title-16-crimes-and-offenses/ga-code-sect-16-12-37/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Only real Vidalia onions can be called 'Vidalia'",
+   "summary": "An onion can only be sold as a 'Vidalia' if it's the right variety AND grown in the official Vidalia onion production area.",
+   "citation": "O.C.G.A. § 2-14-132",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Food & drink",
+   "source_url": "https://codes.findlaw.com/ga/title-2-agriculture/ga-code-sect-2-14-132/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No liquor sales within 100 yards of a church",
+   "summary": "Distilled spirits can't be sold within 100 yards of a church or 200 yards of a school (with exceptions).",
+   "citation": "O.C.G.A. § 3-3-21",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Food & drink",
+   "source_url": "https://codes.findlaw.com/ga/title-3-alcoholic-beverages/ga-code-sect-3-3-21/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Sunday and election day alcohol rules",
+   "summary": "Sunday alcohol sales are banned unless the law specifically allows them, and local governments may ban sales on election days.",
+   "citation": "O.C.G.A. § 3-3-20",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Food & drink",
+   "source_url": "https://codes.findlaw.com/ga/title-3-alcoholic-beverages/ga-code-sect-3-3-20/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Bartenders can't serve the visibly drunk",
+   "summary": "Alcohol can't be sold or given to anyone who is 'in a state of noticeable intoxication.'",
+   "citation": "O.C.G.A. § 3-3-22",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Food & drink",
+   "source_url": "https://codes.findlaw.com/ga/title-3-alcoholic-beverages/ga-code-sect-3-3-22/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "No popping open a bottle inside the liquor store",
+   "summary": "Package stores can't let customers open and drink from bottles on the premises.",
+   "citation": "O.C.G.A. § 3-3-26",
+   "jurisdiction": "Georgia (statewide)",
+   "category": "Food & drink",
+   "source_url": "https://codes.findlaw.com/ga/title-3-alcoholic-beverages/ga-code-sect-3-3-26/",
+   "status": "In the current Georgia Code (checked October 2026)."
+  },
+  {
+   "title": "Gainesville: eat fried chicken with your fingers",
+   "summary": "In 1961 Gainesville passed a publicity-stunt ordinance making it illegal to eat fried chicken with anything but your hands. In 2009 police jokingly 'arrested' a 91-year-old visitor for using a fork, and the mayor pardoned her on the spot.",
+   "citation": "City of Gainesville ordinance (1961), as reported by the Gainesville Times",
+   "jurisdiction": "Gainesville, Georgia (city)",
+   "category": "City ordinances",
+   "source_url": "https://www.gainesvilletimes.com/news/visitor-arrested-for-eating-chicken-with-fork/",
+   "status": "Publicity ordinance, not seriously enforced; not verified in the current online city code, so treat its current status as uncertain."
+  }
+ ],
+ "cases": [
+  {
+   "name": "North British & Mercantile Ins. Co. v. Mercer",
+   "court": "Court of Appeals of Georgia",
+   "year": 1954,
+   "citation": "90 Ga. App. 143, 81 S.E.2d 41",
+   "summary": "An insurer refused to pay for squirrel damage, arguing squirrels are 'vermin.' The court disagreed, quoted the homeowner's brief calling 'vermin' 'a mighty harsh word to hurl at our little friend the squirrel,' and noted the brief included 'an excellent recipe for squirrel stew.' The homeowner won.",
+   "source_url": "https://law.justia.com/cases/georgia/court-of-appeals/1954/35132-0.html"
+  },
+  {
+   "name": "Brown v. State",
+   "court": "Court of Appeals of Georgia",
+   "year": 1975,
+   "citation": "134 Ga. App. 771, 216 S.E.2d 356",
+   "summary": "A trial judge once dared Judge Randall Evans to write in poetry if he ever reversed him again. Evans did — the whole opinion rhymes ('The D. A. was ready / His case was red-hot'). Brown's conviction was reversed because he was denied a one-day delay to get his witness.",
+   "source_url": "https://exa.ai/library/legal/opinion/l90gcq6zb3x"
+  },
+  {
+   "name": "Wheat v. Fraker",
+   "court": "Court of Appeals of Georgia",
+   "year": 1963,
+   "citation": "107 Ga. App. 318, 130 S.E.2d 251",
+   "summary": "A losing party wanted a new trial because the jury foreman's wife was related to both parties' wives. The court answered entirely in verse and said no: in-laws of in-laws aren't kin. Judgment affirmed.",
+   "source_url": "https://exa.ai/library/legal/opinion/zqc1tbbpyw1"
+  },
+  {
+   "name": "Gilreath v. Smith",
+   "court": "Court of Appeals of Georgia",
+   "year": 2017,
+   "citation": "No. A16A1747 (Feb. 17, 2017)",
+   "summary": "A pet sitter was attacked by Sam the rooster, whose coop had a sign reading 'CAUTION AREA PATROLLED By ATTACK ROOSTER Security Co.' She'd been told 'Rooster will attack!' and to use a garbage-can lid as a shield. The court said she assumed the risk and she lost.",
+   "source_url": "https://treeandneighborlawblog.com/wp-content/uploads/2017/02/attackrooster170227.pdf"
+  },
+  {
+   "name": "Quick v. State",
+   "court": "Court of Appeals of Georgia",
+   "year": 1940,
+   "citation": "No. 28102 (Apr. 23, 1940)",
+   "summary": "A driver was convicted of 'maliciously' killing a bull. A witness testified the bull was 'as black as he could be,' the same color as the asphalt, and nobody could see it. The court reversed: careless maybe, malicious no.",
+   "source_url": "https://exa.ai/library/legal/opinion/vqbb7wztmgj"
+  },
+  {
+   "name": "Atlantic Coast Line R.R. v. Hodges",
+   "court": "Court of Appeals of Georgia",
+   "year": 1954,
+   "citation": "No. 35355 (Oct. 1, 1954)",
+   "summary": "A train killed a farmer's mule. A railroad worker testified a horse and colt 'jest did get cross' the tracks first, but 'by the mule being slow, he didn't make it.' Because the engineer said he never saw the horse and colt, the jury could find he wasn't watching. The mule's owner won.",
+   "source_url": "https://exa.ai/library/legal/opinion/1h3d2x8b4wd"
+  },
+  {
+   "name": "Rhodes v. B. C. Moore & Sons, Inc.",
+   "court": "Court of Appeals of Georgia",
+   "year": 1980,
+   "citation": "153 Ga. App. 106, 264 S.E.2d 500",
+   "summary": "A shopper stung by a bee inside a McRae store sued the store. The court said a store can't foresee a one-time flying insect attack with no history of bees, so the store wasn't liable — and paying a medical bill out of kindness wasn't an admission of fault.",
+   "source_url": "https://law.justia.com/cases/georgia/court-of-appeals/1980/59018.html"
+  },
+  {
+   "name": "Dew v. Motel Properties, Inc.",
+   "court": "Court of Appeals of Georgia",
+   "year": 2006,
+   "citation": "No. A06A0909 (Oct. 5, 2006)",
+   "summary": "A motel guest felt a 'pinching sensation' at night and blamed a brown recluse spider — but never saw a spider. The court said it was pure speculation that a spider was in the room before he arrived, and the motel and pest company won.",
+   "source_url": "https://exa.ai/library/legal/opinion/7p0gk59s5jk"
+  },
+  {
+   "name": "Brock v. Harris",
+   "court": "Court of Appeals of Georgia",
+   "year": 2011,
+   "citation": "No. A11A1250 (Nov. 10, 2011)",
+   "summary": "A customer at a lawn mower shop broke his ankle jumping into a trailer to escape the owner's big dog. Georgia law presumes dogs are harmless, and there was no evidence this dog had ever been aggressive, so the shop owner won.",
+   "source_url": "https://exa.ai/library/legal/opinion/vws216c7s2f"
+  },
+  {
+   "name": "Kempton v. Southern Flavor Real Estate, LP",
+   "court": "Court of Appeals of Georgia",
+   "year": 2021,
+   "citation": "No. A21A1551 (Dec. 6, 2021)",
+   "summary": "A goat-and-pecan farmer said a neighboring greenhouse's grow lights glowed 'like sunrise' and woke him in the middle of the night. The court said a lawful, properly zoned greenhouse isn't a nuisance just for being bright.",
+   "source_url": "https://exa.ai/library/legal/opinion/yqmfqvd652z"
+  },
+  {
+   "name": "Payne v. Terrell",
+   "court": "Court of Appeals of Georgia",
+   "year": 2004,
+   "citation": "No. A04A1696 (Aug. 24, 2004)",
+   "summary": "Neighbors sued to stop four giant chicken houses holding 100,000 chickens with fans blowing ammonia toward their homes. The court said the right thing in the wrong place can be a nuisance and ordered an injunction for that site.",
+   "source_url": "https://exa.ai/library/legal/opinion/qvv8dwmmt88"
+  },
+  {
+   "name": "Life for God's Stray Animals, Inc. v. New North Rockdale County Homeowners Ass'n",
+   "court": "Supreme Court of Georgia",
+   "year": 1984,
+   "citation": "Nos. 41124, 41125 (Oct. 31, 1984)",
+   "summary": "Over 1,000 stray animals lived at a shelter in a single-family neighborhood, with noise heard 'at great distances.' Georgia's Supreme Court upheld an order shutting it down as a nuisance.",
+   "source_url": "https://exa.ai/library/legal/opinion/8m7gfvr02d7"
+  },
+  {
+   "name": "Pavesich v. New England Life Ins. Co.",
+   "court": "Supreme Court of Georgia",
+   "year": 1905,
+   "citation": "122 Ga. 190, 50 S.E. 68",
+   "summary": "An insurance ad in the Atlanta Constitution used an artist's photo with the caption 'Do it now. The man who did,' claiming he bought their insurance. He never had. Georgia became the first state high court to recognize a right of privacy — the case that started it all.",
+   "source_url": "https://law.justia.com/cases/georgia/supreme-court/1905/122-ga-190.html"
+  }
+ ]
+}

@@ -133,12 +133,9 @@ class AuthActivity : AppCompatActivity() {
     }
 
     private fun showFreeLaws(){
-        base(); add(ui.title("Funny & Weird Georgia Laws"),0)
-        add(text("MYTH CHECKER — FREE",13f).apply{setTextColor(blue)},4)
-        add(text("Many viral ‘weird law’ lists mix folklore, old local publicity stories and real law. Treat internet claims as myths until a current official Georgia or local source verifies them.",15f),14)
-        add(text("• Fried chicken must be eaten by hand — commonly tied to Gainesville publicity lore, not a statewide criminal rule.\n\n• Donkey in a bathtub — widely repeated online; verify against current official law before relying on it.\n\n• Ice-cream cone in a back pocket on Sunday — another repeated internet claim that should not be treated as current statewide law without an official source.",15f),14)
-        add(button("Back to login"){showAuth()},16)
+        startActivity(android.content.Intent(this, FunnyLawsActivity::class.java))
     }
+
 
     private fun runTask(message:String,work:()->Unit){
         Toast.makeText(this,message,Toast.LENGTH_SHORT).show()
