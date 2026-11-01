@@ -26,8 +26,12 @@ DO $$ BEGIN
     EXECUTE 'DROP INDEX ix_legal_authorities_type_citation';
   END IF;
 END $$;
+-- The old expression index is superseded (the app no longer uses that expression). Drop it
+-- first so its space is free for the new index build (the volume is small).
+DROP INDEX CONCURRENTLY IF EXISTS ix_legal_authorities_fulltext;
+-- Serial build, in memory: a parallel GIN build spills large temp files.
+SET max_parallel_maintenance_workers = 0;
+SET maintenance_work_mem = '512MB';
 CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_legal_authorities_search_vector ON legal_authorities USING GIN (search_vector);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_legal_authorities_type_citation ON legal_authorities (lower(authority_type), citation);
--- 3) The old expression index is superseded (app no longer uses that expression); free its space.
-DROP INDEX CONCURRENTLY IF EXISTS ix_legal_authorities_fulltext;
 ANALYZE legal_authorities;
