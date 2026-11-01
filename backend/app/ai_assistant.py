@@ -267,7 +267,8 @@ def _ask_compat(provider: dict, model: str, question: str, speed: str | None) ->
         provider, model, provider["url"],
         {"model": model, "max_tokens": 2400 if fast else 4096,
          "messages": [{"role": "system", "content": SYSTEM_INSTRUCTIONS}, {"role": "user", "content": question}]},
-        {"Authorization": "Bearer " + provider["api_key"], "Content-Type": "application/json", **(provider.get("headers") or {})},
+        {"Authorization": "Bearer " + provider["api_key"], "Content-Type": "application/json",
+         "User-Agent": "GA.LAW.HELP/1.6 (+https://ga-law-help-production.up.railway.app)", **(provider.get("headers") or {})},
         20.0 if fast else 55.0,
     )
     choice = (data.get("choices") or [{}])[0] or {}
