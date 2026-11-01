@@ -67,7 +67,7 @@ def test_parse_sections_keeps_only_section_numbers():
 def test_hybrid_retrieval_merges_proposed_sections_and_drops_missing(monkeypatch):
     db = _db()
     monkeypatch.setattr(citation_proposer, "enabled", lambda: True)
-    monkeypatch.setattr(citation_proposer, "propose_sections", lambda q: ["19-5-3", "99-99-99"])
+    monkeypatch.setattr(citation_proposer, "propose", lambda q: (["19-5-3", "99-99-99"], ""))
     result = gla._hybrid_retrieval("my landlord gave me an eviction notice", "rights", db=db, limit=6)
     cites = [h["citation"] for h in result["hits"] if h.get("corpus") == "persisted_authorities"]
     assert "O.C.G.A. § 19-5-3" in cites and "O.C.G.A. § 99-99-99" not in cites
@@ -76,5 +76,6 @@ def test_hybrid_retrieval_merges_proposed_sections_and_drops_missing(monkeypatch
 
 def test_proposer_disabled_without_key(monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
     assert citation_proposer.enabled() is False
     assert citation_proposer.propose_sections("anything") == []

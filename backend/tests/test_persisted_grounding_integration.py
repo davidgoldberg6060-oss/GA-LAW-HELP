@@ -69,8 +69,7 @@ def test_persisted_unverified_authority_remains_visible_but_cannot_ground_ai(mon
         db=db,
     )
 
-    assert len(result["authorities"]) == 1
-    assert result["authorities"][0]["citation"] == "322 Ga. 100"
+    assert result["authorities"] == []  # unverified records are never shown as laws cited
     assert result["grounded_authority_count"] == 0
     assert "322 Ga. 100" not in prompts[0]
 
@@ -95,7 +94,6 @@ def test_persisted_negative_treatment_support_gate_cannot_be_bypassed(monkeypatc
         db=db,
     )
 
-    assert len(result["authorities"]) == 1
-    assert result["authorities"][0]["usable_as_support"] is False
+    assert result["authorities"] == []  # negatively treated records are never shown as laws cited
     assert result["grounded_authority_count"] == 0
     assert "323 Ga. 200" not in prompts[0]

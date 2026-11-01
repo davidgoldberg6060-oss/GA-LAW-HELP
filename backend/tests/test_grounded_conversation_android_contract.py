@@ -41,5 +41,6 @@ def test_conversation_renders_backend_authority_metadata_without_upgrading_it():
     assert "GroundedLegalMode.analyze(" in conversation
     assert "GroundedLegalResult.answer(raw)" in mode
     assert "GroundedLegalResult.authoritySummary(raw)" in mode
-    assert 'optBoolean("usable_as_support", true).not()' in renderer
-    assert "Research only — not used as supporting authority." in renderer
+    # Only verified laws are listed, compactly (no URLs / status labels in the user's view).
+    assert '"laws_cited"' in renderer and '"verification_status"' in renderer
+    assert "source_url" not in renderer and "Precedential status" not in renderer

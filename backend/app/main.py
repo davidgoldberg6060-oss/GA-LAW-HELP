@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from . import legacy_main as _legacy_main
 from .legacy_main import *
+import re
 from .legacy_main import audit
 from .motion_screen_service import motion_screen_response
 from .innocence_analysis_service import innocence_analysis_response
@@ -17,6 +18,7 @@ from .civil_topics import HELP_LINKS, follow_ups
 from . import answer_cache
 from .ai_assistant import ask_fast
 from . import ai_assistant as _ai
+from .answer_format import sanitize_result as _sanitize, SHORT_AMENDMENT_NOTE
 def _model_used():
     return getattr(_ai.last_model_used,'value',None)
 from .authority_search_service import persisted_authority_hits, public_law_search, search_georgia_authorities
@@ -101,6 +103,17 @@ def public_georgia_case(authority_id:int,db:Session=Depends(get_db)):
     row=_public_georgia_case_query(db).filter(models.LegalAuthority.id==authority_id).first()
     if not row: raise HTTPException(404,'Public Georgia case not found.')
     return {'case':public_case_payload(row,include_text=True),'coverage_notice':'Verify the opinion and current precedential status against the linked official source before legal reliance.'}
+
+@app.get('/public/georgia-laws/law')
+def public_georgia_law(citation:str='',db:Session=Depends(get_db)):
+    """One law's stored text by exact citation, for opening a cited law inside the app."""
+    citation=re.sub(r"\s*\(text as of[^)]*\)","",citation.strip())
+    if not citation or len(citation)>120: raise HTTPException(400,'Citation required.')
+    row=db.query(models.LegalAuthority).filter(models.LegalAuthority.citation==citation).first()
+    if row is None: raise HTTPException(404,'That law is not in GA.LAW.HELP yet.')
+    from .answer_format import short_title
+    note=SHORT_AMENDMENT_NOTE if (row.citation or '').startswith('O.C.G.A.') else None
+    return {'citation':row.citation,'title':short_title(row.title,row.citation),'text':(row.text or '')[:30000],'note':note}
 
 @app.get('/public/georgia-laws/search')
 def public_georgia_law_search(kind:str='statutes',q:str='',title:str='',chapter:str='',limit:int=25,db:Session=Depends(get_db)):
@@ -192,7 +205,7 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(require_paid),db:Se
     try:
         response=motion_screen_response(db, facts, ask_openai)
     except RuntimeError: raise HTTPException(503,'The motion screening assistant is temporarily unavailable.')
-    audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit();return response
+    audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit();return _sanitize(response)
 
 @app.post('/cases/{case_id}/innocence-analysis')
 def private_innocence_analysis(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
@@ -200,7 +213,7 @@ def private_innocence_analysis(case_id:int,body:dict,user=Depends(require_paid),
     if len(additional)>8000: raise HTTPException(400,'Additional case facts are too long.')
     try: response=innocence_analysis_response(db,case,additional,ask_openai)
     except RuntimeError: raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
-    audit(db,user.id,'RUN_INNOCENCE_ANALYSIS','case',case_id);db.commit();return response
+    audit(db,user.id,'RUN_INNOCENCE_ANALYSIS','case',case_id);db.commit();return _sanitize(response)
 
 @app.post('/cases/{case_id}/chat')
 def private_case_chat(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
@@ -210,7 +223,7 @@ def private_case_chat(case_id:int,body:dict,user=Depends(require_paid),db:Sessio
         response=analyze_case_conversation(user_message=str(body.get('message','')),history=parse_history(body.get('history')),case_summary=case_summary_from_case(case),ask_ai=ask_fast,db=db)
     except ValueError as error: raise HTTPException(400,str(error))
     except RuntimeError: raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
-    audit(db,user.id,'RUN_CASE_CHAT','case',case_id);db.commit();return response
+    audit(db,user.id,'RUN_CASE_CHAT','case',case_id);db.commit();return _sanitize(response)
 
 @app.post('/loopholes/analyze')
 def loopholes_analyze(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
@@ -218,7 +231,7 @@ def loopholes_analyze(body:dict,user=Depends(require_paid),db:Session=Depends(ge
     try: response=analyze_loopholes(str(body.get('topic','')),ask_openai,db=db)
     except ValueError as error: raise HTTPException(400,str(error))
     except RuntimeError: raise HTTPException(503,'The legal analysis assistant is temporarily unavailable.')
-    audit(db,user.id,'RUN_LOOPHOLE_ANALYSIS','topic',None);db.commit();return response
+    audit(db,user.id,'RUN_LOOPHOLE_ANALYSIS','topic',None);db.commit();return _sanitize(response)
 
 def save_charge_check_note(db,case_id,user_id,text):
     db.add(models.CaseNote(case_id=case_id,owner_id=user_id,note_type='CHARGE_CHECK',title='Charge Check',content=text,language='en'))
@@ -247,7 +260,7 @@ def charge_check(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)
         if case is not None:
             save_charge_check_note(db,case.id,user.id,charge_check_note_text(response))
     response['case_id']=case.id if case is not None else None
-    audit(db,user.id,'RUN_CHARGE_CHECK','case',case.id if case is not None else None);db.commit();return response
+    audit(db,user.id,'RUN_CHARGE_CHECK','case',case.id if case is not None else None);db.commit();return _sanitize(response)
 
 @app.post('/cases/{case_id}/charge-check')
 def case_charge_check(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
@@ -280,7 +293,7 @@ def civil_check(body:dict,user=Depends(require_paid),db:Session=Depends(get_db))
         if case is not None:
             save_civil_check_note(db,case.id,user.id,civil_check_note_text(response))
     response['case_id']=case.id if case is not None else None
-    audit(db,user.id,'RUN_CIVIL_CHECK','case',case.id if case is not None else None);db.commit();return response
+    audit(db,user.id,'RUN_CIVIL_CHECK','case',case.id if case is not None else None);db.commit();return _sanitize(response)
 
 @app.post('/cases/{case_id}/civil-check')
 def case_civil_check(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):

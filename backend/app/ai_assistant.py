@@ -404,3 +404,40 @@ def background_model_checks() -> None:
     while True:
         time.sleep(float(os.getenv("AI_MODEL_LIST_REFRESH_SECONDS", "21600")))
         refresh_listed_models()
+
+
+def ask_quick_json(prompt: str, timeout: float = 2.5) -> str:
+    """Tiny JSON helper for query rewrite / citation hints: fastest non-cooling free model, short budget."""
+    started = time.monotonic()
+    gemini = _gemini_provider()
+    tries = []
+    if gemini["api_key"]:
+        for model in [m for m in ai_models.gemini_chain("chat") if "lite" in m][:2]:
+            tries.append(("gemini:" + model, lambda m=model: _http_post_json(
+                gemini, m, f"{gemini['url']}/{m}:generateContent",
+                {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                 "generationConfig": {"maxOutputTokens": 300, "responseMimeType": "application/json", "temperature": 0}},
+                {"x-goog-api-key": gemini["api_key"], "Content-Type": "application/json"}, max(0.5, timeout - (time.monotonic() - started)))))
+    for provider in ai_models.compat_providers():
+        if provider["name"] == "openrouter":
+            continue  # 50 requests/day: keep for real answers
+        for model in provider["models"][:2]:
+            tries.append((provider["name"] + ":" + model, lambda p=provider, m=model: _http_post_json(
+                p, m, p["url"],
+                {"model": m, "max_tokens": 400, "temperature": 0, "messages": [{"role": "user", "content": prompt}]},
+                {"Authorization": "Bearer " + p["api_key"], "Content-Type": "application/json",
+                 "User-Agent": "GA.LAW.HELP/1.6", **(p.get("headers") or {})}, max(0.5, timeout - (time.monotonic() - started)))))
+    for key, call in tries:
+        if time.monotonic() - started > timeout:
+            break
+        try:
+            data = _try_model(key, call)
+        except RuntimeError:
+            data = None
+        if not data:
+            continue
+        if "candidates" in data:
+            return "".join(part.get("text", "") for cand in (data.get("candidates") or [])[:1]
+                           for part in (cand.get("content") or {}).get("parts") or [] if not part.get("thought"))
+        return (((data.get("choices") or [{}])[0] or {}).get("message") or {}).get("content") or ""
+    return ""

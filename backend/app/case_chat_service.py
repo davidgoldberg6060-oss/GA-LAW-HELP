@@ -102,6 +102,7 @@ TRACEABLE VERIFIED INDEXED AUTHORITIES (the only law you may rely on):
 {context}
 
 Write 3-6 plain-English sentences on what this person should consider and practical lawful next steps (gather documents, deadlines the cited authorities mention, when to get a real Georgia attorney). Ground it only in the supplied authorities and cite them by their exact Citation. Never invent a citation, case, statute, rule, or deadline. Never suggest breaking the law, deceiving anyone, or evading police. Do not predict or guarantee outcomes.
+Write every text field in plain, friendly English with no markdown. Never mention the list of authorities, what sources were or were not supplied, the system, a database, or verification; talk to the user directly.
 Return ONLY JSON: {{"lawyer_take":{{"text":"3-6 sentences","citations":["exact citation"]}}}}"""
 
 

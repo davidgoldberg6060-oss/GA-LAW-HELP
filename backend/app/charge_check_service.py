@@ -170,6 +170,7 @@ Rules:
 - Lowest outcome: lawful options only (lawyer/public defender, pretrial diversion, First Offender, conditional discharge, accountability courts, negotiating a plea to a lesser charge, probation/community service instead of jail, restitution, record restriction) and only where a cited section supports it.
 - NEVER suggest lying, making up a story, destroying or hiding evidence, fleeing, skipping court, contacting/pressuring witnesses or victims, or hiding assets.
 - Also write lawyer_take: 3-6 sentences, "If I Was Your Lawyer, I Would Say", lawful steps only, citing the authorities.
+Write every text field in plain, friendly English with no markdown. Never mention the list of authorities, what sources were or were not supplied, the system, a database, or verification; talk to the user directly.
 Return ONLY JSON:
 {{"charges":[{{"charge":"name","citation":"exact","level":"misdemeanor|high_and_aggravated_misdemeanor|felony|unknown","penalty_quote":"verbatim or empty","why":"1-2 sentences tying facts to the law"}}],
 "defenses":[{{"kind":"missing_element|statutory_defense|procedural","title":"short","explanation":"2-3 sentences","citations":["exact"]}}],
@@ -261,6 +262,9 @@ def analyze_charge_check(situation: str, ask_ai, db=None, *, case_summary: str |
     raw = _parse_obj(ask_ai(_candidate_prompt(situation, case_summary)))
     proposed = raw.get("sections") if isinstance(raw.get("sections"), list) else []
     sections = [s for s in (normalize_section(x) for x in proposed[:MAX_CANDIDATES]) if s]
+    from .civil_topics import topic_sections
+    from .slang import plain_terms
+    sections += [s for s in topic_sections(situation + " " + plain_terms(situation)) if s not in sections]
     verified = _verified_hits({"hits": lookup(sections + list(OUTCOME_SECTIONS))})
     offense = [h for h in verified if normalize_section(h.get("citation")) in sections]
     if not offense:
