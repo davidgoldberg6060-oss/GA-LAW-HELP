@@ -134,10 +134,24 @@ class HomeActivity : AppCompatActivity() {
     private fun showMyCase(){ show(MyCaseScreens.hub(ui,nav,savedCases(),{k->when(k){"criminal"->showStages();"civil"->showCivilCheck(null,null);else->showTalkToMe()}},{s->showStage(s.optString("stage"),s.optJSONObject("details"))},{s->AlertDialog.Builder(this).setTitle("Delete saved case?").setPositiveButton("Delete"){_,_->storeCases(savedCases().filter{it.optString("id")!=s.optString("id")});showMyCase()}.setNegativeButton("Cancel",null).show()})) }
     private fun showStages(){ show(MyCaseScreens.stages(ui,nav){st->showStage(st,null)}) }
     private fun showStage(stage:String,prefill:JSONObject?){ lateinit var form:MyCaseScreens.StageForm; form=MyCaseScreens.stageForm(ui,nav,stage,prefill){runGuide(form,stage)}; show(form.root); if(prefill!=null&&(prefill.optString("situation").isNotBlank()||prefill.length()>1))runGuide(form,stage) }
+    private val guideAnswers=JSONObject()
     private fun runGuide(form:MyCaseScreens.StageForm,stage:String){ val details=JSONObject().put("situation",form.situation.text.toString().trim().take(2000)); form.dates.forEach{(k,v)->val d=v.text.toString().trim(); if(d.isNotBlank())details.put(k,d)}
-        GaScreens.loopholesLoading(ui,form.results); ((form.results.getChildAt(0) as? LinearLayout)?.getChildAt(1) as? TextView)?.text="Finding next steps and Georgia laws…"
-        thread{ try{ val g=GuestPublicApi.caseGuide(BuildConfig.API_BASE_URL,stage,details); runOnUiThread{ MyCaseScreens.render(ui,form.results,g,stage,{showChargeCheck(null,null,details.optString("situation").ifBlank{null})},{showLoopholes(details.optString("situation").ifBlank{MyCaseScreens.STAGES.first{it.first==stage}.second})},{saveCase(stage,details)},{u->openUrl(u)}) } }
+        GaScreens.loopholesLoading(ui,form.results); ((form.results.getChildAt(0) as? LinearLayout)?.getChildAt(1) as? TextView)?.text="Finding next steps, motions and Georgia laws…"
+        thread{ try{ val g=GuestPublicApi.caseGuide(BuildConfig.API_BASE_URL,stage,details,guideAnswers); runOnUiThread{ MyCaseScreens.render(ui,form.results,g,stage,MyCaseScreens.Callbacks(
+                {showChargeCheck(null,null,details.optString("situation").ifBlank{null})},{showLoopholes(details.optString("situation").ifBlank{MyCaseScreens.STAGES.first{it.first==stage}.second})},{saveCase(stage,details)},{u->openUrl(u)},
+                {id,v->guideAnswers.put(id,v);runGuide(form,stage)},{key,title->showDraft(key,title,details)},{title,due->remindDeadline(title,due)})) } }
         catch(e:Exception){ runOnUiThread{ form.results.removeAllViews(); toast(AiErrors.message(e)) } } } }
+    private fun showDraft(key:String,title:String,details:JSONObject){ toast("Preparing a draft…")
+        thread{ try{ val d=GuestPublicApi.motionDraft(BuildConfig.API_BASE_URL,key,details); val text=d.optString("text"); runOnUiThread{
+                val (root,body)=GaScreens.page(ui,nav,GaScreens.Tab.LAWS,title,"Fill-in-the-blank template. Review with a lawyer before filing.")
+                body.addView(ui.text(text,13f,GaUi.TEXT).apply{typeface=android.graphics.Typeface.MONOSPACE;setTextIsSelectable(true);setPadding(dp(12),dp(12),dp(12),dp(12));background=ui.glowCard(GaUi.CARD,GaUi.STROKE_SOFT,12,glow=false)},ui.lp(6,8))
+                body.addView(ui.primaryButton("Share as PDF"){runCatching{MotionDrafts.sharePdf(this,title,text)}.onFailure{toast("Couldn't create the PDF.")}},ui.lp(4,4))
+                body.addView(ui.secondaryButton("Share as text"){MotionDrafts.shareText(this,title,text)},ui.lp(4,4))
+                body.addView(ui.secondaryButton("Copy"){copyOut(text)},ui.lp(4,8))
+                show(root) } }
+        catch(e:Exception){ runOnUiThread{ toast(AiErrors.message(e)) } } } }
+    private fun remindDeadline(title:String,due:String){ if(android.os.Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),41)
+        val n=DeadlineReminders.schedule(this,title,due); toast(if(n>0)"Reminders set for $due (7 days before, 1 day before and that day)." else "That date has already passed.") }
     private fun saveCase(stage:String,details:JSONObject){ val name=details.optString("situation").take(40).ifBlank{MyCaseScreens.STAGES.first{it.first==stage}.second}; val id=System.currentTimeMillis().toString()
         storeCases(listOf(JSONObject().put("id",id).put("name",name).put("stage",stage).put("details",details).put("saved_at",java.text.SimpleDateFormat("MMM d, yyyy",java.util.Locale.US).format(java.util.Date())))+savedCases().take(19)); toast("Case saved on this phone.") }
     private fun cites(arr:JSONArray?)=(0 until (arr?.length()?:0)).mapNotNull{i->arr!!.optJSONObject(i)?.let{o->GaScreens.LoopholeCite(noAsOf(o.optString("citation")),clean(o.optString("title")),clean(o.optString("source_url")).ifBlank{null})}}

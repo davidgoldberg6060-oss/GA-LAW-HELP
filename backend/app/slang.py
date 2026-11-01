@@ -7,6 +7,7 @@ from __future__ import annotations
 import re
 
 SLANG: tuple[tuple[str, str], ...] = (
+    (r"caught a body|catch(ing)? a body|\bbodied\b|smoked (him|her|them|somebody|someone|a (dude|man|guy))|dropped (him|her|them|somebody|someone)|\bmerked\b|\bwhacked\b|\bpopped (him|her|them|somebody|someone)\b|lit (him|her|them) up", "killed someone homicide murder"),
     (r"locked up|lock(ed)? me up|booked|jail ?time|in jail|behind bars|catch(ing)? a case|caught a case", "arrest criminal charge sentence"),
     (r"(i'?m|i am|currently|been|still) (in|locked up in|stuck in) (prison|jail|a cell)|incarcerat|\binmates?\b|\bmy cell\b|cell ?block|\bco'?s\b|\bguards?\b|solitary|the hole|commissary|grievance|state pen", "inmate prison conditions sheriff corrections"),
     (r"no (water|food|bed|mattress|blanket|medical|doctor|meds|medication)|not feeding|starv|denied (medical|my meds)", "necessities food water medical treatment"),

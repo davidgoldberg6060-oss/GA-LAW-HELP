@@ -20,6 +20,8 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # Jail / prison conditions (sections confirmed present in the DB 2026-11-01).
     (PRISON, ("42-4-4", "42-4-32", "42-5-2", "42-5-58", "42-5-52", "42-4-31")),
     # Criminal / everyday questions (matched on the question plus slang-derived plain terms).
+    (r"murder|homicide|manslaughter|\bkill(ed|ing)? (someone|somebody|a (man|guy|dude|person)|him|her|them)\b|\bshot (someone|somebody|a (man|guy|dude|person)|him|her|them)\b",
+     ("16-3-21", "16-3-24.2", "16-3-23.1", "16-3-20", "16-3-23", "16-5-1", "16-5-2", "16-5-3", "17-6-1")),
     (r"self defense|justification|use of force|stand your ground", ("16-3-21", "16-3-24.2", "16-3-23.1", "16-3-20")),
     (r"fight|battery|assault|affray", ("16-5-20", "16-5-21", "16-5-23", "16-5-23.1", "16-5-24", "16-11-32")),
     (r"shoplift", ("16-8-14", "16-8-2")),

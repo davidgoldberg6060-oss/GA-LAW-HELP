@@ -237,7 +237,7 @@ def _deadline(rule, dates: dict, today: date) -> dict | None:
             "label": ("Likely passed" if left < 0 else f"{left} days left") + (" (estimate)" if approx else "")}
 
 
-def build_guide(db, *, stage: str, details: dict | None = None, today: date | None = None, exists=None) -> dict:
+def build_guide(db, *, stage: str, details: dict | None = None, today: date | None = None, exists=None, answers: dict | None = None) -> dict:
     from .models import LegalAuthority
     from .answer_format import short_title
     if stage not in OPTIONS:
@@ -266,10 +266,16 @@ def build_guide(db, *, stage: str, details: dict | None = None, today: date | No
         options.append(item)
         if dl:
             timeline.append({"title": o["title"], **dl})
+    from .motions import motions_for
+    motions, questions = motions_for(stage, issues, answers or {}, lookup, lambda r: _deadline(r, dates, today))
+    for m in motions:
+        m["what"] = _third_person(m["what"])
+        if m["deadline_status"] and not any(t["title"] == m["title"] for t in timeline):
+            timeline.append({"title": m["title"], **m["deadline_status"]})
     options.sort(key=lambda x: (not x["highlight"], x["deadline_status"]["passed"] if x["deadline_status"] else False))
     timeline.sort(key=lambda t: t["due"])
     laws, seen = [], set()
-    for o in options:
+    for o in options + motions:
         for c in o["citations"]:
             if c["citation"] not in seen:
                 seen.add(c["citation"]); laws.append(c)
@@ -278,6 +284,7 @@ def build_guide(db, *, stage: str, details: dict | None = None, today: date | No
         if o.get("where"): o["where"] = _third_person(o["where"])
     return {"stage": stage, "stage_label": STAGE_LABELS[stage],
             "next_steps": NEXT_STEPS[stage], "family_tips": FAMILY_TIPS[stage],
+            "motions": motions, "questions": questions,
             "options": options,
             "timeline": timeline, "laws_cited": laws, "resources": RESOURCES, "disclaimer": DISCLAIMER,
             "stages": [{"key": k, "label": v} for k, v in STAGES]}
