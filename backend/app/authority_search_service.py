@@ -190,12 +190,19 @@ def search_vector_ready(db: Session) -> bool:
         return _SV_STATE["ready"]
     from sqlalchemy import text as sql_text
     try:
-        with db.begin_nested():
-            ready = bool(db.execute(sql_text(
-                "SELECT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid = to_regclass(:name) AND indisvalid)"
-            ), {"name": f"public.{SEARCH_VECTOR_INDEX}"}).scalar())
-    except Exception:
-        ready = False
+        ready = bool(db.execute(sql_text(
+            "SELECT EXISTS (SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid "
+            f"WHERE c.relname = '{SEARCH_VECTOR_INDEX}' AND i.indisvalid)"
+        )).scalar())
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("search_vector readiness check failed: %s", exc)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        _SV_STATE.update(checked_at=now - _SV_TTL_SECONDS + 30, ready=False)
+        return False
     _SV_STATE.update(checked_at=now, ready=ready)
     return ready
 
