@@ -80,7 +80,7 @@ export default function MyCase({api, onCivil, onAsk, initial}: {api: string; onC
           {guide.timeline.length > 0 && <div className="mcTimeline"><h3>Deadline timeline</h3>{guide.timeline.map((t) => <p key={t.title}><b>{t.due}</b> · {t.title} <span className={t.passed ? 'passed' : ''}>{t.label}</span></p>)}<small>Estimates from the dates entered. Confirm every deadline with a lawyer.</small></div>}
           <h3>Motions &amp; filings that may apply</h3>
           {guide.options.map((o) => <article key={o.key} className={'mcOption' + (o.highlight ? ' gold' : '')}>
-            {o.highlight && <small className="mcMatch">MATCHES WHAT WAS DESCRIBED</small>}
+            {o.highlight && <small className="mcMatch">MATCHES THE DESCRIPTION</small>}
             <h4>{o.title}</h4><p>{o.what}</p>
             {o.deadline && <p className={'mcDeadline' + (o.deadline_status?.passed ? ' passed' : '')}>⏰ Deadline: {o.deadline}{o.deadline_status ? ` (${o.deadline_status.label})` : ''}</p>}
             {o.where && <p className="mcWhere">Where to file: {o.where}</p>}

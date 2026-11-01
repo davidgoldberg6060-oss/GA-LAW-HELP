@@ -111,7 +111,7 @@ object MyCaseScreens {
         val opts = g.optJSONArray("options") ?: JSONArray()
         for (i in 0 until opts.length()) { val o = opts.getJSONObject(i)
             box.addView(card(o.optBoolean("highlight")).apply {
-                if (o.optBoolean("highlight")) addView(ui.text("MATCHES WHAT YOU DESCRIBED", 11f, GaUi.GOLD, ui.sansBold))
+                if (o.optBoolean("highlight")) addView(ui.text("MATCHES THE DESCRIPTION", 11f, GaUi.GOLD, ui.sansBold))
                 addView(ui.text(o.optString("title"), 16f, GaUi.WHITE, ui.sansMedium))
                 addView(ui.text(o.optString("what"), 14f, GaUi.TEXT).apply { setPadding(0, dp(4), 0, 0) })
                 o.optString("deadline").takeIf { it.isNotBlank() && it != "null" }?.let { d ->
