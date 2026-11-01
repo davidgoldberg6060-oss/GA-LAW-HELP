@@ -212,8 +212,10 @@ def trim_to_last_sentence(text: str) -> str:
 last_model_used = threading.local()
 
 
-def _ask_gemini(provider: dict, question: str, speed: str | None = None, model_override: str | None = None) -> str:
+def _ask_gemini(provider: dict, question: str, speed: str | None = None, model_override: str | None = None, timeout_cap: float | None = None) -> str:
     profile = _gemini_profile(question, provider["default_model"], speed)
+    if timeout_cap:
+        profile["timeout"] = max(5.0, min(profile["timeout"], timeout_cap))
     model = model_override or profile["model"]
     generation_config = {"maxOutputTokens": profile["max_output_tokens"]}
     if profile["thinking_level"] and not model.startswith("gemini-2."):  # 2.x models use thinkingBudget, not thinkingLevel
@@ -315,6 +317,8 @@ def _try_model(key: str, call):
         return None
     except RuntimeError as exc:
         logger.warning("AI model failed: model=%s error=%s", key, exc)
+        if "timed out" in str(exc):
+            ai_models.mark_cooldown(key, 90.0, "timeout")
         return None
 
 
@@ -326,10 +330,14 @@ def ask_openai(question: str, speed: str | None = None) -> str:
     gemini = _gemini_provider()
     kind = _chain_kind(question, speed)
     if gemini["api_key"]:
+        # Leave time for the free fallback providers: Gemini may use ~60% of the budget, and one slow
+        # model can't eat it all (a timeout also puts that model on a short cooldown).
+        gemini_budget = budget * 0.6
         for model in ai_models.gemini_chain(kind):
-            if time.monotonic() - started > budget:
+            left = gemini_budget - (time.monotonic() - started)
+            if left < 5:
                 break
-            text = _try_model("gemini:" + model, lambda m=model: _ask_gemini(gemini, question, speed, model_override=m))
+            text = _try_model("gemini:" + model, lambda m=model, cap=min(left, 25.0): _ask_gemini(gemini, question, speed, model_override=m, timeout_cap=cap))
             if text:
                 return _answered("gemini:" + model, started, text)
     for provider in ai_models.compat_providers():

@@ -117,7 +117,7 @@ _STYLE=("Write in plain, friendly English a non-lawyer understands (about 200-35
 
 _PRACTICAL=("Always give concrete, practical help even when no law section fits. Common situations: "
  "SELF-DEFENSE / FIGHT CHARGES: Georgia law recognizes self-defense and allows a pretrial hearing to ask for immunity from prosecution; get a criminal defense lawyer or public defender right away; don't discuss the incident with police or anyone else without your lawyer; save evidence (photos of injuries, witnesses, video). "
- "JAIL OR PRISON CONDITIONS (no water, food, bed, medical care): file a written grievance and keep copies; ALWAYS include as its own step: put in a written sick-call (medical) request and keep a copy, and if it is ignored, file a grievance about it; have family contact the facility and the Georgia Department of Corrections ombudsman; contact the Southern Center for Human Rights, ACLU of Georgia, or legal aid; in general terms, the U.S. Constitution's Eighth Amendment protects against inhumane conditions and federal civil-rights law (42 U.S.C. § 1983) can allow a lawsuit; in an emergency tell staff right away and have family call the facility. "
+ "JAIL OR PRISON CONDITIONS (no water, food, bed, medical care): file a written grievance and keep copies; put in a written sick-call (medical) request and keep a copy (a grievance if it is ignored); have family contact the facility and the Georgia Department of Corrections ombudsman; contact the Southern Center for Human Rights, ACLU of Georgia, or legal aid; in general terms, the U.S. Constitution's Eighth Amendment protects against inhumane conditions and federal civil-rights law (42 U.S.C. § 1983) can allow a lawsuit; in an emergency tell staff right away and have family call the facility. "
  "You may mention these general federal protections by name, but never quote or number Georgia sections that are not listed.")
 
 def _headings(spec):return "; ".join(label for _,label in spec)
@@ -169,7 +169,7 @@ SICK_CALL_STEP="• Put in a written sick-call (medical) request and keep a copy
 def ensure_sick_call(analysis:str,query:str)->str:
  """Jail/prison-conditions answers always carry the written medical-request step."""
  from .civil_topics import PRISON
- if not re.search(PRISON,query or "",re.I) or re.search(r"(?i)sick[- ]call|medical request|request medical",analysis):return analysis
+ if not re.search(PRISON,query or "",re.I) or not re.search(r"(?i)water|food|eat|bed|medical|medicine|sick|doctor|nurse|hurt|injur|pain|condition|cold|heat|mold|sanitation",query or "") or re.search(r"(?i)sick[- ]call|medical request|request medical",analysis):return analysis
  lines=analysis.split("\n")
  for i,l in enumerate(lines):
   if l.strip().lower()=="steps you can take":lines.insert(i+1,SICK_CALL_STEP);return "\n".join(lines)
