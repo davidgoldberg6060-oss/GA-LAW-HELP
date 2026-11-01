@@ -275,6 +275,7 @@ def build_guide(db, *, stage: str, details: dict | None = None, today: date | No
                 seen.add(c["citation"]); laws.append(c)
     for o in options:  # neutral wording: works whether the case is the user's or someone else's
         o["what"] = _third_person(o["what"]); o["title"] = _third_person(o["title"])
+        if o.get("where"): o["where"] = _third_person(o["where"])
     return {"stage": stage, "stage_label": STAGE_LABELS[stage],
             "next_steps": NEXT_STEPS[stage], "family_tips": FAMILY_TIPS[stage],
             "options": options,

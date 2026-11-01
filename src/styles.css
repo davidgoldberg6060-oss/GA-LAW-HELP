@@ -104,7 +104,7 @@
 .lawAccordion{list-style:none;padding:0;margin:.75rem 0;display:grid;gap:.5rem}
 .lawAccordion li{border:1px solid rgba(77,171,255,.35);border-radius:10px;background:rgba(10,26,45,.85)}
 .lawAccordion button{all:unset;cursor:pointer;display:flex;gap:.25rem;align-items:baseline;width:calc(100% - 1.5rem);padding:.65rem .75rem;color:#e2eaf3}
-.lawAccordion button b{color:#4dabff}.lawAccordion button i{margin-left:auto;font-style:normal;color:#e6be5c}
+.lawAccordion button b{color:#4dabff;white-space:nowrap}.lawAccordion button i{margin-left:auto;font-style:normal;color:#e6be5c}
 .lawText{padding:0 .75rem .75rem}.lawText h4{margin:.25rem 0 .5rem;color:#fff}
 .lawScroll{max-height:420px;overflow-y:auto;padding-right:.5rem;line-height:1.55}
 .lawScroll p{margin:0 0 .6rem}.lawText small{display:block;color:#a0b4c9;margin-top:.5rem}
