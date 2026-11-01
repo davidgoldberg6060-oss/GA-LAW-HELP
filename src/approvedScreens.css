@@ -22,3 +22,4 @@ html[data-theme="light"] body{background:#f4f7fb;color:#102033}
 .approvedUser,.approvedAssistant{margin:0;padding:.55rem .7rem;border-radius:12px}
 .approvedUser{background:#0a273e}
 .approvedAssistant{background:#02111d;border:1px solid #e2b54e}
+.approvedChatDelete{background:none;border:0;color:#3cbeff;font-size:.8rem;cursor:pointer;padding:0 .2rem;text-decoration:underline}

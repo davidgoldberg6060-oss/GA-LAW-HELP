@@ -21,7 +21,7 @@ GA.LAW.HELP is an app that gives general information about Georgia law. It is no
 ### Stored only on your phone
 - Your sign-in session, kept in Android encrypted storage.
 - Your language choice, recent Georgia law searches, and the name and phone number you type on the Profile screen. These are not sent to our server.
-- Talk to Me conversations are kept only while the app is open unless you choose to save them to a case.
+- Talk to Me and Case Chat conversations are kept only on your phone while the app is open unless you choose to save them to a case. Our server does not store chat messages; it only receives the recent messages sent with each new question so the AI can answer.
 
 ### Microphone
 The app asks for microphone access only when you tap the microphone button. Speech is turned into text by your phone's built-in speech recognition, and only the resulting text is used. The app does not record in the background.
@@ -48,6 +48,7 @@ Connections to the server use HTTPS. Passwords are hashed, sign-in tokens are ha
 ## Keeping and deleting your data
 Your data is kept until you delete it or delete your account.
 - You can delete individual saved research notes inside a case.
+- **Delete chat messages:** in Talk to Me or Case Chat, press and hold any message (your question or the AI's answer) and choose Delete, or tap Clear chat to delete the whole conversation. Deleted messages are removed from the chat and are never sent to the AI again. On the website, use the Delete link next to a message or Clear chat.
 - **Delete your data without an account:** in the app, open Account › Delete my data. This permanently removes your device's anonymous record and everything saved to it, the same way account deletion does.
 - **Delete your account:** in the app, open Settings › Privacy & Security › Delete Account. You must enter your password and type DELETE. This permanently removes your account, all of your cases, notes, timeline events, analyses, uploaded files and sign-in tokens from our server. It cannot be undone. One anonymous record that an account was deleted is kept for security, with no user ID or email.
 - **Clear App Data** in Settings removes the information stored on your phone but does not delete your account.

@@ -90,14 +90,24 @@ object GaScreens {
 
     // ---------------- Talk to Me ----------------
     class Chat(val root: View, val messages: LinearLayout, val input: EditText, private val ui: GaUi, private val scroll: ScrollView) {
-        fun bot(text: String, time: String) = add(text, time, false)
-        fun user(text: String, time: String) = add(text, time, true)
+        /** Long-press on a message bubble (id from [ChatTranscript]). 0 = greeting, not deletable. */
+        var onMessageLongPress: ((Long) -> Unit)? = null
+        /** "Clear chat" action in the chat header. */
+        var onClearChat: (() -> Unit)? = null
+        private var last: LinearLayout? = null
+        fun bot(text: String, time: String, id: Long = 0L) = add(text, time, false, id)
+        fun user(text: String, time: String, id: Long = 0L) = add(text, time, true, id)
         /** Append an extra card (e.g. the lawyer take) under the latest answer. */
-        fun attach(v: View) { messages.addView(v, ui.lp(8, 2)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
+        fun attach(v: View) { (last ?: messages).addView(v, ui.lp(8, 2)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
         /** Share / Copy row under the latest answer. */
-        fun actions(onShare: () -> Unit, onCopy: () -> Unit) { messages.addView(shareRow(ui, onShare, onCopy, indent = true)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
-        private fun add(text: String, time: String, mine: Boolean) {
+        fun actions(onShare: () -> Unit, onCopy: () -> Unit) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
+        /** Removes one message (bubble, time, cards and actions) from the screen. */
+        fun remove(id: Long) { if (id == 0L) return; (0 until messages.childCount).map { messages.getChildAt(it) }.filter { it.tag == "msg:$id" }.forEach { messages.removeView(it) }; if (last?.tag == "msg:$id") last = null }
+        /** Removes every user/AI message, keeping only the greeting. */
+        fun clearMessages() { (0 until messages.childCount).map { messages.getChildAt(it) }.filter { (it.tag as? String)?.startsWith("msg:") == true && it.tag != "msg:0" }.forEach { messages.removeView(it) }; last = null }
+        private fun add(text: String, time: String, mine: Boolean, id: Long) {
             val dp = ui::dp
+            val group = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; tag = "msg:$id" }
             val row = LinearLayout(ui.context).apply { orientation = LinearLayout.HORIZONTAL; gravity = if (mine) Gravity.END else Gravity.START }
             if (!mine) {
                 val avatar = FrameLayout(ui.context).apply {
@@ -107,12 +117,15 @@ object GaScreens {
                 row.addView(avatar, LinearLayout.LayoutParams(dp(38), dp(38)).apply { rightMargin = dp(10) })
             }
             val bubble = ui.text(text, 15f, GaUi.TEXT).apply {
-                setPadding(dp(14), dp(11), dp(14), dp(11)); setLineSpacing(0f, 1.15f); setTextIsSelectable(true)
+                setPadding(dp(14), dp(11), dp(14), dp(11)); setLineSpacing(0f, 1.15f)
                 background = if (mine) ui.glowCard(Color.argb(235, 14, 34, 58), GaUi.STROKE_SOFT, 12, glow = false) else ui.glowCard(Color.argb(235, 12, 40, 72), GaUi.STROKE, 12, glow = false)
+                if (id != 0L) { isLongClickable = true; contentDescription = (if (mine) "Your message" else "GA.LAW.HELP answer") + ". Long-press for Copy, Share or Delete."; setOnLongClickListener { onMessageLongPress?.invoke(id); true } }
             }
             row.addView(bubble, LinearLayout.LayoutParams(0, -2, 1f).apply { if (mine) leftMargin = dp(56) })
-            messages.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
-            messages.addView(ui.text(time, 11f, GaUi.MUTED, null, if (mine) Gravity.END else Gravity.START).apply { setPadding(if (mine) 0 else dp(48), dp(4), dp(4), 0) })
+            group.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+            group.addView(ui.text(time, 11f, GaUi.MUTED, null, if (mine) Gravity.END else Gravity.START).apply { setPadding(if (mine) 0 else dp(48), dp(4), dp(4), 0) })
+            messages.addView(group, LinearLayout.LayoutParams(-1, -2))
+            last = group
             scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
         }
     }
@@ -138,6 +151,8 @@ object GaScreens {
         val body = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(4), dp(18), dp(12)) }
         body.addView(ui.title(title))
         body.addView(ui.subtitle(subtitle))
+        lateinit var chat: Chat
+        body.addView(ui.text("Clear chat", 13.5f, Color.rgb(60, 190, 255), ui.sansMedium, Gravity.END).apply { setPadding(0, dp(2), 0, dp(4)); isClickable = true; contentDescription = "Clear chat"; setOnClickListener { chat.onClearChat?.invoke() } }, LinearLayout.LayoutParams(-1, -2))
         val messages = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL }
         body.addView(messages)
         val scroll = ScrollView(ui.context).apply { isFillViewport = true; addView(body) }
@@ -166,7 +181,8 @@ object GaScreens {
         inputRow.addView(send, LinearLayout.LayoutParams(dp(56), -1))
         shell.addView(inputRow, LinearLayout.LayoutParams(-1, dp(54)).apply { setMargins(dp(16), 0, dp(16), dp(10)) })
         shell.addView(bottomNav(ui, nav, tab))
-        return Chat(shell, messages, input, ui, scroll)
+        chat = Chat(shell, messages, input, ui, scroll)
+        return chat
     }
 
     // ---------------- My Cases ----------------
