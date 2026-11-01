@@ -29,6 +29,8 @@ END $$;
 -- The old expression index is superseded (the app no longer uses that expression). Drop it
 -- first so its space is free for the new index build (the volume is small).
 DROP INDEX CONCURRENTLY IF EXISTS ix_legal_authorities_fulltext;
+-- Recycle WAL left by the backfill (frees up to max_wal_size of disk before the build).
+CHECKPOINT;
 -- Serial build, in memory: a parallel GIN build spills large temp files.
 SET max_parallel_maintenance_workers = 0;
 SET maintenance_work_mem = '512MB';
