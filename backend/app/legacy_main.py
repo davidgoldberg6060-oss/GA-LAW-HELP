@@ -411,7 +411,9 @@ def resend_verification(body: schemas.ResendVerificationRequest, db: Session=Dep
     return response
 
 @app.get('/me')
-def me(user=Depends(current_user)): return {'id':user.id,'email':user.email,'role':user.role,'verified_at':user.verified_at,'created_at':user.created_at}
+def me(user=Depends(current_user)):
+    anonymous=str(user.email or '').lower().endswith('@anonymous.galaw.invalid')
+    return {'id':user.id,'email':None if anonymous else user.email,'anonymous':anonymous,'role':user.role,'verified_at':user.verified_at,'created_at':user.created_at}
 
 @app.get('/cases')
 def list_cases(user=Depends(require_paid), db:Session=Depends(get_db)):

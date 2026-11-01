@@ -69,11 +69,8 @@ class GuestRightsActivity : AppCompatActivity() {
                 }
             }
         }
-        val back = gui.secondaryButton("Back to sign in") {}.apply {
-            setOnClickListener {
-                startActivity(Intent(this@GuestRightsActivity, AuthActivity::class.java))
-                finish()
-            }
+        val back = gui.secondaryButton("Back") {}.apply {
+            setOnClickListener { finish() }
         }
         listOf(title, subtitle, question, ask, answer, back).forEach { root.addView(it, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gui.dp(10) }) }
         val shell = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = gui.screenBackground() }

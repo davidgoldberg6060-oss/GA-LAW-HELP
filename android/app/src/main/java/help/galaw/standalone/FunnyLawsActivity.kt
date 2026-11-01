@@ -24,12 +24,12 @@ object FunnyGeorgiaData {
 }
 
 /** Builds the Funny & Weird Georgia Laws screen in the approved GA.LAW.HELP style (testable without an Activity). */
-class FunnyGeorgiaScreen(private val ui:GaUi, private val laws:List<FunnyLaw>, private val cases:List<FunnyCase>, private val onBack:()->Unit, private val openSource:(String)->Unit, startOnCases:Boolean=false) {
+class FunnyGeorgiaScreen(private val ui:GaUi, private val laws:List<FunnyLaw>, private val cases:List<FunnyCase>, private val onBack:()->Unit, private val openSource:(String)->Unit, startOnCases:Boolean=false, private val bottomNav:View?=null) {
     private var showCases=startOnCases; private var query=""
     private lateinit var tabsHost:FrameLayout; private lateinit var list:LinearLayout; private lateinit var count:TextView
     fun build():View {
-        val (root, body) = ui.screen(onBack, null)
-        body.addView(ui.secondaryButton("← Back"){onBack()}.apply{contentDescription="Back"}, ui.lp(4,0))
+        val (root, body) = ui.screen(onBack, bottomNav)
+        if(bottomNav==null) body.addView(ui.secondaryButton("← Back"){onBack()}.apply{contentDescription="Back"}, ui.lp(4,0))
         body.addView(ui.title("Funny & Weird Georgia Laws"))
         body.addView(ui.subtitle("Real Georgia laws and court cases that sound made up. Every card shows its citation — tap it to open the source."))
         tabsHost=FrameLayout(ui.context); body.addView(tabsHost, ui.lp(0,12,ui.dp(46)))

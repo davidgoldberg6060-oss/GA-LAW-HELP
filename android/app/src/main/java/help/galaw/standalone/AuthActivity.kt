@@ -22,7 +22,8 @@ class AuthActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         api = ApiClient(this)
-        if (api.token != null) openApp() else showAuth()
+        // Sign-in is optional (Account tab). Anonymous device sessions stay on this screen.
+        if (api.token != null && !api.isAnonymous) openApp() else showAuth()
     }
 
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
@@ -78,10 +79,7 @@ class AuthActivity : AppCompatActivity() {
                 runOnUiThread { if(result.optBoolean("verification_required")) showVerification(emailValue) else openApp() }
             }
         },8)
-        add(button("Know your rights without signing in"){
-            startActivity(Intent(this, GuestRightsActivity::class.java))
-        },8)
-        add(button("Browse Funny & Weird Georgia Laws free"){ showFreeLaws() },8)
+        add(button("Continue without an account"){ openApp() },8)
         val links=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
         links.addView(button("Verify email"){
             val emailValue=email.text.toString().trim()
@@ -92,7 +90,7 @@ class AuthActivity : AppCompatActivity() {
             if(validEmail(emailValue)) showReset(emailValue) else toast("Enter a valid email address first.")
         },LinearLayout.LayoutParams(0,-2,1f).apply{setMargins(dp(8),0,0,0)})
         add(links,8)
-        add(text("Guest rights use public research only. Sign in to store a private case. This is legal information, not a substitute for a licensed attorney. Stay calm. Do not resist, lie, or destroy evidence.",11f).apply { gravity=Gravity.CENTER; setTextColor(Color.rgb(135,158,176)) },18)
+        add(text("An account is optional. Without one, your cases are saved to this device's anonymous ID. This is legal information, not a substitute for a licensed attorney. Stay calm. Do not resist, lie, or destroy evidence.",11f).apply { gravity=Gravity.CENTER; setTextColor(Color.rgb(135,158,176)) },18)
     }
 
     private fun showVerification(email:String){

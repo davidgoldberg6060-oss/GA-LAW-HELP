@@ -21,21 +21,22 @@ import android.widget.TextView
  */
 object GaScreens {
     interface Nav {
-        fun menu(); fun home(); fun laws(); fun aiHelp(); fun documents(); fun account(); fun more(); fun legalWork()
+        fun menu(); fun home(); fun laws(); fun aiHelp(); fun documents(); fun account(); fun more(); fun legalWork(); fun funny()
     }
 
-    enum class Tab { HOME, LAWS, AI, DOCUMENTS, ACCOUNT, MORE, LEGAL_WORK }
+    enum class Tab { HOME, LAWS, AI, DOCUMENTS, ACCOUNT, MORE, LEGAL_WORK, FUNNY }
 
     fun bottomNav(ui: GaUi, nav: Nav, selected: Tab): View {
         val fourth = if (selected == Tab.LEGAL_WORK) GaUi.NavItem("legal_work", "Legal Work", R.drawable.ga_ic_description) { nav.legalWork() }
         else GaUi.NavItem("documents", "Documents", R.drawable.ga_ic_description) { nav.documents() }
         val fifth = if (selected == Tab.MORE) GaUi.NavItem("more", "More", R.drawable.ga_ic_menu) { nav.more() }
         else GaUi.NavItem("account", "Account", R.drawable.ga_ic_person) { nav.account() }
-        val key = when (selected) { Tab.HOME -> "home"; Tab.LAWS -> "laws"; Tab.AI -> "ai"; Tab.DOCUMENTS -> "documents"; Tab.ACCOUNT -> "account"; Tab.MORE -> "more"; Tab.LEGAL_WORK -> "legal_work" }
+        val key = when (selected) { Tab.HOME -> "home"; Tab.LAWS -> "laws"; Tab.AI -> "ai"; Tab.DOCUMENTS -> "documents"; Tab.ACCOUNT -> "account"; Tab.MORE -> "more"; Tab.LEGAL_WORK -> "legal_work"; Tab.FUNNY -> "funny" }
         return ui.bottomNav(listOf(
             GaUi.NavItem("home", "Home", R.drawable.ga_ic_home) { nav.home() },
             GaUi.NavItem("laws", "Laws", R.drawable.ga_ic_balance) { nav.laws() },
             GaUi.NavItem("ai", "AI Help", R.drawable.ga_ic_sms) { nav.aiHelp() },
+            GaUi.NavItem("funny", "Funny", R.drawable.ga_ic_mood) { nav.funny() },
             fourth, fifth), key, large = true)
     }
 
@@ -53,7 +54,7 @@ object GaScreens {
         "laws" -> R.drawable.ga_ic_balance; "motions" -> R.drawable.ga_ic_edit_square; "forms" -> R.drawable.ga_ic_description
         "court" -> R.drawable.ga_ic_account_balance; "rights" -> R.drawable.ga_ic_groups; "resources" -> R.drawable.ga_ic_support
         "emergency" -> R.drawable.ga_ic_warning; "payments" -> R.drawable.ga_ic_payments; "settings" -> R.drawable.ga_ic_settings
-        "profile" -> R.drawable.ga_ic_person; "loopholes" -> R.drawable.ga_ic_search; "charges" -> R.drawable.ga_ic_error; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
+        "profile" -> R.drawable.ga_ic_person; "loopholes" -> R.drawable.ga_ic_search; "charges" -> R.drawable.ga_ic_error; "funny" -> R.drawable.ga_ic_mood; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
     }
 
     fun drawer(ui: GaUi, items: List<HomeDrawerItem>, versionName: String, onSelect: (HomeDrawerItem) -> Unit, onClose: () -> Unit): View {

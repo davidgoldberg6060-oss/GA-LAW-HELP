@@ -24,6 +24,9 @@ def _delegated_ask_openai(prompt: str):
 
 _legacy_main.ask_openai = _delegated_ask_openai
 app.include_router(public_rights_router)
+from .anonymous_access import router as anonymous_router, ai_rate_limit_middleware
+app.include_router(anonymous_router)
+app.middleware('http')(ai_rate_limit_middleware)
 
 @app.middleware('http')
 async def crawler_policy_headers(request, call_next):
