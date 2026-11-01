@@ -2,6 +2,25 @@
 \timing on
 SET statement_timeout = 0;
 SET client_min_messages = warning;  -- silence "word is too long to be indexed"
+-- 0) If the stored vectors were built by an older expression version, clear them in batches and
+--    VACUUM so the freed TOAST space is reused/truncated before rebuilding.
+SELECT coalesce(col_description('legal_authorities'::regclass,
+         (SELECT attnum FROM pg_attribute WHERE attrelid = 'legal_authorities'::regclass AND attname = 'search_vector')), '')
+       IS DISTINCT FROM obj_description('legal_authority_search_vector(text,text,text)'::regprocedure, 'pg_proc') AS needs_reset \gset
+\if :needs_reset
+DROP INDEX CONCURRENTLY IF EXISTS ix_legal_authorities_search_vector;
+DO $$
+DECLARE lo bigint; maxid bigint; step int := 5000;
+BEGIN
+  SELECT coalesce(min(id),0), coalesce(max(id),0) INTO lo, maxid FROM legal_authorities;
+  WHILE lo <= maxid LOOP
+    UPDATE legal_authorities SET search_vector = NULL WHERE id >= lo AND id < lo + step AND search_vector IS NOT NULL;
+    COMMIT; lo := lo + step;
+  END LOOP;
+END $$;
+VACUUM legal_authorities;
+CHECKPOINT;
+\endif
 -- 1) Batched backfill (each batch commits; live reads/writes are never blocked for long).
 DO $$
 DECLARE lo bigint; hi bigint; maxid bigint; step int := 3000; n bigint;
@@ -17,6 +36,9 @@ BEGIN
   END LOOP;
 END $$;
 SELECT count(*) FILTER (WHERE search_vector IS NULL) AS still_null, count(*) AS total FROM legal_authorities;
+DO $$ BEGIN EXECUTE format('COMMENT ON COLUMN legal_authorities.search_vector IS %L',
+  obj_description('legal_authority_search_vector(text,text,text)'::regprocedure, 'pg_proc')); END $$;
+VACUUM legal_authorities;
 -- 2) Drop any invalid leftover from an interrupted concurrent build, then build concurrently.
 DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM pg_index WHERE indexrelid = to_regclass('public.ix_legal_authorities_search_vector') AND NOT indisvalid) THEN
