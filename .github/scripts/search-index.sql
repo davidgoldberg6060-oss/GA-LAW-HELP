@@ -65,6 +65,11 @@ SELECT pg_size_pretty(pg_database_size(current_database())) AS database,
 -- Serial build, in memory: a parallel GIN build spills large temp files.
 SET max_parallel_maintenance_workers = 0;
 SET maintenance_work_mem = '512MB';
-CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_legal_authorities_search_vector ON legal_authorities USING GIN (search_vector);
+-- Not CONCURRENTLY: for GIN, the concurrent validation pass sorts every posting-list TID and
+-- spills more temp space than this volume has. A plain build takes a SHARE lock, which blocks
+-- only writes (imports) to legal_authorities for about a minute; the app only reads it.
+SET lock_timeout = '30s';
+CREATE INDEX IF NOT EXISTS ix_legal_authorities_search_vector ON legal_authorities USING GIN (search_vector);
+RESET lock_timeout;
 CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_legal_authorities_type_citation ON legal_authorities (lower(authority_type), citation);
 ANALYZE legal_authorities;
