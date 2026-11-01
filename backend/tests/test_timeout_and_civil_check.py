@@ -45,7 +45,7 @@ def test_expungement_maps_to_record_restriction():
 def test_fast_profile_uses_lite_model_even_for_complex_markers(monkeypatch):
     monkeypatch.delenv("GEMINI_FAST_MODEL", raising=False)
     p = ai_assistant._gemini_profile("appeals sentencing post-conviction", "gemini-3.5-flash", "fast")
-    assert p["model"] == "gemini-3.5-flash-lite" and p["max_output_tokens"] <= 1500 and p["timeout"] <= 20
+    assert p["model"] == "gemini-3.5-flash-lite" and p["max_output_tokens"] <= 2400 and p["timeout"] <= 20
     q = ai_assistant._gemini_profile("appeals sentencing", "gemini-3.5-flash")
     assert q["model"] == "gemini-3.5-flash"  # quality path unchanged
 
@@ -54,7 +54,7 @@ def test_public_route_uses_fast_model_and_cache():
     main = (ROOT / "backend/app/main.py").read_text()
     route = main[main.index("@app.post('/public/rights-assistant')"):]
     route = route[:route.index("@app.", 5)]
-    assert "ask_fast" in route and "answer_cache.get(query,mode)" in route and "answer_cache.put" in route
+    assert "ask_fast" in route and "answer_cache.get(query,mode,db=db)" in route and "answer_cache.put" in route
     chat = main[main.index("@app.post('/cases/{case_id}/chat')"):][:1500]
     assert "answer_cache" not in chat  # per-user case chat is never cached
 

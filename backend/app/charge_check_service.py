@@ -17,7 +17,8 @@ from __future__ import annotations
 import json
 import re
 
-from .grounded_legal_assistant import _authority_context, _verified_hits
+from .grounded_legal_assistant import _authority_context, _verified_hits, used_in_text
+import json as _json
 from .loophole_analysis_service import _norm, _parse_obj, validate_lawyer_take
 
 MAX_SITUATION_CHARS = 4000
@@ -262,15 +263,21 @@ def analyze_charge_check(situation: str, ask_ai, db=None, *, case_summary: str |
     if not offense:
         return {**result, "message": NONE_FOUND,
                 "authorities": [_cite_view(h) for h in verified], "grounded_authority_count": len(verified)}
-    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(verified))))
+    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(offense + [h for h in verified if h not in offense]))))
     kept, dropped = validate_charge_check(data, verified)
     take = validate_lawyer_take(data.get("lawyer_take"), verified)
     if take and is_evasion(take["text"]):
         take = None
     result = with_amendment_note(result, verified)
     return {**result, **kept, "message": None if kept["charges"] else NONE_FOUND, "lawyer_take": take,
-            "authorities": [_cite_view(h) for h in verified], "dropped_items": dropped,
+            "authorities": [_cite_view(h) for h in _used(verified, kept, take)], "dropped_items": dropped,
             "grounded_authority_count": len(verified)}
+
+
+def _used(verified, kept, take):
+    """Only the verified authorities the kept analysis actually cites."""
+    blob = _json.dumps([kept, take], default=str)
+    return [h for h in verified if used_in_text(h, blob)]
 
 
 def charge_check_note_text(result: dict) -> str:
