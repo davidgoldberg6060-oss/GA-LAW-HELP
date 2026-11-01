@@ -2,6 +2,7 @@ import React,{FormEvent,useEffect,useRef,useState}from'react';
 import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint,Eye,EyeOff,Upload}from'lucide-react';
 import{guestEncounterReply,guestRightsAndEncounter}from'./guestPublic';
 import ApprovedScreens from './ApprovedScreens';
+import FunnyGeorgia from './FunnyGeorgia';
 import './approvedScreens.css';
 
 const API='https://api-production-60cc.up.railway.app';
@@ -28,11 +29,6 @@ type Finding={id:number;issue:string;category:string;favors:string;analysis:stri
 type SimilarAuthority={id:number;citation:string;title:string|null;status:string;source_url:string|null;match_score:number;verified_versions:Array<{id:number;source_url:string;verification_status:string}>};
 type EvidenceItem={id:number;filename:string;media_type:string;bytes:number;sha256:string;uploaded_at:string;verified_at:string|null;original_preserved:boolean};
 const emptyCase=():CaseForm=>({title:'',case_number:'',county:'',case_type:'criminal',stage:'investigation',narrative:''});
-const funFacts=[
-{title:'Why old laws can sound strange',text:'Georgia law has been revised for generations. Some rules that sound funny online may be outdated, local, misquoted, or missing important context.'},
-{title:'Myth or real law?',text:'GA.LAW.HELP separates viral “weird law” claims from rules that can be traced to an official source.'},
-{title:'Learn before you log in',text:'Public legal-learning features are available without an account. An account is only needed for private work such as saved cases and evidence.'}
-];
 
 type ScenarioKey='traffic'|'public'|'home'|'questioning'|'arrest'|'witness';
 const scenarios:Record<ScenarioKey,{label:string;title:string;tips:string[];phrases:string[]}>={
@@ -512,8 +508,8 @@ export default function App(){
    <button className="toolCard" onClick={()=>openRights()}><ShieldAlert/><span><h3>Know My Rights</h3><p>Choose a situation and see calm, practical safety steps in plain language.</p></span><ChevronRight/></button>
    <button className="toolCard premiumCard" onClick={openPolice}><Car/><span><b className="premiumLabel"><ShieldCheck size={13}/> FREE WITH ACCOUNT</b><h3>Help Me Talk to Police</h3><p>Listen, suggest and read respectful responses aloud.</p></span><ChevronRight/></button>
   </section>
-  <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse as a guest. Claims should be verified against an official source before being presented as current law.</p></div></div>
-   <div className="funGrid">{funFacts.map(x=><article key={x.title}><h3>{x.title}</h3><p>{x.text}</p></article>)}</div></section>
+  <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse free as a guest: real Georgia laws and court cases that sound made up, each with its citation and source.</p></div></div>
+   <FunnyGeorgia/></section>
   <button className="encounterFab" onClick={()=>{setScenario('traffic');openPolice()}}><ShieldAlert size={20}/><span><b>Encounter Help</b><small>Open safety mode</small></span></button>
   {tool&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)closeTool()}}><section className="toolModal" role="dialog" aria-modal="true" aria-label={tool==='avoid'?'Avoid trouble':tool==='case'?'Private case assistant':'Help me talk to police'}>
    <button className="close" onClick={closeTool} aria-label="Close"><X/></button>

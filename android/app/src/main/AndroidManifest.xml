@@ -7,6 +7,7 @@
         <activity android:name=".GeorgiaLawsActivity" android:exported="false" />
         <activity android:name=".InternalLegalSearchActivity" android:exported="false" />
         <activity android:name=".GuestRightsActivity" android:exported="false" />
+        <activity android:name=".FunnyLawsActivity" android:exported="false" />
         <activity android:name=".AuthActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

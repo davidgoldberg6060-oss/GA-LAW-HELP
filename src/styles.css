@@ -98,3 +98,4 @@
 
 .paywallModal{width:min(540px,100%);background:linear-gradient(150deg,#10243a,#091421);border-color:#477ba8}.paywallModal>.eyebrow{display:block;margin-top:12px}.paywallActions{display:flex;gap:9px;margin-top:18px}.paywallActions button{flex:1}.membershipStatus{display:flex;align-items:flex-start;gap:11px;background:#0a1929;border:1px solid #315a7d;border-radius:12px;padding:14px;margin:18px 0}.membershipStatus>svg{color:#78bcff;flex:0 0 auto}.membershipStatus span{display:grid;gap:4px}.membershipStatus small{color:#8298ad;line-height:1.4}
 @media(max-width:520px){.paywallActions{flex-direction:column}}
+.funnySearch{width:100%;background:#07111e;border:1px solid #2e4a67;color:white;border-radius:10px;padding:12px;font-size:16px;margin:0 0 16px}.funGrid small{color:#7fbaff;text-transform:uppercase;font-size:11px;letter-spacing:.08em}.funGrid a{color:#67adf6;display:inline-block;margin-top:10px}.funnyNote{color:#718398;font-size:13px;margin-top:16px}
