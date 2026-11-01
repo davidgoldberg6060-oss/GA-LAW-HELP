@@ -83,7 +83,7 @@ def test_gemini_request_shape_and_text(monkeypatch):
 def test_gemini_empty_response_raises(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "g-test")
     monkeypatch.setattr(ai_assistant.urllib.request, "urlopen", lambda r, timeout: FakeResponse({"candidates": [{"finishReason": "SAFETY"}]}))
-    with pytest.raises(RuntimeError, match="empty"):
+    with pytest.raises(RuntimeError, match="unavailable"):
         ai_assistant.ask_openai("hi")
 
 
@@ -100,7 +100,7 @@ def test_gemini_429_falls_back_to_openai(monkeypatch):
 
     monkeypatch.setattr(ai_assistant.urllib.request, "urlopen", fake_urlopen)
     assert ai_assistant.ask_openai("hi") == "openai answer"
-    assert len(calls) == 3  # 429: one retry on the same model, then fallback
+    assert calls[-1].endswith('/responses') and len(calls) >= 2  # 429 rotates the Gemini chain, then OpenAI
 
 
 def test_gemini_429_without_fallback_raises_runtime_error(monkeypatch):

@@ -7,6 +7,8 @@ import socket
 import urllib.error
 import urllib.request
 
+from . import ai_models
+
 OPENAI_URL = "https://api.openai.com/v1/responses"
 XAI_URL = "https://api.x.ai/v1/responses"
 logger = logging.getLogger(__name__)
@@ -136,6 +138,7 @@ def _http_post_json(provider: dict, model: str, url: str, payload: dict, headers
         logger.error("AI provider HTTP failure: provider=%s status=%s model=%s %s", provider["name"], exc.code, model, _provider_error_summary(detail))
         err = ProviderHTTPError("AI provider request failed", exc.code)
         err.detail = detail[:2000]
+        err.retry_after = (exc.headers.get("Retry-After") if exc.headers else None)
         raise err from exc
     except urllib.error.URLError as exc:
         reason_type = type(getattr(exc, "reason", None)).__name__
@@ -206,7 +209,6 @@ def trim_to_last_sentence(text: str) -> str:
     return text[:nl].rstrip() if nl >= len(text) * 0.4 else text + "…"
 
 
-RATE_LIMIT_BACKOFF_SECONDS = float(os.getenv("AI_RATE_LIMIT_BACKOFF_SECONDS", "1.5"))
 last_model_used = threading.local()
 
 
@@ -256,52 +258,112 @@ def _ask_gemini(provider: dict, question: str, speed: str | None = None, model_o
     return text
 
 
-def _ask_provider(provider: dict, question: str, speed: str | None = None) -> str:
-    if provider["name"] != "gemini":
-        text = _ask_responses_api(provider, question)
-        last_model_used.value = provider["name"] + ":" + _request_profile(question, provider["default_model"])["model"]
-        logger.info("AI answered: provider=%s model=%s", provider["name"], last_model_used.value)
-        return text
-    primary = _gemini_profile(question, provider["default_model"], speed)["model"]
-    lite = os.getenv("GEMINI_FAST_MODEL", GEMINI_FAST_DEFAULT_MODEL).strip() or GEMINI_FAST_DEFAULT_MODEL
-    # On 429: retry the same model once after a short backoff, then the lite model (separate quota).
-    attempts = [(primary, 0.0), (primary, RATE_LIMIT_BACKOFF_SECONDS)]
-    if lite != primary:
-        attempts.append((lite, 0.0))
-    last = None
-    for model, delay in attempts:
-        if delay:
-            time.sleep(delay)
-        try:
-            text = _ask_gemini(provider, question, speed, model_override=model)
-            last_model_used.value = "gemini:" + model
-            logger.info("AI answered: provider=gemini model=%s", model)
-            return text
-        except ProviderHTTPError as exc:
-            last = exc
-            if exc.status != 429:
-                raise
-            logger.warning("Gemini 429 on model=%s; trying next option", model)
-    raise last
+def _ask_compat(provider: dict, model: str, question: str, speed: str | None) -> str:
+    """OpenAI-compatible chat-completions call (Groq, OpenRouter, Cerebras, Mistral, GitHub Models...)."""
+    fast = speed == "fast" or (speed != "quality" and not _is_complex_legal_request(question))
+    data = _http_post_json(
+        provider, model, provider["url"],
+        {"model": model, "max_tokens": 2400 if fast else 4096,
+         "messages": [{"role": "system", "content": SYSTEM_INSTRUCTIONS}, {"role": "user", "content": question}]},
+        {"Authorization": "Bearer " + provider["api_key"], "Content-Type": "application/json"},
+        20.0 if fast else 55.0,
+    )
+    choice = (data.get("choices") or [{}])[0] or {}
+    text = ((choice.get("message") or {}).get("content") or "").strip()
+    if text and choice.get("finish_reason") == "length" and not question.lstrip().startswith("{"):
+        text = trim_to_last_sentence(text)
+    if not text:
+        raise RuntimeError("AI provider returned an empty response")
+    return text
+
+
+def _chain_kind(question: str, speed: str | None) -> str:
+    return "check" if speed != "fast" and (speed == "quality" or _is_complex_legal_request(question)) else "chat"
+
+
+def _answered(key: str, started: float, text: str) -> str:
+    last_model_used.value = key
+    logger.info("AI answered: model=%s seconds=%.1f", key, time.monotonic() - started)
+    return text
+
+
+def _try_model(key: str, call):
+    """Run one model call; returns text or None (after putting the model on cooldown when appropriate)."""
+    if ai_models.is_cooling(key):
+        return None
+    try:
+        return call()
+    except ProviderHTTPError as exc:
+        detail = str(getattr(exc, "detail", ""))
+        if exc.status == 429 or "RESOURCE_EXHAUSTED" in detail:
+            seconds, reason = ai_models.cooldown_seconds(detail, getattr(exc, "retry_after", None))
+            ai_models.mark_cooldown(key, seconds, reason)
+        elif exc.status in (404,) or (exc.status == 400 and "not found" in detail.lower()):
+            ai_models.mark_cooldown(key, ai_models.UNAVAILABLE_COOLDOWN_SECONDS, "model unavailable")
+        elif exc.status == 400:
+            # A bad request is about the prompt, not the model: stop instead of burning every model's quota.
+            raise RuntimeError("AI provider rejected the request") from exc
+        elif exc.status in (401, 403):
+            ai_models.mark_cooldown(key, ai_models.UNAVAILABLE_COOLDOWN_SECONDS, f"auth error {exc.status}")
+        else:
+            logger.warning("AI model failed: model=%s status=%s", key, exc.status)
+        return None
+    except RuntimeError as exc:
+        logger.warning("AI model failed: model=%s error=%s", key, exc)
+        return None
 
 
 def ask_openai(question: str, speed: str | None = None) -> str:
-    """Ask the active AI provider; falls back to the next configured provider on quota/auth errors."""
-    providers = _providers()
-    if not providers:
-        logger.error("AI provider configuration failure: GEMINI_API_KEY, XAI_API_KEY and OPENAI_API_KEY are missing")
+    """Free-model rotation: Gemini chain (fastest-first for chat, quality-first for checks), then any
+    OpenAI-compatible free providers with keys set, then xAI/OpenAI. Cooling-down models are skipped."""
+    started = time.monotonic()
+    budget = float(os.getenv("AI_CHAIN_BUDGET_SECONDS", "50"))
+    gemini = _gemini_provider()
+    kind = _chain_kind(question, speed)
+    if gemini["api_key"]:
+        for model in ai_models.gemini_chain(kind):
+            if time.monotonic() - started > budget:
+                break
+            text = _try_model("gemini:" + model, lambda m=model: _ask_gemini(gemini, question, speed, model_override=m))
+            if text:
+                return _answered("gemini:" + model, started, text)
+    for provider in ai_models.compat_providers():
+        for model in provider["models"]:
+            if time.monotonic() - started > budget:
+                break
+            text = _try_model(provider["name"] + ":" + model, lambda p=provider, m=model: _ask_compat(p, m, question, speed))
+            if text:
+                return _answered(provider["name"] + ":" + model, started, text)
+    others = [p for p in _providers() if p["name"] != "gemini"]
+    for provider in others:
+        model = _request_profile(question, provider["default_model"])["model"]
+        text = _try_model(provider["name"] + ":" + model, lambda p=provider: _ask_responses_api(p, question))
+        if text:
+            return _answered(provider["name"] + ":" + model, started, text)
+    if not gemini["api_key"] and not others and not ai_models.compat_providers():
+        logger.error("AI provider configuration failure: no AI provider keys are set")
         raise RuntimeError("AI service is not configured")
-    last_error = None
-    for index, provider in enumerate(providers):
+    logger.error("AI unavailable: every model in the %s chain failed or is cooling down", kind)
+    raise RuntimeError("AI provider is temporarily unavailable")
+
+
+def probe_models() -> None:
+    """1-token liveness check of every configured Gemini model (run once in the background at startup)."""
+    gemini = _gemini_provider()
+    if not gemini["api_key"]:
+        return
+    for model in dict.fromkeys(ai_models.gemini_chain("chat") + ai_models.gemini_chain("check")):
+        key = "gemini:" + model
         try:
-            return _ask_provider(provider, question, speed)
+            _http_post_json(gemini, model, f"{gemini['url']}/{model}:generateContent",
+                            {"contents": [{"role": "user", "parts": [{"text": "hi"}]}], "generationConfig": {"maxOutputTokens": 1}},
+                            {"x-goog-api-key": gemini["api_key"], "Content-Type": "application/json"}, 15.0)
+            ai_models.record_probe(key, True, "ok")
         except ProviderHTTPError as exc:
-            last_error = exc
-            if exc.status in FALLBACK_STATUS_CODES and index + 1 < len(providers):
-                logger.warning("AI provider fallback: from=%s status=%s to=%s", provider["name"], exc.status, providers[index + 1]["name"])
-                continue
-            raise
-    raise last_error  # pragma: no cover
+            ai_models.record_probe(key, exc.status == 429, f"http {exc.status}")
+            _try_model(key, lambda e=exc: (_ for _ in ()).throw(e))
+        except RuntimeError as exc:
+            ai_models.record_probe(key, False, str(exc))
 
 
 def ask_fast(question: str) -> str:

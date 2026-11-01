@@ -360,3 +360,18 @@ def delete_my_account(body: schemas.AccountDeleteRequest, user=Depends(current_u
     if body.confirm.strip().upper() != CONFIRM_WORD: raise HTTPException(422, f'Type {CONFIRM_WORD} to confirm account deletion')
     if not _verify_password(body.password, user.password_hash): raise HTTPException(403, 'Password is incorrect')
     return delete_account(db, user)
+
+
+# ---------- AI free-model rotation status ----------
+from . import ai_models as _ai_models
+import threading as _threading
+
+@app.get('/health/ai')
+def health_ai():
+    """Cooldown / probe state of each model in the free rotation (no secrets, no prompts)."""
+    return {"status": "ok", "last_probe_note": "1-token probe runs once per process at startup", **_ai_models.status()}
+
+@app.on_event('startup')
+def _start_ai_probe():
+    if os.getenv('AI_STARTUP_PROBE','1')!='0' and os.getenv('GEMINI_API_KEY','').strip():
+        _threading.Thread(target=_ai.probe_models,daemon=True,name='ai-probe').start()

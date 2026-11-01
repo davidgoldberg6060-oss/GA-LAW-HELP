@@ -24,23 +24,50 @@ def test_max_tokens_answer_trimmed(monkeypatch):
         assert ai_assistant.ask_fast("what is a deposit") == "A full sentence here."
 
 
-def test_429_retries_then_lite(monkeypatch):
+def test_429_rotates_chain_and_cools_down(monkeypatch):
+    from app import ai_models
+    ai_models.reset()
     monkeypatch.setenv("GEMINI_API_KEY", "k")
-    for v in ("XAI_API_KEY", "OPENAI_API_KEY", "AI_PROVIDER", "GEMINI_FAST_MODEL", "GEMINI_LEGAL_MODEL", "GEMINI_MODEL"):
+    monkeypatch.setenv("GEMINI_MODEL_CHAIN", "m-a,m-b,m-c")
+    for v in ("XAI_API_KEY", "OPENAI_API_KEY", "AI_PROVIDER", "GROQ_API_KEY", "OPENROUTER_API_KEY"):
         monkeypatch.delenv(v, raising=False)
-    monkeypatch.setattr(ai_assistant, "RATE_LIMIT_BACKOFF_SECONDS", 0)
     calls = []
 
     def fake(provider, model, url, payload, headers, timeout):
         calls.append(model)
-        if model == "gemini-3.5-flash":
-            raise ai_assistant.ProviderHTTPError("quota", 429)
+        if model == "m-a":
+            e = ai_assistant.ProviderHTTPError("quota", 429); e.detail = '"retryDelay": "30s"'; raise e
+        if model == "m-b":
+            e = ai_assistant.ProviderHTTPError("quota", 429); e.detail = "GenerateRequestsPerDayPerProjectPerModel-FreeTier"; raise e
         return _resp("Answer.")
 
     with mock.patch.object(ai_assistant, "_http_post_json", side_effect=fake):
-        assert ai_assistant.ask_openai("x", speed="quality") == "Answer."
-    assert calls == ["gemini-3.5-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
-    assert ai_assistant.last_model_used.value == "gemini:gemini-3.5-flash-lite"
+        assert ai_assistant.ask_fast("x") == "Answer."
+        assert ai_assistant.ask_fast("y") == "Answer."
+    assert calls == ["m-a", "m-b", "m-c", "m-c"]  # cooling models skipped on the second request
+    assert ai_assistant.last_model_used.value == "gemini:m-c"
+    st = {r["model"]: r for r in ai_models.status()["chat_chain"]}
+    assert st["gemini:m-a"]["cooling_down"] and st["gemini:m-a"]["seconds_left"] <= 30
+    assert "daily" in st["gemini:m-b"]["reason"]
+    ai_models.reset()
+
+
+def test_compat_provider_used_only_when_key_set(monkeypatch):
+    from app import ai_models
+    ai_models.reset()
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    assert all(p["name"] != "groq" for p in ai_models.compat_providers())
+    monkeypatch.setenv("GROQ_API_KEY", "g")
+    with mock.patch.object(ai_assistant, "_http_post_json", return_value={"choices": [{"message": {"content": "Hi."}, "finish_reason": "stop"}]}):
+        assert ai_assistant.ask_fast("x") == "Hi."
+    assert ai_assistant.last_model_used.value.startswith("groq:")
+
+
+def test_daily_cooldown_until_pacific_midnight():
+    from app import ai_models
+    secs, reason = ai_models.cooldown_seconds("PerDay quota", None, now=1_793_500_000.0)
+    assert 60 <= secs <= 24 * 3600 + 600 and "Pacific" in reason
 
 
 def test_used_in_text_matches_sections_exactly():
