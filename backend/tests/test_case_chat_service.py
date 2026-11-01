@@ -144,6 +144,8 @@ def test_android_case_chat_screen_is_wired_to_the_route():
     chat = home.split("private fun sendCaseChat(", 1)[1].split("private fun ", 1)[0]
     assert "api.caseChat(caseId,text,history)" in chat
     assert "GroundedLegalResult.answer(result)" in chat and "GroundedLegalResult.authoritySummary(result)" in chat
-    assert 'put("role","user")' in chat and 'put("role","assistant")' in chat
-    assert "while(history.length()>20)history.remove(0)" in chat
+    # History is rebuilt from the on-device transcript (so deleted messages are never resent),
+    # capped at the 20 most recent turns.
+    assert 'put("role",r).put("content",m)' in chat
+    assert "t.roleHistory(20)" in chat
     assert "text.length>4000" in chat

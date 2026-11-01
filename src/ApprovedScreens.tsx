@@ -223,10 +223,31 @@ export default function ApprovedScreens(props: Props) {
                 {chat.length === 0 && <p>Ask a Georgia rights or procedure question. Answers are information, not legal advice.</p>}
                 {chat.map((line, index) => (
                   <p key={index} className={line.role === "user" ? "approvedUser" : "approvedAssistant"}>
-                    <strong>{line.role === "user" ? "You" : "Guest research"}</strong> {line.text}
+                    <strong>{line.role === "user" ? "You" : "Guest research"}</strong> {line.text}{" "}
+                    <button
+                      type="button"
+                      className="approvedChatDelete"
+                      aria-label="Delete this message"
+                      onClick={() => {
+                        if (window.confirm("Delete this message? It will be removed from this chat. This can't be undone.")) setChat((rows) => rows.filter((_, i) => i !== index));
+                      }}
+                    >
+                      Delete
+                    </button>
                   </p>
                 ))}
               </div>
+              {chat.length > 0 && (
+                <button
+                  type="button"
+                  className="approvedChatDelete"
+                  onClick={() => {
+                    if (window.confirm("Clear this chat? All messages will be deleted. This can't be undone.")) setChat([]);
+                  }}
+                >
+                  Clear chat
+                </button>
+              )}
               <label>
                 Question
                 <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Example: what should I say if I am stopped?" />
