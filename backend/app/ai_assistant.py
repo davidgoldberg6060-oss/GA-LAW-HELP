@@ -216,7 +216,7 @@ def _ask_gemini(provider: dict, question: str, speed: str | None = None, model_o
     profile = _gemini_profile(question, provider["default_model"], speed)
     model = model_override or profile["model"]
     generation_config = {"maxOutputTokens": profile["max_output_tokens"]}
-    if profile["thinking_level"]:
+    if profile["thinking_level"] and not model.startswith("gemini-2."):  # 2.x models use thinkingBudget, not thinkingLevel
         generation_config["thinkingConfig"] = {"thinkingLevel": profile["thinking_level"]}
     stripped = question.lstrip()
     if stripped.startswith("{") or "return only json" in question.lower() or "respond with json" in question.lower():
