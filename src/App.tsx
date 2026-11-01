@@ -155,6 +155,11 @@ async function authApi(path:string,options:RequestInit={}){
  }
 }
 
+/** No-login access: a random device key in localStorage maps to an anonymous server identity. */
+const DEVICE_KEY='ga_device_key';
+function deviceKey(){let k=localStorage.getItem(DEVICE_KEY);if(!k){const b=new Uint8Array(32);crypto.getRandomValues(b);k=btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');localStorage.setItem(DEVICE_KEY,k)}return k}
+async function anonymousSession(){const data=await api('/auth/anonymous',{method:'POST',body:JSON.stringify({device_key:deviceKey()})});saveSession(data.access_token,data.refresh_token);return authApi('/me')}
+
 const FREE_LAUNCH=true;
 
 export default function App(){
@@ -345,7 +350,7 @@ export default function App(){
  function stopListening(){recognitionRef.current?.stop();recognitionRef.current=null;setListening(false)}
  function closeTool(){stopRecording();stopListening();window.speechSynthesis?.cancel();setTool(null)}
  async function openCaseWorkspace(){
-  if(!user){setMode('register');setAuthOpen(true);setNotice('Create a free account or sign in to use private case tools.');return}
+  if(!user){try{setUser(await anonymousSession())}catch{setMode('register');setAuthOpen(true);setNotice('Create a free account or sign in to use private case tools.');return}}
   if(!paid){setPaywallOpen(true);return}
   setTool('case');setCaseBusy(true);
   try{const rows=await authApi('/cases');setCases(rows);if(rows.length)await selectCase(rows[0].id);else startNewCase()}
@@ -369,7 +374,7 @@ export default function App(){
  }
  async function screenMotions(){
   if(!motionFacts.trim()){setNotice('Enter the case facts, dates, charge, and current stage first.');return}
-  if(!user){setMode('register');setAuthOpen(true);setNotice('Sign in to use the private case workspace.');return}
+  if(!user){try{setUser(await anonymousSession())}catch{setMode('register');setAuthOpen(true);setNotice('Sign in to use the private case workspace.');return}}
   setMotionBusy(true);setMotionResult('');
   try{
    let id=activeCaseId;

@@ -20,7 +20,7 @@ import android.widget.ScrollView
 class ApprovedHomeScreen(private val context: Context, private val actions: Actions) {
     interface Actions {
         fun openMenu(); fun openAccount(); fun ask(question: String); fun openCases(); fun openTalkToMe()
-        fun openLegalTools(); fun openGeorgiaLaws(); fun openCourtInfo(); fun openLegalForms(); fun openCaseAnalysis()
+        fun openFunnyLaws(); fun openLegalTools(); fun openGeorgiaLaws(); fun openCourtInfo(); fun openLegalForms(); fun openCaseAnalysis()
         fun openKnowYourRights(); fun openResources(); fun openEmergency(); fun openHome(); fun openDocuments()
     }
 
@@ -54,6 +54,7 @@ class ApprovedHomeScreen(private val context: Context, private val actions: Acti
             GaUi.NavItem("home", "Home", R.drawable.ga_ic_home) { actions.openHome() },
             GaUi.NavItem("laws", "Laws", R.drawable.ga_ic_balance) { actions.openGeorgiaLaws() },
             GaUi.NavItem("ai", "AI Help", R.drawable.ga_ic_sms) { actions.openTalkToMe() },
+            GaUi.NavItem("funny", "Funny", R.drawable.ga_ic_mood) { actions.openFunnyLaws() },
             GaUi.NavItem("documents", "Documents", R.drawable.ga_ic_description) { actions.openDocuments() },
             GaUi.NavItem("account", "Account", R.drawable.ga_ic_person) { actions.openAccount() }), "home"))
         return shell

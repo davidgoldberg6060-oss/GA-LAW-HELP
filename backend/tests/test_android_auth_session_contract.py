@@ -26,9 +26,10 @@ def test_logout_revokes_refresh_token_then_clears_local_session():
     assert 'prefs.edit().clear().apply()' in source
 
 
-def test_auth_entry_does_not_open_protected_app_without_token():
+def test_optional_sign_in_screen_stays_open_for_anonymous_device_sessions():
     source = AUTH.read_text()
-    assert 'if (api.token != null) openApp() else showAuth()' in source
+    assert 'if (api.token != null && !api.isAnonymous) openApp() else showAuth()' in source
+    assert 'Continue without an account' in source
     assert 'if(validateLogin(emailValue,passwordValue)) runTask("Signing in…")' in source
 
 

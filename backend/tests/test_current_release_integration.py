@@ -28,9 +28,9 @@ def test_expired_session_has_local_cleanup_and_login_redirect():
     api = API.read_text()
     home = HOME.read_text()
     assert 'clearSession' in api
-    assert 'if(code==401&&!path.startsWith("/auth/"))expireSession()' in ''.join(api.split())
+    assert 'if(code==401&&!path.startsWith("/auth/")){expireSession();' in ''.join(api.split())
+    # Sign-in is optional and reachable from the Account tab.
     assert 'AuthActivity::class.java' in home
-    assert 'finish()' in home
 
 
 def test_free_launch_web_gate_is_disabled_but_billing_code_remains():

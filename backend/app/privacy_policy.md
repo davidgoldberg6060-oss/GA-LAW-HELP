@@ -1,6 +1,6 @@
 # GA.LAW.HELP Privacy Policy
 
-Last updated: October 29, 2026
+Last updated: October 31, 2026
 
 GA.LAW.HELP is an app that gives general information about Georgia law. It is not a law firm and does not give legal advice. This policy explains what the Android app, the website and the GA.LAW.HELP server collect, why, and how you can delete it.
 
@@ -8,6 +8,8 @@ GA.LAW.HELP is an app that gives general information about Georgia law. It is no
 
 ### If you use the app without an account
 - **Questions you type or dictate.** Guest questions (for example Know Your Rights or Georgia law searches) are sent to the GA.LAW.HELP server to search our library of Georgia law and, for some features, to an AI provider to write an answer. Guest questions are not linked to an account.
+- **Anonymous device ID.** You do not need to sign in. The first time the app opens it creates a random device key on your phone (kept in Android encrypted storage). Our server keeps only a one-way hash of it, linked to an anonymous record with no name, email or phone number. This lets the app save your cases, Case Chat, Charge Check and Legal Loopholes results to your device's anonymous record, and lets us apply daily usage limits to AI features. Anything you save this way is treated like account case information below.
+- **IP address for usage limits.** To keep AI features free and prevent abuse, the server counts requests per device and per IP address for up to 24 hours in memory. These counts are not stored in our database.
 
 ### If you create an account
 - **Account details:** your email address, a one-way hash of your password (we never store the password itself), your account type, when you verified your email, and when the account was created.
@@ -46,6 +48,7 @@ Connections to the server use HTTPS. Passwords are hashed, sign-in tokens are ha
 ## Keeping and deleting your data
 Your data is kept until you delete it or delete your account.
 - You can delete individual saved research notes inside a case.
+- **Delete your data without an account:** in the app, open Account › Delete my data. This permanently removes your device's anonymous record and everything saved to it, the same way account deletion does.
 - **Delete your account:** in the app, open Settings › Privacy & Security › Delete Account. You must enter your password and type DELETE. This permanently removes your account, all of your cases, notes, timeline events, analyses, uploaded files and sign-in tokens from our server. It cannot be undone. One anonymous record that an account was deleted is kept for security, with no user ID or email.
 - **Clear App Data** in Settings removes the information stored on your phone but does not delete your account.
 

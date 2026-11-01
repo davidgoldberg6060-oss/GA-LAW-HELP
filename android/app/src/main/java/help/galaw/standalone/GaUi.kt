@@ -373,7 +373,7 @@ class GaUi(val context: Context) {
             if (active) ic.background = GradientDrawable().apply { gradientType = GradientDrawable.RADIAL_GRADIENT; gradientRadius = uf(46f); colors = intArrayOf(withAlpha(BLUE, 110), Color.TRANSPARENT) }
             cell.addView(ic, FrameLayout.LayoutParams(u(72), u(72), Gravity.CENTER_HORIZONTAL).apply { topMargin = u(26) })
             cell.addView(text(item.label, 0f, if (active) Color.rgb(64, 176, 255) else Color.rgb(222, 230, 240), if (active) sansMedium else sansMedium, Gravity.CENTER).apply {
-                setTextSize(TypedValue.COMPLEX_UNIT_PX, uf(36f)); includeFontPadding = false; maxLines = 1
+                setTextSize(TypedValue.COMPLEX_UNIT_PX, uf(if (items.size > 5) 31f else 36f)); includeFontPadding = false; maxLines = 1
                 if (active) setShadowLayer(uf(10f), 0f, 0f, BLUE)
             }, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER_HORIZONTAL).apply { topMargin = u(110) })
             if (active) cell.addView(View(context).apply { background = GradientDrawable().apply { setColor(Color.rgb(40, 160, 255)); cornerRadius = uf(5f) } },

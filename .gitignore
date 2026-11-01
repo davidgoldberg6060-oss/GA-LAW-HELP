@@ -11,3 +11,6 @@ android/**/build/
 supabase/.temp/
 *.jks
 *.keystore
+
+# Standard Android debug keystore (password "android"); committed so debug APKs share one signature.
+!android/debug.keystore
