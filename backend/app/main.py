@@ -373,5 +373,5 @@ def health_ai():
     return {"status": "ok", "last_probe_note": "1-token probe runs once per process at startup", **_ai_models.status()}
 
 # The app uses a lifespan handler (on_event hooks never fire), so start the probe at import time.
-if os.getenv('AI_STARTUP_PROBE','1')!='0' and os.getenv('GEMINI_API_KEY','').strip():
-    _threading.Thread(target=_ai.probe_models,daemon=True,name='ai-probe').start()
+if os.getenv('AI_STARTUP_PROBE','1')!='0' and (os.getenv('GEMINI_API_KEY','').strip() or os.getenv('OPENROUTER_API_KEY','').strip()):
+    _threading.Thread(target=_ai.background_model_checks,daemon=True,name='ai-probe').start()

@@ -29,14 +29,17 @@ PACIFIC = ZoneInfo("America/Los_Angeles")
 COMPAT_PROVIDERS = (
     {"name": "groq", "key_env": "GROQ_API_KEY", "url": "https://api.groq.com/openai/v1/chat/completions",
      "models_env": "GROQ_MODELS", "models": "openai/gpt-oss-120b,openai/gpt-oss-20b,qwen/qwen3-32b"},
-    {"name": "openrouter", "key_env": "OPENROUTER_API_KEY", "url": "https://openrouter.ai/api/v1/chat/completions",
-     "models_env": "OPENROUTER_MODELS", "models": "meta-llama/llama-3.3-70b-instruct:free"},
     {"name": "cerebras", "key_env": "CEREBRAS_API_KEY", "url": "https://api.cerebras.ai/v1/chat/completions",
      "models_env": "CEREBRAS_MODELS", "models": "llama-3.3-70b"},
     {"name": "mistral", "key_env": "MISTRAL_API_KEY", "url": "https://api.mistral.ai/v1/chat/completions",
      "models_env": "MISTRAL_MODELS", "models": "mistral-small-latest"},
     {"name": "github", "key_env": "GITHUB_MODELS_TOKEN", "url": "https://models.github.ai/inference/chat/completions",
      "models_env": "GITHUB_MODELS", "models": "openai/gpt-4.1-mini"},
+    {"name": "openrouter", "key_env": "OPENROUTER_API_KEY", "url": "https://openrouter.ai/api/v1/chat/completions",
+     "models_env": "OPENROUTER_MODELS",
+     "models": "google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free",
+     "headers": {"HTTP-Referer": "https://ga-law-help-production.up.railway.app", "X-Title": "GA.LAW.HELP"},
+     "list_url": "https://openrouter.ai/api/v1/models", "free_only": True},
 )
 
 _lock = threading.Lock()
@@ -75,7 +78,10 @@ def compat_providers() -> list[dict]:
             continue
         models = spec.get("models")
         models = _split(os.getenv(spec.get("models_env", ""), "")) or (models if isinstance(models, list) else _split(models or ""))
-        out.append({"name": spec["name"], "url": spec["url"], "api_key": key, "models": models})
+        if spec.get("free_only"):
+            models = [m for m in models if m.endswith(":free")]
+        out.append({"name": spec["name"], "url": spec["url"], "api_key": key, "models": models,
+                    "headers": dict(spec.get("headers") or {}), "list_url": spec.get("list_url")})
     return out
 
 
