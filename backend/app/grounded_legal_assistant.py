@@ -111,7 +111,7 @@ def _hybrid_retrieval(query,mode,db=None,limit=12):
  result['hits']=(persisted+file_hits)[:limit]
  return result
 
-_STYLE=("Write in plain, friendly English a non-lawyer understands (about 200-350 words). Plain text only: no markdown, "
+_STYLE=("Write in plain, friendly English a non-lawyer understands (about 200-350 words). Never assume the user is the person charged or locked up: if they ask about a family member or friend, talk about \"your loved one\" or \"the person\" and add practical family tips (posting bond, money on books, contacting the public defender, support letters, visits and calls). Plain text only: no markdown, "
  "no '#', no '**'. Put each heading on its own line exactly as written, then short sentences or bullet lines starting with '- '. "
  "Do not add a list of sources at the end; the app shows the laws cited separately.")
 

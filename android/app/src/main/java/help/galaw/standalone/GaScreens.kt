@@ -549,7 +549,7 @@ object GaScreens {
         }, ui.lp(6, 6))
     }
 
-    private fun citeViews(ui: GaUi, card: LinearLayout, cites: List<LoopholeCite>, onCite: (LoopholeCite) -> Unit) {
+    fun citeViews(ui: GaUi, card: LinearLayout, cites: List<LoopholeCite>, onCite: (LoopholeCite) -> Unit) {
         cites.forEach { c ->
             card.addView(ui.text("${c.citation} ›", 13.5f, Color.rgb(60, 190, 255)).apply {
                 setPadding(0, ui.dp(6), 0, 0); isClickable = true; contentDescription = "Show full text of ${c.citation}"; setOnClickListener { LawAccordion.toggle(this, c.citation, null, c.sourceUrl) }

@@ -9,13 +9,11 @@ data class HomeDrawerItem(val id: String, val label: String, val requiresSignIn:
 object HomeDrawerCatalog {
     val items: List<HomeDrawerItem> = listOf(
         HomeDrawerItem("home", "Home", false),
-        HomeDrawerItem("cases", "My Cases", false),
+        HomeDrawerItem("mycase", "My Case (start here)", false),
+        HomeDrawerItem("cases", "Case Workspace", false),
         HomeDrawerItem("ai", "Talk to Me (AI)", false),
         HomeDrawerItem("laws", "Georgia Laws", false),
         HomeDrawerItem("funny", "Funny & Weird Laws", false),
-        HomeDrawerItem("loopholes", "Legal Loopholes", false),
-        HomeDrawerItem("charges", "Charge Check (Criminal)", false),
-        HomeDrawerItem("civil", "Civil Case Check", false),
         HomeDrawerItem("motions", "Motions & Legal Work", false),
         HomeDrawerItem("forms", "Legal Forms", false),
         HomeDrawerItem("court", "Court Information", false),

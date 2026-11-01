@@ -112,3 +112,20 @@
 .lawLoading{display:flex;align-items:center;gap:.5rem;color:#a0b4c9}
 .lawSpinner{width:16px;height:16px;border:2px solid #e6be5c;border-top-color:transparent;border-radius:50%;animation:lawspin .8s linear infinite}
 @keyframes lawspin{to{transform:rotate(360deg)}}
+
+/* My Case hub */
+.myCase{padding:2rem 1rem;max-width:900px;margin:0 auto}
+.mcChoices{display:grid;gap:.6rem;margin:.6rem 0}
+.mcChoice{all:unset;cursor:pointer;display:grid;gap:.25rem;padding:.9rem 1rem;border:1px solid rgba(77,171,255,.35);border-radius:12px;background:rgba(10,26,45,.85);color:#e2eaf3}
+.mcChoice.gold{border-color:#e6be5c;box-shadow:0 0 14px rgba(230,190,92,.25)}.mcChoice.gold b{color:#e6be5c}
+.mcChoice span{color:#a0b4c9;font-size:.9rem}
+.mcSaved{display:flex;gap:.5rem;align-items:stretch}.mcSaved .mcChoice{flex:1}.mcDelete{background:none;border:1px solid #444;color:#f59696;border-radius:10px;padding:0 .8rem}
+.mcBack{background:none;border:none;color:#4dabff;cursor:pointer;padding:0;margin-bottom:.5rem}
+.myCase textarea{width:100%;box-sizing:border-box;border-radius:10px;padding:.7rem;background:#0a1a2d;color:#e2eaf3;border:1px solid rgba(77,171,255,.35)}
+.mcDate{display:flex;gap:.6rem;align-items:center;margin:.5rem 0;color:#a0b4c9}
+.mcRun,.mcActions button{margin:.8rem 0;padding:.7rem 1.2rem;border-radius:10px;border:none;background:#1d6fe0;color:#fff;cursor:pointer}
+.mcOption{border:1px solid rgba(77,171,255,.3);border-radius:12px;padding:.8rem 1rem;margin:.6rem 0;background:rgba(10,26,45,.7)}
+.mcOption.gold{border-color:#e6be5c}.mcMatch{color:#e6be5c;font-weight:700}
+.mcDeadline{color:#e6be5c;font-weight:600}.mcDeadline.passed,.mcTimeline .passed{color:#f59696}
+.mcWhere{color:#a0b4c9}.mcTimeline{border:1px solid #e6be5c;border-radius:12px;padding:.6rem 1rem}.mcTimeline span{color:#e6be5c;margin-left:.4rem}
+.mcErr{color:#f59696}
