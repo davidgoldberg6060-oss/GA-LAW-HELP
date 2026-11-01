@@ -8,7 +8,9 @@ object TalkToMeController {
     data class Reply(
         val transcriptEntry: String,
         val answer: String,
-        val authoritySummary: String
+        val authoritySummary: String,
+        val followUps: List<String> = emptyList(),
+        val cached: Boolean = false
     )
 
     fun reply(
@@ -17,14 +19,20 @@ object TalkToMeController {
         message: String,
         languageInstruction: String
     ): Reply {
-        // Load the public encounter pack without a session. A pack failure must not block the answer.
-        runCatching { GuestPublicApi.encounter(BuildConfig.API_BASE_URL, message) }
+        // General Georgia legal Q&A (criminal and civil). Police-encounter help stays on Know Your Rights.
         val turn = GroundedConversation.analyze(api, history, message, languageInstruction)
         return Reply(
             transcriptEntry = turn.transcriptEntry,
             answer = turn.answer,
-            authoritySummary = turn.authoritySummary
+            authoritySummary = turn.authoritySummary,
+            followUps = followUps(turn.result),
+            cached = turn.result.optBoolean("cached")
         )
+    }
+
+    fun followUps(raw: org.json.JSONObject): List<String> {
+        val arr = raw.optJSONArray("follow_ups") ?: return emptyList()
+        return (0 until arr.length()).map { arr.optString(it).trim() }.filter { it.isNotBlank() && it.length <= 120 }.take(3)
     }
 
     fun append(history: StringBuilder, reply: Reply) {

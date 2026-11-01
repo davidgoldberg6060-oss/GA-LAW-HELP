@@ -50,6 +50,8 @@ def _is_complex_legal_request(question: str) -> bool:
 
 GEMINI_URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 GEMINI_DEFAULT_MODEL = "gemini-3.5-flash"
+# Chat-style answers (Talk to Me, Know Your Rights, case chat) use the lite model: ~1 s instead of ~20 s.
+GEMINI_FAST_DEFAULT_MODEL = "gemini-3.5-flash-lite"
 FALLBACK_STATUS_CODES = {401, 402, 403, 429}
 
 
@@ -130,7 +132,9 @@ def _http_post_json(provider: dict, model: str, url: str, payload: dict, headers
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")
         logger.error("AI provider HTTP failure: provider=%s status=%s model=%s %s", provider["name"], exc.code, model, _provider_error_summary(detail))
-        raise ProviderHTTPError("AI provider request failed", exc.code) from exc
+        err = ProviderHTTPError("AI provider request failed", exc.code)
+        err.detail = detail[:2000]
+        raise err from exc
     except urllib.error.URLError as exc:
         reason_type = type(getattr(exc, "reason", None)).__name__
         logger.error("AI provider network failure: provider=%s model=%s reason_type=%s", provider["name"], model, reason_type)
@@ -172,8 +176,8 @@ def _ask_responses_api(provider: dict, question: str) -> str:
     return text
 
 
-def _gemini_profile(question: str, default_model: str) -> dict:
-    if _is_complex_legal_request(question):
+def _gemini_profile(question: str, default_model: str, speed: str | None = None) -> dict:
+    if speed != "fast" and (speed == "quality" or _is_complex_legal_request(question)):
         return {
             "model": os.getenv("GEMINI_LEGAL_MODEL", default_model).strip() or default_model,
             "max_output_tokens": int(os.getenv("GEMINI_LEGAL_MAX_OUTPUT_TOKENS", "4096")),
@@ -181,15 +185,15 @@ def _gemini_profile(question: str, default_model: str) -> dict:
             "timeout": float(os.getenv("GEMINI_LEGAL_TIMEOUT_SECONDS", "55")),
         }
     return {
-        "model": os.getenv("GEMINI_FAST_MODEL", default_model).strip() or default_model,
-        "max_output_tokens": int(os.getenv("GEMINI_FAST_MAX_OUTPUT_TOKENS", "2048")),
+        "model": os.getenv("GEMINI_FAST_MODEL", GEMINI_FAST_DEFAULT_MODEL).strip() or GEMINI_FAST_DEFAULT_MODEL,
+        "max_output_tokens": int(os.getenv("GEMINI_FAST_MAX_OUTPUT_TOKENS", "1400")),
         "thinking_level": os.getenv("GEMINI_FAST_THINKING_LEVEL", "low").strip(),
-        "timeout": float(os.getenv("GEMINI_FAST_TIMEOUT_SECONDS", "25")),
+        "timeout": float(os.getenv("GEMINI_FAST_TIMEOUT_SECONDS", "20")),
     }
 
 
-def _ask_gemini(provider: dict, question: str) -> str:
-    profile = _gemini_profile(question, provider["default_model"])
+def _ask_gemini(provider: dict, question: str, speed: str | None = None) -> str:
+    profile = _gemini_profile(question, provider["default_model"], speed)
     model = profile["model"]
     generation_config = {"maxOutputTokens": profile["max_output_tokens"]}
     if profile["thinking_level"]:
@@ -197,16 +201,25 @@ def _ask_gemini(provider: dict, question: str) -> str:
     stripped = question.lstrip()
     if stripped.startswith("{") or "return only json" in question.lower() or "respond with json" in question.lower():
         generation_config["responseMimeType"] = "application/json"
-    data = _http_post_json(
-        provider, model, f"{provider['url']}/{model}:generateContent",
-        {
-            "systemInstruction": {"parts": [{"text": SYSTEM_INSTRUCTIONS}]},
-            "contents": [{"role": "user", "parts": [{"text": question}]}],
-            "generationConfig": generation_config,
-        },
-        {"x-goog-api-key": provider["api_key"], "Content-Type": "application/json"},
-        profile["timeout"],
-    )
+    def _call(config):
+        return _http_post_json(
+            provider, model, f"{provider['url']}/{model}:generateContent",
+            {
+                "systemInstruction": {"parts": [{"text": SYSTEM_INSTRUCTIONS}]},
+                "contents": [{"role": "user", "parts": [{"text": question}]}],
+                "generationConfig": config,
+            },
+            {"x-goog-api-key": provider["api_key"], "Content-Type": "application/json"},
+            profile["timeout"],
+        )
+    try:
+        data = _call(generation_config)
+    except ProviderHTTPError as exc:
+        # A model that rejects the thinking setting (HTTP 400) is retried once without it.
+        if exc.status != 400 or "thinkingConfig" not in generation_config or "thinking" not in str(getattr(exc, "detail", "")).lower():
+            raise
+        generation_config = {k: v for k, v in generation_config.items() if k != "thinkingConfig"}
+        data = _call(generation_config)
     parts = []
     for candidate in (data.get("candidates") or [])[:1]:
         for part in (candidate.get("content") or {}).get("parts") or []:
@@ -221,13 +234,13 @@ def _ask_gemini(provider: dict, question: str) -> str:
     return text
 
 
-def _ask_provider(provider: dict, question: str) -> str:
+def _ask_provider(provider: dict, question: str, speed: str | None = None) -> str:
     if provider["name"] == "gemini":
-        return _ask_gemini(provider, question)
+        return _ask_gemini(provider, question, speed)
     return _ask_responses_api(provider, question)
 
 
-def ask_openai(question: str) -> str:
+def ask_openai(question: str, speed: str | None = None) -> str:
     """Ask the active AI provider; falls back to the next configured provider on quota/auth errors."""
     providers = _providers()
     if not providers:
@@ -236,7 +249,7 @@ def ask_openai(question: str) -> str:
     last_error = None
     for index, provider in enumerate(providers):
         try:
-            return _ask_provider(provider, question)
+            return _ask_provider(provider, question, speed)
         except ProviderHTTPError as exc:
             last_error = exc
             if exc.status in FALLBACK_STATUS_CODES and index + 1 < len(providers):
@@ -244,3 +257,8 @@ def ask_openai(question: str) -> str:
                 continue
             raise
     raise last_error  # pragma: no cover
+
+
+def ask_fast(question: str) -> str:
+    """Chat-style answers: always the fast profile (lite model, low thinking, capped output)."""
+    return ask_openai(question, speed="fast")

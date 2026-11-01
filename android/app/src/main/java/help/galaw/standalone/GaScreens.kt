@@ -54,7 +54,7 @@ object GaScreens {
         "laws" -> R.drawable.ga_ic_balance; "motions" -> R.drawable.ga_ic_edit_square; "forms" -> R.drawable.ga_ic_description
         "court" -> R.drawable.ga_ic_account_balance; "rights" -> R.drawable.ga_ic_groups; "resources" -> R.drawable.ga_ic_support
         "emergency" -> R.drawable.ga_ic_warning; "payments" -> R.drawable.ga_ic_payments; "settings" -> R.drawable.ga_ic_settings
-        "profile" -> R.drawable.ga_ic_person; "loopholes" -> R.drawable.ga_ic_search; "charges" -> R.drawable.ga_ic_error; "funny" -> R.drawable.ga_ic_mood; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
+        "profile" -> R.drawable.ga_ic_person; "loopholes" -> R.drawable.ga_ic_search; "charges" -> R.drawable.ga_ic_error; "civil" -> R.drawable.ga_ic_balance; "funny" -> R.drawable.ga_ic_mood; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
     }
 
     fun drawer(ui: GaUi, items: List<HomeDrawerItem>, versionName: String, onSelect: (HomeDrawerItem) -> Unit, onClose: () -> Unit): View {
@@ -101,6 +101,42 @@ object GaScreens {
         fun attach(v: View) { (last ?: messages).addView(v, ui.lp(8, 2)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
         /** Share / Copy row under the latest answer. */
         fun actions(onShare: () -> Unit, onCopy: () -> Unit) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
+        /** 2-3 suggested follow-up question chips under the latest answer. */
+        fun followUps(questions: List<String>, onTap: (String) -> Unit) {
+            if (questions.isEmpty()) return
+            val dp = ui::dp
+            val col = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(48), dp(6), 0, 0) }
+            col.addView(ui.text("Suggested follow-ups", 11.5f, GaUi.MUTED, ui.sansMedium))
+            questions.forEach { q ->
+                col.addView(ui.text(q, 13.5f, GaUi.TEXT).apply {
+                    background = ui.rounded(Color.argb(220, 10, 26, 45), 18, GaUi.STROKE_SOFT, 1.2f); setPadding(dp(12), dp(8), dp(12), dp(8))
+                    isClickable = true; contentDescription = "Ask: $q"; setOnClickListener { onTap(q) }
+                }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) })
+            }
+            (last ?: messages).addView(col); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+        }
+        /** "Find legal help" link under the latest answer. */
+        fun findHelp(onTap: () -> Unit) {
+            (last ?: messages).addView(ui.text("⚖ Find legal help", 13.5f, GaUi.GOLD, ui.sansMedium).apply {
+                setPadding(ui.dp(48), ui.dp(8), 0, ui.dp(2)); isClickable = true; contentDescription = "Find legal help"; setOnClickListener { onTap() }
+            }); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+        }
+        /** Retry button under a failed answer. */
+        fun retry(onRetry: () -> Unit) {
+            (last ?: messages).addView(ui.primaryButton("Retry") { onRetry() }.apply { contentDescription = "Retry question" },
+                LinearLayout.LayoutParams(ui.dp(140), -2).apply { leftMargin = ui.dp(48); topMargin = ui.dp(8) })
+            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+        }
+        /** Animated "Looking up Georgia law…" progress line while waiting for an answer. Returns a stop function. */
+        fun progress(steps: List<String> = PROGRESS_STEPS): () -> Unit {
+            val dp = ui::dp
+            val view = ui.text(steps.first(), 13.5f, GaUi.BLUE_BRIGHT, ui.sansMedium).apply { setPadding(dp(48), dp(10), 0, dp(4)); tag = "progress" }
+            messages.addView(view); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            var i = 0; var running = true
+            val tick = object : Runnable { override fun run() { if (!running) return; i++; view.text = steps[minOf(i / 2, steps.size - 1)] + ".".repeat(i % 3 + 1); view.postDelayed(this, 1500) } }
+            view.postDelayed(tick, 1500)
+            return { running = false; messages.removeView(view) }
+        }
         /** Removes one message (bubble, time, cards and actions) from the screen. */
         fun remove(id: Long) { if (id == 0L) return; (0 until messages.childCount).map { messages.getChildAt(it) }.filter { it.tag == "msg:$id" }.forEach { messages.removeView(it) }; if (last?.tag == "msg:$id") last = null }
         /** Removes every user/AI message, keeping only the greeting. */
@@ -129,6 +165,8 @@ object GaScreens {
             scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
         }
     }
+
+    val PROGRESS_STEPS = listOf("Looking up Georgia law", "Checking verified sources", "Writing your answer", "Almost done — thanks for waiting")
 
     fun talkToMe(ui: GaUi, nav: Nav, onSend: (String) -> Unit, chips: List<Pair<String, () -> Unit>>): Chat =
         chatScreen(ui, nav, Tab.AI, "Talk to Me", "Get trusted legal information, case analysis, and step-by-step guidance.", "Type your question...", onSend, chips)
@@ -627,5 +665,72 @@ object GaScreens {
         }, ui.lp(8, 6))
         if (r.caseId != null) container.addView(ui.note("Saved to your case notes."))
         if (share != null && (r.charges.isNotEmpty() || r.lawyer != null)) container.addView(shareRow(ui, share.first, share.second))
+    }
+
+    // ---------------- Civil Case Check ----------------
+    data class CivilClaim(val sideLabel: String, val claim: String, val why: String, val cite: LoopholeCite)
+    data class CivilCourt(val label: String, val why: String, val limit: String?, val note: String?, val cite: LoopholeCite?)
+    data class CivilDeadline(val title: String, val quote: String, val cite: LoopholeCite)
+    data class HelpLink(val title: String, val url: String)
+    data class CivilCheckResult(
+        val claims: List<CivilClaim>, val court: CivilCourt?, val deadlines: List<CivilDeadline>, val evidence: List<String>,
+        val weakSpots: List<ChargeOption>, val lowCost: List<ChargeOption>, val help: List<HelpLink>, val lawyer: LawyerTake?,
+        val message: String?, val refused: Boolean, val estimateNote: String, val disclaimer: String,
+        val emergency: List<Pair<String, String>>, val caseId: Int?
+    )
+
+    const val CIVIL_DISCLAIMER = "This is legal information, not legal advice. Talk to a Georgia lawyer or a legal aid office before you decide anything or miss a deadline."
+
+    fun civilCheck(ui: GaUi, nav: Nav, caseTitle: String?, onCheck: (String) -> Unit): ChargeCheckForm {
+        val (root, body) = page(ui, nav, Tab.LAWS, "Civil Case Check", "Describe the dispute — landlord, divorce or custody, debt, contract, injury, wages, a neighbor, a will. See the likely claims and defenses, which court, deadlines, and low-cost ways to resolve it.")
+        if (!caseTitle.isNullOrBlank()) body.addView(ui.text("Case: $caseTitle", 13.5f, GaUi.GOLD, ui.sansMedium), ui.lp(2, 4))
+        val situation = ui.input("What is the dispute? Who, what, when, how much money, any papers you got…", true).apply { minLines = 5 }
+        body.addView(situation, ui.lp(8, 8))
+        body.addView(ui.primaryButton("Check My Civil Case") { onCheck(situation.text.toString()) }, ui.lp(4, 8))
+        body.addView(ui.note("Don’t ignore court papers or deadlines. If anyone is in danger, call 911."))
+        val results = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL }
+        body.addView(results)
+        body.addView(ui.note(CIVIL_DISCLAIMER))
+        return ChargeCheckForm(root, situation, results)
+    }
+
+    private fun simpleCard(ui: GaUi, label: String?, title: String, body: String, cites: List<LoopholeCite>, onCite: (LoopholeCite) -> Unit) =
+        optionCard(ui, ChargeOption(label, title, body, cites), onCite)
+
+    fun renderCivilCheck(ui: GaUi, container: LinearLayout, r: CivilCheckResult, share: Pair<() -> Unit, () -> Unit>?, onDial: (String) -> Unit, onLink: (String) -> Unit, onCite: (LoopholeCite) -> Unit) {
+        val dp = ui::dp
+        container.removeAllViews()
+        if (r.emergency.isNotEmpty()) {
+            container.addView(LinearLayout(ui.context).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(Color.argb(235, 70, 16, 22), Color.rgb(255, 90, 90), 12, glow = true)
+                addView(ui.text("If anyone is in danger right now, call 911.", 16f, GaUi.WHITE, ui.sansBold))
+                r.emergency.forEach { (label, contact) -> addView(ui.text("$label: $contact", 14f, GaUi.WHITE).apply { setPadding(0, dp(6), 0, 0); isClickable = true; setOnClickListener { onDial(contact.filter { it.isDigit() }) } }) }
+            }, ui.lp(6, 6))
+        }
+        if (r.refused) { container.addView(ui.emptyCard(R.drawable.ga_ic_error, "Can’t help with that", r.message ?: ""), ui.lp(4, 4)); return }
+        container.addView(ui.note(r.estimateNote))
+        container.addView(ui.sectionHeader("Likely Claims & Defenses (${r.claims.size})"))
+        if (r.claims.isEmpty()) container.addView(ui.emptyCard(R.drawable.ga_ic_search, "No verified match yet", (r.message ?: "") + "\n\n" + COVERAGE_HINT), ui.lp(4, 4))
+        r.claims.forEach { c -> container.addView(simpleCard(ui, c.sideLabel, c.claim, c.why, listOf(c.cite), onCite), ui.lp(5, 5)) }
+        r.court?.let { c ->
+            container.addView(ui.sectionHeader("Which Court"))
+            val body = listOfNotNull(c.why.ifBlank { null }, c.limit?.let { "From the law: “$it”" }, c.note).joinToString("\n\n")
+            container.addView(simpleCard(ui, null, c.label, body, listOfNotNull(c.cite), onCite), ui.lp(5, 5))
+        }
+        if (r.deadlines.isNotEmpty()) { container.addView(ui.sectionHeader("Deadlines (from the law)")); r.deadlines.forEach { d -> container.addView(simpleCard(ui, null, d.title, "“${d.quote}”", listOf(d.cite), onCite), ui.lp(5, 5)) } }
+        if (r.evidence.isNotEmpty()) { container.addView(ui.sectionHeader("Evidence to Gather")); container.addView(simpleCard(ui, null, "Start collecting", r.evidence.joinToString("\n") { "• $it" }, emptyList(), onCite), ui.lp(5, 5)) }
+        if (r.weakSpots.isNotEmpty()) { container.addView(ui.sectionHeader("Weak Spots for Each Side")); r.weakSpots.forEach { container.addView(optionCard(ui, it, onCite), ui.lp(5, 5)) } }
+        if (r.lowCost.isNotEmpty()) { container.addView(ui.sectionHeader("Lowest-Cost Ways to Resolve It")); r.lowCost.forEach { container.addView(optionCard(ui, it, onCite), ui.lp(5, 5)) } }
+        if (r.lawyer != null) container.addView(lawyerCard(ui, r.lawyer, onCite), ui.lp(10, 6))
+        if (r.help.isNotEmpty()) {
+            container.addView(LinearLayout(ui.context).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.GOLD, 12, glow = false)
+                addView(ui.text("Find Legal Help", 15.5f, GaUi.GOLD, ui.sansBold))
+                r.help.forEach { h -> addView(ui.text("${h.title} ›", 14f, Color.rgb(60, 190, 255), ui.sansMedium).apply { setPadding(0, dp(8), 0, 0); isClickable = true; setOnClickListener { onLink(h.url) } }) }
+            }, ui.lp(8, 6))
+        }
+        container.addView(ui.note(r.disclaimer))
+        if (r.caseId != null) container.addView(ui.note("Saved to your case notes."))
+        if (share != null && (r.claims.isNotEmpty() || r.lawyer != null)) container.addView(shareRow(ui, share.first, share.second))
     }
 }

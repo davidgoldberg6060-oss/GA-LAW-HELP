@@ -138,10 +138,10 @@ def test_android_case_chat_screen_is_wired_to_the_route():
     root = Path(__file__).resolve().parents[2] / "android/app/src/main/java/help/galaw/standalone"
     api = (root / "ApiClient.kt").read_text(encoding="utf-8")
     home = (root / "HomeActivity.kt").read_text(encoding="utf-8")
-    assert 'execute("/cases/$id/chat","POST",JSONObject().put("message",message).put("history",history))' in api
+    assert 'execute("/cases/$id/chat","POST",JSONObject().put("message",message).put("history",history),readMs=AI_READ_MS)' in api
     assert 'addButton(root,"Case Chat"){showCaseChat(caseId,detail.optString("title"))}' in home
     assert "GaScreens.caseChat(ui,nav," in home
-    chat = home.split("private fun sendCaseChat(", 1)[1].split("private fun ", 1)[0]
+    chat = home.split("private fun sendCaseChat(", 1)[1].split("private fun showTimeline", 1)[0]
     assert "api.caseChat(caseId,text,history)" in chat
     assert "GroundedLegalResult.answer(result)" in chat and "GroundedLegalResult.authoritySummary(result)" in chat
     # History is rebuilt from the on-device transcript (so deleted messages are never resent),
