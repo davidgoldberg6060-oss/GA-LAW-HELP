@@ -208,7 +208,36 @@ QUERY_EXPANSIONS: tuple[tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]
     (("workers comp", "workers' comp", "hurt at work", "injured at work"), ('"workers compensation"',), ("34-9-1",)),
     (("statute of limitations", "too late to sue", "personal injury"), ("limitation action", "personal injury"), ("9-3-33",)),
     (("speeding",), ("speed",), ("40-6-181",)),
+    (("small claims", "small claim", "magistrate court", "sue someone", "sue my", "file a claim"),
+     ("magistrate", '"magistrate court"', '"statement of claim"'), ("15-10-2", "15-10-43")),
 )
+# Court rule citations ("Unif. Mag. Ct. R. 5", "Uniform Magistrate Court Rule 5", "USCR 6.4",
+# "Ga. Sup. Ct. R. 22", "Supreme Court Rule 22") -> stored citation prefix.
+_RULE_SETS = (
+    (r"unif(?:orm|\.)?\s*mag(?:istrate|\.)?\s*c(?:our)?t\.?|umcr", "Unif. Mag. Ct. R."),
+    (r"unif(?:orm|\.)?\s*super(?:ior|\.)?\s*c(?:our)?t\.?|uscr", "Unif. Super. Ct. R."),
+    (r"unif(?:orm|\.)?\s*state\s*c(?:our)?t\.?", "Unif. State Ct. R."),
+    (r"unif(?:orm|\.)?\s*juv(?:enile|\.)?\s*c(?:our)?t\.?|ujcr", "Unif. Juv. Ct. R."),
+    (r"unif(?:orm|\.)?\s*prob(?:ate|\.)?\s*c(?:our)?t\.?|upcr", "Unif. Prob. Ct. R."),
+    (r"unif(?:orm|\.)?\s*mun(?:icipal|\.)?\s*c(?:our)?t\.?", "Unif. Mun. Ct. R."),
+    (r"(?:statewide\s*)?bus(?:iness|\.)?\s*c(?:our)?t\.?", "Statewide Bus. Ct. R."),
+    (r"(?:ga\.?|georgia)?\s*sup(?:reme|\.)?\s*c(?:our)?t\.?", "Ga. Sup. Ct. R."),
+    (r"(?:ga\.?|georgia)?\s*c(?:our)?t\.?\s*(?:of\s*)?app(?:eals|\.)?", "Ga. Ct. App. R."),
+)
+_RULE_NUM = r"\s*(?:r\.|rules?)?\s*(\d{1,3}(?:\.\d{1,3})*)\b"
+_RULE_PATTERNS = tuple((re.compile(rf"(?<![a-z])(?:{pat}){_RULE_NUM}", re.I), prefix) for pat, prefix in _RULE_SETS)
+_RULES_WORD = re.compile(r"\brules?\b", re.I)
+
+
+def rule_citations(query: str) -> list[str]:
+    """Stored court-rule citations named in a query (lookup hints only; nothing is invented)."""
+    out: dict[str, None] = {}
+    for pattern, prefix in _RULE_PATTERNS:
+        for m in pattern.finditer(query or ""):
+            out[f"{prefix} {m.group(1)}"] = None
+    return list(out)
+
+
 _SECTION_IN_QUERY = re.compile(r"\b(\d{1,2}[A-Z]?-\d{1,3}[A-Z]?-\d{1,4}(?:\.\d+)?)\b")
 
 
@@ -225,6 +254,8 @@ def build_query_plan(query: str) -> QueryPlan:
     keywords = search_keywords(query)
     extra: dict[str, None] = {}
     pinned: dict[str, None] = {}
+    for cite in rule_citations(query):
+        pinned[cite] = None
     for section in _SECTION_IN_QUERY.findall(query or ""):
         pinned[f"O.C.G.A. § {section}"] = None
     for triggers, terms, sections in QUERY_EXPANSIONS:
@@ -311,8 +342,13 @@ def _vector_rows(db: Session, term: str, plan: QueryPlan, limit: int, filters: t
     if plan.expansion_terms:
         # The user's words all present, OR any of the legal-vocabulary expansions.
         strict_q = strict_q.op("||")(func.websearch_to_tsquery(cfg, " or ".join(plan.expansion_terms)))
+    boosts = dict(_TYPE_BOOST)
+    if _RULES_WORD.search(term):  # "small claims court rules" -> rules outrank statutes
+        boosts["court_rule"] = 2.2
+    elif re.search(r"small claim|magistrate", term, re.I):  # procedure questions: rules alongside 15-10-x
+        boosts["court_rule"] = 1.7
     type_boost = case(
-        *[(func.lower(LegalAuthority.authority_type) == k, v) for k, v in _TYPE_BOOST.items()], else_=0.8
+        *[(func.lower(LegalAuthority.authority_type) == k, v) for k, v in boosts.items()], else_=0.8
     )
 
     found: list[LegalAuthority] = []
@@ -519,7 +555,7 @@ def persisted_authority_hits(db: Session, query: str, *, limit: int = 12, extra_
 
 # Georgia Laws screen tabs -> persisted authority types.
 PUBLIC_LAW_KINDS = {
-    "statutes": ("statute", "regulation"),
+    "statutes": ("statute", "regulation", "court_rule"),
     "case_law": ("case_law", "case", "opinion"),
     "court_rules": ("court_rule",),
 }

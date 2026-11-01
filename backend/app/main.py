@@ -110,7 +110,7 @@ def public_georgia_law_search(kind:str='statutes',q:str='',title:str='',chapter:
     if not q and not title.strip(): raise HTTPException(400,'Enter a keyword or choose a title.')
     try: rows=public_law_search(db,kind=kind,keyword=q,title=title,chapter=chapter,limit=limit)
     except ValueError as error: raise HTTPException(400,str(error))
-    items=[{'id':r.id,'citation':r.citation,'title':r.title,'record_type':r.authority_type,'status':r.status,'currency_status':r.currency_status,'precedential_status':r.precedential_status,'source_url':safe_public_source_url(r.source_url),'excerpt':r.text[:600],'usable_as_support':r.usable_as_support} for r in rows]
+    items=[{'id':r.id,'citation':r.citation,'title':r.title,'record_type':r.authority_type,'type_label':{'statute':'Statute','court_rule':'Court rule','regulation':'Regulation'}.get((r.authority_type or '').lower(),'Case law' if r.authority_type else ''),'status':r.status,'currency_status':r.currency_status,'precedential_status':r.precedential_status,'source_url':safe_public_source_url(r.source_url),'excerpt':r.text[:600],'usable_as_support':r.usable_as_support} for r in rows]
     return {'kind':kind,'query':q,'title':title,'chapter':chapter,'items':items,'coverage_notice':'Indexed public Georgia authorities. Verify currency against the official source before relying on any result. Missing authority is not invented.'}
 
 def _guest_rights_without_corpus(query:str, mode:str) -> dict:
