@@ -29,7 +29,7 @@ def test_workflow_is_manual_preview_by_default_and_guards_commit():
     for block in (preview, commit):
         assert "${{" not in block.split("run:", 1)[1]  # inputs reach the shell only via env vars
     assert "permissions:\n  contents: read" in text
-    assert "secrets." not in text.replace("secrets.DATABASE_URL", "")
+    assert "secrets." not in text.replace("secrets.DATABASE_URL", "").replace("secrets.COURTLISTENER_TOKEN", "")
 
 
 def test_runner_script_never_commits_on_its_own():
