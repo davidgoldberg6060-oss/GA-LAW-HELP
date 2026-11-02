@@ -29,7 +29,7 @@ def normalize(question: str) -> str:
 
 
 def key(question: str, mode: str) -> str:
-    return hashlib.sha256(f"v4\x00{mode}\x00{normalize(question)}".encode()).hexdigest()  # v2: plain-text answers
+    return hashlib.sha256(f"v5\x00{mode}\x00{normalize(question)}".encode()).hexdigest()  # v2: plain-text answers
 
 
 def _ensure_table(db) -> None:
