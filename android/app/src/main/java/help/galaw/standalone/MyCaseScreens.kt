@@ -185,6 +185,7 @@ object MyCaseScreens {
         if (fc.length() > 0) box.addView(ui.sectionHeader("Find their case"))
         for (i in 0 until fc.length()) { val r = fc.getJSONObject(i)
             box.addView(ui.text(r.optString("title") + " ›", 14.5f, GaUi.BLUE_BRIGHT).apply { setPadding(0, dp(5), 0, dp(5)); isClickable = true; setOnClickListener { onLink(r.optString("url")) } }) }
+        box.addView(ui.primaryButton("Help your loved one (money, calls, visits)") { HelpLovedOne.show(ui, onLink) }, ui.lp(8, 4))
         box.addView(ui.sectionHeader("Free and low-cost help"))
         val rs = g.optJSONArray("resources") ?: JSONArray()
         for (i in 0 until rs.length()) { val r = rs.getJSONObject(i)

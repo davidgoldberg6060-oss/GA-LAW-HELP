@@ -1,3 +1,4 @@
+import { HelpLovedOne } from './HelpLovedOne';
 import { Glossary } from './Glossary';
 import {useEffect, useState} from 'react';
 import {LawAccordion} from './LawAccordion';
@@ -107,7 +108,7 @@ export default function MyCase({api, onCivil, onAsk, initial}: {api: string; onC
             <LawAccordion api={api} items={o.citations}/>
           </article>)}
           <div className="mcActions"><button type="button" onClick={save}>Save this case</button></div>
-          <Glossary text={JSON.stringify(guide)} />{guide.find_case?.length ? <><h3>Find their case</h3><p>{guide.find_case.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noreferrer">{r.title} </a>)}</p></> : null}<h3>Free and low-cost help</h3><p>{guide.resources.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noreferrer">{r.title} </a>)}</p>
+          <Glossary text={JSON.stringify(guide)} />{guide.find_case?.length ? <><h3>Find their case</h3><p>{guide.find_case.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noreferrer">{r.title} </a>)}</p></> : null}<HelpLovedOne /><h3>Free and low-cost help</h3><p>{guide.resources.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noreferrer">{r.title} </a>)}</p>
           <small>{guide.disclaimer}</small>
         </div>}
       </>}
