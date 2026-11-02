@@ -17,6 +17,14 @@ case "$SOURCE" in
     # SCOPE: "ga", "gactapp" or "ga,gactapp"; bulk files only (no API token needed)
     args=(-m app.ingestion.import_courtlistener_opinions --source bulk --court "${SCOPE:-ga,gactapp}"
           --limit "$LIMIT" --offset "$OFFSET" --index-cache .import-cache/courtlistener-index.json --quiet)
+    # Optional small REST API top-up of clusters filed on/after CL_API_SINCE (needs COURTLISTENER_TOKEN secret).
+    if [ -n "${CL_API_SINCE:-}" ]; then
+      if [[ ! "$CL_API_SINCE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || [ -z "${COURTLISTENER_TOKEN:-}" ]; then
+        echo "::error::courtlistener_api_since must be YYYY-MM-DD and the COURTLISTENER_TOKEN secret must be set"; exit 1
+      fi
+      args=(-m app.ingestion.import_courtlistener_opinions --source api --since "$CL_API_SINCE"
+            --court "${SCOPE:-ga}" --limit "$LIMIT" --offset "$OFFSET" --pause 1.5 --quiet)
+    fi
     # Optional pre-filtered Georgia-only opinions file (made by app/ingestion/courtlistener_prefilter.py).
     if [ -n "${CL_OPINIONS_FILE:-}" ]; then
       if [[ ! "$CL_OPINIONS_FILE" =~ ^\.import-cache/opinions-ga-[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv\.bz2$ ]] \

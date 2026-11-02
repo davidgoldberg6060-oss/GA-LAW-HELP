@@ -38,6 +38,11 @@ on:
         required: false
         default: ""
         type: string
+      courtlistener_api_since:
+        description: "courtlistener only: YYYY-MM-DD to fetch just clusters filed since then from the REST API (uses the COURTLISTENER_TOKEN secret) instead of bulk files"
+        required: false
+        default: ""
+        type: string
       court_rules_release:
         description: "court_rules only: release tag holding official pages saved with --save-pages (court-rules-pages-YYYY-MM-DD), for sites that refuse runner IPs"
         required: false
@@ -153,6 +158,8 @@ jobs:
       - name: Preview import (no database writes)
         if: ${{ !inputs.commit }}
         env:
+          CL_API_SINCE: ${{ inputs.courtlistener_api_since }}
+          COURTLISTENER_TOKEN: ${{ secrets.COURTLISTENER_TOKEN }}
           SOURCE: ${{ inputs.source }}
           SCOPE: ${{ inputs.scope }}
           LIMIT: ${{ inputs.limit }}
@@ -163,6 +170,8 @@ jobs:
         if: ${{ inputs.commit }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CL_API_SINCE: ${{ inputs.courtlistener_api_since }}
+          COURTLISTENER_TOKEN: ${{ secrets.COURTLISTENER_TOKEN }}
           SOURCE: ${{ inputs.source }}
           SCOPE: ${{ inputs.scope }}
           LIMIT: ${{ inputs.limit }}
