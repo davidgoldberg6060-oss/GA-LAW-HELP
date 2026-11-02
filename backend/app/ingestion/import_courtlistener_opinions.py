@@ -294,7 +294,8 @@ def stream_bulk_opinions(opinions: str, index: dict[str, ClusterMeta], state: di
 
 # ---------------------------------------------------------------- API (optional, token)
 def stream_api_opinions(token: str, courts: Iterable[str], state: dict, *, pause: float,
-                        fetch_json: Callable[[str], dict] | None = None) -> Iterator[OpinionRecord | None]:
+                        fetch_json: Callable[[str], dict] | None = None,
+                        since: str | None = None) -> Iterator[OpinionRecord | None]:
     if not token:
         raise ValueError("COURTLISTENER_TOKEN is required for --source api")
 
@@ -306,9 +307,11 @@ def stream_api_opinions(token: str, courts: Iterable[str], state: dict, *, pause
     cursors = state.setdefault("api_next", {})
     done = set(state.setdefault("clusters_done", []))
     for court in courts:
-        url = cursors.get(court) or API_BASE + "clusters/?" + urlencode({
-            "docket__court": court, "order_by": "id",
-            "fields": "id,case_name,date_filed,docket,docket_id,precedential_status,citations,slug"})
+        query = {"docket__court": court, "order_by": "id",
+                 "fields": "id,case_name,date_filed,docket,docket_id,precedential_status,citations,slug"}
+        if since:  # incremental top-up: only clusters filed on/after this date
+            query["date_filed__gte"] = since
+        url = cursors.get(court) or API_BASE + "clusters/?" + urlencode(query)
         while url:
             page = fetch_json(check_url(url))
             for cluster in page.get("results", []):
@@ -382,6 +385,7 @@ def main(argv: list[str] | None = None, *, session_factory=None) -> int:
     parser.add_argument("--limit", type=int, default=100, help="Max records this run (1-50000)")
     parser.add_argument("--offset", type=int, default=0, help="Skip this many matched records first")
     parser.add_argument("--pause", type=float, default=1.0, help="Seconds between API requests (api mode)")
+    parser.add_argument("--since", help="api mode only: only clusters filed on/after YYYY-MM-DD")
     parser.add_argument("--commit", action="store_true", help="Persist records (default: preview only)")
     parser.add_argument("--quiet", action="store_true", help="Only print the summary line")
     args = parser.parse_args(argv)
@@ -392,6 +396,9 @@ def main(argv: list[str] | None = None, *, session_factory=None) -> int:
         parser.error("limit must be 1-50000, offset nonnegative, pause 0.75-30 seconds")
     if args.offset and args.state_file:
         parser.error("use either --offset (ad-hoc batches) or --state-file (checkpointed resume), not both")
+
+    if args.since and (args.source != "api" or not BULK_DATE.match(args.since)):
+        parser.error("--since needs --source api and a YYYY-MM-DD date")
 
     state = _load_state(args.state_file)
     started = time.time()
@@ -418,7 +425,8 @@ def main(argv: list[str] | None = None, *, session_factory=None) -> int:
         records = stream_bulk_opinions(files["opinions"], index, state, f"bulk-{bulk_date}")
         header = {"source": "courtlistener-bulk", "bulk_date": bulk_date, "files": files, "georgia_clusters": len(index)}
     else:
-        records = stream_api_opinions(os.environ.get("COURTLISTENER_TOKEN", ""), courts, state, pause=args.pause)
+        records = stream_api_opinions(os.environ.get("COURTLISTENER_TOKEN", ""), courts, state, pause=args.pause,
+                                      since=args.since)
         header = {"source": "courtlistener-api"}
     if not args.quiet:
         print(json.dumps({"mode": "start", **header}), flush=True)
