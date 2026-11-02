@@ -39,6 +39,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Callable, Iterable, Iterator
 from urllib.parse import urlencode, urlparse
+import urllib.error
 import urllib.request
 
 from .models import LegalStatus, SourceDocument
@@ -300,8 +301,17 @@ def stream_api_opinions(token: str, courts: Iterable[str], state: dict, *, pause
         raise ValueError("COURTLISTENER_TOKEN is required for --source api")
 
     def default_fetch(url: str) -> dict:
-        time.sleep(pause)
-        return json.loads(_fetch_text(url, {"Authorization": f"Token {token}"}))
+        for attempt in range(4):
+            time.sleep(pause)
+            try:
+                return json.loads(_fetch_text(url, {"Authorization": f"Token {token}"}))
+            except urllib.error.HTTPError as exc:  # free accounts are throttled (e.g. 50 requests/hour)
+                if exc.code != 429 or attempt == 3:
+                    raise
+                wait = min(int(exc.headers.get("Retry-After") or 600), 3700)
+                print(json.dumps({"mode": "throttled", "retry_after": wait}), flush=True)
+                time.sleep(wait + 5)
+        raise RuntimeError("unreachable")
 
     fetch_json = fetch_json or default_fetch
     cursors = state.setdefault("api_next", {})
