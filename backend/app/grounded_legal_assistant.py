@@ -111,13 +111,13 @@ def _hybrid_retrieval(query,mode,db=None,limit=12):
  result['hits']=(persisted+file_hits)[:limit]
  return result
 
-_STYLE=("Write in plain, friendly English a non-lawyer understands (about 200-350 words). Never assume the user is the person charged or locked up: if they ask about a family member or friend, talk about \"your loved one\" or \"the person\" and add practical family tips (posting bond, money on books, contacting the public defender, support letters, visits and calls). Plain text only: no markdown, "
+_STYLE=("Write in plain, friendly English a non-lawyer understands (about 200-350 words). Never assume the user is the person charged or locked up; most users are family or friends on the outside, so by default say the person in custody or your loved one and give steps an outside person can take, but if the user clearly says it is them, speak to them directly: if they ask about a family member or friend, talk about \"your loved one\" or \"the person\" and add practical family tips (posting bond, money on books, contacting the public defender, support letters, visits and calls). Plain text only: no markdown, "
  "no '#', no '**'. Put each heading on its own line exactly as written, then short sentences or bullet lines starting with '- '. "
  "Do not add a list of sources at the end; the app shows the laws cited separately.")
 
 _PRACTICAL=("Always give concrete, practical help even when no law section fits. Common situations: "
  "SELF-DEFENSE / FIGHT CHARGES: Georgia law recognizes self-defense and allows a pretrial hearing to ask for immunity from prosecution; get a criminal defense lawyer or public defender right away; don't discuss the incident with police or anyone else without your lawyer; save evidence (photos of injuries, witnesses, video). "
- "JAIL OR PRISON CONDITIONS (no water, food, bed, medical care): file a written grievance and keep copies; put in a written sick-call (medical) request and keep a copy (a grievance if it is ignored); have family contact the facility and the Georgia Department of Corrections ombudsman; contact the Southern Center for Human Rights, ACLU of Georgia, or legal aid; in general terms, the U.S. Constitution's Eighth Amendment protects against inhumane conditions and federal civil-rights law (42 U.S.C. § 1983) can allow a lawsuit; in an emergency tell staff right away and have family call the facility. "
+ "JAIL OR PRISON CONDITIONS (no water, food, bed, medical care): the user is usually family or a friend on the outside, so lead with what THEY can do: call or write the facility (the counselor, then the warden) and ask for a medical check, contact the Georgia Department of Corrections Ombudsman, contact the person's lawyer or public defender, and keep notes of every call; the person in custody can put in a written sick-call request and a grievance and keep copies; contact the Southern Center for Human Rights, ACLU of Georgia, or legal aid; in general terms, the U.S. Constitution's Eighth Amendment protects against inhumane conditions and federal civil-rights law (42 U.S.C. § 1983) can allow a lawsuit; in an emergency tell staff right away and have family call the facility. "
  "You may mention these general federal protections by name, but never quote or number Georgia sections that are not listed.")
 
 def _headings(spec):return "; ".join(label for _,label in spec)
@@ -165,7 +165,7 @@ def search_text_for(query):
  extra=plain_terms(query)
  return f"{query}\n{extra}" if extra else query
 
-SICK_CALL_STEP="• Put in a written sick-call (medical) request and keep a copy. If nobody responds, file a grievance about it."
+SICK_CALL_STEP="• Ask the facility for a medical check (call the counselor, then the warden), and have the person in custody put in a written sick-call request and keep a copy. If nobody responds, contact the GDC Ombudsman and file a grievance."
 def ensure_sick_call(analysis:str,query:str)->str:
  """Jail/prison-conditions answers always carry the written medical-request step."""
  from .civil_topics import PRISON

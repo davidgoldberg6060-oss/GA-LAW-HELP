@@ -12,6 +12,16 @@ from datetime import date, datetime, timedelta
 DISCLAIMER = ("This is general legal information, not legal advice. Deadlines can depend on details of your case. "
               "Contact a lawyer or the Georgia Public Defender Council as soon as possible.")
 
+FIND_CASE = [
+    {"title": "GDC offender search (where they are held)", "url": "https://services.gdc.ga.gov/GDC/OffenderQuery/jsp/OffQryForm.jsp"},
+    {"title": "GDC: where is my loved one / family questions", "url": "https://gdc.georgia.gov/friends-and-family/where-my-loved-one"},
+    {"title": "GDC Ombudsman and family questions", "url": "https://gdc.georgia.gov/friends-and-family/questions-about-your-loved-ones"},
+    {"title": "Send money to someone in GDC custody", "url": "https://gdc.georgia.gov/friends-and-family/send-money-offender"},
+    {"title": "Parole board: tentative parole month lookup", "url": "https://pap.georgia.gov/parole-consideration/inmate-tpm-lookup"},
+    {"title": "County court records search (GSCCCA)", "url": "https://www.gsccca.org/search"},
+    {"title": "Georgia courts (find a court)", "url": "https://georgiacourts.gov/"},
+]
+
 RESOURCES = [
     {"title": "Georgia Public Defender Council", "url": "https://www.gapubdef.org/"},
     {"title": "Georgia Innocence Project", "url": "https://www.georgiainnocenceproject.org/"},
@@ -28,7 +38,7 @@ STAGES = [
     ("trial", "Trial"),
     ("sentenced", "Sentenced"),
     ("appeal", "Appeal"),
-    ("prison", "In prison: get out or reduce time"),
+    ("prison", "Serving a sentence: get out or reduce time"),
     ("probation", "Probation / parole"),
     ("record", "Clear my record"),
 ]
@@ -116,10 +126,10 @@ OPTIONS: dict[str, list[dict]] = {
              "A sentence the law does not allow (for example above the maximum) can be challenged. Ask a lawyer to review it.",
              ["17-10-1"], "Ask a lawyer; void sentences can generally be raised at any time.", "The sentencing court.", tags=("sentence",)),
         _opt("habeas", "Habeas corpus (including bad lawyer / ineffective assistance)",
-             "Challenge the conviction or sentence for violations of your constitutional rights, such as an ineffective lawyer.",
-             ["9-14-40", "9-14-41", "9-14-42", "9-14-43", "9-14-44", "9-14-48", "9-14-52"],
+             "Challenge the conviction or sentence for constitutional violations, such as an ineffective lawyer. For someone serving a sentence, the person in custody is the petitioner, but the petition can be verified under oath by them or by someone on their behalf (9-14-44), so family can help prepare it, gather records and find a lawyer. For someone held without a sentence, a person with an interest in them can also seek the writ (9-14-1).",
+             ["9-14-1", "9-14-40", "9-14-41", "9-14-42", "9-14-43", "9-14-44", "9-14-48", "9-14-52"],
              "Within 4 years for a felony (1 year for a misdemeanor) from when the conviction became final.",
-             "Superior court of the county where you are held.", rule=("final_date", 4 * 365), tags=("lawyer",)),
+             "Superior court of the county where the person is held.", rule=("final_date", 4 * 365), tags=("lawyer",)),
         _opt("extraordinary_mnt", "New evidence: extraordinary motion for new trial",
              "If important evidence was found after trial that could change the result.", ["5-5-41", "5-5-23"],
              None, "The trial court that convicted you.", tags=("evidence",)),
@@ -132,7 +142,7 @@ OPTIONS: dict[str, list[dict]] = {
              "The State Board of Pardons and Paroles decides parole and other relief from sentence. Family can send letters of support.",
              ["42-9-42", "42-9-43", "42-9-20"], None, "State Board of Pardons and Paroles (pap.georgia.gov)."),
         _opt("conditions", "Conditions inside (medical, food, safety)",
-             "Put medical requests in writing (sick-call) and keep copies; file grievances; have family contact the facility.",
+             "The facility holding the person must provide food, clothing and needed medical care. From the outside: call or write the facility's counselor, then the warden, then the GDC Ombudsman; ask the facility for a medical check; and contact the person's lawyer or legal aid. The person in custody can also put in a written sick-call request and a grievance.",
              ["42-5-2", "42-4-4"], None, "The facility, then the Georgia Department of Corrections."),
     ],
     "probation": [
@@ -160,7 +170,7 @@ NEXT_STEPS = {
     "trial": ["Ask the lawyer whether family can testify or help find witnesses and evidence.", "If the defendant is in custody, arrange court clothes.", "Don't talk to jurors or witnesses."],
     "sentenced": ["Deadlines are short: 30 days for a new-trial motion or appeal.", "Get a copy of the sentence and the case number.", "Tell the lawyer in writing if the defendant wants to appeal."],
     "appeal": ["Ask the appellate lawyer for the record and transcript.", "Keep copies of everything filed.", "Send the appellate lawyer any issues to raise."],
-    "prison": ["Get a copy of the sentence, the plea or trial record, and the case number.", "Check the 1-year sentence-modification and the habeas deadlines below.", "Contact a lawyer, the Georgia Innocence Project, or the Southern Center for Human Rights."],
+    "prison": ["Get a copy of the sentence, the plea or trial record, and the case number.", "Check the 1-year sentence-modification and the habeas deadlines below.", "Contact a lawyer, the public defender, the Georgia Innocence Project, or the Southern Center for Human Rights on their behalf.", "Look up where they are held and their parole status with the links under Find their case."],
     "probation": ["Keep proof of every payment, class and check-in.", "If there's a warrant, talk to a lawyer about turning in safely.", "Ask for the conditions in writing."],
     "record": ["Get the criminal history from the GBI or local police (the person may need to request it themselves).", "Note which charges were dismissed, dead-docketed or completed First Offender.", "Contact the prosecutor's office about record restriction."],
 }
@@ -172,7 +182,7 @@ FAMILY_TIPS = {
     "trial": ["Attend court if you can; a supportive family in the courtroom can matter."],
     "sentenced": ["Write a respectful support letter for the judge (job, housing and family support waiting after release).", "Put money on the person's books and set up calls or visits once a facility is assigned to a facility."],
     "appeal": ["Keep in touch with the appellate lawyer and send them any new information."],
-    "prison": ["Write support letters to the State Board of Pardons and Paroles about housing, work and family support.", "Put money on books and set up visits or calls through the Georgia Department of Corrections.", "If there's a medical or safety emergency, call the facility and the GDC ombudsman."],
+    "prison": ["Write support letters to the State Board of Pardons and Paroles about housing, work and family support.", "Put money on books and set up visits or calls through the Georgia Department of Corrections.", "If there's a medical or safety emergency, call the facility (counselor, then warden) and the GDC Ombudsman, and ask for a medical check."],
     "probation": ["Help with rides to check-ins, classes and court."],
     "record": [],
 }
@@ -190,7 +200,7 @@ def _third_person(t: str) -> str:
 
 
 _DETECT = [
-    ("prison", r"(?i)\b(in prison|i'?m locked up|doing time|serving (a |my )?(sentence|time)|get (me )?out|reduce my (time|sentence)|habeas|parole board|commutation)"),
+    ("prison", r"(?i)\b(in prison|(is|are|been|still) (locked up|incarcerated)|serving (a|his|her|their) (sentence|time)|i'?m locked up|doing time|serving (a |my )?(sentence|time)|get (me )?out|reduce my (time|sentence)|habeas|parole board|commutation)"),
     ("record", r"(?i)\b(expunge|record restriction|clear my record|seal my record)"),
     ("probation", r"(?i)\b(probation|parole|\bpo\b|violated)"),
     ("appeal", r"(?i)\b(appeal|appellate|out of time)"),
@@ -286,5 +296,5 @@ def build_guide(db, *, stage: str, details: dict | None = None, today: date | No
             "next_steps": NEXT_STEPS[stage], "family_tips": FAMILY_TIPS[stage],
             "motions": motions, "questions": questions,
             "options": options,
-            "timeline": timeline, "laws_cited": laws, "resources": RESOURCES, "disclaimer": DISCLAIMER,
+            "timeline": timeline, "laws_cited": laws, "resources": RESOURCES, "find_case": FIND_CASE, "disclaimer": DISCLAIMER,
             "stages": [{"key": k, "label": v} for k, v in STAGES]}

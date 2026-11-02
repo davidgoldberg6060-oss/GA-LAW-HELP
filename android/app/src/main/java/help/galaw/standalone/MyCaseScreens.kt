@@ -12,7 +12,7 @@ import org.json.JSONObject
 object MyCaseScreens {
     val STAGES = listOf(
         "arrested" to "Arrested / bond", "pretrial" to "Charged / pretrial", "plea" to "Plea offer", "trial" to "Trial",
-        "sentenced" to "Sentenced", "appeal" to "Appeal", "prison" to "In prison – get out or reduce time",
+        "sentenced" to "Sentenced", "appeal" to "Appeal", "prison" to "Serving a sentence – get out or reduce time",
         "probation" to "Probation / parole", "record" to "Clear a record")
     private val HINTS = mapOf(
         "arrested" to "Where and when was the arrest? What are the charges? Has bond been set?",
@@ -180,6 +180,11 @@ object MyCaseScreens {
         if (stage in CHARGE_STAGES) box.addView(ui.secondaryButton("Check possible charges") { onCharges() }, ui.lp(8, 4))
         box.addView(ui.secondaryButton("Defenses & motions") { onDefenses() }, ui.lp(4, 4))
         box.addView(ui.primaryButton("Save this case") { onSave() }, ui.lp(8, 6))
+        Glossary.button(ui, g.toString())?.let { box.addView(it, ui.lp(4, 4)) }
+        val fc = g.optJSONArray("find_case") ?: JSONArray()
+        if (fc.length() > 0) box.addView(ui.sectionHeader("Find their case"))
+        for (i in 0 until fc.length()) { val r = fc.getJSONObject(i)
+            box.addView(ui.text(r.optString("title") + " ›", 14.5f, GaUi.BLUE_BRIGHT).apply { setPadding(0, dp(5), 0, dp(5)); isClickable = true; setOnClickListener { onLink(r.optString("url")) } }) }
         box.addView(ui.sectionHeader("Free and low-cost help"))
         val rs = g.optJSONArray("resources") ?: JSONArray()
         for (i in 0 until rs.length()) { val r = rs.getJSONObject(i)

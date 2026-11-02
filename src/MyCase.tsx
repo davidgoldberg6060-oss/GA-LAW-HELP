@@ -1,10 +1,11 @@
+import { Glossary } from './Glossary';
 import {useEffect, useState} from 'react';
 import {LawAccordion} from './LawAccordion';
 
 /** 'My Case' hub (web): case type -> criminal stage -> next steps, deadlines, motions with stored Georgia law. */
 export const STAGES: [string, string][] = [
   ['arrested', 'Arrested / bond'], ['pretrial', 'Charged / pretrial'], ['plea', 'Plea offer'], ['trial', 'Trial'],
-  ['sentenced', 'Sentenced'], ['appeal', 'Appeal'], ['prison', 'In prison – get out or reduce time'],
+  ['sentenced', 'Sentenced'], ['appeal', 'Appeal'], ['prison', 'Serving a sentence – get out or reduce time'],
   ['probation', 'Probation / parole'], ['record', 'Clear a record'],
 ];
 const DATE_FIELDS: Record<string, [string, string][]> = {
@@ -20,7 +21,7 @@ type Guide = {stage_label: string; next_steps: string[]; family_tips: string[]; 
   options: {key: string; title: string; what: string; deadline?: string | null; where?: string | null; highlight: boolean; deadline_status?: {label: string; passed: boolean} | null; citations: Cite[]}[];
   motions?: {key: string; title: string; goal_label: string; what: string; fits?: string | null; score: number; deadline?: string | null; deadline_status?: {label: string; passed: boolean; due: string} | null; citations: Cite[]; draftable: boolean}[];
   questions?: {id: string; q: string; options: string[]}[];
-  laws_cited: Cite[]; resources: {title: string; url: string}[]; disclaimer: string};
+  laws_cited: Cite[]; resources: {title: string; url: string}[]; find_case?: {title: string; url: string}[]; disclaimer: string};
 type Saved = {id: string; name: string; stage: string; details: Record<string, string>; saved_at: string};
 const KEY = 'ga_my_cases';
 const load = (): Saved[] => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
@@ -106,7 +107,7 @@ export default function MyCase({api, onCivil, onAsk, initial}: {api: string; onC
             <LawAccordion api={api} items={o.citations}/>
           </article>)}
           <div className="mcActions"><button type="button" onClick={save}>Save this case</button></div>
-          <h3>Free and low-cost help</h3><p>{guide.resources.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noreferrer">{r.title} </a>)}</p>
+          <Glossary text={JSON.stringify(guide)} />{guide.find_case?.length ? <><h3>Find their case</h3><p>{guide.find_case.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noreferrer">{r.title} </a>)}</p></> : null}<h3>Free and low-cost help</h3><p>{guide.resources.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noreferrer">{r.title} </a>)}</p>
           <small>{guide.disclaimer}</small>
         </div>}
       </>}
