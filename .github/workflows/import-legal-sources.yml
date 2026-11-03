@@ -34,7 +34,7 @@ on:
         default: "0"
         type: string
       courtlistener_release:
-        description: "courtlistener only: release tag holding pre-filtered Georgia files (courtlistener-ga-YYYY-MM-DD); blank streams the full 55 GB bulk file"
+        description: "courtlistener only: release tag holding pre-filtered Georgia files (courtlistener-ga-YYYY-MM-DD) or a box-fetched API snapshot (courtlistener-api-YYYY-MM-DD, imported with no CourtListener calls); blank streams the full 55 GB bulk file"
         required: false
         default: ""
         type: string
@@ -102,8 +102,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.courtlistener_release }}
         run: |
+          if [[ "$TAG" =~ ^courtlistener-api-[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            # JSON-lines snapshot fetched off-runner by app/ingestion/courtlistener_api_snapshot.py
+            mkdir -p .import-cache
+            gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "courtlistener-api.jsonl" -p "SHA256SUMS" \
+              -D .import-cache --clobber
+            (cd .import-cache && sha256sum -c SHA256SUMS)
+            echo "CL_RECORDS_FILE=.import-cache/courtlistener-api.jsonl" >> "$GITHUB_ENV"
+            exit 0
+          fi
           if [[ ! "$TAG" =~ ^courtlistener-ga-([0-9]{4}-[0-9]{2}-[0-9]{2})$ ]]; then
-            echo "::error::courtlistener_release must look like courtlistener-ga-YYYY-MM-DD"; exit 1
+            echo "::error::courtlistener_release must look like courtlistener-ga-YYYY-MM-DD or courtlistener-api-YYYY-MM-DD"; exit 1
           fi
           bulk_date="${BASH_REMATCH[1]}"
           mkdir -p .import-cache

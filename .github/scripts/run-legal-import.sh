@@ -32,6 +32,14 @@ case "$SOURCE" in
         echo "::error::bad pre-filtered CourtListener file settings"; exit 1
       fi
       args+=(--opinions-file "$CL_OPINIONS_FILE" --bulk-date "$CL_BULK_DATE")
+    fi
+    # Optional box-fetched API snapshot (courtlistener-api-YYYY-MM-DD release): no CourtListener calls at all.
+    if [ -n "${CL_RECORDS_FILE:-}" ]; then
+      if [ "$CL_RECORDS_FILE" != ".import-cache/courtlistener-api.jsonl" ] || [ -n "${CL_API_SINCE:-}" ]; then
+        echo "::error::bad CourtListener snapshot settings (do not combine with courtlistener_api_since)"; exit 1
+      fi
+      args=(-m app.ingestion.import_courtlistener_opinions --source file --records-file "$CL_RECORDS_FILE"
+            --court "${SCOPE:-ga}" --limit "$LIMIT" --offset "$OFFSET" --quiet)
     fi ;;
   appeals)
     # SCOPE: judgment date range "YYYY-MM-DD..YYYY-MM-DD" (at most one year)

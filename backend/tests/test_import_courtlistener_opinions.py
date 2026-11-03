@@ -200,3 +200,26 @@ def test_api_mode_needs_token_and_checkpoints_the_cursor():
     records = [r for r in cl.stream_api_opinions("tok", ["ga"], state, pause=1, fetch_json=fetch) if r]
     assert [(r.meta.citation, r.opinion_id, r.text) for r in records] == [("318 Ga. 5", "100", "Affirmed.")]
     assert state["api_next"] == {"ga": None} and state["clusters_done"] == ["10"]
+
+
+def test_file_mode_imports_a_snapshot_without_network_and_skips_duplicates(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr(cl, "_fetch_text", lambda *a, **k: (_ for _ in ()).throw(AssertionError("network")))
+    rows = [{"court": "ga", "docket": {"id": 1, "docket_number": "S26A0001", "court_id": "ga"},
+             "cluster": {"id": 10, "case_name": "Smith v. State", "date_filed": "2026-10-14", "docket_id": 1,
+                         "slug": "smith", "citations": []},
+             "opinions": [{"id": 101, "type": "040dissent", "plain_text": "x"},
+                          {"id": 100, "type": "020lead", "plain_text": "Affirmed."}]},
+            {"court": "ga", "docket": {"id": 2, "docket_number": "S26A0002", "court_id": "ga"},
+             "cluster": {"id": 11, "case_name": "No Text v. State", "date_filed": "2026-10-14", "docket_id": 2,
+                         "slug": "nt", "citations": []}, "opinions": []}]
+    path = tmp_path / "courtlistener-api.jsonl"
+    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    Session = _session()
+    args = ["--source", "file", "--records-file", str(path), "--court", "ga", "--quiet", "--commit"]
+    assert cl.main(args, session_factory=Session) == 0
+    assert cl.main(args, session_factory=Session) == 0
+    with Session() as db:
+        assert [r.citation for r in db.query(LegalAuthority).all()] == ["S26A0001 [UNVERIFIED DOCUMENT ID]"]
+        assert db.query(AuthorityVersion).one().version_label == "courtlistener:api:opinion:100"
+    with pytest.raises(SystemExit):
+        cl.main(["--source", "file"])
