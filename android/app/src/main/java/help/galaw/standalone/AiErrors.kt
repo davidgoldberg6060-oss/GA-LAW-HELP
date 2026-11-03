@@ -6,9 +6,9 @@ import java.net.SocketTimeoutException
 /** Turns raw network failures (e.g. OkHttp's bare "timeout") into friendly, retryable messages. */
 object AiErrors {
     const val TIMEOUT_MESSAGE =
-        "GA.LAW.HELP is taking longer than usual to answer. Your question wasn’t lost — tap Retry to try again."
+        "STANDALONE ASSISTANT is taking longer than usual to answer. Your question wasn’t lost — tap Retry to try again."
     const val NETWORK_MESSAGE =
-        "Couldn’t reach GA.LAW.HELP. Check your internet connection, then tap Retry."
+        "Couldn’t reach STANDALONE ASSISTANT. Check your internet connection, then tap Retry."
     const val GENERIC_MESSAGE = "Something went wrong. Please tap Retry."
 
     fun isTimeout(e: Throwable): Boolean {

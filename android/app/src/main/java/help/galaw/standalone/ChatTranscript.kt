@@ -48,7 +48,7 @@ class ChatTranscript(var onChange: ((ChatTranscript) -> Unit)? = null) {
     fun transcript(): String = buildString {
         for (m in items.filter { it.inContext }) {
             if (m.mine) append("User: ").append(m.text.trim()).append('\n')
-            else append("GA.LAW.HELP: ").append(m.text.trim()).append("\n\n")
+            else append("STANDALONE ASSISTANT: ").append(m.text.trim()).append("\n\n")
         }
     }
 }

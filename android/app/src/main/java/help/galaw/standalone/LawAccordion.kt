@@ -71,7 +71,7 @@ object LawAccordion {
 
     private fun fill(ui: GaUi, panel: LinearLayout, citation: String, law: JSONObject?, fallbackUrl: String?) {
         val ctx = panel.context
-        if (law == null) { panel.addView(ui.text("The full text of $citation isn't in GA.LAW.HELP yet, or you're offline. Tap again to retry later.", 14f, GaUi.MUTED)); return }
+        if (law == null) { panel.addView(ui.text("The full text of $citation isn't in STANDALONE ASSISTANT yet, or you're offline. Tap again to retry later.", 14f, GaUi.MUTED)); return }
         fun s(k: String) = law.optString(k).takeIf { it.isNotBlank() && it != "null" }
         s("title")?.let { panel.addView(ui.text(it, 15f, GaUi.WHITE, ui.sansMedium).apply { setPadding(0, 0, 0, ui.dp(6)) }) }
         val body = ui.text(format(s("text") ?: "No text is stored for this item yet.", ui.dp(14)), 14.5f, GaUi.TEXT).apply { setTextIsSelectable(true); setLineSpacing(0f, 1.15f) }

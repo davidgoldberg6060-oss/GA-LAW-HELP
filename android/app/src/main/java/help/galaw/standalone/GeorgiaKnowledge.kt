@@ -48,6 +48,6 @@ object GeorgiaKnowledge {
         "Myth: If two charges come from one incident they automatically merge." to "Merger is a legal analysis, not simply a same-incident rule.",
         "Myth: Deleted texts can never matter in court." to "Copies, backups, screenshots, recipient devices, provider records or other evidence may still exist; authenticity and admissibility are separate issues.",
         "Myth: A private agreement can always override a court order." to "Parties should not assume they can privately disregard an existing order; modifications may require court action.",
-        "Myth: 'Funny law' lists on the internet are reliable statements of current Georgia law." to "Many viral lists confuse repealed provisions, local ordinances, proposed bills, old cases and folklore. GA.LAW.HELP should label an item verified only when an authoritative source supports it."
+        "Myth: 'Funny law' lists on the internet are reliable statements of current Georgia law." to "Many viral lists confuse repealed provisions, local ordinances, proposed bills, old cases and folklore. STANDALONE ASSISTANT should label an item verified only when an authoritative source supports it."
     )
 }

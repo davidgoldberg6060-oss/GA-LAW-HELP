@@ -22,7 +22,7 @@ object TalkToMeScreenModel {
         require(message.length <= MAX_MESSAGE_CHARS) { "Message is too long. Use the key legal facts and question." }
 
         val preamble = buildString {
-            append("Continue a focused GA.LAW.HELP legal-information conversation. ")
+            append("Continue a focused STANDALONE ASSISTANT legal-information conversation. ")
             append(languageInstruction.trim()).append(' ')
             append("Stay within Georgia law, rights, police encounters, criminal/civil legal procedure, motions, sentencing, incarceration/post-conviction issues, appeals, and verified legal programs. Do not answer unrelated general-chat questions.")
         }

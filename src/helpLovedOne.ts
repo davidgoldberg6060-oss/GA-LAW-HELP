@@ -1,4 +1,4 @@
-export const HELP_NOTE = "These are the services the Georgia Department of Corrections lists for state prisons. Riverbend Private Prison still uses Access Securepak for packages. County jails use their own vendors: check the county sheriff's website for how to send money, call or visit. GA.LAW.HELP never takes payments; always pay on the vendor's own site.";
+export const HELP_NOTE = "These are the services the Georgia Department of Corrections lists for state prisons. Riverbend Private Prison still uses Access Securepak for packages. County jails use their own vendors: check the county sheriff's website for how to send money, call or visit. STANDALONE ASSISTANT never takes payments; always pay on the vendor's own site.";
 export const HELP_LINKS: [string, string][] = [
  [
   "Find where they are (GDC offender search)",

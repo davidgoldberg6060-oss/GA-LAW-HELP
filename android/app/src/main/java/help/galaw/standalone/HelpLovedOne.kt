@@ -4,7 +4,7 @@ import android.app.AlertDialog
 
 /** Official outbound links for helping someone in GDC custody (checked to load; vendors as listed by GDC). */
 object HelpLovedOne {
-    const val NOTE = "These are the services the Georgia Department of Corrections lists for state prisons. Riverbend Private Prison still uses Access Securepak for packages. County jails use their own vendors: check the county sheriff's website for how to send money, call or visit. GA.LAW.HELP never takes payments; always pay on the vendor's own site."
+    const val NOTE = "These are the services the Georgia Department of Corrections lists for state prisons. Riverbend Private Prison still uses Access Securepak for packages. County jails use their own vendors: check the county sheriff's website for how to send money, call or visit. STANDALONE ASSISTANT never takes payments; always pay on the vendor's own site."
     val LINKS = listOf(
         "Find where they are (GDC offender search)" to "https://services.gdc.ga.gov/GDC/OffenderQuery/jsp/OffQryForm.jsp",
         "Send money: GDC's instructions (JPay)" to "https://gdc.georgia.gov/friends-and-family/how-do-i-send-money-offender",
