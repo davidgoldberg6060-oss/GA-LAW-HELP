@@ -23,7 +23,7 @@ import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 
 /**
- * GA.LAW.HELP design system: dark navy background, glowing blue outlined cards, Cinzel serif
+ * STANDALONE ASSISTANT design system: dark navy background, glowing blue outlined cards, Cinzel serif
  * wordmark/headlines, gold tagline, original Lady Justice art and the five-tab bottom nav.
  * Everything here builds plain Android Views from a Context so screens can be rendered in
  * activities and in screenshot tests alike.
@@ -180,7 +180,7 @@ class GaUi(val context: Context) {
     }
 
     // ---------- brand ----------
-    fun wordmark(size: Float): TextView = glowText(text("GA.LAW.HELP", size, Color.rgb(236, 244, 255), serifBold, Gravity.CENTER), BLUE, 18f)
+    fun wordmark(size: Float): TextView = glowText(text("STANDALONE ASSISTANT", size, Color.rgb(236, 244, 255), serifBold, Gravity.CENTER), BLUE, 18f)
     fun tagline(size: Float): TextView = text("CLEAR ANSWERS. A STRONGER GEORGIA.", size, GOLD, serifMedium, Gravity.CENTER).apply { letterSpacing = 0.04f }
 
     /** Painterly Lady Justice from the approved mockup (blue statue variant for inner screens). */
@@ -190,7 +190,7 @@ class GaUi(val context: Context) {
     }
 
     fun brandLockup(): View = ImageView(context).apply {
-        setImageResource(R.drawable.ga_brand_lockup); scaleType = ImageView.ScaleType.FIT_XY; contentDescription = "GA.LAW.HELP — Clear answers. A stronger Georgia."
+        setImageResource(R.drawable.ga_brand_lockup); scaleType = ImageView.ScaleType.FIT_XY; contentDescription = "STANDALONE ASSISTANT — Clear answers. A stronger Georgia."
     }
 
     /** Compact header used on every inner screen (Talk to Me, My Cases, Settings …). */

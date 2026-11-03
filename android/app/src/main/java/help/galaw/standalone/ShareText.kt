@@ -2,7 +2,7 @@ package help.galaw.standalone
 
 /** Plain-text versions of answers for the Share / Copy actions. Pure so it can be unit tested. */
 object ShareText {
-    const val NOTE = "From GA.LAW.HELP — general legal information, not legal advice. Talk to a Georgia attorney about your situation."
+    const val NOTE = "From STANDALONE ASSISTANT — general legal information, not legal advice. Talk to a Georgia attorney about your situation."
 
     private fun cites(list: List<GaScreens.LoopholeCite>): String =
         list.joinToString("\n") { c -> "• " + c.citation + (if (c.title.isNotBlank() && c.title != c.citation) " — ${c.title}" else "") + (c.sourceUrl?.let { "\n  $it" } ?: "") }

@@ -53,7 +53,7 @@ export function LawAccordion({api, items}: {api: string; items: LawItem[]}) {
                       <div className="lawScroll">{lawParagraphs(law.text || 'No text is stored for this item yet.').map((p, i) => <p key={i} style={{marginLeft: p.level * 18}}>{p.text}</p>)}</div>
                       {law.note && <small>Note: {law.note}</small>}
                     </>
-                  : <p>The full text of {key} isn't in GA.LAW.HELP yet.</p>}
+                  : <p>The full text of {key} isn't in STANDALONE ASSISTANT yet.</p>}
                 {src && <a className="lawSource" href={src} target="_blank" rel="noreferrer">View official source</a>}
               </div>
             )}

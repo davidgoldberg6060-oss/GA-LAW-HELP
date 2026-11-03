@@ -15,7 +15,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 
 /**
- * Mockup-matched GA.LAW.HELP screens. Each builder is pure (Context + data + callbacks) so the
+ * Mockup-matched STANDALONE ASSISTANT screens. Each builder is pure (Context + data + callbacks) so the
  * same code runs in HomeActivity and in screenshot tests. Lists come from the user's real data;
  * when there is none an empty state is shown instead of sample records.
  */
@@ -159,7 +159,7 @@ object GaScreens {
                 if (!mine && onLawTap != null) movementMethod = android.text.method.LinkMovementMethod.getInstance()
                 setPadding(dp(14), dp(11), dp(14), dp(11)); setLineSpacing(0f, 1.15f)
                 background = if (mine) ui.glowCard(Color.argb(235, 14, 34, 58), GaUi.STROKE_SOFT, 12, glow = false) else ui.glowCard(Color.argb(235, 12, 40, 72), GaUi.STROKE, 12, glow = false)
-                if (id != 0L) { isLongClickable = true; contentDescription = (if (mine) "Your message" else "GA.LAW.HELP answer") + ". Long-press for Copy, Share or Delete."; setOnLongClickListener { onMessageLongPress?.invoke(id); true } }
+                if (id != 0L) { isLongClickable = true; contentDescription = (if (mine) "Your message" else "STANDALONE ASSISTANT answer") + ". Long-press for Copy, Share or Delete."; setOnLongClickListener { onMessageLongPress?.invoke(id); true } }
             }
             row.addView(bubble, LinearLayout.LayoutParams(0, -2, 1f).apply { if (mine) leftMargin = dp(56) })
             group.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
@@ -350,7 +350,7 @@ object GaScreens {
         }
         body.addView(card, ui.lp(0, 6))
         rows.forEach { body.addView(ui.rowCard(it.icon, it.title, it.subtitle, GaUi.BLUE_BRIGHT, action = it.action), ui.lp(5, 5)) }
-        body.addView(ui.note("GA.LAW.HELP provides legal information, not emergency dispatch or attorney representation."))
+        body.addView(ui.note("STANDALONE ASSISTANT provides legal information, not emergency dispatch or attorney representation."))
         return root
     }
 
@@ -382,7 +382,7 @@ object GaScreens {
         phoneField.inputType = android.text.InputType.TYPE_CLASS_PHONE
         listOf(nameBox, emailBox, phoneBox).forEach { body.addView(it, ui.lp(6, 6)) }
         body.addView(ui.primaryButton("Update Profile") { onUpdate(nameField.text.toString().trim(), phoneField.text.toString().trim()) }, ui.lp(14, 4))
-        body.addView(ui.note("Name and phone are saved only on this device. Your sign-in email is managed by your GA.LAW.HELP account."))
+        body.addView(ui.note("Name and phone are saved only on this device. Your sign-in email is managed by your STANDALONE ASSISTANT account."))
         return root
     }
 
@@ -395,7 +395,7 @@ object GaScreens {
             Triple(R.drawable.ga_ic_notifications, "Notifications", null),
             Triple(R.drawable.ga_ic_lock, "Privacy & Security", null),
             Triple(R.drawable.ga_ic_delete, "Clear App Data", null),
-            Triple(R.drawable.ga_ic_info, "About GA.LAW.HELP", null)), onRow), ui.lp(2, 8))
+            Triple(R.drawable.ga_ic_info, "About STANDALONE ASSISTANT", null)), onRow), ui.lp(2, 8))
         return root
     }
 
@@ -497,7 +497,7 @@ object GaScreens {
         if (message != null) container.addView(ui.note(message))
         if (hits == null) return
         container.addView(ui.sectionHeader("Results (${hits.size})"))
-        if (hits.isEmpty()) container.addView(ui.emptyCard(R.drawable.ga_ic_search, "No matching Georgia law found", "Try other words, or a citation such as 16-11-131. GA.LAW.HELP never invents a citation."), ui.lp(4, 4))
+        if (hits.isEmpty()) container.addView(ui.emptyCard(R.drawable.ga_ic_search, "No matching Georgia law found", "Try other words, or a citation such as 16-11-131. STANDALONE ASSISTANT never invents a citation."), ui.lp(4, 4))
         hits.forEach { h ->
             container.addView(LinearLayout(ui.context).apply {
                 orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 12, glow = false)
@@ -557,14 +557,14 @@ object GaScreens {
         }
     }
 
-    const val COVERAGE_HINT = "GA.LAW.HELP is still adding Georgia laws and court opinions to its library, so more topics will have results soon. Try again later or try a related topic."
+    const val COVERAGE_HINT = "STANDALONE ASSISTANT is still adding Georgia laws and court opinions to its library, so more topics will have results soon. Try again later or try a related topic."
 
     fun renderLoopholes(ui: GaUi, container: LinearLayout, findings: List<LoopholeFinding>, message: String?, lawyer: LawyerTake?, refused: Boolean = false, share: Pair<() -> Unit, () -> Unit>? = null, onCite: (LoopholeCite) -> Unit) {
         val dp = ui::dp
         container.removeAllViews()
         container.addView(ui.sectionHeader("Findings (${findings.size})"))
         if (findings.isEmpty()) {
-            val base = message ?: "No findings could be supported by verified Georgia sources. GA.LAW.HELP never invents a citation."
+            val base = message ?: "No findings could be supported by verified Georgia sources. STANDALONE ASSISTANT never invents a citation."
             if (refused) container.addView(ui.emptyCard(R.drawable.ga_ic_error, "Can’t help with that", base), ui.lp(4, 4))
             else container.addView(ui.emptyCard(R.drawable.ga_ic_search, "Nothing found yet", if (base.contains("still adding")) base else base + "\n\n" + COVERAGE_HINT), ui.lp(4, 4))
         }

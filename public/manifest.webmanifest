@@ -1,6 +1,6 @@
 {
-  "name": "STANDALONE ASSISTANT GA.LAW.HELP",
-  "short_name": "GA.LAW.HELP",
+  "name": "STANDALONE ASSISTANT: Georgia Case & Inmate Help",
+  "short_name": "STANDALONE ASSISTANT",
   "description": "Georgia legal information, private case tools, evidence preservation, and safety-focused encounter assistance.",
   "start_url": "/",
   "scope": "/",

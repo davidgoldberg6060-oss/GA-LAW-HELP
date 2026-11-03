@@ -23,7 +23,7 @@ object FunnyGeorgiaData {
     }
 }
 
-/** Builds the Funny & Weird Georgia Laws screen in the approved GA.LAW.HELP style (testable without an Activity). */
+/** Builds the Funny & Weird Georgia Laws screen in the approved STANDALONE ASSISTANT style (testable without an Activity). */
 class FunnyGeorgiaScreen(private val ui:GaUi, private val laws:List<FunnyLaw>, private val cases:List<FunnyCase>, private val onBack:()->Unit, private val openSource:(String)->Unit, startOnCases:Boolean=false, private val bottomNav:View?=null) {
     private var showCases=startOnCases; private var query=""
     private lateinit var tabsHost:FrameLayout; private lateinit var list:LinearLayout; private lateinit var count:TextView

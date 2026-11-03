@@ -13,7 +13,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 
 /**
- * Owner-approved GA.LAW.HELP home (design mockup): Lady Justice header, GA.LAW.HELP wordmark,
+ * Owner-approved STANDALONE ASSISTANT home (design mockup): Lady Justice header, STANDALONE ASSISTANT wordmark,
  * "LEGAL ANSWERS ANYTIME", Ask-a-legal-question search, three quick cards, six tiles,
  * Emergency Information banner, quote and the five-tab bottom nav.
  */
@@ -79,7 +79,7 @@ class ApprovedHomeScreen(private val context: Context, private val actions: Acti
 
     /** Lady Justice header, wordmark, headline, subtitle and search bar (mockup y 0–445). */
     private fun header(): View {
-        val f = ui.artStrip(R.drawable.ga_home_header, 445, "GA.LAW.HELP. Clear answers. A stronger Georgia. Know your rights, build a better tomorrow. Legal answers anytime.")
+        val f = ui.artStrip(R.drawable.ga_home_header, 445, "STANDALONE ASSISTANT. Clear answers. A stronger Georgia. Know your rights, build a better tomorrow. Legal answers anytime.")
         ui.hit(f, 18, 18, 82, 76, "Open menu") { actions.openMenu() }
         ui.hit(f, 826, 14, 896, 84, "Search Georgia laws", 40) { actions.openGeorgiaLaws() }
         ui.hit(f, 926, 12, 1004, 86, "Account", 40) { actions.openAccount() }
@@ -162,7 +162,7 @@ class ApprovedHomeScreen(private val context: Context, private val actions: Acti
         }
         f.addView(android.widget.ImageView(context).apply { setImageResource(R.drawable.ga_home_quote); scaleType = android.widget.ImageView.ScaleType.FIT_XY; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }, FrameLayout.LayoutParams(-1, -1))
         ui.glowText(ui.placeText(f, "\u201CJustice is not a privilege. It\u2019s a right.\u201D", Typeface.create(Typeface.SERIF, Typeface.ITALIC), Color.rgb(250, 251, 253), 238, 1187, 789, originY = o), Color.BLACK, 10f)
-        ui.placeSpaced(f, "GA.LAW.HELP", regular, Color.rgb(236, 241, 248), 438, 1243, 586, 1258, originY = o)
+        ui.placeSpaced(f, "STANDALONE ASSISTANT", regular, Color.rgb(236, 241, 248), 438, 1243, 586, 1258, originY = o)
         f.addView(View(context).apply { background = ui.rounded(Color.rgb(83, 190, 250), 2) }, FrameLayout.LayoutParams(ui.u(84), ui.u(3).coerceAtLeast(2)).apply { leftMargin = ui.u(470); topMargin = ui.u(1279 - o) })
         ui.placeSpaced(f, "INFORMATION", regular, Color.rgb(112, 158, 208), 815, 1278, 969, 1291, originY = o)
         ui.placeSpaced(f, "EMPOWERS", regular, Color.rgb(140, 182, 228), 815, 1309, 941, 1322, originY = o)

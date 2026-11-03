@@ -101,10 +101,10 @@ export default function ApprovedScreens(props: Props) {
   }
 
   return (
-    <section className="approvedShell" aria-label="GA.LAW.HELP screens">
+    <section className="approvedShell" aria-label="STANDALONE ASSISTANT screens">
       <div className="approvedBar">
         <button type="button" onClick={() => setDrawer(true)} aria-label="Open menu">Menu</button>
-        <b>GA.LAW.HELP</b>
+        <b>STANDALONE ASSISTANT</b>
         <button type="button" onClick={() => open("laws")}>Laws</button>
       </div>
       {drawer && (

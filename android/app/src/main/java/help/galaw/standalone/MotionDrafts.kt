@@ -74,7 +74,7 @@ class DeadlineReminderReceiver : BroadcastReceiver() {
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel(DeadlineReminders.CHANNEL, "Case deadlines", NotificationManager.IMPORTANCE_HIGH))
         val open = PendingIntent.getActivity(ctx, 0, Intent(ctx, HomeActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val n = android.app.Notification.Builder(ctx, DeadlineReminders.CHANNEL).setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("GA.LAW.HELP deadline reminder").setContentText(intent.getStringExtra("msg") ?: "A case deadline is coming up.")
+            .setContentTitle("STANDALONE ASSISTANT deadline reminder").setContentText(intent.getStringExtra("msg") ?: "A case deadline is coming up.")
             .setStyle(android.app.Notification.BigTextStyle().bigText((intent.getStringExtra("msg") ?: "") + "\nConfirm the exact deadline with a lawyer."))
             .setContentIntent(open).setAutoCancel(true).build()
         runCatching { nm.notify((intent.getStringExtra("msg") ?: "").hashCode(), n) }

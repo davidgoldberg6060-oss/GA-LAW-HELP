@@ -26,7 +26,7 @@ object GroundedConversation {
         val cleanMessage = message.trim()
         require(cleanMessage.isNotEmpty()) { "Message cannot be empty." }
         val preamble = buildString {
-            append("Continue a focused GA.LAW.HELP legal-information conversation. ")
+            append("Continue a focused STANDALONE ASSISTANT legal-information conversation. ")
             append(languageInstruction.trim())
             append(" Stay within Georgia law, rights, police encounters, criminal/civil legal procedure, motions, sentencing, incarceration/post-conviction issues, appeals, and verified legal programs. ")
             append("Use only the verified authorities supplied by the grounded legal-assistant retrieval layer as legal support. ")
@@ -57,7 +57,7 @@ object GroundedConversation {
         val grounded = GroundedLegalMode.analyze(api, GroundedLegalMode.Mode.TALK_TO_ME, request)
         val transcriptEntry = buildString {
             append("User: ").append(message.trim()).append('\n')
-            append("GA.LAW.HELP: ").append(grounded.answer)
+            append("STANDALONE ASSISTANT: ").append(grounded.answer)
             if (grounded.authoritySummary.isNotBlank()) append("\n\n").append(grounded.authoritySummary)
             append("\n\n")
         }
