@@ -293,6 +293,38 @@ def stream_bulk_opinions(opinions: str, index: dict[str, ClusterMeta], state: di
 
 
 # ---------------------------------------------------------------- API (optional, token)
+def record_from_api(court: str, cluster: dict, docket: dict, opinions: list[dict]) -> OpinionRecord | None:
+    """Build a record from raw CourtListener v4 API objects (cluster, docket, that cluster's opinions)."""
+    meta = ClusterMeta(str(cluster["id"]), court, docket.get("docket_number") or "", cluster.get("case_name") or "",
+                       cluster.get("date_filed") or "", cluster.get("slug") or "",
+                       cluster.get("precedential_status") or "")
+    for cite in cluster.get("citations") or []:
+        if cite.get("reporter") == COURTS[court]:
+            meta.citations.append(f"{int(cite['volume'])} {cite['reporter']} {int(cite['page'])}")
+    lead = sorted((o for o in opinions if o.get("type") in MAIN_TYPES), key=lambda o: (o.get("type"), o.get("id")))
+    text = opinion_text(lead[0]) if lead else ""
+    return OpinionRecord(meta, str(lead[0]["id"]), lead[0]["type"], text, "api") if text else None
+
+
+def stream_file_opinions(path: str, courts: Iterable[str], state: dict) -> Iterator[OpinionRecord | None]:
+    """Records saved by courtlistener_api_snapshot.py: JSON lines of {court, cluster, docket, opinions}.
+
+    No network calls; lets runners whose IPs CourtListener throttles import a snapshot fetched elsewhere."""
+    done = set(state.setdefault("clusters_done", []))
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            court, cid = row["court"], str(row["cluster"]["id"])
+            if court not in courts or cid in done:
+                yield None
+                continue
+            done.add(cid)
+            state["clusters_done"].append(cid)
+            yield record_from_api(court, row["cluster"], row["docket"], row["opinions"])
+
+
 def stream_api_opinions(token: str, courts: Iterable[str], state: dict, *, pause: float,
                         fetch_json: Callable[[str], dict] | None = None,
                         since: str | None = None) -> Iterator[OpinionRecord | None]:
@@ -321,20 +353,11 @@ def stream_api_opinions(token: str, courts: Iterable[str], state: dict, *, pause
                     continue
                 docket_id = cluster.get("docket_id") or str(cluster.get("docket", "")).rstrip("/").rsplit("/", 1)[-1]
                 docket = fetch_json(check_url(f"{API_BASE}dockets/{int(docket_id)}/?fields=docket_number,court_id"))
-                meta = ClusterMeta(cid, court, docket.get("docket_number") or "", cluster.get("case_name") or "",
-                                   cluster.get("date_filed") or "", cluster.get("slug") or "",
-                                   cluster.get("precedential_status") or "")
-                for cite in cluster.get("citations") or []:
-                    if cite.get("reporter") == COURTS[court]:
-                        meta.citations.append(f"{int(cite['volume'])} {cite['reporter']} {int(cite['page'])}")
                 ops = fetch_json(check_url(API_BASE + "opinions/?" + urlencode(
                     {"cluster": cid, "fields": "id,type," + ",".join(TEXT_FIELDS)})))
-                lead = sorted((o for o in ops.get("results", []) if o.get("type") in MAIN_TYPES),
-                              key=lambda o: (o.get("type"), o.get("id")))
-                text = opinion_text(lead[0]) if lead else ""
                 done.add(cid)
                 state["clusters_done"].append(cid)
-                yield OpinionRecord(meta, str(lead[0]["id"]), lead[0]["type"], text, "api") if text else None
+                yield record_from_api(court, cluster, docket, ops.get("results", []))
             url = page.get("next")
             cursors[court] = url
         cursors[court] = None
@@ -375,7 +398,7 @@ def _save_state(path: str | None, state: dict) -> None:
 
 def main(argv: list[str] | None = None, *, session_factory=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--source", choices=("bulk", "api"), default="bulk")
+    parser.add_argument("--source", choices=("bulk", "api", "file"), default="bulk")
     parser.add_argument("--court", default="ga,gactapp", help="Comma list of: ga, gactapp")
     parser.add_argument("--bulk-date", default="latest", help="Bulk snapshot date YYYY-MM-DD or 'latest'")
     for kind in ("dockets", "clusters", "citations", "opinions"):
@@ -385,6 +408,7 @@ def main(argv: list[str] | None = None, *, session_factory=None) -> int:
     parser.add_argument("--limit", type=int, default=100, help="Max records this run (1-50000)")
     parser.add_argument("--offset", type=int, default=0, help="Skip this many matched records first")
     parser.add_argument("--pause", type=float, default=1.0, help="Seconds between API requests (api mode)")
+    parser.add_argument("--records-file", help="file mode: JSON-lines snapshot from courtlistener_api_snapshot.py")
     parser.add_argument("--since", help="api mode only: only clusters filed on/after YYYY-MM-DD")
     parser.add_argument("--commit", action="store_true", help="Persist records (default: preview only)")
     parser.add_argument("--quiet", action="store_true", help="Only print the summary line")
@@ -399,6 +423,9 @@ def main(argv: list[str] | None = None, *, session_factory=None) -> int:
 
     if args.since and (args.source != "api" or not BULK_DATE.match(args.since)):
         parser.error("--since needs --source api and a YYYY-MM-DD date")
+
+    if (args.source == "file") != bool(args.records_file):
+        parser.error("--records-file and --source file go together")
 
     state = _load_state(args.state_file)
     started = time.time()
@@ -424,6 +451,9 @@ def main(argv: list[str] | None = None, *, session_factory=None) -> int:
         index = {k: v for k, v in index.items() if v.court in courts}
         records = stream_bulk_opinions(files["opinions"], index, state, f"bulk-{bulk_date}")
         header = {"source": "courtlistener-bulk", "bulk_date": bulk_date, "files": files, "georgia_clusters": len(index)}
+    elif args.source == "file":
+        records = stream_file_opinions(args.records_file, courts, state)
+        header = {"source": "courtlistener-api-file"}
     else:
         records = stream_api_opinions(os.environ.get("COURTLISTENER_TOKEN", ""), courts, state, pause=args.pause,
                                       since=args.since)
