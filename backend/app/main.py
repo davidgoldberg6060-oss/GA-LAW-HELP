@@ -265,6 +265,29 @@ def private_case_chat(case_id:int,body:dict,user=Depends(require_paid),db:Sessio
     except RuntimeError: raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
     audit(db,user.id,'RUN_CASE_CHAT','case',case_id);db.commit();return _sanitize(response)
 
+from fastapi import Form as _Form
+from . import document_reader as _docreader
+
+@app.post('/documents/read')
+def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form(''),case_id:str=_Form(''),user=Depends(require_paid),db:Session=Depends(get_db)):
+    """Read photos/PDF pages of case papers with a vision model and explain them (Scan a paper)."""
+    case=None
+    if str(case_id or '').strip():
+        try: case=owned_case(int(case_id),user,db)
+        except (TypeError,ValueError): raise HTTPException(400,'Invalid case id.')
+    pages=[]
+    for f in files[:_docreader.MAX_FILES+1]:
+        data=f.file.read(_docreader.MAX_FILE_BYTES+1)
+        pages.append((_docreader.sniff_type(data,f.content_type,f.filename),data))
+    try: result=_docreader.read_documents(pages,question)
+    except _docreader.DocumentInputError as error: raise HTTPException(400 if 'too large' not in str(error) else 413,str(error))
+    except RuntimeError: raise HTTPException(503,'The document reader is busy right now. Your photos weren’t lost — please tap Retry in a minute.')
+    if case is not None and result.get('readable'):
+        db.add(models.CaseNote(case_id=case.id,owner_id=user.id,note_type='DOCUMENT_READ',title=('Scanned paper: '+(result.get('document_type') or 'document'))[:255],content=result['answer']+('\n\nText read from the paper:\n'+result['extracted_text'] if result.get('extracted_text') else ''),language='en'))
+    result['case_id']=case.id if case is not None else None
+    audit(db,user.id,'READ_DOCUMENT_PHOTOS','case',case.id if case is not None else None);db.commit()
+    return result
+
 @app.post('/loopholes/analyze')
 def loopholes_analyze(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     """Legal Loopholes: grounded contradictions, gaps, ambiguities and exceptions for a topic."""
