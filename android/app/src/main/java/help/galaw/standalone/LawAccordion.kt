@@ -27,6 +27,10 @@ import kotlin.concurrent.thread
 object LawAccordion {
     /** Fetches {citation,title,text,note,source_url}. Replaced in tests. */
     var loader: (citation: String, id: Long?) -> JSONObject = { c, id -> GuestPublicApi.law(BuildConfig.API_BASE_URL, c, id) }
+    /** Where the fetch runs and where its result is delivered. Replaced in tests to run synchronously. */
+    var background: (() -> Unit) -> Unit = { thread { it() } }
+    var deliver: (() -> Unit) -> Unit = { main.post(it) }
+    fun clearCache() = cache.clear()
     private val cache = HashMap<String, JSONObject>()
     private var openKey: String? = null
     private var openPanel: View? = null
@@ -37,7 +41,7 @@ object LawAccordion {
 
     fun collapse() { (openPanel?.parent as? ViewGroup)?.removeView(openPanel); openPanel = null; openKey = null }
 
-    fun toggle(anchor: View, citation: String, id: Long? = null, sourceUrl: String? = null) {
+    fun toggle(anchor: View, citation: String, id: Long? = null, sourceUrl: String? = null, showSourceLink: Boolean = true) {
         val k = key(citation)
         val wasOpen = openKey == k
         collapse()
@@ -60,18 +64,30 @@ object LawAccordion {
         panel.addView(spinner)
         parent.addView(panel, parent.indexOfChild(target) + 1, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(6); bottomMargin = ui.dp(6) })
         openPanel = panel; openKey = k
-        val show = { law: JSONObject? -> if (openPanel === panel) { panel.removeView(spinner); fill(ui, panel, k, law, sourceUrl) } }
-        cache[k]?.let { show(it); return }
-        thread {
-            val law = runCatching { loader(k, id) }.getOrNull()
-            if (law != null) cache[k] = law
-            main.post { show(law) }
+        load(ui, panel, spinner, k, id, if (showSourceLink) sourceUrl else null, showSourceLink)
+    }
+
+    private fun load(ui: GaUi, panel: LinearLayout, spinner: View, k: String, id: Long?, sourceUrl: String?, showSourceLink: Boolean) {
+        val show = { law: JSONObject?, failed: Boolean -> if (openPanel === panel) {
+            panel.removeAllViews()
+            if (failed) {
+                panel.addView(ui.text("Couldn't load the full text. Check your connection and try again.", 14f, GaUi.MUTED))
+                panel.addView(ui.secondaryButton("Retry") { panel.removeAllViews(); panel.addView(spinner); load(ui, panel, spinner, k, id, sourceUrl, showSourceLink) }.apply { contentDescription = "Retry loading $k" },
+                    LinearLayout.LayoutParams(-2, ui.dp(40)).apply { topMargin = ui.dp(8) })
+            } else fill(ui, panel, k, law, sourceUrl, showSourceLink)
+        } }
+        cache[k]?.let { show(it, false); return }
+        background {
+            val r = runCatching { loader(k, id) }
+            val notStored = (r.exceptionOrNull() as? ApiException)?.statusCode == 404
+            r.getOrNull()?.let { cache[k] = it }
+            deliver { show(r.getOrNull(), r.isFailure && !notStored) }
         }
     }
 
-    private fun fill(ui: GaUi, panel: LinearLayout, citation: String, law: JSONObject?, fallbackUrl: String?) {
+    private fun fill(ui: GaUi, panel: LinearLayout, citation: String, law: JSONObject?, fallbackUrl: String?, showSourceLink: Boolean = true) {
         val ctx = panel.context
-        if (law == null) { panel.addView(ui.text("The full text of $citation isn't in STANDALONE ASSISTANT yet, or you're offline. Tap again to retry later.", 14f, GaUi.MUTED)); return }
+        if (law == null) { panel.addView(ui.text("The full text of $citation isn't stored in STANDALONE ASSISTANT yet, so there's nothing to show here.", 14f, GaUi.MUTED)); return }
         fun s(k: String) = law.optString(k).takeIf { it.isNotBlank() && it != "null" }
         s("title")?.let { panel.addView(ui.text(it, 15f, GaUi.WHITE, ui.sansMedium).apply { setPadding(0, 0, 0, ui.dp(6)) }) }
         val body = ui.text(format(s("text") ?: "No text is stored for this item yet.", ui.dp(14)), 14.5f, GaUi.TEXT).apply { setTextIsSelectable(true); setLineSpacing(0f, 1.15f) }
@@ -85,7 +101,7 @@ object LawAccordion {
         panel.addView(scroll, LinearLayout.LayoutParams(-1, if (body.measuredHeight > ui.dp(420)) h else -2))
         s("note")?.let { panel.addView(ui.text("Note: $it", 12f, GaUi.MUTED).apply { setPadding(0, ui.dp(8), 0, 0) }) }
         val url = s("source_url") ?: fallbackUrl
-        if (url != null && url.startsWith("https://")) panel.addView(ui.text("View official source", 12.5f, GaUi.BLUE_BRIGHT).apply {
+        if (showSourceLink && url != null && url.startsWith("https://")) panel.addView(ui.text("View official source", 12.5f, GaUi.BLUE_BRIGHT).apply {
             setPadding(0, ui.dp(8), 0, ui.dp(2)); isClickable = true; contentDescription = "View official source for $citation"
             setOnClickListener { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } }
         })
