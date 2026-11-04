@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <cache-path name="drafts" path="drafts/" />
+    <cache-path name="camera" path="camera/" />
+    <files-path name="documents" path="documents/" />
 </paths>

@@ -279,7 +279,7 @@ object GaScreens {
     }
 
     // ---------------- Documents ----------------
-    data class DocRow(val caseId: Int, val caseTitle: String, val name: String, val mediaType: String, val date: String, val size: String)
+    data class DocRow(val caseId: Int, val caseTitle: String, val name: String, val mediaType: String, val date: String, val size: String, val docId: String? = null)
 
     fun documents(ui: GaUi, nav: Nav, tab: Int, docs: List<DocRow>?, onTab: (Int) -> Unit, onUpload: () -> Unit, onSort: () -> Unit, onDoc: (DocRow) -> Unit): View {
         val dp = ui::dp
@@ -299,7 +299,7 @@ object GaScreens {
             }
             addView(ui.icon(R.drawable.ga_ic_cloud_upload, GaUi.BLUE_BRIGHT, 64))
             addView(ui.text("Tap to Upload Documents", 18f, GaUi.BLUE_BRIGHT, ui.sansMedium, Gravity.CENTER).apply { setPadding(0, dp(6), 0, dp(6)) })
-            addView(ui.text("Supports PDF, DOC, DOCX, JPG, PNG, etc.", 14f, GaUi.MUTED, null, Gravity.CENTER))
+            addView(ui.text("Camera, photos, PDF, DOC, DOCX and files from Downloads", 14f, GaUi.MUTED, null, Gravity.CENTER))
         }
         body.addView(upload, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(2), 0, dp(2), dp(8)) })
         val head = LinearLayout(ui.context).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -311,7 +311,7 @@ object GaScreens {
         body.addView(head)
         when {
             docs == null -> body.addView(ui.note("Loading your documents…"))
-            docs.isEmpty() -> body.addView(ui.emptyCard(R.drawable.ga_ic_description, "No documents yet", "Upload a PDF, photo or document to keep it with your case."), ui.lp(4, 4))
+            docs.isEmpty() -> body.addView(ui.emptyCard(R.drawable.ga_ic_description, "No documents yet", "Take a photo of a paper, or add a PDF or file from your phone. You can use it in AI Help and attach it to a case."), ui.lp(4, 4))
             else -> docs.forEach { d ->
                 val isImage = d.mediaType.startsWith("image/")
                 val isPdf = d.mediaType.contains("pdf") || d.name.lowercase().endsWith(".pdf")

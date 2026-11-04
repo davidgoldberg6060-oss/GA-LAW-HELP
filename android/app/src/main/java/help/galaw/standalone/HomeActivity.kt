@@ -27,17 +27,84 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var ui: GaUi
     private var onHome = true
     private var drawerView: View? = null
-    private var pendingUploadCaseId: Int? = null
     private val navy = GaUi.NAVY
     private val panel = GaUi.CARD_SOLID
     private val blue = GaUi.BLUE
     private val muted = GaUi.MUTED
-    private val pickDocument = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        val caseId = pendingUploadCaseId; pendingUploadCaseId = null
-        if (uri == null || caseId == null) return@registerForActivityResult
-        runTask("Uploading document…", { showDocuments() }) { api.upload(caseId, uri); runOnUiThread { toast("Document uploaded securely."); showDocuments() } }
+    private lateinit var docs: DocumentLibrary
+    /** What to do with a document once it is saved in the shared library (read in AI Help, attach to a case...). */
+    private var afterDocAdded: ((DocumentLibrary.Doc) -> Unit)? = null
+    private val cameraPages = mutableListOf<Uri>()
+    private var cameraUri: Uri? = null
+    private val pickDocument = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> if (uris.isNotEmpty()) addToLibrary(uris) else afterDocAdded = null }
+    private val pickPhotos = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(DocumentLibrary.MAX_PAGES)) { uris -> if (uris.isNotEmpty()) addToLibrary(uris) else afterDocAdded = null }
+    private val takePhoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        val uri = cameraUri; cameraUri = null
+        if (ok && uri != null) cameraPages += uri
+        if (cameraPages.isEmpty()) { afterDocAdded = null; return@registerForActivityResult }
+        AlertDialog.Builder(this).setTitle("Page ${cameraPages.size} saved").setMessage("Take a photo of the next page, or finish if that was the last page.")
+            .setPositiveButton("Finish"){_,_-> val pages=cameraPages.toList(); cameraPages.clear(); addToLibrary(pages, "Scanned paper " + SimpleDateFormat("MMM d, h:mm a", Locale.US).format(Date()) + if (pages.size > 1) " (${pages.size} pages)" else "") }
+            .setNeutralButton("Next page"){_,_-> if (cameraPages.size >= DocumentLibrary.MAX_PAGES) toast("That's the most pages for one document.") else launchCamera() }
+            .setCancelable(false).show()
     }
-    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); SystemBars.apply(this); api = ApiClient(this); ui = GaUi(this); showHome(); thread { runCatching { api.ensureSession() } } }
+    private fun launchCamera() { try { val u = docs.newCameraUri(); cameraUri = u; takePhoto.launch(u) } catch (e: Exception) { toast("The camera couldn't be opened. Choose a photo instead."); pickPhotos.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) } }
+    /** Camera, photos, or any file (Downloads, Drive, PDFs) — all land in the one shared document library. */
+    private fun chooseNewDocument(then: ((DocumentLibrary.Doc) -> Unit)? = null) {
+        afterDocAdded = then
+        AlertDialog.Builder(this).setTitle("Add a document").setItems(arrayOf("Take a photo of a paper", "Choose photos", "Choose a file (PDF, Downloads, Drive…)")) { _, i -> when (i) {
+            0 -> { cameraPages.clear(); launchCamera() }
+            1 -> pickPhotos.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            else -> pickDocument.launch(arrayOf("application/pdf", "image/*", "text/*", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "*/*"))
+        } }.setOnCancelListener { afterDocAdded = null }.show()
+    }
+    private fun addToLibrary(uris: List<Uri>, name: String? = null) {
+        val then = afterDocAdded; afterDocAdded = null
+        toast("Saving document…")
+        thread { try { val d = docs.add(uris, name); runOnUiThread { if (then != null) then(d) else { toast("Saved to My Documents."); showDocuments() } } }
+            catch (e: Exception) { runOnUiThread { showError(if (e is DocumentLibrary.DocumentException) e.message ?: "That file couldn't be saved." else "That file couldn't be saved on this phone (${e.javaClass.simpleName}). Try again.", { chooseNewDocument(then) }) } } }
+    }
+    private fun pickSavedDocument(title: String, onPick: (DocumentLibrary.Doc) -> Unit) {
+        val list = docs.list()
+        val labels = (listOf("＋ Add a new document (camera, photos, files)") + list.map { it.name }).toTypedArray()
+        AlertDialog.Builder(this).setTitle(title).setItems(labels) { _, i -> if (i == 0) chooseNewDocument(onPick) else onPick(list[i - 1]) }.show()
+    }
+    private fun documentActions(d: DocumentLibrary.Doc) {
+        val attached = if (d.caseIds.isEmpty()) "" else " (attached to ${d.caseIds.size} case${if (d.caseIds.size > 1) "s" else ""})"
+        AlertDialog.Builder(this).setTitle(d.name + attached).setItems(arrayOf("Use in AI Help (read & explain it)", "Attach to a case", "Open", "Share", "Rename", "Delete from this phone")) { _, i -> when (i) {
+            0 -> readInAiHelp(d)
+            1 -> attachToCase(d)
+            2 -> runCatching { startActivity(docs.viewIntent(d)) }.onFailure { toast("No app on this phone can open this file type.") }
+            3 -> startActivity(docs.shareIntent(d))
+            4 -> { val input = EditText(this).apply { setText(d.name) }; AlertDialog.Builder(this).setTitle("Rename").setView(input).setPositiveButton("Save") { _, _ -> docs.rename(d.id, input.text.toString().trim().ifBlank { d.name }); showDocuments() }.setNegativeButton("Cancel", null).show() }
+            else -> AlertDialog.Builder(this).setTitle("Delete this document?").setMessage("This removes it from this phone. Copies already attached to a case stay in that case.").setPositiveButton("Delete") { _, _ -> docs.delete(d.id); showDocuments() }.setNegativeButton("Cancel", null).show()
+        } }.show()
+    }
+    private fun attachToCase(d: DocumentLibrary.Doc, caseId: Int? = null) {
+        val go = { id: Int -> runTask("Attaching to case…", { attachToCase(d, id) }) { api.uploadDocument(id, d); docs.markAttached(d.id, id); runOnUiThread { toast("Attached to the case."); showCaseDocuments(id) } } }
+        if (caseId != null) return go(caseId)
+        runTask("Loading your cases…", { attachToCase(d) }) { val cases = caseRows(api.cases()); casesCache = cases; runOnUiThread {
+            if (cases.isEmpty()) { toast("Create a case first, then attach the document."); showCreateCase(); return@runOnUiThread }
+            AlertDialog.Builder(this).setTitle("Attach to which case?").setItems(cases.map { it.title }.toTypedArray()) { _, i -> go(cases[i].id) }.show() } }
+    }
+    /** Open AI Help and have the AI read the document's pages, then keep chatting about it. */
+    private fun readInAiHelp(d: DocumentLibrary.Doc, caseId: Int? = null) {
+        val pages = docs.readablePages(d)
+        if (pages.isEmpty()) return toast("AI Help can read photos and PDFs. Save this paper as a photo or PDF first.")
+        showTalkToMe(); val c = chat ?: return
+        val q = "Read my document \"${d.name}\" (${pages.size} page${if (pages.size > 1) "s" else ""}) and explain it."
+        val line = talk.add(true, q, now()); c.user(line.text, line.time, line.id)
+        runDocumentRead(c, d, pages, caseId)
+    }
+    private fun runDocumentRead(c: GaScreens.Chat, d: DocumentLibrary.Doc, pages: List<DocumentLibrary.Page>, caseId: Int?) {
+        val stop = c.progress(listOf("Uploading ${pages.size} page${if (pages.size > 1) "s" else ""}…", "Reading the paper…", "Finding dates, charges and next steps…", "Almost done…"))
+        thread { try { val r = api.readDocument(pages, "", caseId); val answer = r.optString("answer"); val text = r.optString("extracted_text")
+                docs.saveSummary(d.id, answer)
+                // The text read from the paper stays in the chat context so follow-up questions can use it.
+                val full = answer + if (text.isNotBlank()) "\n\nText read from the paper:\n" + text else ""
+                runOnUiThread { stop(); val bot = talk.add(false, full, now(), ShareText.answer("Document: " + d.name, full)); if (chat === c) { c.bot(bot.text, bot.time, bot.id); c.followUps(listOf("What should I do first?", "What does this charge mean?", "What questions should I ask my lawyer?")) { f -> sendTalk(f) } } } }
+            catch (e: Exception) { runOnUiThread { stop(); val msg = AiErrors.message(e); val bot = talk.add(false, msg, now(), inContext = false); if (chat === c) { c.bot(bot.text, bot.time, bot.id); c.retry { talk.delete(bot.id); c.remove(bot.id); runDocumentRead(c, d, pages, caseId) } } } } }
+    }
+    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); SystemBars.apply(this); api = ApiClient(this); docs = DocumentLibrary(this); ui = GaUi(this); showHome(); thread { runCatching { api.ensureSession() } } }
     @Deprecated("Deprecated in Java") override fun onBackPressed() { if (drawerView != null) { closeDrawer(); return }; if (!onHome) showHome() else super.onBackPressed() }
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private val homeActions = object : ApprovedHomeScreen.Actions {
@@ -70,6 +137,7 @@ class HomeActivity : AppCompatActivity() {
     private fun askFromHome(question:String){ showTalkToMe(); sendTalk(question) }
     private fun showTalkToMe(){ val c=GaScreens.talkToMe(ui,nav,{q->sendTalk(q)},listOf(
         "Cite a law" to { chat?.input?.apply{setText("Which Georgia law applies to ");setSelection(text.length);requestFocus()} },
+        "Read a document" to { pickSavedDocument("Which document should AI Help read?") { d -> readInAiHelp(d) } },
         "Find a form" to { showLegalForms() },
         "Explain in simple terms" to { if(!talk.hasAnswer()) toast("Ask a question first.") else sendTalk("Explain your last answer in simple terms.") }))
         chat=c; wireChatDelete(c,talk); show(c.root); c.bot("How can I help you today?",greetingTime); talk.messages.forEach{ if(it.mine) c.user(it.text,it.time,it.id) else c.bot(it.text,it.time,it.id) } }
@@ -177,9 +245,9 @@ class HomeActivity : AppCompatActivity() {
     private var docsTab = 0
     private var docsSortByName = false
     private var docsCache: List<GaScreens.DocRow>? = null
-    private fun showDocuments(){if(!requireSignedIn())return; docsCache=null; renderDocuments(); runTask("Loading documents…",{showDocuments()}){val cases=caseRows(api.cases());casesCache=cases;val docs=cases.flatMap{c->val ev=api.evidence(c.id);(0 until ev.length()).mapNotNull{i->ev.optJSONObject(i)?.let{o->GaScreens.DocRow(c.id,c.title,o.optString("filename","Document"),clean(o.optString("media_type")),shortDate(clean(o.optString("uploaded_at"))),humanSize(o.optLong("size_bytes",-1)))}}};runOnUiThread{docsCache=docs;renderDocuments()}}}
-    private fun renderDocuments(){ val docs=docsCache?.let{ if(docsSortByName) it.sortedBy{d->d.name.lowercase()} else it }; show(GaScreens.documents(ui,nav,docsTab,docs,{docsTab=it;renderDocuments()},{chooseUploadCase()},{docsSortByName=!docsSortByName;toast(if(docsSortByName)"Sorted by name" else "Sorted by case");renderDocuments()},{showCaseDocuments(it.caseId)})) }
-    private fun chooseUploadCase(){ val cases=casesCache.orEmpty(); if(cases.isEmpty()){toast("Create a case first so the file has a secure case workspace.");showCreateCase();return}; val launch={id:Int->pendingUploadCaseId=id;pickDocument.launch(arrayOf("application/pdf","image/*","text/*","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document"))}; if(cases.size==1)launch(cases[0].id) else AlertDialog.Builder(this).setTitle("Add to which case?").setItems(cases.map{it.title}.toTypedArray()){_,i->launch(cases[i].id)}.show() }
+    private fun localDocRows()=docs.list().map{d->GaScreens.DocRow(-1,"",d.name,d.mime,SimpleDateFormat("MMM d, yyyy",Locale.US).format(Date(d.addedAt)),humanSize(d.bytes)+(if(d.pages.size>1)" • ${d.pages.size} pages" else "")+(if(d.caseIds.isNotEmpty())" • in case" else ""),d.id)}
+    private fun showDocuments(){if(!requireSignedIn())return; val local=localDocRows(); docsCache=local; renderDocuments(); thread{try{val cases=caseRows(api.cases());casesCache=cases;val server=cases.flatMap{c->val ev=api.evidence(c.id);(0 until ev.length()).mapNotNull{i->ev.optJSONObject(i)?.let{o->GaScreens.DocRow(c.id,c.title,o.optString("filename","Document"),clean(o.optString("media_type")),shortDate(clean(o.optString("uploaded_at"))),humanSize(o.optLong("bytes",o.optLong("size_bytes",-1)))+" • "+c.title)}}};runOnUiThread{docsCache=local+server;renderDocuments()}}catch(e:Exception){runOnUiThread{if(local.isEmpty())toast(AiErrors.message(e))}}}}
+    private fun renderDocuments(){ val rows=docsCache?.let{ if(docsSortByName) it.sortedBy{d->d.name.lowercase()} else it }; show(GaScreens.documents(ui,nav,docsTab,rows,{docsTab=it;renderDocuments()},{chooseNewDocument()},{docsSortByName=!docsSortByName;toast(if(docsSortByName)"Sorted by name" else "Sorted by case");renderDocuments()},{d->if(d.docId!=null)docs.get(d.docId)?.let{documentActions(it)} else showCaseDocuments(d.caseId)})) }
     private fun shortDate(iso:String):String = runCatching{ SimpleDateFormat("MMM d, yyyy",Locale.US).format(SimpleDateFormat("yyyy-MM-dd",Locale.US).parse(iso.take(10))!!) }.getOrDefault("")
     private fun humanSize(bytes:Long):String = when{ bytes<0->""; bytes<1024->"$bytes B"; bytes<1024*1024->"${bytes/1024} KB"; else->String.format(Locale.US,"%.1f MB",bytes/1048576.0) }
 
@@ -284,7 +352,7 @@ class HomeActivity : AppCompatActivity() {
     private fun showLegalTools(){if(!requireSignedIn())return; val root=page("Legal Tools","Case analysis, legal research, forms and court resources.");addButton(root,"Case Analysis"){showCaseAnalysis()};addButton(root,"Georgia Laws"){showGeorgiaLaws()};addButton(root,"Legal Forms"){showLegalForms()};addButton(root,"Court Info"){showCourtInfo()};addButton(root,"Know Your Rights"){showKnowYourRights()}}
     private fun showKnowYourRights(){val root=page("Know Your Rights","Guest information only. Do not resist, lie, or destroy evidence.");listOf("Arrest" to "If arrested, do not resist or run. You may state that you are remaining silent and want a lawyer.","Police encounter" to "Keep your hands visible. You may ask whether you are free to leave and state that you do not consent to a search. Do not physically interfere.","Court" to "Court dates and filing rules vary. Do not ignore a court date. Ask the court or a lawyer before relying on a deadline.","Jail" to "Calls and common areas may be recorded. Do not discuss case facts there. You may ask for a lawyer.","Constitutional rights" to "You may clearly invoke the right to remain silent and the right to a lawyer. This screen is not a substitute for a licensed Georgia attorney.").forEach{(title,body)->addButton(root,title){val topic=page(title,"General information. Guest rights stay on /public/rights-assistant.");topic.addView(label(body,15f));addButton(topic,"Ask without signing in"){showTalkToMe()}}};root.addView(label("Do not resist, lie, or destroy evidence. Private cases stay login-only.",14f).apply{setTextColor(muted)})}
     private fun showResources(){val root=page("Resources","Georgia courts, legal aid and assistance resources.");addButton(root,"Georgia Legal Aid"){openUrl("https://www.georgialegalaid.org/")};addButton(root,"Georgia Courts"){openUrl("https://georgiacourts.gov/")};addButton(root,"Georgia Public Defender Council"){openUrl("https://gapubdef.org/")};addButton(root,"988 Crisis & Suicide Lifeline"){openUrl("https://988lifeline.org/")}}
-    private fun showCaseDocuments(caseId:Int){val root=page("Documents","Evidence and files attached to this case.");addButton(root,"+ Upload Document"){pendingUploadCaseId=caseId;pickDocument.launch(arrayOf("application/pdf","image/*","text/*","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document"))};runTask("Loading documents…",{showCaseDocuments(caseId)}){val items=api.evidence(caseId);runOnUiThread{renderJsonArray(root,items,"No documents uploaded yet.")}}}
+    private fun showCaseDocuments(caseId:Int){val root=page("Documents","Evidence and files attached to this case.");addButton(root,"+ Add from My Documents"){pickSavedDocument("Attach which document?"){d->attachToCase(d,caseId)}};addButton(root,"Read a paper with AI Help"){pickSavedDocument("Which document should AI Help read?"){d->readInAiHelp(d,caseId)}};runTask("Loading documents…",{showCaseDocuments(caseId)}){val items=api.evidence(caseId);runOnUiThread{renderJsonArray(root,items,"No documents attached yet.")}}}
     private fun pretty(obj:JSONObject):String{val preferred=listOf("title","citation","summary","analysis","answer","detail","description","status","county","stage","issue","kind","note");val lines=preferred.mapNotNull{key->obj.optString(key).takeIf{it.isNotBlank()}?.let{"$key: $it"}};return if(lines.isNotEmpty())lines.joinToString("\n\n")else obj.toString(2)}
     private fun openUrl(url:String){runCatching{startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url)))}.onFailure{toast("No browser is available for this link.")}}
     private fun renderJsonArray(root:LinearLayout,items:JSONArray,emptyMessage:String){if(items.length()==0){root.addView(label(emptyMessage,14f).apply{setTextColor(muted)});return};for(i in 0 until items.length()){val item=items.opt(i);val text=when(item){is JSONObject->pretty(item);else->item?.toString().orEmpty()};root.addView(label(text,14f).apply{setPadding(dp(14),dp(12),dp(14),dp(12));background=ui.glowCard(GaUi.CARD,GaUi.STROKE_SOFT,12,glow=false)},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(5),0,dp(5))})}}
