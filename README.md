@@ -17,3 +17,7 @@ python -m venv .venv
 ```
 
 See `docs/SUPABASE.md` for the GALAWHELP deployment contract and `android/README.md` for Android build configuration.
+
+---
+
+© 2026 Treyvon Pattillo and Ashanti Coles. All rights reserved.

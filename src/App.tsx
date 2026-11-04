@@ -528,7 +528,7 @@ export default function App(){
   </section>
   <MyCase api={API} initial={caseStart} onCivil={()=>setTool('case')} onAsk={()=>setTool('avoid')}/>
   <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse free as a guest: real Georgia laws and court cases that sound made up, each with its citation and source.</p></div></div>
-   <FunnyGeorgia/></section>
+   <FunnyGeorgia api={API}/></section>
   <button className="encounterFab" onClick={()=>{setScenario('traffic');openPolice()}}><ShieldAlert size={20}/><span><b>Encounter Help</b><small>Open safety mode</small></span></button>
   {tool&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)closeTool()}}><section className="toolModal" role="dialog" aria-modal="true" aria-label={tool==='avoid'?'Avoid trouble':tool==='case'?'Private case assistant':'Help me talk to police'}>
    <button className="close" onClick={closeTool} aria-label="Close"><X/></button>
@@ -623,6 +623,6 @@ export default function App(){
     {(mode==='forgot'||mode==='reset')&&<button type="button" className="authLink" onClick={()=>{if(mode==='reset')window.history.replaceState({},'', '/');setMode('login');setAuthError('');setPassword('')}}>Back to sign in</button>}
     {mode==='register'&&<small className="accountFinePrint">Public legal learning remains available without an account.</small>}
    </form></section></div>}
-  <footer className="appFooter" style={{padding:'16px',fontSize:'12px',opacity:.8,textAlign:'center'}}><p>STANDALONE ASSISTANT gives general information about Georgia law. It is not legal advice and does not create an attorney-client relationship. Questions may be processed by third-party AI providers; do not enter sensitive personal information.</p><p><a href={API+'/privacy'} target="_blank" rel="noreferrer">Privacy policy</a> · <a href="mailto:davidgoldberg6060@gmail.com">Contact</a></p></footer>
+  <footer className="appFooter" style={{padding:'16px',fontSize:'12px',opacity:.8,textAlign:'center'}}><p>STANDALONE ASSISTANT gives general information about Georgia law. It is not legal advice and does not create an attorney-client relationship. Questions may be processed by third-party AI providers; do not enter sensitive personal information.</p><p><a href={API+'/privacy'} target="_blank" rel="noreferrer">Privacy policy</a> · <a href="mailto:davidgoldberg6060@gmail.com">Contact</a></p><p>© 2026 Treyvon Pattillo and Ashanti Coles. All rights reserved.</p></footer>
  </main>
 }
