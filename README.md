@@ -20,4 +20,4 @@ See `docs/SUPABASE.md` for the GALAWHELP deployment contract and `android/README
 
 ---
 
-© 2026 Treyvon Pattillo and Ashanti Coles. All rights reserved.
+© 2026 Treyvon Pattillo. All rights reserved.
