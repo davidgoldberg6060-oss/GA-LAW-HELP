@@ -129,15 +129,16 @@ object GaScreens {
                 LinearLayout.LayoutParams(ui.dp(140), -2).apply { leftMargin = ui.dp(48); topMargin = ui.dp(8) })
             scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
         }
-        /** Animated "Looking up Georgia law…" progress line while waiting for an answer. Returns a stop function. */
-        fun progress(steps: List<String> = PROGRESS_STEPS): () -> Unit {
+        /** Rotating, fading progress line while waiting for an answer. Returns a stop function. */
+        fun progress(steps: List<String> = LoadingLines.AI_HELP): () -> Unit {
             val dp = ui::dp
-            val view = ui.text(steps.first(), 13.5f, GaUi.BLUE_BRIGHT, ui.sansMedium).apply { setPadding(dp(48), dp(10), 0, dp(4)); tag = "progress" }
+            val view = ui.text(steps.first(), 13.5f, GaUi.BLUE_BRIGHT, ui.sansMedium).apply {
+                setPadding(dp(48), dp(10), 0, dp(4)); tag = "progress"
+                contentDescription = "Loading. ${steps.first()}"
+            }
             messages.addView(view); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
-            var i = 0; var running = true
-            val tick = object : Runnable { override fun run() { if (!running) return; i++; view.text = steps[minOf(i / 2, steps.size - 1)] + ".".repeat(i % 3 + 1); view.postDelayed(this, 1500) } }
-            view.postDelayed(tick, 1500)
-            return { running = false; messages.removeView(view) }
+            val stopRotate = LoadingLines.rotate(view, steps, contentPrefix = "Loading")
+            return { stopRotate(); messages.removeView(view) }
         }
         /** Removes one message (bubble, time, cards and actions) from the screen. */
         fun remove(id: Long) { if (id == 0L) return; (0 until messages.childCount).map { messages.getChildAt(it) }.filter { it.tag == "msg:$id" }.forEach { messages.removeView(it) }; if (last?.tag == "msg:$id") last = null }
@@ -170,7 +171,7 @@ object GaScreens {
         }
     }
 
-    val PROGRESS_STEPS = listOf("Looking up Georgia law", "Checking verified sources", "Writing your answer", "Almost done — thanks for waiting")
+    val PROGRESS_STEPS = LoadingLines.AI_HELP
 
     fun talkToMe(ui: GaUi, nav: Nav, onSend: (String) -> Unit, chips: List<Pair<String, () -> Unit>>): Chat =
         chatScreen(ui, nav, Tab.AI, "Talk to Me", "Get trusted legal information, case analysis, and step-by-step guidance.", "Type your question...", onSend, chips)
@@ -246,7 +247,7 @@ object GaScreens {
         body.addView(searchRow)
         body.addView(ui.tabs(listOf("All", "Active", "Closed", "Favorites"), filter, onFilter, underline = true), ui.lp(14, 10, dp(48)))
         when {
-            cases == null -> body.addView(ui.note("Loading your cases…"))
+            cases == null -> body.addView(loadingNote(ui, LoadingLines.CASES, "Loading cases"))
             else -> {
                 val q = query.trim().lowercase()
                 val shown = cases.filter { c ->
@@ -310,7 +311,7 @@ object GaScreens {
         })
         body.addView(head)
         when {
-            docs == null -> body.addView(ui.note("Loading your documents…"))
+            docs == null -> body.addView(loadingNote(ui, LoadingLines.DOCUMENTS, "Loading documents"))
             docs.isEmpty() -> body.addView(ui.emptyCard(R.drawable.ga_ic_description, "No documents yet", "Take a photo of a paper, or add a PDF or file from your phone. You can use it in AI Help and attach it to a case."), ui.lp(4, 4))
             else -> docs.forEach { d ->
                 val isImage = d.mediaType.startsWith("image/")
@@ -494,6 +495,10 @@ object GaScreens {
     fun renderLawResults(ui: GaUi, container: LinearLayout, hits: List<LawHit>?, message: String?, onOpen: (LawHit) -> Unit) {
         val dp = ui::dp
         container.removeAllViews()
+        if (hits == null && (message == null || message.startsWith("Searching") || message.startsWith("Looking"))) {
+            container.addView(loadingNote(ui, LoadingLines.LAWS, "Searching Georgia law"))
+            return
+        }
         if (message != null) container.addView(ui.note(message))
         if (hits == null) return
         container.addView(ui.sectionHeader("Results (${hits.size})"))
@@ -539,13 +544,26 @@ object GaScreens {
         return LoopholesForm(root, topic, results)
     }
 
-    fun loopholesLoading(ui: GaUi, container: LinearLayout) {
+    /** Small rotating loading note used on list screens (Documents, Cases). Keeps running until the view is replaced. */
+    fun loadingNote(ui: GaUi, lines: List<String>, contentPrefix: String): TextView {
+        val view = ui.note(lines.first()).apply { contentDescription = "$contentPrefix. ${lines.first()}" }
+        view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            var stop: (() -> Unit)? = null
+            override fun onViewAttachedToWindow(v: View) { stop = LoadingLines.rotate(view, lines, contentPrefix = contentPrefix) }
+            override fun onViewDetachedFromWindow(v: View) { stop?.invoke(); stop = null }
+        })
+        return view
+    }
+
+    fun loopholesLoading(ui: GaUi, container: LinearLayout, lines: List<String> = LoadingLines.LOOPHOLES) {
         container.removeAllViews()
+        val label = ui.text(lines.first(), 14.5f, GaUi.TEXT).apply { contentDescription = "Loading. ${lines.first()}" }
         container.addView(LinearLayout(ui.context).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(ui.dp(14), ui.dp(14), ui.dp(14), ui.dp(14))
             background = ui.glowCard(GaUi.CARD, GaUi.STROKE_SOFT, 12, glow = false)
             addView(android.widget.ProgressBar(ui.context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(GaUi.GOLD) }, LinearLayout.LayoutParams(ui.dp(26), ui.dp(26)).apply { rightMargin = ui.dp(12) })
-            addView(ui.text("Comparing verified Georgia laws and cases…", 14.5f, GaUi.TEXT))
+            addView(label)
+            tag = LoadingLines.rotate(label, lines, contentPrefix = "Loading")
         }, ui.lp(6, 6))
     }
 
@@ -620,8 +638,7 @@ object GaScreens {
     }
 
     fun chargeCheckLoading(ui: GaUi, container: LinearLayout) {
-        loopholesLoading(ui, container)
-        ((container.getChildAt(0) as? LinearLayout)?.getChildAt(1) as? TextView)?.text = "Looking up Georgia Code sections…"
+        loopholesLoading(ui, container, LoadingLines.CHARGE)
     }
 
     private fun optionCard(ui: GaUi, o: ChargeOption, onCite: (LoopholeCite) -> Unit) = LinearLayout(ui.context).apply {

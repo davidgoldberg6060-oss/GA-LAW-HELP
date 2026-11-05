@@ -28,9 +28,14 @@ class InternalLegalSearchActivity : AppCompatActivity() {
 
     private fun guest(mode:String)=mode in setOf("rights","talk_to_me")
     private fun statusFor(mode:String)=when{
-        guest(mode)->"Looking up free guest rights help. This does not require a login and is not a claim of current Georgia law."
-        grounded(mode)->"AI is analyzing the facts and checking verified internal authority…"
-        else->"Searching the internal legal corpus…"
+        guest(mode)->"Looking up free guest rights help…"
+        grounded(mode)->LoadingLines.AI_HELP.first()
+        else->LoadingLines.LAWS.first()
+    }
+    private fun statusLines(mode:String)=when{
+        guest(mode)->listOf("Looking up free guest rights help…", "Checking what you can do next…", "Almost ready…")
+        grounded(mode)->LoadingLines.AI_HELP
+        else->LoadingLines.LAWS
     }
     private fun lookup(mode:String, q:String): org.json.JSONObject {
         if (mode == "rights" || mode == "talk_to_me") {
@@ -56,7 +61,7 @@ val gui=GaUi(this);val shell=LinearLayout(this).apply{orientation=LinearLayout.V
         val search=gui.primaryButton(buttonFor(mode)){};body.addView(search,LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(10),0,dp(12))})
         val results=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};body.addView(results);body.addView(gui.secondaryButton("Home"){}.apply{setOnClickListener{startActivity(Intent(this@InternalLegalSearchActivity,HomeActivity::class.java).apply{addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)});finish()}},LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,dp(12),0,0)})
         shell.addView(ScrollView(this).apply{addView(body)},LinearLayout.LayoutParams(-1,-1));setContentView(shell)
-        search.setOnClickListener{val q=query.text.toString().trim();if(q.isBlank()){Toast.makeText(this,"Enter details first.",Toast.LENGTH_SHORT).show();return@setOnClickListener};search.isEnabled=false;results.removeAllViews();results.addView(text(statusFor(mode),muted));thread{try{val response=lookup(mode,q);runOnUiThread{render(results,response,grounded(mode)||guest(mode));search.isEnabled=true}}catch(e:Exception){runOnUiThread{results.removeAllViews();results.addView(text(e.message?:"Request failed. Edit the details and try again.",Color.rgb(245,150,150)));search.isEnabled=true}}}}
+        search.setOnClickListener{val q=query.text.toString().trim();if(q.isBlank()){Toast.makeText(this,"Enter details first.",Toast.LENGTH_SHORT).show();return@setOnClickListener};search.isEnabled=false;results.removeAllViews();results.addView(GaScreens.loadingNote(gui, statusLines(mode), "Loading"));thread{try{val response=lookup(mode,q);runOnUiThread{render(results,response,grounded(mode)||guest(mode));search.isEnabled=true}}catch(e:Exception){runOnUiThread{results.removeAllViews();results.addView(text(e.message?:"Request failed. Edit the details and try again.",Color.rgb(245,150,150)));search.isEnabled=true}}}}
     }
 
     private fun requestSpeechCapture(){if(ContextCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)startSpeechCapture()else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)}

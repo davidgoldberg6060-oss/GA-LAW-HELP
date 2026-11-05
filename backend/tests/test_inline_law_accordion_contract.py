@@ -7,7 +7,9 @@ SRC = ROOT / "android/app/src/main/java/help/galaw/standalone"
 def test_android_citations_expand_inline_instead_of_opening_downloads():
     acc = (SRC / "LawAccordion.kt").read_text(encoding="utf-8")
     assert "collapse()" in acc and "if (wasOpen) return" in acc  # one open at a time; tap again closes
-    assert "Loading full text" in acc and "View official source" in acc
+    assert "LoadingLines.LAWS" in acc and "View official source" in acc
+    lines = (SRC / "LoadingLines.kt").read_text(encoding="utf-8")
+    assert "Searching Georgia law" in lines
     screens = (SRC / "GaScreens.kt").read_text(encoding="utf-8")
     assert screens.count("LawAccordion.toggle(") >= 2 and "Open official source ›" not in screens
     assert "LawAccordion.toggle(widget, cite)" in (SRC / "AnswerFormat.kt").read_text(encoding="utf-8")

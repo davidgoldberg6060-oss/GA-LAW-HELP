@@ -109,7 +109,7 @@
 .lawScroll{max-height:420px;overflow-y:auto;padding-right:.5rem;line-height:1.55}
 .lawScroll p{margin:0 0 .6rem}.lawText small{display:block;color:#a0b4c9;margin-top:.5rem}
 .lawSource{display:inline-block;margin-top:.5rem;font-size:.82rem;color:#4dabff}
-.lawLoading{display:flex;align-items:center;gap:.5rem;color:#a0b4c9}
+.lawLoading{display:flex;align-items:center;gap:.5rem;color:#a0b4c9}.loadingPhrase{opacity:.2;transition:opacity .22s ease}.loadingPhrase.on{opacity:1}
 .lawSpinner{width:16px;height:16px;border:2px solid #e6be5c;border-top-color:transparent;border-radius:50%;animation:lawspin .8s linear infinite}
 @keyframes lawspin{to{transform:rotate(360deg)}}
 

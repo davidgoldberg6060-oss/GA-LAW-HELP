@@ -56,10 +56,12 @@ object LawAccordion {
             background = ui.rounded(Color.argb(240, 6, 18, 33), 10, GaUi.STROKE_SOFT, 1.2f)
             tag = "law-panel:$k"; contentDescription = "Full text of $k"
         }
+        val loadLabel = ui.text(LoadingLines.LAWS.first(), 13.5f, GaUi.MUTED).apply { contentDescription = "Loading. ${LoadingLines.LAWS.first()}" }
         val spinner = LinearLayout(anchor.context).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             addView(ProgressBar(anchor.context).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(GaUi.GOLD) }, LinearLayout.LayoutParams(ui.dp(22), ui.dp(22)).apply { rightMargin = ui.dp(10) })
-            addView(ui.text("Loading full text…", 13.5f, GaUi.MUTED))
+            addView(loadLabel)
+            tag = LoadingLines.rotate(loadLabel, LoadingLines.LAWS, contentPrefix = "Loading")
         }
         panel.addView(spinner)
         parent.addView(panel, parent.indexOfChild(target) + 1, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(6); bottomMargin = ui.dp(6) })

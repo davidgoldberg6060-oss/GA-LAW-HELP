@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {LoadingPhrase, LOADING} from './LoadingPhrase';
 
 /** One law, rule, regulation or case that can be expanded inline to its full stored text. */
 export type LawItem = {citation: string; title?: string | null; id?: number | null; source_url?: string | null};
@@ -47,7 +48,7 @@ export function LawAccordion({api, items}: {api: string; items: LawItem[]}) {
             </button>
             {isOpen && (
               <div className="lawText" role="region" aria-label={'Full text of ' + key}>
-                {loading && !cache.has(key) ? <p className="lawLoading"><span className="lawSpinner" />Loading full text…</p>
+                {loading && !cache.has(key) ? <LoadingPhrase lines={LOADING.laws} label="Loading full text" />
                   : law ? <>
                       {law.title && <h4>{law.title}</h4>}
                       <div className="lawScroll">{lawParagraphs(law.text || 'No text is stored for this item yet.').map((p, i) => <p key={i} style={{marginLeft: p.level * 18}}>{p.text}</p>)}</div>

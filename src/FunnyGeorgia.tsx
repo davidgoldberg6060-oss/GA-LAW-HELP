@@ -1,5 +1,6 @@
 import{useState}from'react';
 import data from './funnyGeorgia.json';
+import {LoadingPhrase, LOADING} from './LoadingPhrase';
 import{lawParagraphs}from'./LawAccordion';
 type Law={title:string;summary:string;citation:string;jurisdiction:string;category:string;source_url:string;status:string};
 type Case={name:string;court:string;year:number;citation:string;summary:string;source_url:string};
@@ -25,7 +26,7 @@ export default function FunnyGeorgia({api=DEFAULT_API}:{api?:string}){
  function panel(cite:string){
   if(open!==cite)return null;const law=cache.get(cite);
   return <div className="lawText" role="region" aria-label={'Full text of '+cite}>
-   {!cache.has(cite)&&state==='loading'?<p className="lawLoading"><span className="lawSpinner"/>Loading full text…</p>
+   {!cache.has(cite)&&state==='loading'?<LoadingPhrase lines={LOADING.laws} label="Loading full text" />
    :!cache.has(cite)&&state==='error'?<p>Couldn't load the full text. Check your connection and try again. <button type="button" onClick={()=>load(cite)}>Retry</button></p>
    :law?<>{law.title&&<h4>{law.title}</h4>}<div className="lawScroll">{lawParagraphs(law.text||'No text is stored for this item yet.').map((p,i)=><p key={i} style={{marginLeft:p.level*18}}>{p.text}</p>)}</div>{law.note&&<small>Note: {law.note}</small>}</>
    :<p>The full text of {cite} isn't stored in STANDALONE ASSISTANT yet, so there's nothing to show here.</p>}
