@@ -10,6 +10,18 @@ import java.net.URLEncoder
  * These calls do not require a session and must not send the user to login.
  */
 object GuestPublicApi {
+    /** Short TTL cache for guest GET responses (laws search / law text) so back-navigation is instant. */
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, String>>()
+    private const val CACHE_TTL_MS = 120_000L
+    private fun cachedGet(baseUrl: String, path: String): String {
+        val key = baseUrl.trimEnd('/') + path
+        val hit = cache[key]
+        if (hit != null && System.currentTimeMillis() - hit.first < CACHE_TTL_MS) return hit.second
+        val body = get(baseUrl, path)
+        cache[key] = System.currentTimeMillis() to body
+        return body
+    }
+
     /** Server limit for POST /public/rights-assistant `query` (backend/app/main.py). */
     const val MAX_QUERY_CHARS = 4_000
 
@@ -38,12 +50,12 @@ object GuestPublicApi {
         val path = "/public/georgia-laws/search?kind=" + URLEncoder.encode(kind, "UTF-8") +
             "&q=" + URLEncoder.encode(query.trim().take(400), "UTF-8") +
             "&title=" + URLEncoder.encode(title, "UTF-8") + "&chapter=" + URLEncoder.encode(chapter, "UTF-8")
-        return JSONObject(get(baseUrl, path))
+        return JSONObject(cachedGet(baseUrl, path))
     }
 
     /** One law's stored text by exact citation (GET /public/georgia-laws/law). */
     fun law(baseUrl: String, citation: String, id: Long? = null): JSONObject =
-        JSONObject(get(baseUrl, "/public/georgia-laws/law?citation=" + URLEncoder.encode(citation.trim().take(250), "UTF-8") + (id?.let { "&id=$it" } ?: "")))
+        JSONObject(cachedGet(baseUrl, "/public/georgia-laws/law?citation=" + URLEncoder.encode(citation.trim().take(250), "UTF-8") + (id?.let { "&id=$it" } ?: "")))
 
     fun caseGuide(baseUrl: String, stage: String, details: JSONObject, answers: JSONObject = JSONObject()): JSONObject =
         JSONObject(post(baseUrl, "/public/case-guide", JSONObject().put("stage", stage).put("details", details).put("answers", answers)))
@@ -62,6 +74,7 @@ object GuestPublicApi {
             connectTimeout = 8_000
             readTimeout = readMs
             setRequestProperty("Accept", "application/json")
+            setRequestProperty("Connection", "keep-alive")
         }
     }
 

@@ -61,8 +61,8 @@ class ApiClient(private val context: Context) {
     /** A session that can no longer be refreshed falls back to this device's anonymous identity; no login screen. */
     private fun expireSession() { clearSession(); runCatching { anonymousSignIn() } }
     private fun connection(path:String,method:String):HttpURLConnection { return connection(path,method,30_000) }
-    private fun connection(path:String,method:String,readMs:Int):HttpURLConnection { require(BuildConfig.API_BASE_URL.startsWith("https://")||BuildConfig.DEBUG); return (URL(BuildConfig.API_BASE_URL.trimEnd('/')+path).openConnection() as HttpURLConnection).apply { requestMethod=method;connectTimeout=8_000;readTimeout=readMs;setRequestProperty("Accept","application/json");token?.let{setRequestProperty("Authorization","Bearer $it")} } }
-    private fun read(c:HttpURLConnection):Pair<Int,String>{val code=c.responseCode;val stream=if(code in 200..299)c.inputStream else c.errorStream;return code to stream?.bufferedReader()?.use{it.readText()}.orEmpty()}
+    private fun connection(path:String,method:String,readMs:Int):HttpURLConnection { require(BuildConfig.API_BASE_URL.startsWith("https://")||BuildConfig.DEBUG); return (URL(BuildConfig.API_BASE_URL.trimEnd('/')+path).openConnection() as HttpURLConnection).apply { requestMethod=method;connectTimeout=8_000;readTimeout=readMs;setRequestProperty("Accept","application/json");setRequestProperty("Connection","keep-alive");token?.let{setRequestProperty("Authorization","Bearer $it")} } }
+    private fun read(c:HttpURLConnection):Pair<Int,String>{val code=c.responseCode;var stream=if(code in 200..299)c.inputStream else c.errorStream;if(stream!=null&&c.contentEncoding?.contains("gzip",true)==true)stream=java.util.zip.GZIPInputStream(stream);return code to stream?.bufferedReader()?.use{it.readText()}.orEmpty()}
     private fun networkMessage(e:Exception):ApiNetworkException=when{
         e is ApiNetworkException->e
         e is UnknownHostException->ApiNetworkException("Couldn’t look up the STANDALONE ASSISTANT server (DNS error). Your phone may be online but its network didn’t answer. Tap Retry, or switch between Wi-Fi and mobile data.",e)

@@ -393,7 +393,7 @@ object GaScreens {
         body.addView(ui.settingsList(listOf(
             Triple(R.drawable.ga_ic_language, "Language", null),
             Triple(R.drawable.ga_ic_dark_mode, "Dark Mode", ui.toggle(darkMode)),
-            Triple(R.drawable.ga_ic_notifications, "Notifications", null),
+            Triple(R.drawable.ga_ic_notifications, "Court date reminders", null),
             Triple(R.drawable.ga_ic_lock, "Privacy & Security", null),
             Triple(R.drawable.ga_ic_delete, "Clear App Data", null),
             Triple(R.drawable.ga_ic_info, "About STANDALONE ASSISTANT", null)), onRow), ui.lp(2, 8))

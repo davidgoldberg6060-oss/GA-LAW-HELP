@@ -8,24 +8,27 @@ import kotlin.test.assertTrue
 
 class HomeDrawerCatalogTest {
     @Test
-    fun drawerMatchesApprovedHomeItems() {
+    fun drawerIncludesCitizenHelpAndGuestRights() {
         assertEquals(
             listOf(
-                "Home", "My Cases", "Talk to Me (AI)", "Georgia Laws", "Legal Loopholes", "Charge Check", "Motions & Legal Work", "Legal Forms",
-                "Court Information", "Know Your Rights", "Resources", "Emergency Information",
+                "Home", "My Case (start here)", "Case Workspace", "Talk to Me (AI)", "Georgia Laws",
+                "Funny & Weird Laws", "Motions & Legal Work", "Legal Forms", "Court Information",
+                "Know Your Rights", "Citizen Help", "Resources", "Emergency Information",
                 "Payments & Subscription", "Settings", "Profile", "Help & Support"
             ),
             HomeDrawerCatalog.items.map { it.label }
         )
-        assertEquals(setOf("cases", "loopholes", "charges", "motions", "profile"), HomeDrawerCatalog.items.filter { it.requiresSignIn }.map { it.id }.toSet())
+        assertTrue(HomeDrawerCatalog.items.none { it.requiresSignIn })
         assertFalse(HomeDrawerCatalog.items.first { it.id == "rights" }.requiresSignIn)
+        assertEquals("citizen", HomeDrawerCatalog.items.first { it.label == "Citizen Help" }.id)
     }
 
     @Test
-    fun homeMenuKeepsGuestRightsAndPrivateCasesSplit() {
+    fun homeMenuKeepsGuestRightsAndCitizenHelp() {
         val home = source("app/src/main/java/help/galaw/standalone/HomeActivity.kt")
         assertTrue(home.contains("HomeDrawerCatalog.items"))
         assertTrue(home.contains("Guest rights stay on /public/rights-assistant"))
+        assertTrue(home.contains("showCitizenHelpHub"))
         assertTrue(home.contains("Criminal — public defender council"))
         assertTrue(home.contains("Civil — Georgia Courts self-help"))
         assertTrue(home.contains("Family — Georgia Legal Aid"))
