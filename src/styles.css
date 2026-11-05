@@ -143,3 +143,13 @@
 .funnyCard .lawScroll{max-height:220px;overflow:auto;margin-top:.4rem}
 .funnyDeckActions{justify-content:center;margin-top:.7rem}
 .funnyDeckActions button{border-radius:12px;min-width:5.5rem}
+
+.funnyChooser{background:#071d2f;border:1px solid #e2b54e;border-radius:16px;padding:1rem;margin:.6rem 0 1rem}
+.funnyChooser h3{color:#fff;margin:0 0 .35rem}
+.funnyChooser p{color:#afc2d0;margin:0 0 .75rem}
+.funnyChooserOpts{display:flex;gap:.55rem;flex-wrap:wrap}
+.funnyChooserOpts button{flex:1;min-width:140px;text-align:left;background:#02111d;border:1px solid #26a9ff;border-radius:12px;padding:.75rem;color:#fff;cursor:pointer}
+.funnyChooserOpts b{display:block;color:#e2b54e;margin-bottom:.25rem}
+.funnyChooserOpts span{color:#afc2d0;font-size:.85rem}
+.funnyRemember{display:flex;align-items:center;gap:.45rem;color:#e2eaf3;margin-top:.75rem;font-size:.9rem}
+.funnyMode button.askNext{background:transparent;border-color:#194e70;color:#afc2d0}

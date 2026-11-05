@@ -25,7 +25,11 @@ export default function FunnyGeorgia({ api = DEFAULT_API }: { api?: string }) {
   const [tab, setTab] = useState<'laws' | 'cases'>('laws');
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('All');
-  const [mode, setMode] = useState<'cards' | 'list'>('cards');
+  const remembered = typeof localStorage !== 'undefined' ? localStorage.getItem('funny_view_mode') : null;
+  const rememberFlag = typeof localStorage !== 'undefined' && localStorage.getItem('funny_view_remember') === '1';
+  const [mode, setMode] = useState<'cards' | 'list'>(remembered === 'list' ? 'list' : 'cards');
+  const [chooser, setChooser] = useState(!rememberFlag);
+  const [rememberBox, setRememberBox] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [index, setIndex] = useState(0);
@@ -136,9 +140,25 @@ export default function FunnyGeorgia({ api = DEFAULT_API }: { api?: string }) {
           }}>{cat}</button>
         ))}
       </div>
+      {chooser && (
+        <div className="funnyChooser" role="dialog" aria-label="Choose Funny view">
+          <h3>How do you want to browse?</h3>
+          <p>People love to swipe — or stick with the classic list. You can switch anytime.</p>
+          <div className="funnyChooserOpts">
+            <button type="button" onClick={() => { if (rememberBox) { localStorage.setItem('funny_view_remember','1'); localStorage.setItem('funny_view_mode','swipe'); } setMode('cards'); setChooser(false); }}>
+              <b>Swipe</b><span>Card deck — swipe, tap to flip</span>
+            </button>
+            <button type="button" onClick={() => { if (rememberBox) { localStorage.setItem('funny_view_remember','1'); localStorage.setItem('funny_view_mode','list'); } setMode('list'); setChooser(false); }}>
+              <b>List</b><span>Classic scrollable list</span>
+            </button>
+          </div>
+          <label className="funnyRemember"><input type="checkbox" checked={rememberBox} onChange={(e) => setRememberBox(e.target.checked)} /> Remember my choice</label>
+        </div>
+      )}
       <div className="funnyMode">
-        <button type="button" className={mode === 'cards' ? 'on' : ''} onClick={() => setMode('cards')}>Cards</button>
-        <button type="button" className={mode === 'list' ? 'on' : ''} onClick={() => setMode('list')}>List</button>
+        <button type="button" className={mode === 'cards' ? 'on' : ''} onClick={() => { setMode('cards'); if (localStorage.getItem('funny_view_remember')==='1') localStorage.setItem('funny_view_mode','swipe'); }}>Swipe</button>
+        <button type="button" className={mode === 'list' ? 'on' : ''} onClick={() => { setMode('list'); if (localStorage.getItem('funny_view_remember')==='1') localStorage.setItem('funny_view_mode','list'); }}>List</button>
+        <button type="button" className="askNext" onClick={() => { localStorage.removeItem('funny_view_remember'); localStorage.removeItem('funny_view_mode'); setChooser(true); }}>Ask next time</button>
       </div>
       <input className="funnySearch" aria-label="Search funny laws and cases" placeholder="Search funny laws and cases…" value={q} onChange={(e) => { setQ(e.target.value); resetDeck(); }} />
 

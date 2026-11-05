@@ -76,12 +76,15 @@ class FunnyGeorgiaScreen(
     private val openSource: (String) -> Unit,
     startOnCases: Boolean = false,
     private val bottomNav: View? = null,
-    private val shareText: (String) -> Unit = {}
+    private val shareText: (String) -> Unit = {},
+    initialDeckMode: Boolean = true,
+    private val onModeChanged: (deckMode: Boolean) -> Unit = {},
+    private val onAskNextTime: () -> Unit = {}
 ) {
     private var showCases = startOnCases
     private var query = ""
     private var category = "All"
-    private var deckMode = true
+    private var deckMode = initialDeckMode
     private var index = 0
     private var flipped = false
     private var deckOrder: MutableList<Int> = mutableListOf()
@@ -208,8 +211,18 @@ class FunnyGeorgiaScreen(
                 background = ui.rounded(if (on) GaUi.BLUE_BRIGHT else GaUi.CARD_SOLID, 12, GaUi.STROKE, 1f)
                 isClickable = true; setOnClickListener { act() }
             }
-        modeToggle.addView(modeBtn("Cards", deckMode) { deckMode = true; flipped = false; render() }, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = ui.dp(6) })
-        modeToggle.addView(modeBtn("List", !deckMode) { deckMode = false; LawAccordion.collapse(); render() }, LinearLayout.LayoutParams(0, -2, 1f))
+        modeToggle.addView(modeBtn("Swipe", deckMode) {
+            deckMode = true; flipped = false; onModeChanged(true); render()
+        }, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = ui.dp(6) })
+        modeToggle.addView(modeBtn("List", !deckMode) {
+            deckMode = false; LawAccordion.collapse(); onModeChanged(false); render()
+        }, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = ui.dp(6) })
+        modeToggle.addView(ui.text("Ask next time", 12.5f, GaUi.MUTED).apply {
+            setPadding(ui.dp(8), ui.dp(8), ui.dp(8), ui.dp(8))
+            isClickable = true; contentDescription = "Ask List or Swipe next time"
+            tag = "funny-ask-next"
+            setOnClickListener { onAskNextTime(); Toast.makeText(ui.context, "We'll ask List or Swipe next time you open Funny.", Toast.LENGTH_SHORT).show() }
+        })
         LawAccordion.collapse(); list.removeAllViews(); deckHost.removeAllViews()
         val items = deckItems()
         if (deckMode) {
@@ -387,11 +400,78 @@ class FunnyGeorgiaScreen(
 class FunnyLawsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState); SystemBars.apply(this)
+        val prefs = getSharedPreferences("ga_settings", MODE_PRIVATE)
+        val remember = prefs.getBoolean("funny_view_remember", false)
+        val deck = if (remember) prefs.getString("funny_view_mode", "swipe") != "list" else true
+        if (!remember) {
+            // Navy placeholder behind the chooser so the window isn't blank.
+            setContentView(android.widget.FrameLayout(this).apply { setBackgroundColor(GaUi.NAVY) })
+            FunnyViewChooser.show(this) { useSwipe, rememberChoice ->
+                if (rememberChoice) prefs.edit().putBoolean("funny_view_remember", true).putString("funny_view_mode", if (useSwipe) "swipe" else "list").apply()
+                showFunny(useSwipe)
+            }
+        } else showFunny(deck)
+    }
+
+    private fun showFunny(deckMode: Boolean) {
+        val prefs = getSharedPreferences("ga_settings", MODE_PRIVATE)
         val (laws, cases) = FunnyGeorgiaData.parse(assets.open("funny_georgia.json").bufferedReader().use { it.readText() })
         setContentView(
-            FunnyGeorgiaScreen(GaUi(this), laws, cases, { finish() }, { }, intent.getBooleanExtra("cases", false), shareText = { text ->
-                startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Share funny Georgia law"))
-            }).build()
+            FunnyGeorgiaScreen(
+                GaUi(this), laws, cases, { finish() }, { }, intent.getBooleanExtra("cases", false),
+                shareText = { text ->
+                    startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Share funny Georgia law"))
+                },
+                initialDeckMode = deckMode,
+                onModeChanged = { swipe ->
+                    if (prefs.getBoolean("funny_view_remember", false))
+                        prefs.edit().putString("funny_view_mode", if (swipe) "swipe" else "list").apply()
+                },
+                onAskNextTime = { prefs.edit().putBoolean("funny_view_remember", false).remove("funny_view_mode").apply() }
+            ).build()
         )
+    }
+}
+
+/** Styled List vs Swipe picker shown when Funny opens (unless the user asked us to remember). */
+object FunnyViewChooser {
+    fun show(activity: android.app.Activity, onPick: (useSwipe: Boolean, remember: Boolean) -> Unit) {
+        val ui = GaUi(activity)
+        val box = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(ui.dp(20), ui.dp(8), ui.dp(20), ui.dp(4))
+            setBackgroundColor(GaUi.NAVY)
+        }
+        box.addView(ui.text("How do you want to browse?", 18f, GaUi.WHITE, ui.sansBold))
+        box.addView(ui.text("People love to swipe — or stick with the classic list. You can switch anytime on the Funny screen.", 14f, GaUi.MUTED).apply { setPadding(0, ui.dp(6), 0, ui.dp(12)) })
+        val remember = android.widget.CheckBox(activity).apply {
+            text = "Remember my choice"
+            setTextColor(GaUi.TEXT)
+            buttonTintList = android.content.res.ColorStateList.valueOf(GaUi.GOLD)
+            contentDescription = "Remember my choice"
+        }
+        val holder = arrayOfNulls<android.app.AlertDialog>(1)
+        fun option(title: String, blurb: String, swipe: Boolean) = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(ui.dp(14), ui.dp(12), ui.dp(14), ui.dp(12))
+            background = ui.glowCard(glow = true)
+            addView(ui.text(title, 17f, GaUi.GOLD, ui.sansBold))
+            addView(ui.text(blurb, 13.5f, GaUi.TEXT).apply { setPadding(0, ui.dp(4), 0, 0) })
+            isClickable = true; contentDescription = title
+            setOnClickListener { holder[0]?.dismiss(); onPick(swipe, remember.isChecked) }
+            layoutParams = ui.lp(6, 6)
+        }
+        box.addView(option("Swipe", "Card deck — swipe left/right, tap to flip the full law.", true))
+        box.addView(option("List", "Classic scrollable list with Open source accordion.", false))
+        box.addView(remember, LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(8) })
+        val dlg = android.app.AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar)
+            .setView(box)
+            .setCancelable(true)
+            .create()
+        holder[0] = dlg
+        dlg.setOnCancelListener { onPick(true, false) }
+        dlg.show()
+        dlg.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(GaUi.NAVY))
+        dlg.window?.setLayout((activity.resources.displayMetrics.widthPixels * 0.92f).toInt(), android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 }

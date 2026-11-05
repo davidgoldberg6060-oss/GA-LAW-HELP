@@ -124,7 +124,26 @@ class HomeActivity : AppCompatActivity() {
     /** No login needed: ApiClient creates this device's anonymous session on the first request. */
     private fun requireSignedIn():Boolean = true
     private var funnyData: Pair<List<FunnyLaw>,List<FunnyCase>>? = null
-    private fun showFunnyLaws(cases:Boolean=false){ val data=funnyData?:FunnyGeorgiaData.parse(assets.open("funny_georgia.json").bufferedReader().use{it.readText()}).also{funnyData=it}; show(FunnyGeorgiaScreen(ui,data.first,data.second,{showMenu()},{url->openUrl(url)},cases,GaScreens.bottomNav(ui,nav,GaScreens.Tab.FUNNY), shareText={text->shareOut(text)}).build()) }
+    private fun funnyPrefs()=getSharedPreferences("ga_settings",MODE_PRIVATE)
+    private fun showFunnyLaws(cases:Boolean=false){
+        val prefs=funnyPrefs()
+        val remembered=prefs.getBoolean("funny_view_remember",false)
+        if(!remembered){
+            FunnyViewChooser.show(this){useSwipe,remember->
+                if(remember) prefs.edit().putBoolean("funny_view_remember",true).putString("funny_view_mode",if(useSwipe)"swipe" else "list").apply()
+                openFunnyLaws(cases,useSwipe)
+            }
+        } else openFunnyLaws(cases, prefs.getString("funny_view_mode","swipe")!="list")
+    }
+    private fun openFunnyLaws(cases:Boolean, deckMode:Boolean){
+        val data=funnyData?:FunnyGeorgiaData.parse(assets.open("funny_georgia.json").bufferedReader().use{it.readText()}).also{funnyData=it}
+        val prefs=funnyPrefs()
+        show(FunnyGeorgiaScreen(ui,data.first,data.second,{showMenu()},{url->openUrl(url)},cases,GaScreens.bottomNav(ui,nav,GaScreens.Tab.FUNNY),
+            shareText={text->shareOut(text)}, initialDeckMode=deckMode,
+            onModeChanged={swipe-> if(prefs.getBoolean("funny_view_remember",false)) prefs.edit().putString("funny_view_mode",if(swipe)"swipe" else "list").apply() },
+            onAskNextTime={ prefs.edit().putBoolean("funny_view_remember",false).remove("funny_view_mode").apply() }
+        ).build())
+    }
     private fun showMenu(){ closeDrawer(); val items=HomeDrawerCatalog.items; val overlay=GaScreens.drawer(ui,items,BuildConfig.VERSION_NAME,{item->closeDrawer();onDrawerItem(item)},{closeDrawer()}); drawerView=overlay; addContentView(overlay,ViewGroup.LayoutParams(-1,-1)) }
     private fun closeDrawer(){ drawerView?.let{(it.parent as? ViewGroup)?.removeView(it)}; drawerView=null }
     private fun onDrawerItem(item:HomeDrawerItem){if(item.requiresSignIn&&!requireSignedIn())return;when(item.id){"home"->showHome();"mycase"->showMyCase();"cases"->showCases();"ai"->showTalkToMe();"laws"->showGeorgiaLaws();"loopholes"->showLoopholes();"charges"->showChargeCheck(null,null);"civil"->showCivilCheck(null,null);"motions"->showMotionsHub();"forms"->showLegalForms();"court"->showCourtInfo();"rights"->showKnowYourRights();"citizen"->showCitizenHelpHub();"resources"->showResources();"emergency"->showEmergency();"payments"->showPayment();"settings"->showSettings();"profile"->showAccount();"help"->showMore();"funny"->showFunnyLaws()}}
