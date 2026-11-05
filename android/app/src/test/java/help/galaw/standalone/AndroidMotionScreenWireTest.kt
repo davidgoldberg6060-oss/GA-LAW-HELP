@@ -14,7 +14,7 @@ class AndroidMotionScreenWireTest {
     @Test
     fun privateCaseMotionScreenUsesAuthenticatedEndpoint() {
         val api = source("app/src/main/java/help/galaw/standalone/ApiClient.kt")
-        assertTrue(api.contains("/cases/$id/motion-screen"))
+        assertTrue(api.contains("/cases/" + "$" + "id/motion-screen"))
         assertTrue(api.contains("fun motionScreen("))
         val home = source("app/src/main/java/help/galaw/standalone/HomeActivity.kt")
         assertTrue(home.contains("api.motionScreen"))

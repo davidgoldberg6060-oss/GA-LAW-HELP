@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CITIZEN_DISCLAIMER, CITIZEN_FEATURES } from "./citizenHelp";
 import {
   APPEALS_OPINIONS_URL,
   CODE_REVISION_URL,
@@ -205,6 +206,22 @@ export default function ApprovedScreens(props: Props) {
           {panel === "resources" && (
             <>
               <h2>Resources</h2>
+              <p className="muted">{CITIZEN_DISCLAIMER}</p>
+              <h3>Citizen Help</h3>
+              <ul className="citizenHelpList">
+                {CITIZEN_FEATURES.map((f) => (
+                  <li key={f.id}>
+                    <b>{f.title}</b>
+                    <span> — {f.blurb}</span>
+                    <div className="citizenHelpLinks">
+                      {f.links.map((l) => (
+                        <a key={l.url} href={l.url} target="_blank" rel="noreferrer">{l.label}</a>
+                      ))}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
               {resourceLinks.map((link) => <p key={link.url}><a href={link.url}>{link.title}</a></p>)}
             </>
           )}

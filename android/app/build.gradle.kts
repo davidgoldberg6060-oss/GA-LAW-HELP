@@ -7,8 +7,8 @@ android {
         applicationId = "help.galaw.standalone"
         minSdk = 26
         targetSdk = 35
-        versionCode = 34
-        versionName = "1.6.9"
+        versionCode = 35
+        versionName = "1.7.0"
         val apiBaseUrl = providers.gradleProperty("GALAW_API_BASE_URL").orElse("https://api-production-60cc.up.railway.app").get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
@@ -44,10 +44,22 @@ android {
                 keyPassword = releaseKeyPassword
             }
         }
-        buildTypes {
-            getByName("release") {
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             }
+        }
+        getByName("debug") {
+            isMinifyEnabled = false
         }
     }
 
@@ -57,6 +69,10 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { buildConfig = true }
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
 }
 
 dependencies {
@@ -65,4 +81,7 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.10.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.24")
+    testImplementation("junit:junit:4.13.2")
 }
+

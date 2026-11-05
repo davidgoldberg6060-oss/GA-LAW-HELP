@@ -41,6 +41,11 @@ app.middleware('http')(ai_rate_limit_middleware)
 async def crawler_policy_headers(request, call_next):
     response = await call_next(request)
     response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive, nosnippet'
+    # Short public GET cache for laws/cases search (clients + CDN/proxy). Mutations stay uncached.
+    path = request.url.path
+    if request.method == 'GET' and path.startswith(('/public/georgia-laws', '/public/georgia-cases', '/health')):
+        response.headers.setdefault('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+        response.headers.setdefault('Vary', 'Accept-Encoding')
     return response
 
 @app.get('/robots.txt', include_in_schema=False)

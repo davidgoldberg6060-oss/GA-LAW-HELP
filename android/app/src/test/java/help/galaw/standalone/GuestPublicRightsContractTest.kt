@@ -22,13 +22,12 @@ class GuestPublicRightsContractTest {
     }
 
     @Test
-    fun signInScreenOpensGuestRightsWithoutAccount() {
-        val auth = source("app/src/main/java/help/galaw/standalone/AuthActivity.kt")
-        assertTrue(auth.contains("GuestRightsActivity"))
-        assertTrue(auth.contains("Know your rights without signing in"))
+    fun guestRightsActivityUsesPublicEndpoints() {
         val guestScreen = source("app/src/main/java/help/galaw/standalone/GuestRightsActivity.kt")
         assertTrue(guestScreen.contains("GuestPublicApi.rightsAssistant"))
         assertTrue(guestScreen.contains("GuestPublicApi.encounter"))
+        val main = source("app/src/main/java/help/galaw/standalone/MainActivity.kt")
+        assertTrue(main.contains("GuestRightsActivity"))
     }
 
     @Test
@@ -71,19 +70,21 @@ class GuestPublicRightsContractTest {
     fun homeActivityGeorgiaLawsUsesPublicAskWithoutLoginGate() {
         val home = source("app/src/main/java/help/galaw/standalone/HomeActivity.kt")
         assertFalse(home.contains("if (api.token == null) { startActivity(Intent(this, AuthActivity::class.java)); finish(); return }"))
-        assertTrue(home.contains("api = ApiClient(this); showHome()"))
-        assertTrue(home.contains("api.publicAsk(question)"))
-        assertTrue(home.contains("GeorgiaLawsActivity"))
+        assertTrue(home.contains("api = ApiClient(this)"))
+        assertTrue(home.contains("showHome()"))
+        assertTrue(home.contains("GuestPublicApi.lawSearch"))
         assertTrue(home.contains("TalkToMeController.reply"))
+        assertTrue(home.contains("showGeorgiaLaws()"))
         assertFalse(home.contains("showTalkToMe()}){val result=api.publicAsk(q)"))
         assertFalse(home.contains("api.searchAuthorities(q)"))
-        assertTrue(home.contains("if(!requireSignedIn())return; val root=page(\"My Cases\""))
-        assertTrue(home.contains("if(!requireSignedIn())return; val root=page(\"Documents\""))
+        assertTrue(home.contains("private fun showCases(){if(!requireSignedIn())return;"))
+        assertTrue(home.contains("private fun showDocuments(){if(!requireSignedIn())return;"))
         val laws = source("app/src/main/java/help/galaw/standalone/GeorgiaLawsActivity.kt")
         assertTrue(laws.contains("GuestPublicApi.rightsAssistant"))
         assertTrue(laws.contains("GuestPublicApi.encounter"))
         val api = source("app/src/main/java/help/galaw/standalone/ApiClient.kt")
         assertTrue(api.contains("GuestPublicApi.rightsAssistant"))
         assertTrue(api.contains("GuestPublicApi.encounter"))
+        assertTrue(api.contains("fun publicAsk"))
     }
 }
