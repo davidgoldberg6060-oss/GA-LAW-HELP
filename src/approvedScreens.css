@@ -30,3 +30,5 @@ html[data-theme="light"] body{background:#f4f7fb;color:#102033}
 .citizenHelpLinks{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
 .citizenHelpLinks a{background:#0a273e;color:#3cbeff;border:1px solid #26a9ff;padding:.25rem .55rem;text-decoration:none;font-size:.85rem}
 .muted{color:#afc2d0;font-size:.9rem}
+
+.funnyChips button.on,.funnyMode button.on{background:#e2b54e;color:#02111d}

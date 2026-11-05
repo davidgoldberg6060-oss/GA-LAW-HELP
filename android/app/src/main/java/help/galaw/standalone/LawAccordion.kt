@@ -31,6 +31,13 @@ object LawAccordion {
     var background: (() -> Unit) -> Unit = { thread { it() } }
     var deliver: (() -> Unit) -> Unit = { main.post(it) }
     fun clearCache() = cache.clear()
+    /** Seed the accordion with already-stored statute/case text (Funny Laws offline pack). */
+    fun preload(citation: String, title: String, text: String, note: String? = null, sourceUrl: String? = null) {
+        val o = JSONObject().put("citation", citation).put("title", title).put("text", text)
+        if (!note.isNullOrBlank()) o.put("note", note)
+        if (!sourceUrl.isNullOrBlank()) o.put("source_url", sourceUrl)
+        cache[key(citation)] = o
+    }
     private val cache = HashMap<String, JSONObject>()
     private var openKey: String? = null
     private var openPanel: View? = null
