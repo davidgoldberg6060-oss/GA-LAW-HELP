@@ -130,3 +130,26 @@
 .mcWhere{color:#a0b4c9}.mcTimeline{border:1px solid #e6be5c;border-radius:12px;padding:.6rem 1rem}.mcTimeline span{color:#e6be5c;margin-left:.4rem}
 .mcErr{color:#f59696}
 .mcChip{margin-left:.4rem;padding:.25rem .7rem;border-radius:14px;border:1px solid rgba(77,171,255,.4);background:#0a1a2d;color:#e2eaf3;cursor:pointer}
+
+.funnyChips,.funnyMode,.funnyDeckActions{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0}
+.funnyChips button,.funnyMode button,.funnyDeckActions button{background:#0a273e;color:#fff;border:1px solid #26a9ff;border-radius:999px;padding:.35rem .75rem;cursor:pointer}
+.funnyChips button.on,.funnyMode button.on{background:#e2b54e;color:#02111d;border-color:#e2b54e}
+.funnyDeck{margin:.6rem 0 1rem}
+.funnyProgress{text-align:center;color:#e2b54e;font-weight:600;margin:.2rem 0 .6rem}
+.funnyCard{background:#071d2f;border:1px solid #e2b54e;border-radius:16px;padding:1rem 1.1rem;min-height:260px;box-shadow:0 0 24px rgba(38,169,255,.18);touch-action:pan-y}
+.funnyCard small{color:#e2b54e;letter-spacing:.04em;text-transform:uppercase;font-size:.72rem}
+.funnyCard h3{color:#fff;margin:.35rem 0 .55rem;font-size:1.25rem}
+.funnyCard .hint{color:#afc2d0;font-size:.85rem}
+.funnyCard .lawScroll{max-height:220px;overflow:auto;margin-top:.4rem}
+.funnyDeckActions{justify-content:center;margin-top:.7rem}
+.funnyDeckActions button{border-radius:12px;min-width:5.5rem}
+
+.funnyChooser{background:#071d2f;border:1px solid #e2b54e;border-radius:16px;padding:1rem;margin:.6rem 0 1rem}
+.funnyChooser h3{color:#fff;margin:0 0 .35rem}
+.funnyChooser p{color:#afc2d0;margin:0 0 .75rem}
+.funnyChooserOpts{display:flex;gap:.55rem;flex-wrap:wrap}
+.funnyChooserOpts button{flex:1;min-width:140px;text-align:left;background:#02111d;border:1px solid #26a9ff;border-radius:12px;padding:.75rem;color:#fff;cursor:pointer}
+.funnyChooserOpts b{display:block;color:#e2b54e;margin-bottom:.25rem}
+.funnyChooserOpts span{color:#afc2d0;font-size:.85rem}
+.funnyRemember{display:flex;align-items:center;gap:.45rem;color:#e2eaf3;margin-top:.75rem;font-size:.9rem}
+.funnyMode button.askNext{background:transparent;border-color:#194e70;color:#afc2d0}

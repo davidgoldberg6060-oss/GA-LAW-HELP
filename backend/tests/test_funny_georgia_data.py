@@ -17,11 +17,12 @@ def test_android_and_web_copies_are_identical():
 
 def test_every_law_has_citation_and_https_source():
     laws = _data()["laws"]
-    assert len(laws) >= 60
+    assert len(laws) >= 100
     for law in laws:
         for key in ("title", "summary", "citation", "jurisdiction", "category", "status"):
             assert law[key].strip(), (key, law)
         assert law["source_url"].startswith("https://"), law
+        assert len(law.get("full_text") or "") >= 20, law["citation"]
     statutes = [l for l in laws if l["citation"].startswith("O.C.G.A. § ")]
     assert all("codes.findlaw.com/ga/" in l["source_url"] for l in statutes)
     assert len({l["citation"] for l in statutes}) == len(statutes)
@@ -29,7 +30,7 @@ def test_every_law_has_citation_and_https_source():
 
 def test_every_case_has_court_year_citation_and_https_source():
     cases = _data()["cases"]
-    assert len(cases) >= 10
+    assert len(cases) >= 20
     for c in cases:
         assert c["name"].strip() and c["court"].strip() and c["citation"].strip() and c["summary"].strip()
         assert c["court"] in {"Court of Appeals of Georgia", "Supreme Court of Georgia"}
@@ -50,3 +51,4 @@ def test_android_screen_loads_asset_and_is_wired_for_guests():
     assert "Funny Cases" in activity and "Funny Laws" in activity
     assert "FunnyLawsActivity" in (src / "AuthActivity.kt").read_text(encoding="utf-8")
     assert "FunnyLawsActivity" in (ROOT / "android/app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
+    assert "deckMode" in activity and "attachSwipe" in activity and "Remember" in activity
