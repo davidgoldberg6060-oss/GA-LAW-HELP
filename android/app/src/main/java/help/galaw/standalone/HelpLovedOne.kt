@@ -17,7 +17,7 @@ object HelpLovedOne {
         "Schedule a visit (GDConnect)" to "https://gdconnect.gdc.ga.gov/visitation",
         "Questions about your loved one / Ombudsman" to "https://gdc.georgia.gov/friends-and-family/questions-about-your-loved-ones"
     )
-    val CUSTODY = Regex("(?i)\\b(jail|prison|locked up|incarcerat|inmate|in custody|serving (a|his|her|their|my) (sentence|time)|commissary|on (the )?books|visitation|gdc)\\b")
+    val CUSTODY = Regex("(?i)\\b(jail|prison|locked up|incarcerat|inmate|in custody|serving (a|his|her|their|my) (sentence|time)|commissary|on (the )?books|gdc)\\b")
     fun show(ui: GaUi, open: (String) -> Unit) {
         AlertDialog.Builder(ui.context).setTitle("Help your loved one").setMessage(NOTE)
             .setItems(LINKS.map { it.first + " ›" }.toTypedArray()) { _, i -> open(LINKS[i].second) }
