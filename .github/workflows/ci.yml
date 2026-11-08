@@ -45,7 +45,7 @@ jobs:
       - name: Validate nginx config syntax
         run: docker run --rm ga-law-help-web:ci nginx -t
       - name: Web server config regression tests
-        run: pip install pytest && python -m pytest -q tests/test_nginx_web_conf.py
+        run: pip install pytest && python -m pytest -q tests/test_nginx_web_conf.py tests/test_install_page.py
 
   android:
     runs-on: ubuntu-latest
