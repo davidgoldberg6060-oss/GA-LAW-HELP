@@ -14,7 +14,7 @@ from .internal_legal_search import search_internal
 from .loophole_analysis_service import SUGGESTED_TOPICS, analyze_loopholes
 from .charge_check_service import analyze_charge_check, charge_check_note_text
 from .civil_check_service import analyze_civil_check, civil_check_note_text
-from .civil_topics import HELP_LINKS, follow_ups
+from .civil_topics import HELP_LINKS, follow_ups, current_question
 from . import answer_cache
 from .ai_assistant import ask_fast
 from . import ai_assistant as _ai
@@ -175,11 +175,12 @@ def _decorate_public(response:dict,query:str,mode:str)->dict:
     response['login_required'] = False
     response.setdefault('official_indexes',official_indexes())
     if not response.get('answer') and response.get('analysis'): response['answer']=response['analysis']
-    response.setdefault('follow_ups',follow_ups(query))
+    question=current_question(query)
+    response.setdefault('follow_ups',follow_ups(question,str(response.get('answer') or '')))
     response.setdefault('help_links',HELP_LINKS)
     from .case_guide import detect_stage,STAGE_LABELS
-    stage=detect_stage(query)
-    if stage and not re.search(r"(?i)landlord|tenant|evict|deposit|divorce|custody|child support|debt|wage",query):
+    stage=detect_stage(question)
+    if stage and not re.search(r"(?i)landlord|tenant|evict|deposit|divorce|custody|child support|debt|wage",question):
         response['case_stage']=stage;response['case_stage_label']=STAGE_LABELS[stage]
     return response
 
