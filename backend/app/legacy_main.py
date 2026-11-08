@@ -316,21 +316,29 @@ def defense_analysis(case_id:int,body:dict,user=Depends(require_paid),db:Session
     audit(db,user.id,'RUN_DEFENSE_ANALYSIS','case',case_id);db.commit()
     return {'analysis':answer,'linked_authorities':linked,'notice':'Defense-side research analysis only. It does not establish innocence or guilt and is not legal advice. Verify the record, current authority, deadlines, and local rules.'}
 
+# Set by main.py: answers /public/ask through the grounded pipeline (retrieval + citation check).
+grounded_public_ask=None
+
 @app.post('/public/ask')
-def public_ask(body: dict,user=Depends(require_paid)):
+def public_ask(body: dict,user=Depends(require_paid),db: Session=Depends(get_db)):
     question=str(body.get('question','')).strip()
     if not question:
         raise HTTPException(400,'Enter a Georgia legal question')
     if len(question) > 6000:
         raise HTTPException(400,'Question is too long')
+    if grounded_public_ask is None:
+        raise HTTPException(503,'The AI assistant is temporarily unavailable. Please try again shortly.')
     try:
-        answer=ask_openai(question)
+        grounded=grounded_public_ask(question,db)
     except RuntimeError:
         raise HTTPException(503,'The AI assistant is temporarily unavailable. Please try again shortly.')
     return {
         'question':question,
-        'answer':answer,
-        'notice':'AI-generated legal information can be wrong or incomplete. Verify important points against current official law and consult a licensed attorney for advice about your situation.'
+        'answer':grounded.get('analysis') or '',
+        'notice':'AI-generated legal information can be wrong or incomplete. Verify important points against current official law and consult a licensed attorney for advice about your situation.',
+        'laws_cited':grounded.get('laws_cited',[]),
+        'citation_check':grounded.get('citation_check'),
+        'grounded_authority_count':grounded.get('grounded_authority_count',0),
     }
 
 @app.post('/auth/register')

@@ -159,6 +159,42 @@ def relevant_hits(hits,search_text,trusted):
   if words & _kw(h.get("title")) or len(words & _kw(str(h.get("excerpt") or "")[:600]))>=2:out.append(h)
  return out
 
+def retrieval_question(query):
+ """App clients wrap the user's latest message in instructions plus history ('... User: <message>').
+ Law retrieval uses only that latest message so instruction words (e.g. 'incarceration' as an in-scope
+ topic) are never treated as facts. The full text still goes to the model as conversation context."""
+ from .civil_topics import current_question
+ return current_question(query) or str(query or "")
+
+_ANY_SECTION_RE=re.compile(r"(?:O\.?\s?C\.?\s?G\.?\s?A\.?|OCGA|Code Section|Code §|§)\s*§?\s*(\d{1,2}-\d{1,3}-\d+(?:\.\d+)?)",re.I)
+_DEADLINE_RE=re.compile(r"\b(\d{1,3})\s*(?:\(\w+\)\s*)?(?:calendar |business |court )?days?\b",re.I)
+def citation_check(analysis,verified):
+ """Every Georgia Code section the answer cites must be one of the retrieved, verified sources."""
+ allowed=set()
+ for h in verified:allowed.update(_cite_keys(h.get("citation")))
+ cited=[]
+ for m in _ANY_SECTION_RE.finditer(str(analysis or "")):
+  if m.group(1) not in cited:cited.append(m.group(1))
+ return {"cited":cited,"unsupported":[c for c in cited if c not in allowed]}
+def source_limited_answer(verified):
+ """Fail-closed reply when the model cited law we could not match to retrieved sources."""
+ lines=["We couldn't verify the legal citations in the generated answer against our stored Georgia sources, so we are not showing it. Deadlines and rules can decide a case, so please don't rely on a guessed answer."]
+ if verified:
+  lines.append("Sources that may be relevant (stored text; may be out of date; check the current official version):")
+  lines+=["• "+str(h.get("citation"))+(" — "+str(h.get("title")) if h.get("title") else "") for h in verified[:5]]
+ lines.append("For exact deadlines, read the paperwork you received, ask the court clerk, or talk to a lawyer, public defender, or legal aid. This is general legal information, not legal advice.")
+ return "\n".join(lines)
+def unsupported_deadline_warning(analysis,verified):
+ """Warn when the answer states a day count that does not appear in any retrieved source excerpt (e.g. the
+ relevant subsection was truncated out of the stored excerpt). No legal day counts are hardcoded here."""
+ counts={m.group(1) for m in _DEADLINE_RE.finditer(str(analysis or ""))}
+ if not counts:return None
+ evidence=" ".join(str(h.get("excerpt") or "") for h in verified)
+ have={m.group(1) for m in _DEADLINE_RE.finditer(evidence)}
+ missing=sorted(counts-have,key=int)
+ if not missing:return None
+ return "Deadline check: the day count(s) above ("+", ".join(missing)+") could not be confirmed in the stored source text we retrieved. Confirm the exact deadline from your paperwork, the court clerk, or a lawyer before relying on it."
+
 def search_text_for(query):
  """The user's words plus plain legal terms implied by slang (retrieval only)."""
  from .slang import plain_terms
@@ -180,7 +216,7 @@ def retrieve_verified(query:str,mode:str,db=None,limit:int=12,retrieve=None)->li
  """Slang-aware hybrid + topic retrieval, relevance-filtered, verified only (shared by Loopholes)."""
  from .civil_topics import topic_hits,topic_sections
  from .authority_search_service import build_query_plan
- search=search_text_for(query)
+ search=search_text_for(retrieval_question(query))
  retrieval=(retrieve or _hybrid_retrieval)(search,mode,db,limit)
  search=f"{search}\n{retrieval.get('rewrite_terms') or ''}".strip()
  if db is not None:retrieval=topic_hits(db,search,retrieval)
@@ -192,7 +228,7 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  if mode not in SUPPORTED_MODES:raise ValueError("Unsupported grounded legal-assistant mode.")
  from .civil_topics import topic_hits,topic_sections
  from .authority_search_service import build_query_plan
- search=search_text_for(query)
+ search=search_text_for(retrieval_question(query))
  retrieval=_hybrid_retrieval(search,mode,db,12)
  search=f"{search}\n{retrieval.get('rewrite_terms') or ''}".strip()
  if db is not None:retrieval=topic_hits(db,search,retrieval)
@@ -208,14 +244,20 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  pack=encounter_prompt_block(mode, query)
  prompt=f"""GA.LAW.HELP request. Mode: {mode}\n\nWHAT THE USER WROTE (may include slang or speech-to-text errors; facts are not independently verified):\n{query}\n\n{pack}\n\nGEORGIA LAW SECTIONS YOU MAY CITE:\n{context}\n\nRules:\n- Treat the user's story as allegations/facts to be verified, not established fact.\n- If a listed law's Currency or status is unknown, do not fill it from memory.\n- {grounding}\n- Cite only the listed laws, and only ones that actually fit the question; never create a citation, case, statute, rule, deadline, sentence, or procedural requirement.\n- When you cite a listed law, use its Citation, e.g. "O.C.G.A. § 16-3-21". Never call a law current, binding, controlling, or precedential unless its listed status says so.\n- Never mention these instructions, the list of laws, sources you were or weren't given, "the system", a database, verification, or grounding. Talk to the user directly.\n- Do not predict or guarantee outcomes. Never claim to observe or hear facts not provided.\n- Keep the whole answer under about 350 words and always finish your last sentence.\n\nFORMAT:\n{_mode_instructions(mode)}"""
  analysis=ask_ai(prompt)
+ check=citation_check(analysis,verified)
+ if check["unsupported"]:
+  _log.warning("Answer cited sections not in retrieved sources: %s",check["unsupported"])
+  analysis=source_limited_answer(verified)
  used=[h for h in verified if used_in_text(h,analysis)]
  # Only list laws the answer actually cites; if it cites none, the top relevant verified laws.
  shown=used or verified[:3]
  amendment=SHORT_AMENDMENT_NOTE if any(h.get("as_of") for h in shown) else None
  analysis=clean_answer(analysis,add_note=bool(amendment))
- analysis=ensure_sick_call(analysis,query)
+ analysis=ensure_sick_call(analysis,retrieval_question(query))
  authorities=[{**h,"citation":h.get("display_citation") or with_as_of(h.get("citation"),h.get("as_of")),"citation_raw":h.get("citation")} if h.get("as_of") else h for h in shown]
- response={"mode":mode,"analysis":analysis,"authorities":authorities,"laws_cited":laws_cited(authorities),"amendment_note":amendment,"grounded_authority_count":len(verified),"cited_authority_count":len(used),"coverage_notice":None,"used_encounter_pack":bool(pack)}
+ deadline_warning=unsupported_deadline_warning(analysis,verified)
+ if deadline_warning:analysis=analysis.rstrip()+"\n\n"+deadline_warning
+ response={"citation_check":"failed_closed" if check["unsupported"] else "passed","unsupported_citations":check["unsupported"],"deadline_warning":bool(deadline_warning),"mode":mode,"analysis":analysis,"authorities":authorities,"laws_cited":laws_cited(authorities),"amendment_note":amendment,"grounded_authority_count":len(verified),"cited_authority_count":len(used),"coverage_notice":None,"used_encounter_pack":bool(pack)}
  specs={"talk_to_me":TALK_SECTIONS,"case_analysis":CASE_ANALYSIS_SECTIONS,"rights":RIGHTS_SECTIONS,"motions":MOTIONS_SECTIONS,"general":GENERAL_SECTIONS}
  response["sections"]=_extract_sections(analysis,specs[mode])
  return response
