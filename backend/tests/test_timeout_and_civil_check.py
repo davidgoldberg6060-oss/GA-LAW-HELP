@@ -176,4 +176,4 @@ def test_android_civil_check_reachable_from_drawer_and_case():
 
 def test_follow_ups_are_topic_specific():
     assert any("deposit" in q.lower() for q in follow_ups("security deposit"))
-    assert len(follow_ups("something else")) == 3
+    assert follow_ups("something else") == []  # no generic filler when nothing relevant fits

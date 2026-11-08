@@ -101,7 +101,7 @@ class HomeActivity : AppCompatActivity() {
                 docs.saveSummary(d.id, answer)
                 // The text read from the paper stays in the chat context so follow-up questions can use it.
                 val full = answer + if (text.isNotBlank()) "\n\nText read from the paper:\n" + text else ""
-                runOnUiThread { stop(); val bot = talk.add(false, full, now(), ShareText.answer("Document: " + d.name, full)); if (chat === c) { c.bot(bot.text, bot.time, bot.id); c.followUps(listOf("What should I do first?", "What does this charge mean?", "What questions should I ask my lawyer?")) { f -> sendTalk(f) } } } }
+                runOnUiThread { stop(); val bot = talk.add(false, full, now(), ShareText.answer("Document: " + d.name, full)); if (chat === c) { c.bot(bot.text, bot.time, bot.id); c.followUps(listOf("What does this document mean?", "Is there a deadline in this document?", "What questions should I ask a lawyer about it?")) { f -> sendTalk(f) } } } }
             catch (e: Exception) { runOnUiThread { stop(); val msg = AiErrors.message(e); val bot = talk.add(false, msg, now(), inContext = false); if (chat === c) { c.bot(bot.text, bot.time, bot.id); c.retry { talk.delete(bot.id); c.remove(bot.id); runDocumentRead(c, d, pages, caseId) } } } } }
     }
     override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); SystemBars.apply(this); api = ApiClient(this); docs = DocumentLibrary(this); ui = GaUi(this); showHome(); thread { runCatching { api.ensureSession() } } }

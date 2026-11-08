@@ -87,25 +87,53 @@ def topic_hits(db, query: str, retrieval: dict, limit: int = 12) -> dict:
     return {**retrieval, "hits": (hits + rest)[:limit]}
 
 
+_DOC_PATTERN = r"\bdocuments?\b|\bpapers?\b|\bforms?\b|\bletter\b|\bsummons\b|\bsubpoena"
+# Suggested follow-ups. Matched on the user's CURRENT question first (then the answer, except for
+# jail/prison), so suggestions stay on the topic asked and never assume custody or a conviction.
 FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    (PRISON, ("How do I file a grievance in a Georgia prison or jail?", "How can my family report conditions to the Georgia Department of Corrections?", "Can I get free legal help while incarcerated?")),
-    (r"expung|record restrict|criminal record", ("Which charges can be restricted in Georgia?", "How do I request record restriction from the prosecutor?", "Does First Offender status help my record?")),
-    (r"security deposit|deposit back", ("How long does my landlord have to return my deposit?", "Can I sue for my deposit in small claims court?", "What can a landlord deduct from a deposit?")),
-    (r"evict|dispossessory|landlord|tenant", ("How much notice does a Georgia landlord have to give?", "What happens at a dispossessory hearing?", "Can my landlord lock me out?")),
-    (r"divorce|custody|child support|alimony", ("How is child support calculated in Georgia?", "How long does an uncontested divorce take?", "What does the court consider for custody?")),
-    (r"debt|garnish|collector", ("How long can a creditor sue me for a debt in Georgia?", "What income is protected from garnishment?", "What should I do if I'm served with a lawsuit?")),
-    (r"injur|accident", ("How long do I have to file an injury claim?", "What evidence should I keep after an accident?")),
-    (r"small claims|magistrate|sue", ("How do I file in magistrate court?", "How much can I sue for in small claims?")),
+    (r"self[- ]defen[cs]e|justification|stand your ground|use of force", ("When does Georgia law treat force as justified?", "How does a pretrial immunity hearing work in Georgia?", "What evidence helps show self-defense?")),
+    (r"expung|record restrict|criminal record", ("Which charges can be restricted in Georgia?", "How do I request record restriction from the prosecutor?", "Does First Offender status help a record?")),
+    (r"first offender", ("Who is eligible for First Offender treatment?", "What happens after First Offender is completed?")),
+    (r"security deposit|deposit back", ("How long does a landlord have to return a deposit?", "Can I sue for a deposit in small claims court?", "What can a landlord deduct from a deposit?")),
+    (r"evict|dispossessory|landlord|tenant", ("How much notice does a Georgia landlord have to give?", "What happens at a dispossessory hearing?", "Can a landlord lock a tenant out?")),
+    (r"\bdui\b|under the influence|implied consent|license suspen", ("How do I request an ALS hearing with DDS?", "What is an ignition interlock limited permit?", "What happens at a first DUI court date?")),
+    (r"traffic|speeding|\bticket|super speeder|points on my license", ("How do points on a Georgia license work?", "Can I contest a traffic ticket in court?", "What happens if I miss my court date for a ticket?")),
+    (r"\bappeal|new trial|convicted|conviction", ("How do I file a notice of appeal in Georgia?", "What is a motion for new trial?", "Which court hears my appeal?")),
+    (r"custody|visitation|parenting plan", ("What does the court consider for custody in Georgia?", "How do I change a custody order?", "What is a parenting plan?")),
+    (r"divorce|alimony|separat", ("How long does an uncontested divorce take?", "How is property divided in a Georgia divorce?")),
+    (r"child support", ("How is child support calculated in Georgia?", "How do I change a child support order?")),
+    (r"debt|garnish|collector", ("How long can a creditor sue over a debt in Georgia?", "What income is protected from garnishment?", "What should I do if I'm served with a lawsuit?")),
+    (r"injur|accident|wreck", ("How long do I have to file an injury claim?", "What evidence should I keep after an accident?")),
+    (r"small claims|magistrate|\bsue\b", ("How do I file in magistrate court?", "How much can I sue for in small claims?")),
+    (r"\bbond\b|\bbail\b", ("How is bond set in Georgia?", "Can a bond amount be reduced?")),
+    (r"warrant", ("How can I check if there is a warrant?", "What happens after a warrant is served?")),
+    (_DOC_PATTERN, ("What does this document mean?", "Is there a deadline in this document?", "What questions should I ask a lawyer about it?")),
 )
-GENERIC_FOLLOW_UPS = ("What deadlines should I watch for?", "Where can I get free legal help in Georgia?", "What documents should I gather?")
+# Jail/prison follow-ups only when the user's own current question is explicitly about custody or conditions.
+PRISON_FOLLOW_UPS = ("How do I file a grievance in a Georgia prison or jail?", "How can family report conditions to the Georgia Department of Corrections?", "Where can someone in custody get free legal help?")
+_WRAPPER_RE = re.compile(r"(?:^|\n)User:[ \t]*")
 
 
-def follow_ups(text: str, n: int = 3) -> list[str]:
-    low = (text or "").lower()
-    for pattern, items in FOLLOW_UPS:
-        if re.search(pattern, low):
-            return list(items[:n])
-    return list(GENERIC_FOLLOW_UPS[:n])
+def current_question(text: str) -> str:
+    """The user's latest message. App clients wrap it in a preamble plus history ending in 'User: ...';
+    the preamble (which mentions incarceration as an in-scope topic) must not drive topic detection."""
+    t = text or ""
+    parts = _WRAPPER_RE.split(t)
+    return parts[-1].strip() if len(parts) > 1 else t.strip()
+
+
+def follow_ups(question: str, answer: str = "", n: int = 3) -> list[str]:
+    """Topic-specific suggestions for the current question, or [] when nothing relevant fits."""
+    q = current_question(question).lower()
+    if re.search(PRISON, q):
+        return list(PRISON_FOLLOW_UPS[:n])
+    for text, from_answer in ((q, False), ((answer or "").lower(), True)):
+        for pattern, items in FOLLOW_UPS:
+            if from_answer and pattern == _DOC_PATTERN:
+                continue  # answers mention documents generically; only the question can pick this topic
+            if re.search(pattern, text):
+                return [i for i in items if i.lower().rstrip("?") != q.rstrip("?")][:n]
+    return []
 
 
 HELP_LINKS = [
