@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:web": "node --test --experimental-strip-types web-tests/aiHelpNav.test.ts"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",

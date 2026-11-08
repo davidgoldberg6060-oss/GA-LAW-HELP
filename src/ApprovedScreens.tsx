@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { aiHelpQuestionOnOpen } from "./aiHelpNav";
 import { CITIZEN_DISCLAIMER, CITIZEN_FEATURES } from "./citizenHelp";
 import {
   APPEALS_OPINIONS_URL,
@@ -25,6 +26,8 @@ type Props = {
   onLogout: () => void;
   onRights: (scenario: Scenario) => void;
   onAsk: (question: string) => void;
+  /** Current text of the page's main question field (read-only; AI Help never writes to it). */
+  heroDraft?: string;
   askGuest?: (question: string) => Promise<{ answer: string; notice: string }>;
 };
 
@@ -37,6 +40,7 @@ export default function ApprovedScreens(props: Props) {
   const [codeTab, setCodeTab] = useState(true);
   const [dark, setDark] = useState(true);
   const [question, setQuestion] = useState("");
+  const aiQuestionRef = useRef<HTMLTextAreaElement>(null);
   const [chat, setChat] = useState<ChatLine[]>([]);
   const [chatBusy, setChatBusy] = useState(false);
   const [chatNotice, setChatNotice] = useState("");
@@ -92,14 +96,17 @@ export default function ApprovedScreens(props: Props) {
       return;
     }
     if (id === "ai") {
-      props.onAsk(question.trim() || "What should I know before a Georgia police encounter?");
-      const ask = document.querySelector(".ask input");
-      if (ask instanceof HTMLInputElement) ask.focus();
+      // Opening AI Help must not invent or submit a question, or touch the main search field.
+      setQuestion((current) => aiHelpQuestionOnOpen(current, props.heroDraft));
     }
     if (id === "rights") props.onRights("public");
     setPanel(id);
     setDrawer(false);
   }
+
+  useEffect(() => {
+    if (panel === "ai") aiQuestionRef.current?.focus();
+  }, [panel]);
 
   return (
     <section className="approvedShell" aria-label="STANDALONE ASSISTANT screens">
@@ -267,7 +274,7 @@ export default function ApprovedScreens(props: Props) {
               )}
               <label>
                 Question
-                <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Example: what should I say if I am stopped?" />
+                <textarea ref={aiQuestionRef} id="ai-help-question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Example: what should I say if I am stopped?" />
               </label>
               <button type="button" onClick={sendGuestChat} disabled={chatBusy}>{chatBusy ? "Asking…" : "Send guest question"}</button>
               {chatNotice && <p>{chatNotice}</p>}
