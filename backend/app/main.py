@@ -32,6 +32,7 @@ def _delegated_ask_openai(prompt: str):
     return ask_openai(prompt)
 
 _legacy_main.ask_openai = _delegated_ask_openai
+_legacy_main.grounded_public_ask = lambda question, db: grounded_legal_response(question, 'general', ask_openai, db=db)
 app.include_router(public_rights_router)
 from .anonymous_access import router as anonymous_router, ai_rate_limit_middleware
 app.include_router(anonymous_router)
