@@ -38,6 +38,7 @@ Read every page carefully, including small print, handwriting, stamps and dates.
 "charges_or_claims": list of strings exactly as written on the paper (empty if none),
 "next_steps": list of practical steps the person can take, most urgent first,
 "questions_for_lawyer": list of questions to ask their lawyer or public defender,
+"helpful_flags": list of short points in the paper that could help the person's defense or side, only if they are really on the paper: missing or wrong information (names, dates, case number, code section, court, officer or landlord details), an element of the charge or claim that the paper does not allege, a missing signature or notice, a defect in how or when it was served, inconsistent facts, or a date that may already be past (empty list if none),
 "photo_tips": a short tip if some part was hard to read, otherwise "".
 Only use facts that are on the paper. Do not invent laws, case numbers or deadlines. This is legal information, not legal advice."""
 
@@ -265,6 +266,7 @@ def parse_result(raw: str) -> dict:
         "charges_or_claims": _as_list(data.get("charges_or_claims")),
         "next_steps": _as_list(data.get("next_steps")),
         "questions_for_lawyer": _as_list(data.get("questions_for_lawyer")),
+        "helpful_flags": _as_list(data.get("helpful_flags")),
         "photo_tips": str(data.get("photo_tips") or "").strip()[:400],
     }
     out["answer"] = format_answer(out)
@@ -281,8 +283,9 @@ def format_answer(r: dict) -> str:
     if r["summary"]:
         lines.append(r["summary"])
     for title, key in (("Important dates", "key_dates"), ("Charges or claims on the paper", "charges_or_claims"),
-                       ("What you can do next", "next_steps"), ("Questions to ask your lawyer", "questions_for_lawyer")):
-        if r[key]:
+                       ("What could help in this paper", "helpful_flags"), ("What you can do next", "next_steps"),
+                       ("Questions to ask your lawyer", "questions_for_lawyer")):
+        if r.get(key):
             lines.append(title + ":\n" + "\n".join("• " + x for x in r[key]))
     if r["photo_tips"]:
         lines.append("Photo tip: " + r["photo_tips"])

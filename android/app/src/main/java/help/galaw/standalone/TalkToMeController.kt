@@ -15,7 +15,9 @@ object TalkToMeController {
         val caseStageLabel: String = "",
         val helpResources: List<HelpResource> = emptyList(),
         /** Server id of the remembered exchange (0 = not remembered). */
-        val turnId: Long = 0L
+        val turnId: Long = 0L,
+        /** Automatic Defense Plan: "built", "needs_details", or "" for a normal answer. */
+        val planStatus: String = ""
     )
 
     /** One verified "Where to get help" entry from the server catalogue (https link, optional phone). */
@@ -38,7 +40,8 @@ object TalkToMeController {
             caseStage = turn.result.optString("case_stage"),
             caseStageLabel = turn.result.optString("case_stage_label"),
             helpResources = helpResources(turn.result),
-            turnId = turn.turnId
+            turnId = turn.turnId,
+            planStatus = turn.result.optJSONObject("defense_plan")?.optString("status").orEmpty()
         )
     }
 

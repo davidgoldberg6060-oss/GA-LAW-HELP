@@ -332,9 +332,29 @@ def private_case_chat(case_id:int,body:dict,user=Depends(require_paid),db:Sessio
 from fastapi import Form as _Form
 from . import document_reader as _docreader
 
+def _document_defense_plan(result:dict,question:str,db)->dict|None:
+    """Automatic Defense Plan from an uploaded paper's facts (charges/claims, dates, flagged problems)."""
+    from . import defense_plan as _dp
+    from .case_guide import STAGE_LABELS
+    plan=_dp.document_plan(result)
+    try:
+        r=grounded_legal_response(_dp.document_situation(result,question),'general',ask_fast,db=db,plan=plan)
+    except (RuntimeError,SQLAlchemyError) as exc:
+        if isinstance(exc,SQLAlchemyError): db.rollback()
+        return {'status':'unavailable','message':'Your Defense Plan could not be built right now. Tap "Build my defense" to try again.'}
+    keep=('analysis','laws_cited','suggested_motions','case_stage','help_resources','follow_ups','defense_plan','citation_check','deadline_warning')
+    out={k:r[k] for k in keep if k in r}
+    out['answer']=out.pop('analysis','')
+    out['status']=(r.get('defense_plan') or {}).get('status','built')
+    if out.get('case_stage') in STAGE_LABELS and plan.get('family')=='criminal': out['case_stage_label']=STAGE_LABELS[out['case_stage']]
+    else: out.pop('case_stage',None)
+    return out
+
 @app.post('/documents/read')
-def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form(''),case_id:str=_Form(''),remember:str=_Form('true'),user=Depends(require_paid),db:Session=Depends(get_db)):
-    """Read photos/PDF pages of case papers with a vision model and explain them (Scan a paper)."""
+def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form(''),case_id:str=_Form(''),remember:str=_Form('true'),defense_plan:str=_Form('true'),user=Depends(require_paid),db:Session=Depends(get_db)):
+    """Read photos/PDF pages of case papers with a vision model and explain them (Scan a paper).
+    A readable paper also gets an automatic "Your Defense Plan" built from the facts on it (``defense_plan``),
+    unless the client sends ``defense_plan=false``. A plan failure never fails the read."""
     case=None
     if str(case_id or '').strip():
         try: case=owned_case(int(case_id),user,db)
@@ -349,6 +369,8 @@ def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form('')
     if case is not None and result.get('readable'):
         db.add(models.CaseNote(case_id=case.id,owner_id=user.id,note_type='DOCUMENT_READ',title=('Scanned paper: '+(result.get('document_type') or 'document'))[:255],content=result['answer']+('\n\nText read from the paper:\n'+result['extracted_text'] if result.get('extracted_text') else ''),language='en'))
     result['case_id']=case.id if case is not None else None
+    if result.get('readable') and str(defense_plan).lower()!='false':
+        result['defense_plan']=_document_defense_plan(result,question,db)
     audit(db,user.id,'READ_DOCUMENT_PHOTOS','case',case.id if case is not None else None);db.commit()
     # The paper's explanation joins the shared conversation so any screen can follow up on it.
     remembered={'answer':('Paper read: '+(result.get('document_type') or 'document')+'. '+str(result.get('answer') or '')).strip()} if result.get('readable') else {}

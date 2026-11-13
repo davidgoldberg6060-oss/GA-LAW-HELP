@@ -5,10 +5,11 @@
  * Kept in step with android/.../AnswerSections.kt.
  */
 export type AnswerItem = { head: string; detail?: string; meta?: string };
-export type SectionKind = "info" | "motions" | "questions" | "deadlines" | "laws" | "help";
+export type SectionKind = "info" | "case" | "fight" | "motions" | "questions" | "deadlines" | "laws" | "help";
 export type AnswerSection = { id: string; title: string; kind: SectionKind; items: AnswerItem[]; notes: string[] };
 export type LawRef = { citation: string; title?: string | null; id?: number | null };
-export type StructuredAnswer = { quick: string; sections: AnswerSection[]; note: string; laws: LawRef[] };
+/** `plan`: "Your Defense Plan: DUI" when the answer is an automatic Defense Plan (first line of the text). */
+export type StructuredAnswer = { quick: string; sections: AnswerSection[]; note: string; laws: LawRef[]; plan?: string };
 
 /** Items shown before a "Show more" link inside a section. */
 export const SECTION_VISIBLE = 4;
@@ -23,7 +24,13 @@ const TOP_HEADINGS = new Set([
   "facts to confirm", "legal issues", "the other side's arguments", "your side's arguments", "possible motions",
   "next steps", "your situation", "rights that may apply", "what police can do", "what police can't do",
   "your options", "the issue", "facts or evidence needed", "questions to check",
+  // "Your Defense Plan"
+  "how they'd build the case against you", "how to fight back", "your strongest defenses", "ways to challenge the evidence",
+  "ways to challenge their case", "options to lessen the outcome", "ways to resolve it", "motions and filings that could help",
+  "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out",
 ]);
+/** First line of an automatic Defense Plan answer. */
+export const PLAN_LINE = /^Your Defense Plan(?:\s*[:—–-]\s*(.+))?$/;
 const RENAME: Record<string, string> = {
   "how it works in georgia": "How it works",
   "challenging the evidence": "Ways to fight the evidence",
@@ -39,9 +46,11 @@ const SIDE_NOTE = /^(tap\s+["“]?open my case|a lawyer should decide|providers 
 
 function kindOf(title: string): SectionKind {
   const t = title.toLowerCase();
+  if (t.startsWith("how they")) return "case";
+  if (t.startsWith("how to fight back")) return "fight";
   if (t.includes("motion")) return "motions";
   if (t.startsWith("questions")) return "questions";
-  if (t.startsWith("deadlines")) return "deadlines";
+  if (t.startsWith("deadlines") || t === "key deadlines") return "deadlines";
   if (t === "laws cited") return "laws";
   if (t.startsWith("where to get help")) return "help";
   return "info";
@@ -99,6 +108,18 @@ export function toItem(raw: string, kind: SectionKind): AnswerItem {
     if (m) return { head: m[1].trim(), detail: sentences(m[2]).slice(0, 2).join(" ") || undefined };
   }
   if (kind === "questions") return { head: t };
+  if (kind === "fight") {
+    // "Possession: The State cannot establish possession because … Challenge: … Motion: …"
+    const m = t.match(/^([^.!?]{3,70}):\s+(.*)$/);
+    if (m) {
+      const rest = m[2];
+      const challenge = rest.match(/\bChallenge:\s*(.*?)(?=\s+Motion:|$)/i)?.[1]?.trim();
+      const motion = rest.match(/\bMotion:\s*(.*)$/i)?.[1]?.trim().replace(/\.$/, "");
+      const argument = rest.split(/\s+Challenge:/i)[0].split(/\s+Motion:/i)[0].trim();
+      const meta = [challenge ? "Challenge: " + challenge.replace(/\.$/, "") : "", motion ? "Motion: " + motion : ""].filter(Boolean).join(" · ");
+      return { head: m[1].trim(), detail: argument || undefined, meta: meta || undefined };
+    }
+  }
   const lead = t.match(/^([^.!?]{3,70}):\s+(.*)$/);
   if (lead) return { head: lead[1].trim(), detail: lead[2].trim() || undefined };
   const s = sentences(t);
@@ -119,6 +140,7 @@ export function structureAnswer(raw: string, known: LawRef[] = []): StructuredAn
   let cur: AnswerSection | null = null;
   let sawHeading = false;
   const lawLines: LawRef[] = [];
+  let plan: string | undefined;
 
   const open = (title: string) => {
     const t = cleanTitle(title);
@@ -161,6 +183,8 @@ export function structureAnswer(raw: string, known: LawRef[] = []): StructuredAn
     const line = rawLine.trim();
     if (!line) continue;
     if (/^note:/i.test(line)) { note = line.replace(/^note:\s*/i, ""); continue; }
+    const planMatch = !sawHeading && plan === undefined ? line.match(PLAN_LINE) : null;
+    if (planMatch) { plan = planMatch[1] ? "Your Defense Plan · " + planMatch[1].trim() : "Your Defense Plan"; continue; }
     if (!BULLET.test(line) && isTopHeading(line)) {
       sawHeading = true;
       top = line.replace(/:$/, "").trim().toLowerCase();
@@ -203,7 +227,7 @@ export function structureAnswer(raw: string, known: LawRef[] = []): StructuredAn
     const helpAt = kept.findIndex((s) => s.kind === "help");
     if (helpAt >= 0) kept.splice(helpAt, 0, lawSec); else kept.push(lawSec);
   }
-  return { quick, sections: kept, note, laws };
+  return { quick, sections: kept, note, laws, ...(plan ? { plan } : {}) };
 }
 
 /** "Motion to suppress evidence, Demand for speedy trial…" preview under a closed Motions title. */

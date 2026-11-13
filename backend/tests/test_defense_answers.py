@@ -141,7 +141,8 @@ def test_post_conviction_questions_do_not_get_pretrial_motions_and_civil_gets_no
 
 
 def test_every_criminal_question_gets_defense_focus_prompt(wired):
-    run(wired, "I was charged with shoplifting, what happens next?", "Short answer\nx\n\nHow it works in Georgia\ny")
+    # A general (informational) criminal question; a user's own situation gets the Defense Plan (test_defense_plan.py).
+    run(wired, "What happens after a shoplifting charge in Georgia?", "Short answer\nx\n\nHow it works in Georgia\ny")
     assert "DEFENSE FOCUS" in wired[-1] and "BROAD DEFENSE QUESTION" not in wired[-1]
     assert "say plainly how it can help and when it applies" in wired[-1]
 

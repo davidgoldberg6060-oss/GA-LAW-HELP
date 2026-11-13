@@ -45,7 +45,11 @@ _KNOWN_HEADINGS = {h.lower() for h in (
     "What's happening", "Stay safe right now", "Your rights", "What police can and can't do", "What to say or do",
     "Facts to confirm", "Legal issues", "The other side's arguments", "Your side's arguments", "Possible motions",
     "Next steps", "Your situation", "Rights that may apply", "What police can do", "What police can't do",
-    "Your options", "The issue", "Facts or evidence needed", "Questions to check")}
+    "Your options", "The issue", "Facts or evidence needed", "Questions to check",
+    # "Your Defense Plan" (defense_plan.py)
+    "Quick answer", "How they'd build the case against you", "How to fight back", "Your strongest defenses", "Ways to challenge the evidence", "Ways to challenge their case",
+    "Options to lessen the outcome", "Ways to resolve it", "Motions and filings that could help", "Key deadlines",
+    "Evidence to gather now", "What helps in your paperwork", "While you find that out")}
 _INTERNAL_LABEL = re.compile(r"(?i)^(\s*•?\s*)(?:factual premises?|governing authority|counter-?arguments?|unverified issues?|"
                              r"verified (?:facts|law)|legal analysis|analysis|limitations?)\s*:\s*")
 

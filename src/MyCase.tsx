@@ -37,7 +37,7 @@ export default function MyCase({api, onCivil, onAsk, initial}: {api: string; onC
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [saved, setSaved] = useState<Saved[]>(load);
-  useEffect(() => { if (initial?.stage) { setStage(initial.stage); setDetails({situation: initial.situation}); setGuide(null); setStep('form'); } }, [initial]);
+  useEffect(() => { if (initial?.stage) { const d = {situation: initial.situation}; setStage(initial.stage); setDetails(d); setGuide(null); setStep('form'); void run(initial.stage, d, {}); } }, [initial]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   async function draftMotion(key: string, title: string) {
     const r = await fetch(api + '/public/motion-draft', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key, details})});

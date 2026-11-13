@@ -160,6 +160,10 @@ export type AiHelpReply = {
   laws?: { citation: string; title?: string | null; id?: number | null }[];
   /** Up to 3 short suggested follow-up questions. */
   followUps?: string[];
+  /** Automatic Defense Plan: "built" or "needs_details" (asked 1-2 questions). */
+  planStatus?: string;
+  /** My Case stage whose motion maker fits this answer (e.g. "pretrial"). */
+  caseStage?: string;
 };
 
 /**
@@ -183,5 +187,8 @@ export async function aiHelpAsk(requestJson: GuestRequestJson, query: string, to
         .map((l) => ({ citation: String(l.citation), title: typeof l.title === 'string' ? l.title : null, id: typeof l.id === 'number' ? l.id : null }))
     : [];
   const followUps = Array.isArray(raw.follow_ups) ? (raw.follow_ups as unknown[]).filter((q): q is string => typeof q === 'string' && !!q.trim()).slice(0, 3) : [];
-  return { answer, notice: data.coverage_notice || '', turnId: continuity?.turn_id, continuity, laws, followUps };
+  const extra = data as { defense_plan?: { status?: unknown }; case_stage?: unknown };
+  const planStatus = extra.defense_plan && typeof extra.defense_plan.status === 'string' ? extra.defense_plan.status : undefined;
+  const caseStage = typeof extra.case_stage === 'string' && extra.case_stage ? extra.case_stage : undefined;
+  return { answer, notice: data.coverage_notice || '', turnId: continuity?.turn_id, continuity, laws, followUps, planStatus, caseStage };
 }
