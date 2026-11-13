@@ -47,6 +47,7 @@ _KNOWN_HEADINGS = {h.lower() for h in (
     "Next steps", "Your situation", "Rights that may apply", "What police can do", "What police can't do",
     "Your options", "The issue", "Facts or evidence needed", "Questions to check",
     # "Your Defense Plan" (defense_plan.py)
+    "Things you may not know to ask",
     "Quick answer", "How they'd build the case against you", "How to fight back", "Your strongest defenses", "Ways to challenge the evidence", "Ways to challenge their case",
     "Options to lessen the outcome", "Ways to resolve it", "Motions and filings that could help", "Key deadlines",
     "Evidence to gather now", "What helps in your paperwork", "While you find that out")}

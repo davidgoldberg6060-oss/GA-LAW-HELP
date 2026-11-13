@@ -367,9 +367,10 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None,conversation:list|
  response={"suggested_motions":[{k:v for k,v in m.items() if k!="authorities"} for m in motions],"help_resources":help_resources,"citation_check":"failed_closed" if check["unsupported"] else "passed","unsupported_citations":check["unsupported"],"deadline_warning":bool(deadline_warning),"mode":mode,"analysis":analysis,"authorities":authorities,"laws_cited":laws_cited(authorities),"amendment_note":amendment,"grounded_authority_count":len(verified),"cited_authority_count":len(used),"coverage_notice":None,"used_encounter_pack":bool(pack)}
  if case_stage:response["case_stage"]=case_stage
  if plan:
-  response["analysis"]=_dp.title_line(plan)+"\n\n"+_dp.with_notice(response["analysis"])
+  response["analysis"]=_dp.title_line(plan)+"\n\n"+_dp.with_notice(_dp.add_hidden_issues(plan,response["analysis"]))
   response["defense_plan"]=_dp.meta(plan)
   if _dp.follow_ups(plan):response["follow_ups"]=_dp.follow_ups(plan)
+  if _dp.hidden_issues(plan):response["follow_up_details"]=_dp.hidden_issues(plan)[:3]
  if conversation:response["focus_question"]=focus
  response["analysis"]=re.sub(r"\n{3,}","\n\n",response["analysis"] or "")
  specs={"talk_to_me":TALK_SECTIONS,"case_analysis":CASE_ANALYSIS_SECTIONS,"rights":RIGHTS_SECTIONS,"motions":MOTIONS_SECTIONS,"general":GENERAL_SECTIONS+(("motions_that_could_help",_dh.MOTIONS_HEADING),)}

@@ -345,7 +345,7 @@ def _document_defense_plan(result:dict,question:str,db)->dict|None:
     except (RuntimeError,SQLAlchemyError) as exc:
         if isinstance(exc,SQLAlchemyError): db.rollback()
         return {'status':'unavailable','message':'Your Defense Plan could not be built right now. Tap "Build my defense" to try again.'}
-    keep=('analysis','laws_cited','suggested_motions','case_stage','help_resources','follow_ups','defense_plan','citation_check','deadline_warning')
+    keep=('analysis','laws_cited','suggested_motions','case_stage','help_resources','follow_ups','follow_up_details','defense_plan','citation_check','deadline_warning')
     out={k:r[k] for k in keep if k in r}
     out['answer']=out.pop('analysis','')
     out['status']=(r.get('defense_plan') or {}).get('status','built')

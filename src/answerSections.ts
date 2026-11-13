@@ -5,7 +5,7 @@
  * Kept in step with android/.../AnswerSections.kt.
  */
 export type AnswerItem = { head: string; detail?: string; meta?: string };
-export type SectionKind = "info" | "case" | "fight" | "motions" | "questions" | "deadlines" | "laws" | "help";
+export type SectionKind = "info" | "case" | "fight" | "motions" | "questions" | "ask" | "deadlines" | "laws" | "help";
 export type AnswerSection = { id: string; title: string; kind: SectionKind; items: AnswerItem[]; notes: string[] };
 export type LawRef = { citation: string; title?: string | null; id?: number | null };
 /** `plan`: "Your Defense Plan: DUI" when the answer is an automatic Defense Plan (first line of the text). */
@@ -27,7 +27,7 @@ const TOP_HEADINGS = new Set([
   // "Your Defense Plan"
   "how they'd build the case against you", "how to fight back", "your strongest defenses", "ways to challenge the evidence",
   "ways to challenge their case", "options to lessen the outcome", "ways to resolve it", "motions and filings that could help",
-  "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out",
+  "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out", "things you may not know to ask",
 ]);
 /** First line of an automatic Defense Plan answer. */
 export const PLAN_LINE = /^Your Defense Plan(?:\s*[:—–-]\s*(.+))?$/;
@@ -48,6 +48,7 @@ function kindOf(title: string): SectionKind {
   const t = title.toLowerCase();
   if (t.startsWith("how they")) return "case";
   if (t.startsWith("how to fight back")) return "fight";
+  if (t.startsWith("things you may not know")) return "ask";
   if (t.includes("motion")) return "motions";
   if (t.startsWith("questions")) return "questions";
   if (t.startsWith("deadlines") || t === "key deadlines") return "deadlines";
@@ -108,6 +109,11 @@ export function toItem(raw: string, kind: SectionKind): AnswerItem {
     if (m) return { head: m[1].trim(), detail: sentences(m[2]).slice(0, 2).join(" ") || undefined };
   }
   if (kind === "questions") return { head: t };
+  if (kind === "ask") {
+    // "Do I have to appeal …? Why it matters: …" → tappable question + its one-line why.
+    const m = t.match(/^(.{3,140}?\?)\s*(?:Why it matters:\s*)?(.*)$/i);
+    if (m) return { head: m[1].trim(), detail: m[2].trim() ? "Why it matters: " + m[2].trim() : undefined };
+  }
   if (kind === "fight") {
     // "Possession: The State cannot establish possession because … Challenge: … Motion: …"
     const m = t.match(/^([^.!?]{3,70}):\s+(.*)$/);

@@ -7,6 +7,7 @@ import pytest
 
 from app import answer_cache
 from app import defense_plan as dp
+from app.hidden_issues import HEADING as hi_head
 from app import grounded_legal_assistant as service
 
 TITLES = {"40-6-391": "Driving under the influence", "40-6-392": "Chemical tests for alcohol or drugs", "40-5-67.1": "Chemical tests",
@@ -117,7 +118,7 @@ def test_dui_plan_prompt_and_answer(wired):
     assert r["defense_plan"] == {"status": "built", "case_type": "dui", "label": "DUI", "family": "criminal", "title": "Your Defense Plan: DUI"}
     assert r["suggested_motions"] and r["case_stage"] and any(m["draftable"] for m in r["suggested_motions"])
     assert "how_they_d_build_the_case_against_you" in r["sections"] and "how_to_fight_back" in r["sections"]
-    assert r["citation_check"] == "passed" and "ALS hearing" in r["follow_ups"][0]
+    assert r["citation_check"] == "passed" and "license suspension within 30 days" in r["follow_ups"][0] and r["follow_up_details"][0]["why"] and hi_head in r["analysis"]
     assert a.rstrip().splitlines()[-1].startswith("Note: This is legal information, not legal advice.")
 
 
