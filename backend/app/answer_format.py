@@ -50,7 +50,7 @@ _KNOWN_HEADINGS = {h.lower() for h in (
     "Things you may not know to ask",
     "Quick answer", "How they'd build the case against you", "How to fight back", "Your strongest defenses", "Ways to challenge the evidence", "Ways to challenge their case",
     "Options to lessen the outcome", "Ways to resolve it", "Motions and filings that could help", "Key deadlines",
-    "Evidence to gather now", "What helps in your paperwork", "While you find that out")}
+    "Evidence to gather now", "What helps in your paperwork", "While you find that out", "Problem with my public defender?")}
 _INTERNAL_LABEL = re.compile(r"(?i)^(\s*•?\s*)(?:factual premises?|governing authority|counter-?arguments?|unverified issues?|"
                              r"verified (?:facts|law)|legal analysis|analysis|limitations?)\s*:\s*")
 

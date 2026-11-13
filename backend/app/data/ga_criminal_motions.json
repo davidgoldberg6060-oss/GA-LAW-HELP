@@ -122,6 +122,33 @@
    "default_criminal": false
   },
   {
+   "key": "discharge_appointed_counsel",
+   "name": "Motion to discharge appointed counsel and appoint substitute counsel",
+   "stages": [
+    "arrested",
+    "pretrial",
+    "plea",
+    "trial",
+    "appeal"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the judge to remove appointed counsel and appoint a different lawyer for good cause, such as a conflict of interest or a complete breakdown in communication.",
+   "when_it_applies": "May apply when the person already has a public defender or court-appointed lawyer and can show good cause (a conflict, including a co-defendant, or a complete breakdown in communication). The person generally cannot pick a particular appointed lawyer.",
+   "how_it_helps": "If the court finds good cause, a different lawyer can be appointed. A grievance alone does not remove the lawyer from the case.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-12-1",
+    "17-12-22"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "discharge_appointed_counsel",
+   "triggers": "public defender.{0,40}(state|against|conflict|plea)|appointed (counsel|lawyer|attorney).{0,40}(conflict|breakdown|not help|fire|replace)|discharge appointed|substitute counsel",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
    "key": "suppress",
    "name": "Motion to suppress evidence",
    "stages": [

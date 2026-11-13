@@ -1,0 +1,1340 @@
+{
+  "checked_on": "2026-11-13",
+  "source_url": "https://gapubdef.org/_data/circuits.json",
+  "find_tool_url": "https://gapubdef.org/find-defender.html",
+  "sitemap_url": "https://www.gapubdef.org/sitemap.xml",
+  "source_name": "Georgia Public Defender Council",
+  "outcome_note_en": "Georgia does not publish an official per-attorney public-defender win/loss record or client rating. Official GPDC figures reported through the Governor's Office of Planning and Budget are statewide totals (for example cases assigned and closed, and how often clients were contacted), not results for an individual lawyer. This app does not rate lawyers, scrape internet commentary, or invent win/loss stats. To check whether a lawyer is licensed in Georgia and whether there is public discipline, use the State Bar of Georgia Member Directory.",
+  "outcome_note_es": "Georgia no publica un registro oficial de triunfos y derrotas ni una calificación de cada defensor público. Las cifras oficiales del GPDC que aparecen en los informes de la Oficina de Planificación y Presupuesto del Gobernador son totales estatales (por ejemplo, casos asignados y cerrados, y con qué frecuencia se contactó a los clientes), no los resultados de un abogado en particular. Esta aplicación no califica abogados, no recopila comentarios de internet ni inventa estadísticas de triunfos y derrotas. Para ver si un abogado tiene licencia en Georgia y si hay disciplina pública, use el Directorio de Miembros del Colegio de Abogados de Georgia.",
+  "bar_directory": {
+    "label_en": "Check a lawyer",
+    "label_es": "Consultar a un abogado",
+    "url": "https://www.gabar.org/member-directory/",
+    "discipline_url": "https://www.gabar.org/general-counsel/ethics---discipline/disciplinary-prosecution/attorney-discipline",
+    "terms_url": "https://www.gabar.org/terms-of-use",
+    "explainer_en": "The State Bar Member Directory is the official place to look up a Georgia-licensed lawyer. It can show contact information, membership status, and public disciplinary history. If the Supreme Court of Georgia has issued a public discipline order, it is posted on the lawyer's directory page under Public Discipline / History on File; if not, it may show None on Record. The directory does not show win/loss records, client reviews, or how often a public defender 'wins' cases. Search on the Bar's own website — this app does not copy or scrape that directory (the Bar's terms do not allow data mining or similar automated collection).",
+    "explainer_es": "El Directorio de Miembros del Colegio de Abogados es el lugar oficial para buscar a un abogado con licencia en Georgia. Puede mostrar información de contacto, el estado de membresía y el historial de disciplina pública. Si la Corte Suprema de Georgia ha emitido una orden de disciplina pública, aparece en la página del abogado bajo Public Discipline / History on File; si no, puede decir None on Record. El directorio no muestra récords de triunfos y derrotas, opiniones de clientes ni con qué frecuencia un defensor público 'gana' casos. Busque en el sitio del Colegio de Abogados; esta aplicación no copia ni extrae ese directorio (los términos del Colegio no permiten la minería de datos ni recolecciones automatizadas similares)."
+  },
+  "offices": [
+    {
+      "id": "alapaha-circuit",
+      "circuit": "Alapaha Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Atkinson",
+        "Berrien",
+        "Clinch",
+        "Cook",
+        "Lanier"
+      ],
+      "defender": "Gabriel Cason",
+      "address": "105 North Parrish Ave, Adel, GA 31620",
+      "phone": "229-896-2858",
+      "fax": "229-896-2875",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/alapaha-circuit.html",
+      "region": "south"
+    },
+    {
+      "id": "alcovy-circuit",
+      "circuit": "Alcovy Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Newton",
+        "Walton"
+      ],
+      "defender": "Anthony Carter",
+      "address": "1160 Pace St, Covington, GA 30014",
+      "phone": "770-788-3750",
+      "fax": "770-788-3757",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Walton County",
+          "address": "303 S. Hammond Dr., Suite 98, Monroe, GA 30655",
+          "phone": "770-266-1540",
+          "fax": "770-266-1545"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/alcovy-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "appalachian-circuit",
+      "circuit": "Appalachian Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Fannin",
+        "Gilmer",
+        "Pickens"
+      ],
+      "defender": "Clint Hooker",
+      "address": "1 Broad St, Ste 001, Ellijay, GA 30540",
+      "phone": "706-698-7322",
+      "fax": "706-698-7333",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/appalachian-circuit.html",
+      "region": "north"
+    },
+    {
+      "id": "atlanta-circuit",
+      "circuit": "Atlanta Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Fulton"
+      ],
+      "defender": "Maurice Kenner",
+      "address": "100 Peachtree Street, NW, Suite 1600, Atlanta, GA 30303",
+      "phone": "404-612-5200",
+      "fax": "404-730-5856",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/atlanta-circuit.html",
+      "region": "metro"
+    },
+    {
+      "id": "atlantic-circuit",
+      "circuit": "Atlantic Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Bryan",
+        "Evans",
+        "Liberty",
+        "Long",
+        "McIntosh",
+        "Tattnall"
+      ],
+      "defender": "Joshua Brockington",
+      "address": "201 South Main Street, Suite 2400, Hinesville, GA 31313",
+      "phone": "912-369-6338",
+      "fax": "912-369-8327",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Bryan County",
+          "address": "P.O. Box 1270, Pembroke, GA 31321",
+          "phone": "912-653-4605",
+          "fax": null
+        },
+        {
+          "location": "McIntosh County",
+          "address": "102 Madison Street, Darien, GA 31305",
+          "phone": "912-437-3880",
+          "fax": null
+        },
+        {
+          "location": "Tattnall County",
+          "address": "108 W. Brazell St, Suite 321, Reidsville, GA 30453",
+          "phone": "912-557-4426",
+          "fax": "912-557-4428"
+        },
+        {
+          "location": "Appling/Jeff Davis/Wayne Counties",
+          "address": "241 East Walnut Street, Jesup, GA 31598",
+          "phone": "912-427-9066",
+          "fax": null
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/atlantic-circuit.html",
+      "region": "coastal"
+    },
+    {
+      "id": "augusta-circuit",
+      "circuit": "Augusta Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Burke",
+        "Richmond"
+      ],
+      "defender": "Lee Prescott",
+      "address": "902 Greene Street, Augusta, GA 30901",
+      "phone": "706-312-5105",
+      "fax": null,
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/augusta-circuit.html",
+      "region": "east"
+    },
+    {
+      "id": "bell-forsyth-judicial-circuit-opt-out",
+      "circuit": "Bell-Forsyth Circuit",
+      "opt_out": true,
+      "opt_out_note": "Forsyth County operates its own public defender office independently.",
+      "counties": [
+        "Forsyth"
+      ],
+      "defender": "Melissa M. Banker",
+      "address": "101 E. Courthouse Square Suite 4099, Cumming, GA 30040",
+      "phone": "678-513-5959",
+      "fax": "678-513-5960",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/bell-forsyth-judicial-circuit-opt-out.html",
+      "region": "north"
+    },
+    {
+      "id": "blue-ridge-judicial-circuit-opt-out",
+      "circuit": "Blue Ridge Circuit",
+      "opt_out": true,
+      "opt_out_note": "Cherokee County operates its own public defender office independently.",
+      "counties": [
+        "Cherokee"
+      ],
+      "defender": "George R. Templeton",
+      "address": "90 North St Ste 200, Canton, GA 30114",
+      "phone": "678-493-6190",
+      "fax": "678-493-6199",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/blue-ridge-judicial-circuit-opt-out.html",
+      "region": "north"
+    },
+    {
+      "id": "brunswick-circuit",
+      "circuit": "Brunswick Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Appling",
+        "Camden",
+        "Glynn",
+        "Jeff Davis",
+        "Wayne"
+      ],
+      "defender": "Stephen Tillman",
+      "address": "11 Judicial Lane, Suite 111, Brunswick, GA 31520",
+      "phone": "912-554-7072",
+      "fax": "912-279-2964",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Camden County",
+          "address": "403 Georgia Avenue, Woodbine, GA 31569",
+          "phone": "912-673-9488",
+          "fax": null
+        },
+        {
+          "location": "Appling/Jeff Davis/Wayne Counties",
+          "address": "241 East Walnut Street, Jesup, GA 31598",
+          "phone": "912-427-9066",
+          "fax": null
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/brunswick-circuit.html",
+      "region": "coastal"
+    },
+    {
+      "id": "chattahoochee-circuit",
+      "circuit": "Chattahoochee Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Chattahoochee",
+        "Harris",
+        "Marion",
+        "Muscogee",
+        "Talbot",
+        "Taylor"
+      ],
+      "defender": "T. Moffett Flournoy",
+      "address": "420 10th Street, Ste 001, Columbus, GA 31901",
+      "phone": "706-653-4301",
+      "fax": "706-225-4309",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/chattahoochee-circuit.html",
+      "region": "east"
+    },
+    {
+      "id": "cherokee-circuit",
+      "circuit": "Cherokee Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Bartow",
+        "Gordon"
+      ],
+      "defender": "Christopher Paul",
+      "address": "128 W. Cherokee Ave, Cartersville, GA 30120",
+      "phone": "678-721-3254",
+      "fax": "678-721-3255",
+      "email": null,
+      "website": null,
+      "hours": "Monday – Friday, 8:00am – 5:00pm",
+      "additional_offices": [
+        {
+          "location": "Gordon County",
+          "address": "101 Boston Road, Calhoun, GA 30701",
+          "phone": null,
+          "fax": null
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/cherokee-circuit.html",
+      "region": "north"
+    },
+    {
+      "id": "clayton-circuit",
+      "circuit": "Clayton Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Clayton"
+      ],
+      "defender": "Tamika Fluker",
+      "address": "6525 Professional Place, Riverdale, GA 30274",
+      "phone": "678-479-5036",
+      "fax": "678-479-5037",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/clayton-circuit.html",
+      "region": "metro"
+    },
+    {
+      "id": "cobb-judicial-circuit-opt-out",
+      "circuit": "Cobb Circuit",
+      "opt_out": true,
+      "opt_out_note": "Cobb County operates its own public defender office independently.",
+      "counties": [
+        "Cobb"
+      ],
+      "defender": "Scott Halperin",
+      "address": "32 Waddell St, Marietta, GA 30090",
+      "phone": "770-528-1950",
+      "fax": "770-528-1949",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/cobb-judicial-circuit-opt-out.html",
+      "region": "metro",
+      "juvenile": {
+        "name": "Robin Brashear",
+        "phone": "770-528-3378",
+        "address": null
+      }
+    },
+    {
+      "id": "columbia-circuit",
+      "circuit": "Columbia Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Columbia"
+      ],
+      "defender": "Mack Taylor",
+      "address": "7045 Evans Town Center Boulevard, 3rd Floor, Evans, GA 30209",
+      "phone": "706-447-6750",
+      "fax": null,
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/columbia-circuit.html",
+      "region": "east"
+    },
+    {
+      "id": "conasauga-circuit",
+      "circuit": "Conasauga Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Murray",
+        "Whitfield"
+      ],
+      "defender": "Amanda McCoy",
+      "address": "205 N. Selvidge Street, Ground Floor, Dalton, GA 30721",
+      "phone": "706-876-1576",
+      "fax": "706-876-1528",
+      "email": null,
+      "website": null,
+      "hours": "Monday – Friday, 8:00am – 4:00pm",
+      "additional_offices": [
+        {
+          "location": "Murray County",
+          "address": "121 North 4th Avenue, Chatsworth, GA 30705",
+          "phone": "706-517-8547",
+          "fax": "706-517-7405"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/conasauga-circuit.html",
+      "region": "north"
+    },
+    {
+      "id": "cordele-circuit",
+      "circuit": "Cordele Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Ben Hill",
+        "Crisp",
+        "Dooly",
+        "Wilcox"
+      ],
+      "defender": "Kyle Hollomon",
+      "address": "716-B 16th Avenue East, Cordele, GA 31015",
+      "phone": "229-276-2768",
+      "fax": "229-273-5396",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/cordele-circuit.html",
+      "region": "south"
+    },
+    {
+      "id": "coweta-circuit",
+      "circuit": "Coweta Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Coweta",
+        "Meriwether",
+        "Troup"
+      ],
+      "defender": "Ricardo Samper",
+      "address": "8B Madison Street, Newnan, GA 30263",
+      "phone": "770-254-2704",
+      "fax": "770-254-2706",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Meriwether County",
+          "address": "126 North Court Square, Greenville, GA 30222",
+          "phone": "706-672-2056",
+          "fax": null
+        },
+        {
+          "location": "Troup County",
+          "address": "134 Bull St, LaGrange, GA 30240",
+          "phone": "706-883-3000",
+          "fax": "706-883-3004"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/coweta-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "dekalb-circuit",
+      "circuit": "Dekalb Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "DeKalb"
+      ],
+      "defender": "Letitia Delan",
+      "address": "320 Church Street, Decatur, GA 30030",
+      "phone": "404-371-2222",
+      "fax": "404-371-2298",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/dekalb-circuit.html",
+      "region": "metro"
+    },
+    {
+      "id": "dougherty-circuit",
+      "circuit": "Dougherty Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Dougherty"
+      ],
+      "defender": "Troy Golden",
+      "address": "225 Pine Avenue, Room 100, Albany, GA 31701",
+      "phone": "229-483-6240",
+      "fax": "229-483-6259",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/dougherty-circuit.html",
+      "region": "south"
+    },
+    {
+      "id": "douglas-judicial-circuit-opt-out",
+      "circuit": "Douglas Circuit",
+      "opt_out": true,
+      "opt_out_note": "Douglas County operates its own public defender office independently.",
+      "counties": [
+        "Douglas"
+      ],
+      "defender": "Monica Myles",
+      "address": "8700 Hospital Dr, Douglasville, GA 30134",
+      "phone": "770-949-1096",
+      "fax": "770-920-7387",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/douglas-judicial-circuit-opt-out.html",
+      "region": "metro",
+      "juvenile": {
+        "name": "Ashley Rogers",
+        "phone": "678-449-3995",
+        "address": null
+      }
+    },
+    {
+      "id": "dublin-circuit",
+      "circuit": "Dublin Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Johnson",
+        "Laurens",
+        "Treutlen",
+        "Twiggs"
+      ],
+      "defender": "Clay Tapley",
+      "address": "1506 Bellvue Rd, Dublin, GA 31021",
+      "phone": "478-272-7210",
+      "fax": "478-272-3378",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/dublin-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "eastern-circuit",
+      "circuit": "Eastern Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Chatham"
+      ],
+      "defender": "Todd Martin",
+      "address": "222 W Oglethorpe Ave, Suite 130, Savannah, GA 31401",
+      "phone": "912-447-4901",
+      "fax": "912-447-4909",
+      "email": null,
+      "website": "https://publicdefender.chathamcountyga.gov/",
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Juvenile Division",
+          "address": "197 Carl Griffin Dr, Savannah, GA 31405",
+          "phone": "912-652-6904",
+          "fax": "912-652-6923"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/eastern-circuit.html",
+      "region": "coastal"
+    },
+    {
+      "id": "enotah-circuit",
+      "circuit": "Enotah Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Lumpkin",
+        "Towns",
+        "Union",
+        "White"
+      ],
+      "defender": "Penny Hunter",
+      "address": "59 South Main Street, Suite C, Cleveland, GA 30528",
+      "phone": "706-348-8577",
+      "fax": "706-348-8578",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Lumpkin County",
+          "address": "194 Courthouse Hill, Annex B, Dahlonega, GA 30533",
+          "phone": "706-864-1555",
+          "fax": "706-864-1367"
+        },
+        {
+          "location": "Towns County",
+          "address": "48 River St, Ste 1, Hiawassee, GA 30546",
+          "phone": "706-896-7819",
+          "fax": "706-896-8441"
+        },
+        {
+          "location": "Union County",
+          "address": "65 Courthouse Street, Suite 265, Blairsville, GA 30512",
+          "phone": "706-745-8156",
+          "fax": "706-745-8166"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/enotah-circuit.html",
+      "region": "north"
+    },
+    {
+      "id": "flint-circuit",
+      "circuit": "Flint Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Henry"
+      ],
+      "defender": "Jennifer Lewis",
+      "address": "30 Atlanta Street, McDonough, GA 30253",
+      "phone": "770-288-7460",
+      "fax": "770-288-7468",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/flint-circuit.html",
+      "region": "metro"
+    },
+    {
+      "id": "griffin-circuit",
+      "circuit": "Griffin Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Fayette",
+        "Pike",
+        "Spalding",
+        "Upson"
+      ],
+      "defender": "William Imhoff",
+      "address": "601 W. Gordon Street, PO Box 1145, Thomaston, GA 30286",
+      "phone": "706-647-7020",
+      "fax": "706-647-7032",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Fayetteville Office",
+          "address": "715 Bradley Drive, Fayetteville, GA 30214",
+          "phone": "770-716-4340",
+          "fax": "770-460-8685"
+        },
+        {
+          "location": "Spalding Office",
+          "address": "141 W. Solomon Street, Griffin, GA 30224",
+          "phone": "770-467-4725",
+          "fax": "770-467-4724"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/griffin-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "gwinnett-judicial-circuit-opt-out",
+      "circuit": "Gwinnett Circuit",
+      "opt_out": true,
+      "opt_out_note": "Gwinnett County operates its own public defender office independently.",
+      "counties": [
+        "Gwinnett"
+      ],
+      "defender": null,
+      "address": "75 Langley Drive, Lawrenceville, GA 30046",
+      "phone": "770-822-8523",
+      "fax": "770-822-8566",
+      "email": "tanya.myers@gwinnettcounty.com",
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/gwinnett-judicial-circuit-opt-out.html",
+      "region": "metro"
+    },
+    {
+      "id": "houston-judicial-circuit-opt-out",
+      "circuit": "Houston Circuit",
+      "opt_out": true,
+      "opt_out_note": "Houston County operates its own public defender office independently.",
+      "counties": [
+        "Houston"
+      ],
+      "defender": "Claudia E. Meier",
+      "address": "201 Perry Pkwy, Perry, GA 31069",
+      "phone": "478-218-4846",
+      "fax": "478-218-4875",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/houston-judicial-circuit-opt-out.html",
+      "region": "central",
+      "juvenile": {
+        "name": "Tomeka Vargas",
+        "phone": null,
+        "address": null
+      }
+    },
+    {
+      "id": "lookout-mountain-circuit",
+      "circuit": "Lookout Mountain Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Catoosa",
+        "Chattooga",
+        "Dade",
+        "Walker"
+      ],
+      "defender": "Jad Johnson",
+      "address": "101 Napier Street, LaFayette, GA 30739",
+      "phone": "706-638-3290",
+      "fax": "706-638-7331",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Catoosa County",
+          "address": "875 LaFayette Street, Ringgold, GA 30736",
+          "phone": "706-935-3400",
+          "fax": "706-935-3582"
+        },
+        {
+          "location": "Chattooga County",
+          "address": "10035 Commerce Street, Summerville, GA 30747",
+          "phone": "706-857-9243",
+          "fax": "706-857-9218"
+        },
+        {
+          "location": "Dade County",
+          "address": "111 Railway Lane, Trenton, GA 30752",
+          "phone": "706-657-2602",
+          "fax": "706-657-2744"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/lookout-mountain-circuit.html",
+      "region": "north"
+    },
+    {
+      "id": "macon-circuit",
+      "circuit": "Macon Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Bibb",
+        "Crawford",
+        "Peach"
+      ],
+      "defender": "Rick Waller Jr.",
+      "address": "201 Second Street, Ste 550, Macon, GA 31201",
+      "phone": "478-621-5950",
+      "fax": "478-621-5975",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/macon-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "middle-circuit",
+      "circuit": "Middle Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Candler",
+        "Emanuel",
+        "Jefferson",
+        "Toombs",
+        "Washington"
+      ],
+      "defender": "Brandi D. Payne",
+      "address": "120 North Main Street, Swainsboro, GA 30401",
+      "phone": "478-237-9014",
+      "fax": "478-237-9017",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Toombs County",
+          "address": "360 Bulldog Road, Suite A, Lyons, GA 30436",
+          "phone": "912-526-9405",
+          "fax": "912-526-9408"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/middle-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "mountain-circuit",
+      "circuit": "Mountain Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Banks",
+        "Habersham",
+        "Rabun",
+        "Stephens"
+      ],
+      "defender": "Gregory Lucas",
+      "address": "226 Grant Street, Clarkesville, GA 30523",
+      "phone": "706-754-6427",
+      "fax": "706-754-8064",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/mountain-circuit.html",
+      "region": "north"
+    },
+    {
+      "id": "northeastern-circuit",
+      "circuit": "Northeastern Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Hall",
+        "Dawson"
+      ],
+      "defender": "Mark Alexander",
+      "address": "111 Spring Street, SE, Gainesville, GA 30501",
+      "phone": "770-718-5523",
+      "fax": "770-718-5538",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Dawson County",
+          "address": "1 Courthouse Square, Dawsonville, GA 30534",
+          "phone": "706-216-3853",
+          "fax": "770-718-5538"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/northeastern-circuit.html",
+      "region": "north"
+    },
+    {
+      "id": "northern-circuit",
+      "circuit": "Northern Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Elbert",
+        "Franklin",
+        "Hart",
+        "Madison",
+        "Oglethorpe"
+      ],
+      "defender": "Amanda Grantham",
+      "address": "461 Cook St. Ste J, Royston, GA 30662",
+      "phone": "706-246-9320",
+      "fax": "706-246-9325",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/northern-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "ocmulgee-circuit",
+      "circuit": "Ocmulgee Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Baldwin",
+        "Greene",
+        "Hancock",
+        "Jasper",
+        "Jones",
+        "Morgan",
+        "Putnam",
+        "Wilkinson"
+      ],
+      "defender": "Kristin Waller",
+      "address": "121 N. Wilkinson St., Milledgeville, GA 31059",
+      "phone": "478-445-8100",
+      "fax": "478-445-8111",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Greene County",
+          "address": "113 N. Main St, Suite 123, Greensboro, GA 30642",
+          "phone": null,
+          "fax": null
+        },
+        {
+          "location": "Hancock County",
+          "address": "12630 Broad Street, Suite J, Sparta, GA 31087",
+          "phone": null,
+          "fax": null
+        },
+        {
+          "location": "Jasper County",
+          "address": "126 W Greene Street, Monticello, GA 31064",
+          "phone": null,
+          "fax": null
+        },
+        {
+          "location": "Jones County",
+          "address": "166 Industrial Blvd, Gray, GA 31032",
+          "phone": "478-986-6185",
+          "fax": "478-986-6359"
+        },
+        {
+          "location": "Morgan County",
+          "address": "1380 Monticello Rd, Madison, GA 30650",
+          "phone": null,
+          "fax": null
+        },
+        {
+          "location": "Putnam County",
+          "address": "100 S Jefferson Street, Eatonton, GA 31024",
+          "phone": null,
+          "fax": null
+        },
+        {
+          "location": "Wilkinson County",
+          "address": "100 Bacon Street, Irwinton, GA 31042",
+          "phone": null,
+          "fax": null
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/ocmulgee-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "oconee-circuit",
+      "circuit": "Oconee Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Bleckley",
+        "Dodge",
+        "Montgomery",
+        "Pulaski",
+        "Telfair",
+        "Wheeler"
+      ],
+      "defender": "Ashley McLaughlin",
+      "address": "5120 Norman Street, Eastman, GA 31023",
+      "phone": "478-448-1801",
+      "fax": "478-448-1805",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/oconee-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "ogeechee-circuit",
+      "circuit": "Ogeechee Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Bulloch",
+        "Effingham",
+        "Jenkins",
+        "Screven"
+      ],
+      "defender": "Renata Newbill-Jallow",
+      "address": "30 N Main St, Statesboro, GA 30458",
+      "phone": "912-764-6292",
+      "fax": "912-489-3223",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/ogeechee-circuit.html",
+      "region": "coastal"
+    },
+    {
+      "id": "pataula-circuit",
+      "circuit": "Pataula Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Clay",
+        "Early",
+        "Miller",
+        "Quitman",
+        "Randolph",
+        "Seminole",
+        "Terrell"
+      ],
+      "defender": "Marla Chambless",
+      "address": "575 College Street, Blakely, GA 39823",
+      "phone": "229-758-6236",
+      "fax": "229-758-6187",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Randolph/Terrell Counties",
+          "address": "181 Cuthbert St, Colquitt, GA 39837",
+          "phone": null,
+          "fax": null
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/pataula-circuit.html",
+      "region": "south"
+    },
+    {
+      "id": "paulding-circuit",
+      "circuit": "Paulding Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Paulding"
+      ],
+      "defender": "Michael Syrop",
+      "address": "1387 Industrial Blvd N, Suite 103, Dallas, GA 30132",
+      "phone": "770-443-3463",
+      "fax": "770-443-9936",
+      "email": "PCPublicDefenderApps@paulding.gov",
+      "website": "https://www.paulding.gov/1152/Public-Defender-for-Superior-Court-Juven",
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/paulding-circuit.html",
+      "region": "metro"
+    },
+    {
+      "id": "piedmont-circuit",
+      "circuit": "Piedmont Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Barrow",
+        "Jackson"
+      ],
+      "defender": "Donna Seagraves",
+      "address": "5000 Jackson Pkwy, Suite 270, Jefferson, GA 30549",
+      "phone": "706-387-6317",
+      "fax": "706-387-6329",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Barrow County",
+          "address": "652 Barrow Park Dr., Suite C, Winder, GA 30680",
+          "phone": "770-307-3006",
+          "fax": "770-307-0839"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/piedmont-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "rockdale-circuit",
+      "circuit": "Rockdale Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Rockdale"
+      ],
+      "defender": "Gina Bernard",
+      "address": "882 N. Main Street, NW, Conyers, GA 30012",
+      "phone": "770-278-7820",
+      "fax": "770-918-6313",
+      "email": null,
+      "website": null,
+      "hours": "Monday – Friday, 8:00am – 5:00pm",
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/rockdale-circuit.html",
+      "region": "metro"
+    },
+    {
+      "id": "rome-circuit",
+      "circuit": "Rome Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Floyd"
+      ],
+      "defender": "Sean Lowe",
+      "address": "12 East Fourth Avenue, Suite 10, Rome, GA 30161",
+      "phone": "706-234-0975",
+      "fax": "706-234-0978",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/rome-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "south-georgia-circuit",
+      "circuit": "South Georgia Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Baker",
+        "Calhoun",
+        "Decatur",
+        "Grady",
+        "Mitchell"
+      ],
+      "defender": "Tre McLendon",
+      "address": "118 River St, Bainbridge, GA 39818",
+      "phone": "229-246-2877",
+      "fax": "229-246-9158",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/south-georgia-circuit.html",
+      "region": "south"
+    },
+    {
+      "id": "southern-circuit",
+      "circuit": "Southern Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Brooks",
+        "Colquitt",
+        "Echols",
+        "Lowndes",
+        "Thomas"
+      ],
+      "defender": "Wade Krueger",
+      "address": "910 N. Patterson St., Valdosta, GA 31601",
+      "phone": "229-671-2800",
+      "fax": "229-671-2829",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Colquitt County",
+          "address": "9 South Main St, Ste 105, Moultrie, GA 31768",
+          "phone": "229-616-7070",
+          "fax": "229-616-7067"
+        },
+        {
+          "location": "Thomas County",
+          "address": "418 Smith Ave, Thomasville, GA 31792",
+          "phone": "229-226-3616",
+          "fax": "229-226-5696"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/southern-circuit.html",
+      "region": "south"
+    },
+    {
+      "id": "southwestern-circuit",
+      "circuit": "Southwestern Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Lee",
+        "Macon",
+        "Schley",
+        "Stewart",
+        "Sumter",
+        "Webster"
+      ],
+      "defender": "David Winheim",
+      "address": "510 West Lamar Street, 2nd Floor, Americus, GA 31709",
+      "phone": "229-928-4610",
+      "fax": "229-928-4594",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/southwestern-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "tallapoosa-circuit",
+      "circuit": "Tallapoosa Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Haralson",
+        "Polk"
+      ],
+      "defender": "David Smith",
+      "address": "4485 Highway 120, Buchanan, GA 30113",
+      "phone": "770-646-6629",
+      "fax": "678-802-5498",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Polk County",
+          "address": "109 East Avenue, Cedartown, GA 30125",
+          "phone": "770-748-3480",
+          "fax": "770-748-3493"
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/tallapoosa-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "tifton-circuit",
+      "circuit": "Tifton Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Irwin",
+        "Tift",
+        "Turner",
+        "Worth"
+      ],
+      "defender": "Janice Prince",
+      "address": "1212 Chestnut Ave, Tifton, GA 31794",
+      "phone": "229-387-6488",
+      "fax": "229-387-6234",
+      "email": null,
+      "website": null,
+      "hours": "Monday–Friday, 9:00 AM–5:00 PM",
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/tifton-circuit.html",
+      "region": "south"
+    },
+    {
+      "id": "toombs-circuit",
+      "circuit": "Toombs Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Glascock",
+        "Lincoln",
+        "McDuffie",
+        "Taliaferro",
+        "Warren",
+        "Wilkes"
+      ],
+      "defender": "Caryn Lobdell",
+      "address": "306 Greenway Street, Thomson, GA 30824",
+      "phone": "706-595-7650",
+      "fax": "706-595-6030",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/toombs-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "towaliga-circuit",
+      "circuit": "Towaliga Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Butts",
+        "Lamar",
+        "Monroe"
+      ],
+      "defender": "David Tatem",
+      "address": "135 L. Cary Bittick Drive, Forsyth, GA 31029",
+      "phone": "478-994-0040",
+      "fax": "478-994-0018",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/towaliga-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "waycross-circuit",
+      "circuit": "Waycross Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Bacon",
+        "Brantley",
+        "Charlton",
+        "Coffee",
+        "Pierce",
+        "Ware"
+      ],
+      "defender": "Joshua Larkey",
+      "address": "300 Carswell Avenue, Waycross, GA 31501",
+      "phone": "912-287-4360",
+      "fax": "912-287-4362",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/waycross-circuit.html",
+      "region": "south"
+    },
+    {
+      "id": "west-georgia-circuit",
+      "circuit": "West Georgia Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Carroll",
+        "Heard"
+      ],
+      "defender": "Maryellen Simmons",
+      "address": "166A Independence Drive, Carrollton, GA 30116",
+      "phone": "770-830-1323",
+      "fax": "770-830-0715",
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [
+        {
+          "location": "Heard County",
+          "address": "215 East Court Square, Suite 4099, Franklin, GA 30217",
+          "phone": "706-675-0288",
+          "fax": null
+        }
+      ],
+      "page_url": "https://gapubdef.org/local-offices/west-georgia-circuit.html",
+      "region": "central"
+    },
+    {
+      "id": "western-circuit",
+      "circuit": "Western Circuit",
+      "opt_out": false,
+      "opt_out_note": null,
+      "counties": [
+        "Clarke",
+        "Oconee"
+      ],
+      "defender": "John Donnelly",
+      "address": "440 College Avenue, Suite 220, Athens, GA 30601",
+      "phone": "706-369-6440",
+      "fax": null,
+      "email": null,
+      "website": null,
+      "hours": null,
+      "additional_offices": [],
+      "page_url": "https://gapubdef.org/local-offices/western-circuit.html",
+      "region": "central"
+    }
+  ]
+}

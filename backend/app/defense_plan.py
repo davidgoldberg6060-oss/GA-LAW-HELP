@@ -242,8 +242,10 @@ def section_spec(plan: dict) -> tuple[tuple[str, str], ...]:
     extra = (PAPERWORK_HEADING,) if plan.get("source") == "document" else ()
     from .defense_help import MOTIONS_HEADING
     from .hidden_issues import HEADING as HIDDEN
+    from .public_defender_problems import HEADING as PD_HEAD
     return tuple((_KEYS[h], h) for h in heads + extra) + ((re.sub(r"[^a-z]+", "_", MOTIONS_HEADING.lower()), MOTIONS_HEADING),
-                                                         (re.sub(r"[^a-z]+", "_", HIDDEN.lower()).strip("_"), HIDDEN))
+                                                         (re.sub(r"[^a-z]+", "_", HIDDEN.lower()).strip("_"), HIDDEN),
+                                                         ("problem_with_my_public_defender", PD_HEAD))
 
 
 _FOCUS = {

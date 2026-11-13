@@ -12,7 +12,7 @@ class HomeDrawerCatalogTest {
         assertEquals(
             listOf(
                 "Home", "My Case (start here)", "Case Workspace", "Talk to Me (AI)", "Paper reader", "Georgia Laws",
-                "Funny & Weird Laws", "Motions & Legal Work", "Legal Forms", "Court Information", "Courtroom prep",
+                "Funny & Weird Laws", "Motions & Legal Work", "Legal Forms", "Court Information", "Public Defenders", "Courtroom prep",
                 "Know Your Rights", "Citizen Help", "Resources", "Emergency Information",
                 "Payments & Subscription", "Settings", "Send feedback", "Profile", "Help & Support"
             ),

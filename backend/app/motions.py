@@ -73,6 +73,14 @@ def _fit_concurrent(t, a):
     return 0, None, None
 
 
+
+def _fit_discharge(t, a):
+    from .public_defender_problems import detect
+    if detect(t):
+        return 3, "The facts describe a problem with appointed counsel.", None
+    return 0, None, None
+
+
 def _fit_lawyer(t, a):
     if _has(t, "lawyer", "attorney", "public defender", "counsel") and _has(t, "never", "didn't", "did not", "failed", "bad", "ineffective", "wouldn't"):
         return 3, "The facts describe problems with the lawyer.", None
@@ -194,6 +202,12 @@ MOTIONS = [
          rule=("sentence_date", 365), fit=_always(2),
          relief="reduce, suspend or probate all or part of the sentence imposed",
          facts="[Programs completed, good conduct, work, family needs, health, remorse, support waiting at home.]"),
+    dict(key="discharge_appointed_counsel", title="Motion to discharge appointed counsel and appoint substitute counsel",
+         goal="other", stages=["arrested", "pretrial", "plea", "trial", "appeal"],
+         what="Asks the judge to remove appointed counsel and appoint a different lawyer for good cause, such as a conflict of interest or a complete breakdown in communication. The defendant generally cannot pick a particular appointed lawyer.",
+         cites=["17-12-1", "17-12-22"], deadline=None, fit=_fit_discharge,
+         relief="discharge appointed counsel and appoint substitute counsel",
+         facts="[Conflict of interest, including a co-defendant represented by the same lawyer or office; or a complete breakdown in communication. List dates, what was sent, and any response.]"),
     dict(key="new_trial", title="Motion for new trial", goal="dismiss", stages=["sentenced"],
          what="Asks the trial judge for a new trial because of errors at trial, an ineffective lawyer, or new evidence.",
          cites=["5-5-40", "5-5-23"], deadline="Within 30 days after the judgment is entered.", rule=("sentence_date", 30), fit=_fit_lawyer,

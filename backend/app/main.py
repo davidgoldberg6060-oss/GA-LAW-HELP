@@ -590,6 +590,21 @@ def public_courtroom_prep(case_type:str='', language:str='en', situation:str='')
     pack['text']=_prep.as_text(pack)
     return pack
 
+
+@app.get('/public/public-defender-problems')
+def public_defender_problems(language:str='en'):
+    """Georgia guide when a user has a problem with appointed counsel. No personal data is stored."""
+    from . import public_defender_problems as _pd
+    pack=_pd.guide(language)
+    pack['text']=_pd.as_text(pack)
+    return pack
+
+@app.get('/public/public-defender-offices')
+def public_defender_offices(q:str='', county:str='', language:str='en'):
+    """Official GPDC circuit office directory (contact information only). No ratings or win/loss records."""
+    from . import public_defender_offices as _off
+    return _off.pack(q, county, language)
+
 @app.get('/public/voices')
 def public_voices():
     """The two original Read aloud voices, plus Off. No trademarks or real-person voices."""

@@ -17,7 +17,8 @@ object TalkToMeController {
         /** Server id of the remembered exchange (0 = not remembered). */
         val turnId: Long = 0L,
         /** Automatic Defense Plan: "built", "needs_details", or "" for a normal answer. */
-        val planStatus: String = ""
+        val planStatus: String = "",
+        val publicDefenderProblems: Boolean = false
     )
 
     /** One verified "Where to get help" entry from the server catalogue (https link, optional phone). */
@@ -41,7 +42,8 @@ object TalkToMeController {
             caseStageLabel = turn.result.optString("case_stage_label"),
             helpResources = helpResources(turn.result),
             turnId = turn.turnId,
-            planStatus = turn.result.optJSONObject("defense_plan")?.optString("status").orEmpty()
+            planStatus = turn.result.optJSONObject("defense_plan")?.optString("status").orEmpty(),
+            publicDefenderProblems = turn.result.optBoolean("public_defender_problems")
         )
     }
 

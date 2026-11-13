@@ -8,7 +8,7 @@ SW = (ROOT / "public/sw.js").read_text()
 
 
 def test_android_link_points_at_signed_release_asset():
-    assert "https://github.com/davidgoldberg6060-oss/GA-LAW-HELP/releases/download/apk-1.7.5-release/ga-law-help-1.7.5-release.apk" in PAGE
+    assert "https://github.com/davidgoldberg6060-oss/GA-LAW-HELP/releases/download/apk-1.7.6-release/ga-law-help-1.7.6-release.apk" in PAGE
 
 
 def test_iphone_steps_are_home_screen_web_app_not_app_store():
