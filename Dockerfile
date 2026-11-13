@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --no-create-home app \
     && mkdir -p /data/evidence && chown -R app:app /data
 COPY --chown=app:app backend/app ./app
+COPY --chown=app:app config ./config
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

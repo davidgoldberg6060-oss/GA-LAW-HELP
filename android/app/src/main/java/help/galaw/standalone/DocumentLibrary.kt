@@ -63,10 +63,10 @@ class DocumentLibrary(private val context: Context) {
     /** Copy picked/captured files into the library as ONE document (several photos = several pages). */
     fun add(uris: List<Uri>, nameHint: String? = null): Doc {
         if (uris.isEmpty()) throw DocumentException("No file was selected.")
-        if (uris.size > MAX_PAGES) throw DocumentException("Please add $MAX_PAGES pages or fewer at a time.")
+        val selected = if (uris.size > MAX_PAGES) uris.take(MAX_PAGES) else uris
         val id = "d" + System.currentTimeMillis()
         val pages = JSONArray(); var mime = ""
-        uris.forEachIndexed { i, uri ->
+        selected.forEachIndexed { i, uri ->
             val type = mimeOf(uri)
             val (bytes, outMime, ext) = when {
                 type.startsWith("image/") -> Triple(prepareImage(uri), "image/jpeg", "jpg")
@@ -77,8 +77,8 @@ class DocumentLibrary(private val context: Context) {
             val f = File(dir, "$id-$i.$ext"); f.writeBytes(bytes)
             pages.put(JSONObject().put("file", f.name).put("mime", outMime))
         }
-        val first = displayName(uris[0])
-        val name = nameHint ?: if (uris.size > 1) "${first.substringBeforeLast('.')} (${uris.size} pages)" else first
+        val first = displayName(selected[0])
+        val name = nameHint ?: if (selected.size > 1) "${first.substringBeforeLast('.')} (${selected.size} pages)" else first
         val o = JSONObject().put("id", id).put("name", name).put("mime", mime).put("pages", pages).put("added", System.currentTimeMillis()).put("cases", JSONArray())
         synchronized(this) { val a = readIndex(); a.put(o); writeIndex(a) }
         return get(id)!!

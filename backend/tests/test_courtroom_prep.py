@@ -54,3 +54,12 @@ def test_unknown_type_falls_back_to_general():
     pack = prep.prep_for("not-a-real-type")
     assert pack["case_type"] is None or pack["case_type"] == ""
     assert pack["family"] == "general"
+
+
+def test_catalog_loads_from_packaged_app_data():
+    from pathlib import Path
+    from app import courtroom_prep as prep
+    packaged = Path(prep.__file__).resolve().parent / "data" / "courtroom_prep.json"
+    assert packaged.is_file()
+    assert packaged in prep._CANDIDATES or packaged == prep._path()
+    assert "general" in prep.catalog()

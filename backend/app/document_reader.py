@@ -104,10 +104,12 @@ def pdf_text(data: bytes, max_chars: int = 60000) -> str:
         return ""
 
 
-def _prompt(count: int, question: str, pdf_texts: list[str]) -> str:
+def _prompt(count: int, question: str, pdf_texts: list[str], prior_context: str = "") -> str:
     q = (question or "").strip()[:1500]
     line = f'Their question: "{q}"' if q else "They want to understand what it says and what to do next."
     text = PROMPT.format(count=count, question_line=line)
+    if prior_context:
+        text += "\n\n" + prior_context.strip()
     if pdf_texts:
         text += "\n\nText already extracted from the PDF file(s):\n" + "\n\n".join(pdf_texts)
     return text
@@ -392,7 +394,7 @@ def attach_spanish(result: dict, translation: dict) -> dict:
     return result
 
 
-def read_documents(files: list[tuple[str, bytes]], question: str = "", *, translate_spanish: bool = False) -> dict:
+def read_documents(files: list[tuple[str, bytes]], question: str = "", *, translate_spanish: bool = False, prior_context: str = "") -> dict:
     validate(files)
     pdf_texts = []
     for mt, data in files:
@@ -400,7 +402,7 @@ def read_documents(files: list[tuple[str, bytes]], question: str = "", *, transl
             t = pdf_text(data)
             if len(t) > 200:
                 pdf_texts.append(t)
-    prompt = _prompt(len(files), question, pdf_texts)
+    prompt = _prompt(len(files), question, pdf_texts, prior_context=prior_context)
     raw, model = ask_vision(files, prompt)
     result = parse_result(raw)
     result["model_used"] = model

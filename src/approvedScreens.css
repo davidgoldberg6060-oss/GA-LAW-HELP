@@ -149,3 +149,12 @@ html[data-theme="light"] .ansAsk{color:#0b5cad}
 .ansSec[open] .ansPeek{opacity:0;height:0;margin:0}
 .ansSec[open] .ansChevron{transform:rotate(45deg)}
 .paperPlan{margin-top:1rem;padding-top:.5rem;border-top:1px solid #1d3f58}
+
+.pageCounter{display:flex;align-items:baseline;gap:.75rem;margin:.4rem 0 .2rem;color:#eef3fa;font-size:1.05rem}
+.pageLimitNote{color:#afc2d0;font-weight:400;font-size:.9rem}
+.pageList{list-style:none;margin:.5rem 0 0;padding:0;display:flex;flex-direction:column;gap:.35rem}
+.pageList li{display:flex;align-items:center;justify-content:space-between;gap:.5rem;background:#02111d;border:1px solid #1d3f58;border-radius:10px;padding:.45rem .7rem;color:#eef3fa}
+.pageRemove{background:none;border:0;color:#9fd6ff;cursor:pointer;font:inherit;padding:0}
+.paperNotice{color:#e2b54e;font-size:.9rem}
+.paperContinue{margin:.4rem 0 .6rem}
+.paperActions button:disabled{opacity:.45;cursor:not-allowed}

@@ -36,16 +36,23 @@ class HomeActivity : AppCompatActivity() {
     private var afterDocAdded: ((DocumentLibrary.Doc) -> Unit)? = null
     private val cameraPages = mutableListOf<Uri>()
     private var cameraUri: Uri? = null
-    private val pickDocument = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> if (uris.isNotEmpty()) addToLibrary(uris) else afterDocAdded = null }
-    private val pickPhotos = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(DocumentLibrary.MAX_PAGES)) { uris -> if (uris.isNotEmpty()) addToLibrary(uris) else afterDocAdded = null }
+    private var stagingForPaper = false
+    private val paperBatch = mutableListOf<Uri>()
+    private var paperSessionId: String? = null
+    private var paperAwaitingNext = false
+    private val pickDocument = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> if (uris.isEmpty()) { if (stagingForPaper) stagingForPaper = false; afterDocAdded = null } else if (stagingForPaper) { stagingForPaper = false; addToPaperBatch(uris) } else addToLibrary(uris) }
+    private val pickPhotos = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(DocumentLibrary.MAX_PAGES)) { uris -> if (uris.isEmpty()) { if (stagingForPaper) stagingForPaper = false; afterDocAdded = null } else if (stagingForPaper) { stagingForPaper = false; addToPaperBatch(uris) } else addToLibrary(uris) }
     private val takePhoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val uri = cameraUri; cameraUri = null
-        if (ok && uri != null) cameraPages += uri
-        if (cameraPages.isEmpty()) { afterDocAdded = null; return@registerForActivityResult }
-        AlertDialog.Builder(this).setTitle("Page ${cameraPages.size} saved").setMessage("Take a photo of the next page, or finish if that was the last page.")
-            .setPositiveButton("Finish"){_,_-> val pages=cameraPages.toList(); cameraPages.clear(); addToLibrary(pages, "Scanned paper " + SimpleDateFormat("MMM d, h:mm a", Locale.US).format(Date()) + if (pages.size > 1) " (${pages.size} pages)" else "") }
-            .setNeutralButton("Next page"){_,_-> if (cameraPages.size >= DocumentLibrary.MAX_PAGES) toast("That's the most pages for one document.") else launchCamera() }
-            .setCancelable(false).show()
+        if (ok && uri != null && PageBatch.canAdd(cameraPages.size)) cameraPages += uri
+        if (cameraPages.isEmpty()) { if (!stagingForPaper) afterDocAdded = null; return@registerForActivityResult }
+        val dlg = AlertDialog.Builder(this).setTitle(PageBatch.counter(cameraPages.size) + " saved")
+            .setMessage("Up to 10 pages at a time.\n\nTake a photo of the next page, or finish if that was the last page.")
+            .setPositiveButton("Finish"){_,_-> val pages=cameraPages.toList(); cameraPages.clear(); if (stagingForPaper) { stagingForPaper=false; addToPaperBatch(pages) } else addToLibrary(pages, "Scanned paper " + SimpleDateFormat("MMM d, h:mm a", Locale.US).format(Date()) + if (pages.size > 1) " (${pages.size} pages)" else "") }
+            .setNeutralButton("Next page"){_,_-> if (cameraPages.size >= PageBatch.MAX) toast("That's 10 pages, the most for this batch.") else launchCamera() }
+            .setCancelable(false).create()
+        dlg.show()
+        if (cameraPages.size >= PageBatch.MAX) dlg.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled = false
     }
     private fun launchCamera() { try { val u = docs.newCameraUri(); cameraUri = u; takePhoto.launch(u) } catch (e: Exception) { toast("The camera couldn't be opened. Choose a photo instead."); pickPhotos.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) } }
     /** Camera, photos, or any file (Downloads, Drive, PDFs) — all land in the one shared document library. */
@@ -59,9 +66,18 @@ class HomeActivity : AppCompatActivity() {
     }
     private fun addToLibrary(uris: List<Uri>, name: String? = null) {
         val then = afterDocAdded; afterDocAdded = null
+        val cap = PageBatch.cap(emptyList(), uris)
+        if (cap.dropped > 0) toast(cap.message)
+        if (cap.pages.isEmpty()) return
         toast("Saving document…")
-        thread { try { val d = docs.add(uris, name); runOnUiThread { if (then != null) then(d) else { toast("Saved to My Documents."); showDocuments() } } }
+        thread { try { val d = docs.add(cap.pages, name); runOnUiThread { if (then != null) then(d) else { toast("Saved to My Documents."); showDocuments() } } }
             catch (e: Exception) { runOnUiThread { showError(if (e is DocumentLibrary.DocumentException) e.message ?: "That file couldn't be saved." else "That file couldn't be saved on this phone (${e.javaClass.simpleName}). Try again.", { chooseNewDocument(then) }) } } }
+    }
+    private fun addToPaperBatch(uris: List<Uri>) {
+        val cap = PageBatch.cap(paperBatch.toList(), uris)
+        paperBatch.clear(); paperBatch.addAll(cap.pages)
+        if (cap.message.isNotBlank()) toast(cap.message)
+        showPaperReader()
     }
     private fun pickSavedDocument(title: String, onPick: (DocumentLibrary.Doc) -> Unit) {
         val list = docs.list()
@@ -97,7 +113,7 @@ class HomeActivity : AppCompatActivity() {
     }
     private fun runDocumentRead(c: GaScreens.Chat, d: DocumentLibrary.Doc, pages: List<DocumentLibrary.Page>, caseId: Int?) {
         val stop = c.progress(listOf("Sending ${pages.size} page${if (pages.size > 1) "s" else ""}…") + LoadingLines.DOCUMENT_READ)
-        thread { try { val r = api.readDocument(pages, "", caseId, paperTranslate); val answer = r.optString("answer"); val text = r.optString("extracted_text")
+        thread { try { val r = api.readDocument(pages, "", caseId, paperTranslate, paperSessionId); val answer = r.optString("answer"); val text = r.optString("extracted_text")
                 docs.saveSummary(d.id, answer)
                 // The text read from the paper stays in the chat context so follow-up questions can use it.
                 val full = answer + if (text.isNotBlank()) "\n\nText read from the paper:\n" + text else ""
@@ -113,6 +129,10 @@ class HomeActivity : AppCompatActivity() {
                     c.attach(ui.secondaryButton("Share as PDF"){ sharePlanPdf(if(planText.isNotBlank()) "Your Defense Plan" else "Paper reading", if(planText.isNotBlank()) planText else full) })
                     if(ReadAloud.saved(this)!=ReadAloud.OFF) c.attach(ui.secondaryButton("Read aloud"){ maybeRead(if(planText.isNotBlank()) planText else full) })
                     if(!paperTranslate && r.optString("answer_es").isBlank()) c.attach(ui.secondaryButton("Translate to Spanish"){ translatePaperReading(c, r) })
+                    val sid=r.optString("session_id"); if(sid.isNotBlank()) paperSessionId=sid
+                    paperBatch.clear(); paperAwaitingNext=true
+                    c.attach(ui.secondaryButton("Add more pages to this case ›"){ paperAwaitingNext=false; showPaperReader() })
+                    c.attach(ui.secondaryButton("Start a new case ›"){ paperAwaitingNext=false; paperSessionId=null; paperBatch.clear(); paperTranslate=false; showPaperReader() })
                     } } }
             catch (e: Exception) { runOnUiThread { stop(); val msg = AiErrors.message(e); val bot = talk.add(false, msg, now(), inContext = false); if (chat === c) { c.bot(bot.text, bot.time, bot.id); c.retry { talk.delete(bot.id); c.remove(bot.id); runDocumentRead(c, d, pages, caseId) } } } } }
     }
@@ -466,12 +486,47 @@ class HomeActivity : AppCompatActivity() {
         root.addView(label(pack.disclaimer+"\n\n"+pack.notice,12f).apply{setTextColor(muted)})
     }
     private var paperTranslate=false
+    private fun startPaperCamera(){ stagingForPaper=true; cameraPages.clear(); launchCamera() }
+    private fun startPaperPicker(){
+        AlertDialog.Builder(this).setTitle("Add pages (" + PageBatch.counter(paperBatch.size) + ")").setMessage("Up to 10 pages at a time.")
+            .setItems(arrayOf("Choose photos", "Choose a file (PDF, Downloads, Drive…)")) { _, i ->
+                stagingForPaper=true
+                if (i == 0) pickPhotos.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                else pickDocument.launch(arrayOf("application/pdf", "image/*", "text/*", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "*/*"))
+            }.setOnCancelListener { stagingForPaper=false }.show()
+    }
+    private fun sendPaperBatch(translate:Boolean){
+        if (paperBatch.isEmpty()) return toast("Add a photo or PDF of the paper first.")
+        paperTranslate=translate
+        toast("Saving document…")
+        val pages=paperBatch.toList()
+        thread { try { val d=docs.add(pages, "Paper " + SimpleDateFormat("MMM d, h:mm a", Locale.US).format(Date()) + if (pages.size>1) " (${pages.size} pages)" else ""); runOnUiThread { readInAiHelp(d) } }
+            catch(e:Exception){ runOnUiThread { showError(if(e is DocumentLibrary.DocumentException) e.message?:"That file couldn't be saved." else "That file couldn't be saved on this phone. Try again.", { showPaperReader() }) } } }
+    }
     private fun showPaperReader(){
         UsageAnalytics.feature(api,"uploads"); currentScreen="paper"
         val root=page("Paper reader","Photograph or upload a citation, warrant, summons, eviction notice or court order. We pull out the charge, dates, case number and court in plain language.")
-        addButton(root,"Take a photo of a paper"){ paperTranslate=false; chooseNewDocument{ d->readInAiHelp(d) } }
-        addButton(root,"Photograph and translate to Spanish"){ paperTranslate=true; chooseNewDocument{ d->readInAiHelp(d) } }
-        addButton(root,"Choose a photo or PDF"){ paperTranslate=false; chooseNewDocument{ d->readInAiHelp(d) } }
+        val count = if (paperAwaitingNext) 0 else paperBatch.size
+        root.addView(label(PageBatch.counter(count), 22f, true))
+        root.addView(label("Up to 10 pages at a time.", 14f).apply{setTextColor(muted)})
+        if (paperAwaitingNext) {
+            root.addView(label("You can add another batch of up to 10 pages to this same case, or start a new case.", 14f).apply{setTextColor(muted)})
+            addButton(root, "Add more pages to this case"){ paperAwaitingNext=false; paperBatch.clear(); showPaperReader() }
+            addButton(root, "Start a new case"){ paperAwaitingNext=false; paperSessionId=null; paperBatch.clear(); paperTranslate=false; showPaperReader() }
+        } else {
+            if (PageBatch.canAdd(paperBatch.size)) {
+                addButton(root,"Take a photo of a paper"){ paperTranslate=false; startPaperCamera() }
+                addButton(root,"Photograph and translate to Spanish"){ paperTranslate=true; startPaperCamera() }
+                addButton(root,"Choose a photo or PDF"){ startPaperPicker() }
+            } else {
+                root.addView(label("This batch is full. Read these 10 pages, then you can add more pages to this case.",13f).apply{setTextColor(muted)})
+            }
+            paperBatch.forEachIndexed { i, uri -> root.addView(label("${i+1}. " + docs.displayName(uri), 14f)) }
+            if (paperBatch.isNotEmpty()) {
+                addButton(root, "Read this paper"){ sendPaperBatch(false) }
+                addButton(root, "Translate this paper to Spanish"){ sendPaperBatch(true) }
+            }
+        }
         root.addView(label("A Spanish translation is for understanding only. The original English document is what counts in court.\n\nThis is legal information, not legal advice.",13f).apply{setTextColor(muted)})
     }
 

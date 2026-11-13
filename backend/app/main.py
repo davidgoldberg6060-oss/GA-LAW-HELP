@@ -354,10 +354,15 @@ def _document_defense_plan(result:dict,question:str,db)->dict|None:
     return out
 
 @app.post('/documents/read')
-def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form(''),case_id:str=_Form(''),remember:str=_Form('true'),defense_plan:str=_Form('true'),translate:str=_Form('false'),language:str=_Form('en'),user=Depends(require_paid),db:Session=Depends(get_db)):
+def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form(''),case_id:str=_Form(''),session_id:str=_Form(''),remember:str=_Form('true'),defense_plan:str=_Form('true'),translate:str=_Form('false'),language:str=_Form('en'),user=Depends(require_paid),db:Session=Depends(get_db)):
     """Read photos/PDF pages of case papers with a vision model and explain them (Scan a paper).
     A readable paper also gets an automatic "Your Defense Plan" built from the facts on it (``defense_plan``),
-    unless the client sends ``defense_plan=false``. A plan failure never fails the read."""
+    unless the client sends ``defense_plan=false``. A plan failure never fails the read.
+
+    Each request accepts at most 10 pages. Send ``session_id`` from a previous response to append
+    the next batch to the same case; earlier batches are included (summarized if the text is long).
+    """
+    from . import document_batches as _batches
     case=None
     if str(case_id or '').strip():
         try: case=owned_case(int(case_id),user,db)
@@ -366,13 +371,34 @@ def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form('')
     for f in files[:_docreader.MAX_FILES+1]:
         data=f.file.read(_docreader.MAX_FILE_BYTES+1)
         pages.append((_docreader.sniff_type(data,f.content_type,f.filename),data))
+    sid=(session_id or '').strip() or _batches.new_session_id()
+    earlier=_batches.load(db,user.id,sid) if (session_id or '').strip() else []
+    prior,summarized=_batches.prior_context(earlier)
     want_es=str(translate).lower() in ('1','true','yes','es','spanish') or str(language).lower().startswith('es')
-    try: result=_docreader.read_documents(pages,question,translate_spanish=want_es)
+    try: result=_docreader.read_documents(pages,question,translate_spanish=want_es,prior_context=prior)
     except _docreader.DocumentInputError as error: raise HTTPException(400 if 'too large' not in str(error) else 413,str(error))
     except RuntimeError: raise HTTPException(503,'The document reader is busy right now. Your photos weren’t lost — please tap Retry in a minute.')
+    # If this is a later batch, keep earlier charges, dates, case number and court in the combined result
+    # so the defense plan still sees the whole set when the new pages omit them.
+    if earlier and result.get('readable'):
+        snap=_batches.snapshot_fields(earlier)
+        if snap.get('charges_or_claims') or snap.get('key_dates') or snap.get('case_number') or snap.get('court'):
+            result['charges_or_claims']=list(dict.fromkeys((result.get('charges_or_claims') or [])+(snap.get('charges_or_claims') or [])))
+            result['key_dates']=list(dict.fromkeys((result.get('key_dates') or [])+(snap.get('key_dates') or [])))
+            result['case_number']=result.get('case_number') or snap.get('case_number') or ''
+            result['court']=result.get('court') or snap.get('court') or ''
+            result['answer']=_docreader.format_answer(result)
     if case is not None and result.get('readable'):
         db.add(models.CaseNote(case_id=case.id,owner_id=user.id,note_type='DOCUMENT_READ',title=('Scanned paper: '+(result.get('document_type') or 'document'))[:255],content=result['answer']+('\n\nText read from the paper:\n'+result['extracted_text'] if result.get('extracted_text') else ''),language='en'))
     result['case_id']=case.id if case is not None else None
+    if result.get('readable'):
+        result['session_id']=sid
+        result['batch_index']=_batches.append(db,user.id,sid,len(pages),result,case.id if case is not None else None)
+        result['pages_this_batch']=len(pages)
+        result['pages_total']=int(sum(int(b.get('page_count') or b.get('pages') or 0) for b in earlier)+len(pages))
+        result['earlier_batches']=len(earlier)
+        result['earlier_batches_summarized']=bool(summarized)
+        result['can_add_more']=True
     if result.get('readable') and str(defense_plan).lower()!='false':
         result['defense_plan']=_document_defense_plan(result,question,db)
     audit(db,user.id,'READ_DOCUMENT_PHOTOS','case',case.id if case is not None else None);db.commit()
