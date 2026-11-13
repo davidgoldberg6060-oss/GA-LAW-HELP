@@ -160,6 +160,8 @@ export type AiHelpReply = {
   laws?: { citation: string; title?: string | null; id?: number | null }[];
   /** Up to 3 short suggested follow-up questions. */
   followUps?: string[];
+  /** One-line "why this matters" per follow-up question (Defense Plan hidden issues). */
+  followUpWhy?: Record<string, string>;
   /** Automatic Defense Plan: "built" or "needs_details" (asked 1-2 questions). */
   planStatus?: string;
   /** My Case stage whose motion maker fits this answer (e.g. "pretrial"). */
@@ -180,7 +182,7 @@ export async function aiHelpAsk(requestJson: GuestRequestJson, query: string, to
   });
   const answer = typeof data.analysis === 'string' && data.analysis.trim() ? data.analysis : data.answer || 'No grounded answer was returned.';
   const continuity = data.continuity && typeof data.continuity === 'object' ? data.continuity : null;
-  const raw = data as { laws_cited?: unknown; follow_ups?: unknown };
+  const raw = data as { laws_cited?: unknown; follow_ups?: unknown; follow_up_details?: unknown };
   const laws = Array.isArray(raw.laws_cited)
     ? (raw.laws_cited as { citation?: unknown; title?: unknown; id?: unknown }[])
         .filter((l) => l && typeof l.citation === 'string' && l.citation.trim())
@@ -190,5 +192,12 @@ export async function aiHelpAsk(requestJson: GuestRequestJson, query: string, to
   const extra = data as { defense_plan?: { status?: unknown }; case_stage?: unknown };
   const planStatus = extra.defense_plan && typeof extra.defense_plan.status === 'string' ? extra.defense_plan.status : undefined;
   const caseStage = typeof extra.case_stage === 'string' && extra.case_stage ? extra.case_stage : undefined;
-  return { answer, notice: data.coverage_notice || '', turnId: continuity?.turn_id, continuity, laws, followUps, planStatus, caseStage };
+  const followUpWhy: Record<string, string> = {};
+  if (Array.isArray(raw.follow_up_details)) {
+    for (const d of raw.follow_up_details as { question?: unknown; why?: unknown }[]) {
+      if (d && typeof d.question === 'string' && typeof d.why === 'string' && followUps.includes(d.question)) followUpWhy[d.question] = d.why.slice(0, 200);
+    }
+  }
+  return { answer, notice: data.coverage_notice || '', turnId: continuity?.turn_id, continuity, laws, followUps,
+    followUpWhy: Object.keys(followUpWhy).length ? followUpWhy : undefined, planStatus, caseStage };
 }

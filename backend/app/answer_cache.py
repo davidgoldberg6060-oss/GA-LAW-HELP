@@ -29,7 +29,7 @@ def normalize(question: str) -> str:
 
 
 def key(question: str, mode: str) -> str:
-    return hashlib.sha256(f"v7\x00{mode}\x00{normalize(question)}".encode()).hexdigest()  # v7: automatic Defense Plan answers
+    return hashlib.sha256(f"v8\x00{mode}\x00{normalize(question)}".encode()).hexdigest()  # v8: plan quality fixes + "Things you may not know to ask"
 
 
 def _ensure_table(db) -> None:

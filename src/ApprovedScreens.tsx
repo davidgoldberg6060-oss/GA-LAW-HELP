@@ -57,7 +57,7 @@ const FEATURE_BY_SCREEN: Partial<Record<ScreenId, "chat" | "case_check" | "motio
   resources: "find_legal_help",
 };
 
-function SectionBlock({ section }: { section: AnswerSection }) {
+function SectionBlock({ section, onAsk }: { section: AnswerSection; onAsk?: (q: string) => void }) {
   const [open, setOpen] = useState(false);
   const [all, setAll] = useState(false);
   const shown = all ? section.items : section.items.slice(0, SECTION_VISIBLE);
@@ -82,7 +82,11 @@ function SectionBlock({ section }: { section: AnswerSection }) {
             <ul className="ansItems">
               {shown.map((item, i) => (
                 <li key={i}>
-                  <span className="ansHead">{item.head}</span>
+                  {section.kind === "ask" && onAsk ? (
+                    <button type="button" className="ansHead ansAsk" aria-label={"Ask: " + item.head} onClick={() => onAsk(item.head)}>{item.head}</button>
+                  ) : (
+                    <span className="ansHead">{item.head}</span>
+                  )}
                   {item.detail && <span className="ansDetail">{item.detail}</span>}
                   {item.meta && <span className="ansMeta">{item.meta}</span>}
                 </li>
@@ -100,7 +104,7 @@ function SectionBlock({ section }: { section: AnswerSection }) {
 }
 
 /** One answer: a short "Quick answer", then small sections that open on tap. */
-function AnswerBody({ text, laws }: { text: string; laws?: LawRef[] }) {
+function AnswerBody({ text, laws, onAsk }: { text: string; laws?: LawRef[]; onAsk?: (q: string) => void }) {
   const a = structureAnswer(text, laws);
   if (!a.sections.length) return <div className="chatAnswer"><p className="ansQuickText">{a.quick || text}</p></div>;
   return (
@@ -113,7 +117,7 @@ function AnswerBody({ text, laws }: { text: string; laws?: LawRef[] }) {
         </div>
       )}
       <div className="ansSections">
-        {a.sections.map((s) => <SectionBlock key={s.id} section={s} />)}
+        {a.sections.map((s) => <SectionBlock key={s.id} section={s} onAsk={onAsk} />)}
       </div>
       {a.note && <p className="ansFootnote">{a.note}</p>}
     </div>
@@ -170,7 +174,7 @@ export default function ApprovedScreens(props: Props) {
       const turn = reply.turnId;
       setChat((rows) => [
         ...rows.map((row) => (row.id === asked.id ? { ...row, turn } : row)),
-        { id: lineId(), role: "assistant", text: reply.answer || "No grounded answer was returned.", turn, laws: reply.laws, followUps: reply.followUps,
+        { id: lineId(), role: "assistant", text: reply.answer || "No grounded answer was returned.", turn, laws: reply.laws, followUps: reply.followUps, followUpWhy: reply.followUpWhy,
           caseStage: reply.caseStage, situation: textValue.replace(BUILD_PREFIX, "").slice(0, 2000) },
       ]);
       const carried = continuityLine(reply.continuity, AI_LABEL);
@@ -438,7 +442,7 @@ export default function ApprovedScreens(props: Props) {
                 )}
                 {chat.map((line, index) => (
                   <div key={line.id} className={line.role === "user" ? "chatMsg approvedUser" : "chatMsg approvedAssistant"}>
-                    {line.role === "user" ? <p className="chatText">{line.text}</p> : <AnswerBody text={line.text} laws={line.laws} />}
+                    {line.role === "user" ? <p className="chatText">{line.text}</p> : <AnswerBody text={line.text} laws={line.laws} onAsk={chatBusy ? undefined : (q) => void askChat(q)} />}
                     {line.role === "assistant" && index === chat.length - 1 && !chatBusy && chat.some((r) => r.role === "user") && (
                       <div className="ansActions">
                         <button type="button" className="ansBuild" onClick={buildDefense}>
@@ -454,7 +458,10 @@ export default function ApprovedScreens(props: Props) {
                     {line.role === "assistant" && index === chat.length - 1 && !chatBusy && !!line.followUps?.length && (
                       <div className="ansChips" aria-label="Suggested follow-ups">
                         {line.followUps.slice(0, 3).map((q) => (
-                          <button key={q} type="button" className="ansChip" onClick={() => void askChat(q)}>{q}</button>
+                          <button key={q} type="button" className={"ansChip" + (line.followUpWhy?.[q] ? " hasWhy" : "")} onClick={() => void askChat(q)}>
+                            <span className="ansChipQ">{q}</span>
+                            {line.followUpWhy?.[q] && <span className="ansChipWhy">{line.followUpWhy[q]}</span>}
+                          </button>
                         ))}
                       </div>
                     )}

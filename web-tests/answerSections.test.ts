@@ -128,3 +128,16 @@ test("Defense Plan: title line becomes a badge, new sections are tap-to-open wit
 test("A normal answer has no plan badge", () => {
   assert.equal(structureAnswer(ANSWER).plan, undefined);
 });
+
+test("hidden-issue questions become tappable items with a why line", () => {
+  const a = structureAnswer(
+    "Your Defense Plan: DUI\n\nQuick answer\nFight the stop.\n\nThings you may not know to ask\n" +
+      "• Do I have to appeal my license suspension within 30 days? Why it matters: The ALS appeal is separate from the criminal case.\n\n" +
+      "Questions to ask your lawyer\n• Can the stop be challenged?",
+  );
+  const s = a.sections.find((x) => x.kind === "ask");
+  assert.ok(s);
+  assert.equal(s!.title, "Things you may not know to ask");
+  assert.equal(s!.items[0].head, "Do I have to appeal my license suspension within 30 days?");
+  assert.equal(s!.items[0].detail, "Why it matters: The ALS appeal is separate from the criminal case.");
+});

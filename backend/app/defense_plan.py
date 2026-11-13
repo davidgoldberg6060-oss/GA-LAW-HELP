@@ -241,7 +241,9 @@ def section_spec(plan: dict) -> tuple[tuple[str, str], ...]:
     heads = CRIMINAL_HEADINGS if plan.get("family") == "criminal" else CIVIL_HEADINGS
     extra = (PAPERWORK_HEADING,) if plan.get("source") == "document" else ()
     from .defense_help import MOTIONS_HEADING
-    return tuple((_KEYS[h], h) for h in heads + extra) + ((re.sub(r"[^a-z]+", "_", MOTIONS_HEADING.lower()), MOTIONS_HEADING),)
+    from .hidden_issues import HEADING as HIDDEN
+    return tuple((_KEYS[h], h) for h in heads + extra) + ((re.sub(r"[^a-z]+", "_", MOTIONS_HEADING.lower()), MOTIONS_HEADING),
+                                                         (re.sub(r"[^a-z]+", "_", HIDDEN.lower()).strip("_"), HIDDEN))
 
 
 _FOCUS = {
@@ -493,7 +495,26 @@ FOLLOW_UPS = {
 def follow_ups(plan: dict) -> list[str]:
     if plan.get("status") == "clarify":
         return list(CLARIFY_EXAMPLES[plan.get("family") or "criminal"])
-    return list(FOLLOW_UPS.get(plan.get("case_type") or "", ()))
+    from . import hidden_issues as _hi
+    return _hi.chips(hidden_issues(plan)) or list(FOLLOW_UPS.get(plan.get("case_type") or "", ()))
+
+
+def hidden_issues(plan: dict) -> list[dict]:
+    """'Things you may not know to ask' items ({question, why}) for a built plan, from its facts."""
+    if not plan or plan.get("status") != "build":
+        return []
+    from . import hidden_issues as _hi
+    return _hi.pick(plan.get("case_type"), plan.get("facts") or "")
+
+
+def add_hidden_issues(plan: dict, analysis: str) -> str:
+    """Insert the 'Things you may not know to ask' section before the lawyer questions (or help)."""
+    from . import hidden_issues as _hi
+    sec = _hi.section(hidden_issues(plan))
+    if not sec:
+        return analysis
+    placed = insert_before(analysis, sec, ("Questions to ask your lawyer", "Where to get help"))
+    return placed if placed is not None else before_note(analysis, sec)
 
 
 def meta(plan: dict) -> dict:
