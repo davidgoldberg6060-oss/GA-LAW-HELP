@@ -22,6 +22,9 @@ import FeedbackForm from "./FeedbackForm";
 import { markPromptSeen, promptDue, setScreen, trackFeature } from "./usage";
 import CourtroomPrepScreen from "./CourtroomPrepScreen";
 import PaperReaderScreen from "./PaperReaderScreen";
+import PublicDefendersScreen from "./PublicDefendersScreen";
+import PublicDefenderProblemsScreen from "./PublicDefenderProblemsScreen";
+import { detectsPdProblem } from "./publicDefenderProblems";
 import { getLang, getVoice, setLang, setVoice, t, type Lang, type VoiceId } from "./i18n";
 import { downloadPdf } from "./planPdf";
 import { isSupported, speak, stop } from "./readAloud";
@@ -63,6 +66,8 @@ const FEATURE_BY_SCREEN: Partial<Record<ScreenId, "chat" | "case_check" | "motio
   tools: "motion_maker",
   forms: "motion_maker",
   resources: "find_legal_help",
+  defenders: "find_legal_help",
+  pd: "find_legal_help",
 };
 
 function SectionBlock({ section, onAsk }: { section: AnswerSection; onAsk?: (q: string) => void }) {
@@ -187,7 +192,7 @@ export default function ApprovedScreens(props: Props) {
       setChat((rows) => [
         ...rows.map((row) => (row.id === asked.id ? { ...row, turn } : row)),
         { id: lineId(), role: "assistant", text: reply.answer || "No grounded answer was returned.", turn, laws: reply.laws, followUps: reply.followUps, followUpWhy: reply.followUpWhy,
-          caseStage: reply.caseStage, situation: textValue.replace(BUILD_PREFIX, "").slice(0, 2000) },
+          caseStage: reply.caseStage, situation: textValue.replace(BUILD_PREFIX, "").slice(0, 2000), publicDefenderProblems: reply.publicDefenderProblems },
       ]);
       const carried = continuityLine(reply.continuity, AI_LABEL);
       if (carried) setCarryLine(carried);
@@ -397,6 +402,10 @@ export default function ApprovedScreens(props: Props) {
               <h2>Legal Tools</h2>
               <p>Public tools open official rule and code indexes. Motion screening for a saved case stays login-only.</p>
               <p><a href={CODE_REVISION_URL}>Unannotated code index</a> · <a href="https://www.gasupreme.us/rules/">Supreme Court rules</a></p>
+              <div className="ansActions">
+                <button type="button" className="ansMaker" onClick={() => open("defenders")}>{t("publicDefenders", lang)}</button>
+                <button type="button" className="ansMaker" onClick={() => open("pd")}>{t("pdProblems", lang)}</button>
+              </div>
             </>
           )}
           {panel === "rights" && (
@@ -465,6 +474,11 @@ export default function ApprovedScreens(props: Props) {
                             Open My Case: draft these motions ›
                           </button>
                         )}
+                        {(line.publicDefenderProblems || detectsPdProblem(line.situation || lastSituation(chat) || "")) && (
+                          <button type="button" className="ansMaker" onClick={() => open("pd")}>
+                            {t("pdProblems", lang)}
+                          </button>
+                        )}
                         {/^Your Defense Plan:/.test(line.text) && (
                           <button type="button" className="ansMaker" onClick={() => { setPrepType(""); open("prep"); }}>
                             {t("courtroomPrep", lang)}
@@ -524,6 +538,16 @@ export default function ApprovedScreens(props: Props) {
               {chatNotice && <p className="chatNotice">{chatNotice}</p>}
               <p className="chatNotice">{SAFETY_NOTICE}</p>
             </>
+          )}
+          {panel === "defenders" && (
+            <PublicDefendersScreen lang={lang} onOpenProblems={() => open("pd")} />
+          )}
+          {panel === "pd" && (
+            <PublicDefenderProblemsScreen
+              lang={lang}
+              onOpenDefenders={() => open("defenders")}
+              onOpenMotions={() => { if (props.onOpenCase) props.onOpenCase("pretrial", lastSituation(chat) || "appointed counsel problem"); }}
+            />
           )}
           {panel === "prep" && (
             <CourtroomPrepScreen

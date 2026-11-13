@@ -166,6 +166,7 @@ export type AiHelpReply = {
   planStatus?: string;
   /** My Case stage whose motion maker fits this answer (e.g. "pretrial"). */
   caseStage?: string;
+  publicDefenderProblems?: boolean;
 };
 
 /**
@@ -189,9 +190,10 @@ export async function aiHelpAsk(requestJson: GuestRequestJson, query: string, to
         .map((l) => ({ citation: String(l.citation), title: typeof l.title === 'string' ? l.title : null, id: typeof l.id === 'number' ? l.id : null }))
     : [];
   const followUps = Array.isArray(raw.follow_ups) ? (raw.follow_ups as unknown[]).filter((q): q is string => typeof q === 'string' && !!q.trim()).slice(0, 3) : [];
-  const extra = data as { defense_plan?: { status?: unknown }; case_stage?: unknown };
+  const extra = data as { defense_plan?: { status?: unknown }; case_stage?: unknown; public_defender_problems?: unknown };
   const planStatus = extra.defense_plan && typeof extra.defense_plan.status === 'string' ? extra.defense_plan.status : undefined;
   const caseStage = typeof extra.case_stage === 'string' && extra.case_stage ? extra.case_stage : undefined;
+  const publicDefenderProblems = extra.public_defender_problems === true;
   const followUpWhy: Record<string, string> = {};
   if (Array.isArray(raw.follow_up_details)) {
     for (const d of raw.follow_up_details as { question?: unknown; why?: unknown }[]) {
@@ -199,5 +201,5 @@ export async function aiHelpAsk(requestJson: GuestRequestJson, query: string, to
     }
   }
   return { answer, notice: data.coverage_notice || '', turnId: continuity?.turn_id, continuity, laws, followUps,
-    followUpWhy: Object.keys(followUpWhy).length ? followUpWhy : undefined, planStatus, caseStage };
+    followUpWhy: Object.keys(followUpWhy).length ? followUpWhy : undefined, planStatus, caseStage, publicDefenderProblems: publicDefenderProblems || undefined };
 }

@@ -152,7 +152,11 @@ object CitizenHelp {
                 Section(
                     "If your appointed lawyer is not helping",
                     "You can ask the judge for a different appointed lawyer and explain the problem on the record. Keep notes of dates the lawyer did not visit, evidence ignored, or plea pressure without explanation. Complaints about licensed lawyers can go to the State Bar of Georgia. This app cannot fire or replace your lawyer.",
-                    listOf(Link("State Bar of Georgia", "https://www.gabar.org/"))
+                    listOf(
+                        Link("State Bar of Georgia", "https://www.gabar.org/"),
+                        Link("Public Defenders directory in this app", "app:defenders"),
+                        Link("Problem with my public defender?", "app:pd")
+                    )
                 )
             )
         ),

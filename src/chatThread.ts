@@ -13,6 +13,7 @@ export type ChatLine = {
   /** Defense Plan answers: My Case stage for the motion maker, and the user's situation to pre-fill it. */
   caseStage?: string;
   situation?: string;
+  publicDefenderProblems?: boolean;
 };
 
 export const MAX_LINES = 40;
@@ -38,6 +39,7 @@ export function loadThread(store: Store | undefined, feature: string): ChatLine[
           : undefined,
         caseStage: typeof r.caseStage === "string" ? r.caseStage : undefined,
         situation: typeof r.situation === "string" ? r.situation.slice(0, 2000) : undefined,
+        publicDefenderProblems: r.publicDefenderProblems === true ? true : undefined,
       }))
       .slice(-MAX_LINES);
   } catch {

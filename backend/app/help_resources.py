@@ -17,6 +17,24 @@ R = {
         "next": "Ask at your first court appearance or contact the public defender office for that county.",
         "url": "https://georgiacourts.gov/find-your-public-defender/", "phone": None,
         "source": "https://georgiacourts.gov/find-your-public-defender/"},
+    "gpdc_contact": {
+        "name": "Georgia Public Defender Council — find your office", "cost": "Free to call",
+        "what": "Helps you reach the circuit public defender office. Start with the office or a supervisor if you have a problem with appointed counsel.",
+        "next": "Call (800) 676-4432 or use Find Your Public Defender.",
+        "url": "https://georgiacourts.gov/find-your-public-defender/", "phone": "800-676-4432",
+        "source": "https://georgia.gov/contacts/public-defender-council-contact"},
+    "bar_cap": {
+        "name": "State Bar of Georgia — Client Assistance Program", "cost": "Free",
+        "what": "Can try informal help if you are having trouble reaching your lawyer. It does not take over your case or remove the lawyer.",
+        "next": "Call (404) 527-8759.",
+        "url": "https://www.gabar.org/programs/client-assistance-program", "phone": "404-527-8759",
+        "source": "https://www.gabar.org/programs/client-assistance-program"},
+    "bar_grievance": {
+        "name": "State Bar of Georgia — file a grievance", "cost": "Free to file",
+        "what": "A written ethics complaint with the Office of the General Counsel. A grievance does not remove the lawyer from your case or stop court dates.",
+        "next": "Read the Bar's instructions and file on the Bar's website. The lawyer is likely to see what you submit.",
+        "url": "https://www.gabar.org/general-counsel/file-a-grievance", "phone": None,
+        "source": "https://www.gabar.org/general-counsel/file-a-grievance"},
     "lawyer_directory": {
         "name": "State Bar of Georgia — Find a Lawyer directory", "cost": "Private lawyers (usually paid)",
         "what": "Search for lawyers by practice area. The State Bar does not refer clients itself.",
@@ -101,8 +119,14 @@ def route(question: str) -> list[dict]:
         keys.append("dv_hotline")
     if re.search(DUI, q):
         keys.append("dds_als")
+    from .public_defender_problems import detect as pd_detect
+    if pd_detect(q):
+        keys += ["gpdc_contact", "bar_cap", "bar_grievance", "lawyer_directory"]
     if criminal:
-        keys += ["public_defender", "lawyer_directory"]
+        if not pd_detect(q):
+            keys += ["public_defender", "lawyer_directory"]
+        else:
+            keys += ["public_defender"]
     if re.search(PRISON, q):
         keys.append("gdc_family")
     if civil or re.search(DV, q):
@@ -134,7 +158,11 @@ def section_text(question: str, resources: list[dict]) -> str:
     q = current_question(question).lower()
     lines = ["Where to get help"]
     if re.search(EXISTING_LAWYER, q):
-        lines.append("• If you already have a lawyer for this, ask them first; they know your case and deadlines.")
+        from .public_defender_problems import detect as pd_detect
+        if pd_detect(q):
+            lines.append("• If the problem is with your public defender or appointed lawyer, use the steps in \"Problem with my public defender?\" A State Bar grievance does not automatically remove them from your case.")
+        else:
+            lines.append("• If you already have a lawyer for this, ask them first; they know your case and deadlines.")
     if not resources:
         lines.append("• We don't have a specific verified resource for this question. GeorgiaLegalAid.org (free legal information) or the State Bar of Georgia Find a Lawyer directory (private lawyers) are general starting points.")
         return "\n".join(lines)

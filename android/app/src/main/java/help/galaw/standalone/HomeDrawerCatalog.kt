@@ -18,6 +18,7 @@ object HomeDrawerCatalog {
         HomeDrawerItem("motions", "Motions & Legal Work", false),
         HomeDrawerItem("forms", "Legal Forms", false),
         HomeDrawerItem("court", "Court Information", false),
+        HomeDrawerItem("defenders", "Public Defenders", false),
         HomeDrawerItem("prep", "Courtroom prep", false),
         HomeDrawerItem("rights", "Know Your Rights", false),
         HomeDrawerItem("citizen", "Citizen Help", false),

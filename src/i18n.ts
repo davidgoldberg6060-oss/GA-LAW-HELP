@@ -22,6 +22,26 @@ const STRINGS: Record<string, { en: string; es: string }> = {
     en: "This translation is for understanding only. The original English document is what counts in court.",
     es: "Esta traducción es solo para que usted entienda el documento. En la corte, el documento original en inglés es el que cuenta.",
   },
+  publicDefenders: { en: "Public Defenders", es: "Defensores públicos" },
+  publicDefendersHint: {
+    en: "Official office contacts from the Georgia Public Defender Council, plus a link to check a lawyer on the State Bar site. This app does not rate lawyers.",
+    es: "Contactos oficiales de oficinas del Georgia Public Defender Council, y un enlace para consultar a un abogado en el sitio del Colegio de Abogados. Esta aplicación no califica abogados.",
+  },
+  publicDefendersQuick: {
+    en: "Find the circuit office for the county where the charge was filed. To check a lawyer's license or public discipline, use the State Bar Member Directory. If you feel your appointed lawyer is not working for you, open Problem with my public defender? Georgia does not publish official win/loss records for individual public defenders, so this app does not star-rate lawyers or collect internet commentary.",
+    es: "Encuentre la oficina del circuito del condado donde se presentó el cargo. Para ver la licencia o la disciplina pública de un abogado, use el Directorio de Miembros del Colegio de Abogados. Si siente que su abogado asignado no está trabajando para usted, abra ¿Problema con mi defensor público? Georgia no publica récords oficiales de triunfos y derrotas de cada defensor público, así que esta aplicación no califica abogados ni recopila comentarios de internet.",
+  },
+  findOffice: { en: "Find an office by county or circuit", es: "Buscar una oficina por condado o circuito" },
+  findOfficePlaceholder: { en: "County, circuit, city, or lawyer name", es: "Condado, circuito, ciudad o nombre del abogado" },
+  noOfficeMatch: { en: "No official office matched that search. Try the county where the charge was filed.", es: "Ninguna oficina oficial coincide con esa búsqueda. Pruebe con el condado donde se presentó el cargo." },
+  openBarDirectory: { en: "Open the State Bar Member Directory", es: "Abrir el Directorio de Miembros del Colegio de Abogados" },
+  publicDisciplineExplainer: { en: "How public discipline is posted", es: "Cómo se publica la disciplina pública" },
+  pdProblems: { en: "Problem with my public defender?", es: "¿Problema con mi defensor público?" },
+  pdProblemsHint: {
+    en: "Red flags, when to act, letters, a motion to ask the judge for a different appointed lawyer, and how to complain without assuming a grievance removes the lawyer from your case.",
+    es: "Señales de alerta, cuándo actuar, cartas, una moción para pedirle al juez otro abogado asignado, y cómo quejarse sin asumir que una queja saca al abogado de su caso.",
+  },
+  openMotionMaker: { en: "Open in the motion maker", es: "Abrir en el creador de mociones" },
   courtroomPrep: { en: "Courtroom prep", es: "Preparación para la corte" },
   courtroomHint: {
     en: "A day-before and day-of checklist for Georgia courts.",

@@ -1,0 +1,287 @@
+{
+  "title_en": "Problem with my public defender?",
+  "title_es": "¿Problema con mi defensor público?",
+  "hint_en": "Options if you feel your appointed lawyer is not working for you, and clear points for when to act.",
+  "hint_es": "Opciones si siente que su abogado asignado no está trabajando para usted, y puntos claros sobre cuándo actuar.",
+  "quick_en": "Feeling like your public defender is working with the State is a serious concern. You generally cannot pick a particular appointed lawyer, and a Bar grievance does not take them off your case. Write down what happened and ask in writing for a meeting. If that fails, contact the circuit public defender or supervisor and ask for a new lawyer. If there is a conflict of interest or a complete breakdown in communication, you can ask the judge to appoint different counsel — but the judge may say no, and you could end up representing yourself. After a conviction, short deadlines apply for a new trial, an appeal, or habeas corpus.",
+  "quick_es": "Sentir que su defensor público está trabajando con el Estado es un problema serio. Por lo general, usted no puede elegir a un abogado asignado en particular, y una queja ante el Colegio de Abogados no lo saca de su caso. Anote lo que pasó y pida por escrito una reunión. Si eso no funciona, contacte al defensor público del circuito o a un supervisor y pida otro abogado. Si hay un conflicto de interés o una ruptura total de la comunicación, puede pedirle al juez que nombre otro abogado, pero el juez puede decir que no, y usted podría terminar representándose a sí mismo. Después de una condena, hay plazos cortos para un nuevo juicio, una apelación o un hábeas corpus.",
+  "disclaimer_en": "This is general Georgia legal information, not legal advice, and it is not a substitute for a licensed Georgia attorney. Court rules and deadlines can vary. Confirm anything that affects your case with the court or a lawyer.",
+  "disclaimer_es": "Esto es información legal general de Georgia, no asesoramiento jurídico, y no sustituye a un abogado con licencia en Georgia. Las reglas y los plazos pueden variar. Confirme cualquier cosa que afecte su caso con la corte o con un abogado.",
+  "compact_ladder_en": [
+    "Write down dates, calls, missed meetings, and evidence they ignored, then send a short dated letter or email asking to meet and to review the evidence.",
+    "If that fails, contact the circuit public defender or a supervisor and ask, in writing, to reassign your case. GPDC can help you find the office: (800) 676-4432.",
+    "You may ask the judge to discharge appointed counsel and appoint a different lawyer. You generally cannot pick the new lawyer. You must show good cause, such as a conflict of interest or a complete breakdown in communication. The judge may deny the request; you could be told to keep the same lawyer or to represent yourself; the case may be delayed.",
+    "If you can, hire a private criminal-defense lawyer (State Bar Find a Lawyer directory). Georgia legal aid programs are generally for civil cases, not criminal defense.",
+    "You can contact GPDC to reach the office, and you can file a State Bar grievance or call the Client Assistance Program. A grievance does not remove the lawyer from your case or stop your court dates.",
+    "After a conviction, claims that the lawyer's work was constitutionally ineffective are usually raised in a motion for new trial (generally 30 days), a notice of appeal (generally 30 days), or later in habeas corpus (generally 4 years for a felony, 1 year for a misdemeanor, and 180 days for a misdemeanor traffic conviction)."
+  ],
+  "compact_ladder_es": [
+    "Anote fechas, llamadas, reuniones perdidas y pruebas que ignoraron, y envíe una carta o un correo con fecha pidiendo una reunión y revisar las pruebas.",
+    "Si eso no funciona, contacte al defensor público del circuito o a un supervisor y pida por escrito que reasignen su caso. El GPDC puede ayudarle a encontrar la oficina: (800) 676-4432.",
+    "Puede pedirle al juez que releve al abogado asignado y nombre a otro. Por lo general, usted no puede elegir al nuevo abogado. Debe demostrar una causa justificada, como un conflicto de interés o una ruptura total de la comunicación. El juez puede negar la petición; le pueden decir que se quede con el mismo abogado o que se represente a sí mismo; el caso se puede atrasar.",
+    "Si puede, contrate a un abogado particular de defensa penal (directorio Find a Lawyer del Colegio de Abogados). Los programas de asistencia legal de Georgia suelen ser para casos civiles, no para defensa penal.",
+    "Puede contactar al GPDC para llegar a la oficina, y puede presentar una queja ante el Colegio de Abogados o llamar al Programa de Asistencia al Cliente. Una queja no saca al abogado de su caso ni cancela sus fechas de corte.",
+    "Después de una condena, las reclamaciones de que el trabajo del abogado fue constitucionalmente ineficaz suelen presentarse en una moción de nuevo juicio (por lo general 30 días), un aviso de apelación (por lo general 30 días) o más tarde en un hábeas corpus (por lo general 4 años en un delito grave, 1 año en un delito menor, y 180 días en una condena de tráfico menor)."
+  ],
+  "sections": [
+    {
+      "id": "red_flags",
+      "title_en": "Red flags — when to act",
+      "title_es": "Señales de alerta — cuándo actuar",
+      "items": [
+        {
+          "en": "No contact before court dates. Time to act: if your lawyer has not met or spoken with you before a court date, write them and then contact a supervisor.",
+          "es": "No hay contacto antes de las fechas de corte. Momento de actuar: si su abogado no se ha reunido ni ha hablado con usted antes de una fecha de corte, escríbale y luego contacte a un supervisor."
+        },
+        {
+          "en": "Not reviewing discovery with you. Time to act: if evidence has been turned over and they still will not go over it with you, put the request in writing and escalate.",
+          "es": "No revisan las pruebas (discovery) con usted. Momento de actuar: si ya entregaron las pruebas y aún no las revisan con usted, pida la reunión por escrito y escale el problema."
+        },
+        {
+          "en": "Pressuring a plea without explaining the offer or the evidence. Time to act: do not plead just to end the pressure. Ask for the offer and the evidence in writing, then escalate.",
+          "es": "Lo presionan a declararse culpable sin explicarle la oferta ni las pruebas. Momento de actuar: no se declare culpable solo para que dejen de presionarlo. Pida la oferta y las pruebas por escrito, y luego escale el problema."
+        },
+        {
+          "en": "Ignoring witnesses or evidence you provide. Time to act: send the names and documents in a dated letter or email, keep a copy, and escalate if they still ignore it.",
+          "es": "Ignoran testigos o pruebas que usted entrega. Momento de actuar: envíe los nombres y documentos en una carta o un correo con fecha, guarde una copia y escale el problema si siguen sin hacer caso."
+        },
+        {
+          "en": "Missed deadlines or motions. Time to act immediately. Pretrial motions are often due within 10 days after arraignment unless the court extends the time (O.C.G.A. § 17-7-110).",
+          "es": "Se pasaron plazos o no presentaron mociones. Actúe de inmediato. Las mociones antes del juicio suelen vencer a los 10 días de la acusación formal, salvo que la corte amplíe el plazo (O.C.G.A. § 17-7-110)."
+        },
+        {
+          "en": "Conflict of interest — for example, the lawyer or the same office represents a co-defendant in a way that hurts you. Time to act now. Circuit offices must identify conflicts early; if the office has a conflict, other counsel is arranged (O.C.G.A. § 17-12-22).",
+          "es": "Conflicto de interés: por ejemplo, el abogado o la misma oficina representa a un coacusado de un modo que le perjudica. Actúe ahora. Las oficinas del circuito deben identificar conflictos lo antes posible; si la oficina tiene un conflicto, se organiza otro abogado (O.C.G.A. § 17-12-22)."
+        },
+        {
+          "en": "Telling you things that contradict the court papers or the record. Time to act: compare what they said with your papers, write down the difference, and raise it with the supervisor or the judge.",
+          "es": "Le dicen cosas que contradicen los papeles de la corte o el expediente. Momento de actuar: compare lo que dijeron con sus papeles, anote la diferencia y plantéelo al supervisor o al juez."
+        }
+      ]
+    },
+    {
+      "id": "ladder",
+      "title_en": "What you can do, step by step",
+      "title_es": "Qué puede hacer, paso a paso",
+      "items": [
+        {
+          "en": "Step 1 — Document everything and request a meeting in writing. Save dates, calls, messages, missed visits, and copies of what you sent. Use the letter template below.",
+          "es": "Paso 1 — Documente todo y pida una reunión por escrito. Guarde fechas, llamadas, mensajes, visitas fallidas y copias de lo que envió. Use la plantilla de carta más abajo."
+        },
+        {
+          "en": "Step 2 — Contact the circuit public defender or a supervisor and ask in writing to reassign your case. Find the office through GPDC or Georgia Courts. GPDC: (800) 676-4432, operator-recept@gapubdef.org.",
+          "es": "Paso 2 — Contacte al defensor público del circuito o a un supervisor y pida por escrito que reasignen su caso. Encuentre la oficina a través del GPDC o Georgia Courts. GPDC: (800) 676-4432, operator-recept@gapubdef.org."
+        },
+        {
+          "en": "Step 3 — Ask the judge to discharge appointed counsel and appoint a different lawyer. See the next section for good cause, risks, and a motion template.",
+          "es": "Paso 3 — Pídale al juez que releve al abogado asignado y nombre a otro. Vea la siguiente sección sobre la causa justificada, los riesgos y la plantilla de moción."
+        },
+        {
+          "en": "Step 4 — If you can, hire a private criminal-defense lawyer. Legal aid in Georgia is generally civil, not criminal.",
+          "es": "Paso 4 — Si puede, contrate a un abogado particular de defensa penal. La asistencia legal en Georgia suele ser civil, no penal."
+        },
+        {
+          "en": "Step 5 — Complaints: contact the circuit office or GPDC to reach the right office, and/or file a State Bar grievance. A grievance does not remove the lawyer from your case.",
+          "es": "Paso 5 — Quejas: contacte la oficina del circuito o el GPDC para llegar a la oficina correcta, y/o presente una queja ante el Colegio de Abogados. Una queja no saca al abogado de su caso."
+        },
+        {
+          "en": "Step 6 — After a conviction, ineffective assistance is usually raised in a motion for new trial, an appeal, or habeas corpus, which have short deadlines. See “After a conviction.”",
+          "es": "Paso 6 — Después de una condena, la asistencia ineficaz suele plantearse en una moción de nuevo juicio, una apelación o un hábeas corpus, que tienen plazos cortos. Vea “Después de una condena.”"
+        }
+      ]
+    },
+    {
+      "id": "motion",
+      "title_en": "Asking the judge for a new appointed lawyer",
+      "title_es": "Pedirle al juez un nuevo abogado asignado",
+      "items": [
+        {
+          "en": "You generally cannot choose a particular appointed lawyer. An indigent defendant is not entitled to preferred counsel (Holsey v. State, 291 Ga. App. 216 (2008)).",
+          "es": "Por lo general, usted no puede elegir a un abogado asignado en particular. Una persona indigente no tiene derecho a un abogado de su preferencia (Holsey v. State, 291 Ga. App. 216 (2008))."
+        },
+        {
+          "en": "You must show good cause — justifiable dissatisfaction such as a conflict of interest, an irreconcilable conflict, or a complete breakdown in communication. Disagreements over strategy, tension, or lost trust, without more, usually are not enough (Holsey v. State, 291 Ga. App. 216 (2008)).",
+          "es": "Debe demostrar una causa justificada: una insatisfacción justificable, como un conflicto de interés, un conflicto irreconciliable o una ruptura total de la comunicación. Los desacuerdos sobre la estrategia, la tensión o la pérdida de confianza, por sí solos, normalmente no bastan (Holsey v. State, 291 Ga. App. 216 (2008))."
+        },
+        {
+          "en": "If the circuit office itself has a conflict, other counsel is supposed to be arranged (O.C.G.A. § 17-12-22).",
+          "es": "Si la oficina del circuito tiene un conflicto, se supone que se organizará otro abogado (O.C.G.A. § 17-12-22)."
+        },
+        {
+          "en": "Risks: the judge may deny the request; you may have to keep the same lawyer or represent yourself; the case may be delayed. Use the motion template and the motion maker.",
+          "es": "Riesgos: el juez puede negar la petición; puede tener que quedarse con el mismo abogado o representarse a sí mismo; el caso se puede atrasar. Use la plantilla de moción y el creador de mociones."
+        }
+      ]
+    },
+    {
+      "id": "self_rep",
+      "title_en": "Representing yourself",
+      "title_es": "Representarse a sí mismo",
+      "items": [
+        {
+          "en": "You have a right to represent yourself if you clearly give up the right to a lawyer, knowingly and intelligently (Faretta v. California, 422 U.S. 806 (1975); State v. Evans, 285 Ga. 67 (2009)).",
+          "es": "Usted tiene derecho a representarse a sí mismo si renuncia claramente al derecho a un abogado, de forma consciente e inteligente (Faretta v. California, 422 U.S. 806 (1975); State v. Evans, 285 Ga. 67 (2009))."
+        },
+        {
+          "en": "This is risky. You must follow the same technical rules as a lawyer. The prosecutor will not go easy. If you are in jail, it is much harder to investigate and prepare. The judge should warn you about these dangers. Representing yourself is usually a last resort.",
+          "es": "Esto es arriesgado. Debe seguir las mismas reglas técnicas que un abogado. El fiscal no le va a facilitar las cosas. Si está en la cárcel, es mucho más difícil investigar y prepararse. El juez debe advertirle de estos peligros. Representarse a sí mismo suele ser el último recurso."
+        }
+      ]
+    },
+    {
+      "id": "hire",
+      "title_en": "Hiring a private lawyer",
+      "title_es": "Contratar a un abogado particular",
+      "items": [
+        {
+          "en": "You can hire a private criminal-defense lawyer at any point if you can afford one. Search the State Bar of Georgia Find a Lawyer directory and ask about fees before you hire anyone.",
+          "es": "Puede contratar a un abogado particular de defensa penal en cualquier momento si puede pagarlo. Busque en el directorio Find a Lawyer del Colegio de Abogados de Georgia y pregunte los honorarios antes de contratar."
+        },
+        {
+          "en": "Georgia legal aid programs (Atlanta Legal Aid, GLSP, GeorgiaLegalAid.org) are generally for civil cases, not for defending a criminal charge.",
+          "es": "Los programas de asistencia legal de Georgia (Atlanta Legal Aid, GLSP, GeorgiaLegalAid.org) suelen ser para casos civiles, no para defender un cargo penal."
+        }
+      ]
+    },
+    {
+      "id": "complaints",
+      "title_en": "Complaints — these do not remove the lawyer from your case",
+      "title_es": "Quejas — estas no sacan al abogado de su caso",
+      "items": [
+        {
+          "en": "Start with the circuit public defender office or a supervisor. GPDC can help you reach the right office: (800) 676-4432 or operator-recept@gapubdef.org. Use Find Your Public Defender. GPDC does not publish a separate statewide “client complaint form”; the published path is to contact the office and GPDC.",
+          "es": "Empiece por la oficina del defensor público del circuito o un supervisor. El GPDC puede ayudarle a llegar a la oficina correcta: (800) 676-4432 o operator-recept@gapubdef.org. Use Find Your Public Defender. El GPDC no publica un “formulario estatal de queja del cliente” aparte; la vía publicada es contactar la oficina y el GPDC."
+        },
+        {
+          "en": "For trouble reaching the lawyer, call the State Bar Client Assistance Program at (404) 527-8759. CAP can try informal help; it does not take over your case.",
+          "es": "Si no logra comunicarse con el abogado, llame al Programa de Asistencia al Cliente del Colegio de Abogados al (404) 527-8759. El CAP puede intentar ayuda informal; no se hace cargo de su caso."
+        },
+        {
+          "en": "To allege a violation of the ethics rules, file a written grievance with the State Bar Office of the General Counsel. A grievance is reviewed for possible ethics violations. It does not remove the lawyer from your case, does not stop court dates, and the lawyer is likely to see what you file.",
+          "es": "Para alegar una violación de las reglas de ética, presente una queja por escrito ante la Oficina del Asesor General del Colegio de Abogados. La queja se revisa por posibles violaciones éticas. No saca al abogado de su caso, no cancela las fechas de corte, y es probable que el abogado vea lo que usted presente."
+        }
+      ]
+    },
+    {
+      "id": "after_conviction",
+      "title_en": "After a conviction",
+      "title_es": "Después de una condena",
+      "items": [
+        {
+          "en": "A claim that the lawyer's work was constitutionally ineffective is judged under Strickland v. Washington, 466 U.S. 668 (1984): the lawyer's work fell below a reasonable standard, and there is a reasonable probability the result would have been different. That claim is usually raised in a motion for new trial, on appeal, or later in habeas corpus — not as a way to fire the lawyer mid-case.",
+          "es": "Una reclamación de que el trabajo del abogado fue constitucionalmente ineficaz se juzga según Strickland v. Washington, 466 U.S. 668 (1984): el trabajo del abogado estuvo por debajo de un nivel razonable, y hay una probabilidad razonable de que el resultado habría sido distinto. Esa reclamación suele plantearse en una moción de nuevo juicio, en la apelación o más tarde en un hábeas corpus, no como una forma de despedir al abogado en medio del caso."
+        },
+        {
+          "en": "Motion for new trial: generally within 30 days of the entry of the judgment, except in extraordinary cases (O.C.G.A. § 5-5-40(a)).",
+          "es": "Moción de nuevo juicio: por lo general, dentro de los 30 días de la entrada de la sentencia, salvo en casos extraordinarios (O.C.G.A. § 5-5-40(a))."
+        },
+        {
+          "en": "Notice of appeal: generally within 30 days after the entry of the appealable decision or judgment. If a timely motion for new trial was filed, the notice is due within 30 days after the order that grants, overrules, or otherwise finally disposes of that motion (O.C.G.A. § 5-6-38(a)).",
+          "es": "Aviso de apelación: por lo general, dentro de los 30 días después de la entrada de la decisión o sentencia apelable. Si se presentó a tiempo una moción de nuevo juicio, el aviso vence a los 30 días de la orden que concede, rechaza o resuelve de forma final esa moción (O.C.G.A. § 5-6-38(a))."
+        },
+        {
+          "en": "State habeas corpus: generally within 4 years for a felony, or within 1 year for a misdemeanor, after the conviction becomes final (after the appeal ends or the time to appeal runs out), with some other starting dates and exceptions (O.C.G.A. § 9-14-42(c)). A challenge to a misdemeanor traffic conviction generally must be filed within 180 days (O.C.G.A. § 40-13-33). Death-sentence cases have different rules. Ask a lawyer to check the starting date.",
+          "es": "Hábeas corpus estatal: por lo general, dentro de 4 años en un delito grave, o dentro de 1 año en un delito menor, después de que la condena quede firme (cuando termina la apelación o se acaba el plazo para apelar), con otras fechas de inicio y excepciones (O.C.G.A. § 9-14-42(c)). Una impugnación de una condena de tráfico menor generalmente debe presentarse dentro de 180 días (O.C.G.A. § 40-13-33). Los casos con pena de muerte tienen reglas distintas. Pida a un abogado que revise la fecha de inicio."
+        }
+      ]
+    },
+    {
+      "id": "questions",
+      "title_en": "Questions to ask your lawyer",
+      "title_es": "Preguntas para hacerle a su abogado",
+      "items": [
+        {
+          "en": "Have you received and reviewed all discovery, and when can we go through it together?",
+          "es": "¿Ya recibió y revisó todas las pruebas (discovery), y cuándo podemos revisarlas juntos?"
+        },
+        {
+          "en": "What is the State's evidence, and what are my options besides a plea?",
+          "es": "¿Cuáles son las pruebas del Estado, y qué opciones tengo además de declararme culpable?"
+        },
+        {
+          "en": "Did you follow up on the witnesses and documents I gave you?",
+          "es": "¿Dio seguimiento a los testigos y documentos que le entregué?"
+        },
+        {
+          "en": "Is there a conflict because you or your office represents a co-defendant?",
+          "es": "¿Hay un conflicto porque usted o su oficina representa a un coacusado?"
+        },
+        {
+          "en": "What motions have you filed, and when are the upcoming deadlines?",
+          "es": "¿Qué mociones ha presentado, y cuáles son los próximos plazos?"
+        },
+        {
+          "en": "If we cannot work together, how do I ask your supervisor or the court for different appointed counsel?",
+          "es": "Si no podemos trabajar juntos, ¿cómo le pido a su supervisor o a la corte otro abogado asignado?"
+        }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "id": "letter_pd",
+      "kind": "letter",
+      "title_en": "Letter to your public defender",
+      "title_es": "Carta a su defensor público",
+      "body_en": "Date: [DATE]\n\nTo: [LAWYER'S NAME], Assistant Public Defender\n[OFFICE NAME AND ADDRESS / EMAIL]\n\nRe: [YOUR FULL NAME], Case No. [CASE NUMBER], [COUNTY] County — request for a meeting\n\nDear [Mr./Ms. LAST NAME]:\n\nI am writing to request a meeting about my case before the next court date of [COURT DATE].\n\nI have tried to reach you on these dates: [DATES AND HOW YOU CONTACTED THEM]. I still need to review the discovery with you, including [LIST PAPERS, WITNESSES, OR EVIDENCE]. I also need you to explain the charge, the State's evidence, and any plea offer in language I understand before I decide anything.\n\nPlease confirm in writing when we can meet, and whether you have received the information I already sent.\n\nThank you.\n\n[YOUR NAME]\n[ADDRESS / JAIL OR PRISON ID]\n[PHONE / EMAIL]\n\nThis is a template only, not legal advice. Keep a copy.",
+      "body_es": "Fecha: [FECHA]\n\nPara: [NOMBRE DEL ABOGADO], Defensor Público Auxiliar\n[NOMBRE Y DIRECCIÓN / CORREO DE LA OFICINA]\n\nAsunto: [SU NOMBRE COMPLETO], Caso No. [NÚMERO DE CASO], Condado de [CONDADO] — solicitud de reunión\n\nEstimado/a [Sr./Sra. APELLIDO]:\n\nLe escribo para pedir una reunión sobre mi caso antes de la próxima fecha de corte del [FECHA DE CORTE].\n\nHe tratado de comunicarme con usted en estas fechas: [FECHAS Y CÓMO LO CONTACTÓ]. Todavía necesito revisar las pruebas (discovery) con usted, incluyendo [LISTE PAPELES, TESTIGOS O PRUEBAS]. También necesito que me explique el cargo, las pruebas del Estado y cualquier oferta de declaración en palabras que yo entienda antes de decidir nada.\n\nPor favor confirme por escrito cuándo podemos reunirnos, y si recibió la información que ya le envié.\n\nGracias.\n\n[SU NOMBRE]\n[DIRECCIÓN / NÚMERO DE CÁRCEL O PRISIÓN]\n[TELÉFONO / CORREO]\n\nEsto es solo una plantilla, no es asesoramiento jurídico. Guarde una copia."
+    },
+    {
+      "id": "letter_supervisor",
+      "kind": "letter",
+      "title_en": "Letter to the circuit public defender or supervisor",
+      "title_es": "Carta al defensor público del circuito o al supervisor",
+      "body_en": "Date: [DATE]\n\nTo: [CIRCUIT PUBLIC DEFENDER OR SUPERVISOR NAME]\n[OFFICE NAME AND ADDRESS / EMAIL]\n\nRe: Request to reassign appointed counsel — [YOUR FULL NAME], Case No. [CASE NUMBER], [COUNTY] County\n\nDear [Mr./Ms. LAST NAME]:\n\nI am a client of [LAWYER'S NAME] in the case above. I am asking that a different lawyer in your office, or conflict counsel, be assigned to my case.\n\nThe problems include: [NO CONTACT BEFORE COURT / DISCOVERY NOT REVIEWED / PLEA PRESSURE WITHOUT EXPLANATION / WITNESSES OR EVIDENCE IGNORED / MISSED DEADLINE OR MOTION / CONFLICT OF INTEREST / STATEMENTS THAT CONTRADICT THE RECORD]. Dates and details: [LIST DATES, WHAT HAPPENED, AND COPIES YOU ATTACH].\n\nI already wrote to my lawyer on [DATE] and asked for a meeting. [WHAT HAPPENED NEXT, IF ANYTHING.]\n\nPlease tell me in writing whether the case will be reassigned and to whom.\n\nThank you.\n\n[YOUR NAME]\n[ADDRESS / JAIL OR PRISON ID]\n[PHONE / EMAIL]\n\nThis is a template only, not legal advice. Keep a copy. You can also call GPDC at (800) 676-4432 if you cannot find the office.",
+      "body_es": "Fecha: [FECHA]\n\nPara: [NOMBRE DEL DEFENSOR PÚBLICO DEL CIRCUITO O SUPERVISOR]\n[NOMBRE Y DIRECCIÓN / CORREO DE LA OFICINA]\n\nAsunto: Solicitud de reasignar al abogado asignado — [SU NOMBRE COMPLETO], Caso No. [NÚMERO DE CASO], Condado de [CONDADO]\n\nEstimado/a [Sr./Sra. APELLIDO]:\n\nSoy cliente de [NOMBRE DEL ABOGADO] en el caso indicado. Pido que se asigne a mi caso otro abogado de su oficina, o un abogado de conflicto.\n\nLos problemas incluyen: [NO HAY CONTACTO ANTES DE LA CORTE / NO REVISAN LAS PRUEBAS / PRESIÓN PARA DECLARARSE CULPABLE SIN EXPLICACIÓN / IGNORAN TESTIGOS O PRUEBAS / SE PASÓ UN PLAZO O UNA MOCIÓN / CONFLICTO DE INTERÉS / DECLARACIONES QUE CONTRADICEN EL EXPEDIENTE]. Fechas y detalles: [LISTE FECHAS, LO QUE PASÓ Y LAS COPIAS QUE ADJUNTA].\n\nYa le escribí a mi abogado el [FECHA] y pedí una reunión. [LO QUE PASÓ DESPUÉS, SI ACASO.]\n\nPor favor dígame por escrito si van a reasignar el caso y a quién.\n\nGracias.\n\n[SU NOMBRE]\n[DIRECCIÓN / NÚMERO DE CÁRCEL O PRISIÓN]\n[TELÉFONO / CORREO]\n\nEsto es solo una plantilla, no es asesoramiento jurídico. Guarde una copia. También puede llamar al GPDC al (800) 676-4432 si no encuentra la oficina."
+    },
+    {
+      "id": "motion_discharge",
+      "kind": "motion",
+      "motion_key": "discharge_appointed_counsel",
+      "title_en": "Motion to discharge appointed counsel and appoint substitute counsel",
+      "title_es": "Moción para relevar al abogado asignado y nombrar otro",
+      "body_en": "IN THE [SUPERIOR / STATE] COURT OF [COUNTY] COUNTY\nSTATE OF GEORGIA\n\nSTATE OF GEORGIA,\n        v.                                   Case No. [CASE NUMBER]\n[YOUR FULL NAME],\n        Defendant.\n\nMOTION TO DISCHARGE APPOINTED COUNSEL AND APPOINT SUBSTITUTE COUNSEL\n\nTEMPLATE – NOT LEGAL ADVICE. Review with a lawyer before filing. Fill in every [blank]. Check the current law and local court rules.\n\nCOMES NOW [YOUR FULL NAME], Defendant, [pro se], and respectfully moves this Court to discharge appointed counsel, [LAWYER'S NAME], and to appoint substitute counsel. In support, Defendant shows the following:\n\n1. Defendant is charged with [CHARGE(S)] and is represented by appointed counsel in this case.\n\n2. Defendant is not asking to choose a particular appointed lawyer. Defendant asks only that the Court appoint different qualified counsel for good cause.\n\n3. Facts showing good cause: [CONFLICT OF INTEREST, INCLUDING A CO-DEFENDANT REPRESENTED BY THE SAME LAWYER OR OFFICE / COMPLETE BREAKDOWN IN COMMUNICATION / OTHER SPECIFIC FACTS]. Dates and details: [LIST DATES, WHAT HAPPENED, WHAT YOU SENT, AND WHAT RESPONSE, IF ANY, YOU RECEIVED].\n\n4. Defendant already asked counsel in writing for a meeting on [DATE] and contacted the circuit public defender or supervisor on [DATE]. [WHAT HAPPENED NEXT.]\n\n5. If the circuit public defender office has a conflict of interest, O.C.G.A. § 17-12-22 provides for other counsel to be arranged. Defendant also relies on the right to conflict-free appointed counsel and asks the Court to find justifiable dissatisfaction, such as a conflict of interest or a complete breakdown in communication.\n\n6. Defendant understands that this request may be denied, that Defendant may have to keep the same lawyer or may have to represent Defendant's self, and that the case may be delayed. Defendant is not, by this motion alone, giving up the right to a lawyer.\n\nWHEREFORE, Defendant respectfully asks that this Court discharge appointed counsel, appoint substitute counsel, and grant any other relief that is just.\n\nRespectfully submitted this [DAY] day of [MONTH], [YEAR].\n\n______________________________\n[YOUR NAME]\n[Address / inmate number and facility]\n[Phone / email]\n\nCERTIFICATE OF SERVICE\nI certify that I served a copy of this filing on the District Attorney and on appointed counsel by [mail / e-filing / hand delivery] at [address] on [date].\n\n______________________________\n[YOUR NAME]\n\nYou can also open the motion maker in this app to fill in a draft of this motion (key: discharge_appointed_counsel).",
+      "body_es": "EN LA CORTE [SUPERIOR / ESTATAL] DEL CONDADO DE [CONDADO]\nESTADO DE GEORGIA\n\nESTADO DE GEORGIA,\n        c.                                   Caso No. [NÚMERO DE CASO]\n[SU NOMBRE COMPLETO],\n        Acusado/a.\n\nMOCIÓN PARA RELEVAR AL ABOGADO ASIGNADO Y NOMBRAR ABOGADO SUSTITUTO\n\nPLANTILLA – NO ES ASESORAMIENTO JURÍDICO. Revísela con un abogado antes de presentarla. Complete cada [espacio]. Verifique la ley vigente y las reglas locales de la corte.\n\nCOMPARECE AHORA [SU NOMBRE COMPLETO], Acusado/a, [por derecho propio], y respetuosamente pide a esta Corte que releve al abogado asignado, [NOMBRE DEL ABOGADO], y que nombre un abogado sustituto. En apoyo, el/la Acusado/a muestra lo siguiente:\n\n1. El/la Acusado/a está acusado/a de [CARGO(S)] y está representado/a por un abogado asignado en este caso.\n\n2. El/la Acusado/a no pide elegir a un abogado asignado en particular. Solo pide que la Corte nombre a otro abogado calificado por una causa justificada.\n\n3. Hechos que muestran una causa justificada: [CONFLICTO DE INTERÉS, INCLUYENDO UN COACUSADO REPRESENTADO POR EL MISMO ABOGADO U OFICINA / RUPTURA TOTAL DE LA COMUNICACIÓN / OTROS HECHOS ESPECÍFICOS]. Fechas y detalles: [LISTE FECHAS, LO QUE PASÓ, LO QUE ENVIÓ Y QUÉ RESPUESTA, SI ACASO, RECIBIÓ].\n\n4. El/la Acusado/a ya pidió por escrito una reunión a su abogado el [FECHA] y contactó al defensor público del circuito o al supervisor el [FECHA]. [LO QUE PASÓ DESPUÉS.]\n\n5. Si la oficina del defensor público del circuito tiene un conflicto de interés, el O.C.G.A. § 17-12-22 dispone que se organice otro abogado. El/la Acusado/a también se apoya en el derecho a un abogado asignado libre de conflictos y pide que la Corte encuentre una insatisfacción justificable, como un conflicto de interés o una ruptura total de la comunicación.\n\n6. El/la Acusado/a entiende que esta petición puede ser negada, que puede tener que quedarse con el mismo abogado o representarse a sí mismo/a, y que el caso se puede atrasar. Con esta moción, por sí sola, no renuncia al derecho a un abogado.\n\nPOR LO TANTO, el/la Acusado/a pide respetuosamente que esta Corte releve al abogado asignado, nombre un abogado sustituto y conceda cualquier otra medida que sea justa.\n\nPresentado respetuosamente este día [DÍA] de [MES] de [AÑO].\n\n______________________________\n[SU NOMBRE]\n[Dirección / número de interno y centro]\n[Teléfono / correo]\n\nCERTIFICADO DE NOTIFICACIÓN\nCertifico que entregué una copia de este escrito al Fiscal de Distrito y al abogado asignado por [correo / presentación electrónica / entrega en mano] en [dirección] el [fecha].\n\n______________________________\n[SU NOMBRE]\n\nTambién puede abrir el creador de mociones en esta aplicación para completar un borrador de esta moción (clave: discharge_appointed_counsel)."
+    },
+    {
+      "id": "complaint_checklist",
+      "kind": "checklist",
+      "title_en": "Complaint checklist",
+      "title_es": "Lista para una queja",
+      "body_en": "Use this before you contact a supervisor, GPDC, or the State Bar. Keep copies of everything.\n\n• Your full name, case number, county, and court.\n• Lawyer's full name and office.\n• A timeline of dates you called, wrote, or visited, and what happened.\n• What you asked the lawyer to do (meeting, review discovery, investigate a witness, file a motion).\n• What evidence or witnesses you provided, and when.\n• Any plea offer and whether it was explained.\n• Any conflict (for example a co-defendant represented by the same lawyer or office).\n• Upcoming court dates and any deadline you know about.\n• Copies of letters, emails, texts, and court papers (keep the originals).\n\nThen:\n• Send the letter to your lawyer (keep a copy).\n• If needed, send the supervisor letter and/or call GPDC at (800) 676-4432.\n• For trouble reaching the lawyer: State Bar Client Assistance Program, (404) 527-8759.\n• For a written ethics grievance: State Bar Office of the General Counsel. A grievance does not remove the lawyer from your case.\n• If you ask the judge for a new lawyer, use the motion template or the motion maker.\n\nThis checklist is legal information, not legal advice.",
+      "body_es": "Use esto antes de contactar a un supervisor, al GPDC o al Colegio de Abogados. Guarde copias de todo.\n\n• Su nombre completo, número de caso, condado y corte.\n• Nombre completo del abogado y la oficina.\n• Una línea de tiempo con las fechas en que llamó, escribió o visitó, y lo que pasó.\n• Lo que le pidió al abogado (reunión, revisar las pruebas, investigar a un testigo, presentar una moción).\n• Qué pruebas o testigos entregó, y cuándo.\n• Cualquier oferta de declaración y si se la explicaron.\n• Cualquier conflicto (por ejemplo, un coacusado representado por el mismo abogado o la misma oficina).\n• Próximas fechas de corte y cualquier plazo que conozca.\n• Copias de cartas, correos, mensajes y papeles de la corte (guarde los originales).\n\nLuego:\n• Envíe la carta a su abogado (guarde una copia).\n• Si hace falta, envíe la carta al supervisor y/o llame al GPDC al (800) 676-4432.\n• Si no logra comunicarse con el abogado: Programa de Asistencia al Cliente del Colegio de Abogados, (404) 527-8759.\n• Para una queja ética por escrito: Oficina del Asesor General del Colegio de Abogados. Una queja no saca al abogado de su caso.\n• Si le pide al juez un nuevo abogado, use la plantilla de moción o el creador de mociones.\n\nEsta lista es información legal, no asesoramiento jurídico."
+    }
+  ],
+  "links": [
+    {
+      "id": "gpdc",
+      "label_en": "Georgia Public Defender Council",
+      "label_es": "Georgia Public Defender Council",
+      "url": "https://www.gapubdef.org/"
+    },
+    {
+      "id": "find_pd",
+      "label_en": "Find Your Public Defender",
+      "label_es": "Encuentre su defensor público",
+      "url": "https://georgiacourts.gov/find-your-public-defender/"
+    },
+    {
+      "id": "bar_grievance",
+      "label_en": "State Bar of Georgia — file a grievance",
+      "label_es": "Colegio de Abogados de Georgia — presentar una queja",
+      "url": "https://www.gabar.org/general-counsel/file-a-grievance"
+    },
+    {
+      "id": "bar_cap",
+      "label_en": "State Bar Client Assistance Program",
+      "label_es": "Programa de Asistencia al Cliente del Colegio de Abogados",
+      "url": "https://www.gabar.org/programs/client-assistance-program"
+    },
+    {
+      "id": "find_lawyer",
+      "label_en": "State Bar — Find a Lawyer",
+      "label_es": "Colegio de Abogados — Find a Lawyer",
+      "url": "https://www.gabar.org/public/find-a-lawyer"
+    }
+  ]
+}
