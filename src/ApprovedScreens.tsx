@@ -20,6 +20,12 @@ import {
 } from "./approvedScreenCatalog";
 import FeedbackForm from "./FeedbackForm";
 import { markPromptSeen, promptDue, setScreen, trackFeature } from "./usage";
+import CourtroomPrepScreen from "./CourtroomPrepScreen";
+import PaperReaderScreen from "./PaperReaderScreen";
+import { getLang, getVoice, setLang, setVoice, t, type Lang, type VoiceId } from "./i18n";
+import { downloadPdf } from "./planPdf";
+import { isSupported, speak, stop } from "./readAloud";
+import type { PaperResult, ReadPaper, TranslatePaper } from "./paperApi";
 
 type Scenario = "traffic" | "public" | "home" | "questioning" | "arrest" | "witness";
 
@@ -42,6 +48,8 @@ type Props = {
     startFresh: (feature: string) => Promise<void>;
     forgetTurn: (turn: number) => Promise<void>;
   };
+  readPaper?: ReadPaper;
+  translatePaper?: TranslatePaper;
 };
 
 const AI_FEATURE = "ai_help";
@@ -138,6 +146,10 @@ export default function ApprovedScreens(props: Props) {
   const [chatNotice, setChatNotice] = useState("");
   const [carryLine, setCarryLine] = useState("");
   const [askFeedback, setAskFeedback] = useState(false);
+  const [lang, setLangState] = useState<Lang>(() => getLang());
+  const [voice, setVoiceState] = useState<VoiceId>(() => getVoice());
+  const [speaking, setSpeaking] = useState(false);
+  const [prepType, setPrepType] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
 
@@ -453,6 +465,20 @@ export default function ApprovedScreens(props: Props) {
                             Open My Case: draft these motions ›
                           </button>
                         )}
+                        {/^Your Defense Plan:/.test(line.text) && (
+                          <button type="button" className="ansMaker" onClick={() => { setPrepType(""); open("prep"); }}>
+                            {t("courtroomPrep", lang)}
+                          </button>
+                        )}
+                        <button type="button" className="ansMaker" onClick={() => downloadPdf(/^Your Defense Plan:/.test(line.text) ? (line.text.split("\n")[0] || "Your Defense Plan") : "STANDALONE ASSISTANT answer", line.text, t("notice", lang))}>
+                          {t("downloadPdf", lang)}
+                        </button>
+                        {isSupported() && voice !== "off" && (
+                          <button type="button" className="ansMaker" onClick={() => {
+                            if (speaking) { stop(); setSpeaking(false); return; }
+                            setSpeaking(speak(line.text, voice, lang));
+                          }}>{speaking ? t("stopReading", lang) : t("readAloud", lang)}</button>
+                        )}
                       </div>
                     )}
                     {line.role === "assistant" && index === chat.length - 1 && !chatBusy && !!line.followUps?.length && (
@@ -499,11 +525,54 @@ export default function ApprovedScreens(props: Props) {
               <p className="chatNotice">{SAFETY_NOTICE}</p>
             </>
           )}
+          {panel === "prep" && (
+            <CourtroomPrepScreen
+              caseType={prepType}
+              lang={lang}
+              speaking={speaking}
+              onSpeakChange={setSpeaking}
+              onDefense={(kind) => { void askChat(kind ? "Build my defense plan for a " + kind + " case" : "Build my defense plan"); open("ai"); }}
+            />
+          )}
+          {panel === "paper" && (
+            <PaperReaderScreen
+              lang={lang}
+              readPaper={props.readPaper}
+              translatePaper={props.translatePaper}
+              onDefense={(result) => {
+                const situation = [result.document_type, result.summary, (result.charges_or_claims || []).join("; ")].filter(Boolean).join(". ");
+                void askChat(situation ? "Build my defense plan for this: " + situation : "Build my defense plan");
+                open("ai");
+              }}
+              onPrep={(kind) => { setPrepType(kind || ""); open("prep"); }}
+            />
+          )}
           {panel === "settings" && (
             <>
-              <h2>Settings</h2>
+              <h2>{t("settings", lang)}</h2>
               <p>{props.signedIn ? "Signed in. Private cases remain login-only." : "Guest mode. Sign in only for My Cases and Case Analysis."}</p>
               <p>Dark mode is {dark ? "on" : "off"}.</p>
+              <div className="settingBlock">
+                <h3>{t("language", lang)}</h3>
+                <p className="muted">{t("languageHint", lang)}</p>
+                <div className="settingChoices">
+                  <button type="button" className={lang === "en" ? "on" : ""} onClick={() => { setLang("en"); setLangState("en"); }}>{t("english", lang)}</button>
+                  <button type="button" className={lang === "es" ? "on" : ""} onClick={() => { setLang("es"); setLangState("es"); }}>{t("spanish", lang)}</button>
+                </div>
+                <p className="ansFootnote">{t("notice", lang)}</p>
+              </div>
+              <div className="settingBlock">
+                <h3>{t("voice", lang)}</h3>
+                <p className="muted">{t("voiceHint", lang)}</p>
+                <div className="settingChoices">
+                  {([["off", "voiceOff", ""], ["butler", "butler", "butlerHint"], ["nanny", "nanny", "nannyHint"]] as const).map(([id, label, hint]) => (
+                    <button type="button" key={id} className={voice === id ? "on" : ""} onClick={() => { setVoice(id); setVoiceState(id); if (id === "off") { stop(); setSpeaking(false); } }}>
+                      <strong>{t(label, lang)}</strong>
+                      {hint && <small>{t(hint, lang)}</small>}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <button type="button" className="feedbackEntry settingsFeedback" onClick={() => open("feedback")}>
                 <strong>Send feedback</strong>
                 <small>Help us improve the app.</small>

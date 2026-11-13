@@ -11,8 +11,8 @@ class HomeDrawerCatalogTest {
     fun drawerIncludesCitizenHelpAndGuestRights() {
         assertEquals(
             listOf(
-                "Home", "My Case (start here)", "Case Workspace", "Talk to Me (AI)", "Georgia Laws",
-                "Funny & Weird Laws", "Motions & Legal Work", "Legal Forms", "Court Information",
+                "Home", "My Case (start here)", "Case Workspace", "Talk to Me (AI)", "Paper reader", "Georgia Laws",
+                "Funny & Weird Laws", "Motions & Legal Work", "Legal Forms", "Court Information", "Courtroom prep",
                 "Know Your Rights", "Citizen Help", "Resources", "Emergency Information",
                 "Payments & Subscription", "Settings", "Send feedback", "Profile", "Help & Support"
             ),

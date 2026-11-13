@@ -16,7 +16,7 @@ export const SECTION_VISIBLE = 4;
 const QUICK_SENTENCES = 3;
 
 const BULLET = /^\s*(?:[•●▪*-]|\d{1,2}[.)])\s+/;
-const QUICK_HEADINGS = /^(short answer|quick answer|what's happening|your situation|the issue|facts to confirm)$/i;
+const QUICK_HEADINGS = /^(short answer|quick answer|respuesta r[aá]pida|respuesta corta|what's happening|your situation|the issue|facts to confirm)$/i;
 const TOP_HEADINGS = new Set([
   "short answer", "quick answer", "how it works in georgia", "how it works", "steps you can take", "questions to ask your lawyer",
   "motions that could help", "deadlines and costs", "where to get help", "laws cited",
@@ -28,6 +28,11 @@ const TOP_HEADINGS = new Set([
   "how they'd build the case against you", "how to fight back", "your strongest defenses", "ways to challenge the evidence",
   "ways to challenge their case", "options to lessen the outcome", "ways to resolve it", "motions and filings that could help",
   "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out", "things you may not know to ask",
+  // Paper reader
+  "charge or claim", "important dates", "case number", "court", "what could help in this paper", "what you can do next",
+  "traducción al español", "explicación en palabras sencillas", "cargo o demanda", "fechas importantes",
+  "número de caso", "tribunal", "qué puede hacer ahora", "preguntas para su abogado",
+  "original en inglés (el que cuenta en la corte)", "lo que podría ayudar en este papel",
 ]);
 /** First line of an automatic Defense Plan answer. */
 export const PLAN_LINE = /^Your Defense Plan(?:\s*[:—–-]\s*(.+))?$/;

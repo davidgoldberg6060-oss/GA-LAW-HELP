@@ -354,7 +354,7 @@ def _document_defense_plan(result:dict,question:str,db)->dict|None:
     return out
 
 @app.post('/documents/read')
-def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form(''),case_id:str=_Form(''),remember:str=_Form('true'),defense_plan:str=_Form('true'),user=Depends(require_paid),db:Session=Depends(get_db)):
+def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form(''),case_id:str=_Form(''),remember:str=_Form('true'),defense_plan:str=_Form('true'),translate:str=_Form('false'),language:str=_Form('en'),user=Depends(require_paid),db:Session=Depends(get_db)):
     """Read photos/PDF pages of case papers with a vision model and explain them (Scan a paper).
     A readable paper also gets an automatic "Your Defense Plan" built from the facts on it (``defense_plan``),
     unless the client sends ``defense_plan=false``. A plan failure never fails the read."""
@@ -366,7 +366,8 @@ def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form('')
     for f in files[:_docreader.MAX_FILES+1]:
         data=f.file.read(_docreader.MAX_FILE_BYTES+1)
         pages.append((_docreader.sniff_type(data,f.content_type,f.filename),data))
-    try: result=_docreader.read_documents(pages,question)
+    want_es=str(translate).lower() in ('1','true','yes','es','spanish') or str(language).lower().startswith('es')
+    try: result=_docreader.read_documents(pages,question,translate_spanish=want_es)
     except _docreader.DocumentInputError as error: raise HTTPException(400 if 'too large' not in str(error) else 413,str(error))
     except RuntimeError: raise HTTPException(503,'The document reader is busy right now. Your photos weren’t lost — please tap Retry in a minute.')
     if case is not None and result.get('readable'):
@@ -545,6 +546,58 @@ def render_policy_html(md: str) -> str:
     if in_list: body.append('</ul>')
     style = 'body{font-family:system-ui,sans-serif;max-width:760px;margin:2rem auto;padding:0 1rem;line-height:1.5;color:#e8f0f8;background:#04121f}h1,h2,h3{color:#d4af37}'
     return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GA.LAW.HELP Privacy Policy</title><style>{style}</style></head><body>{"".join(body)}</body></html>'
+
+
+# ---------- Courtroom prep, paper translation, share-as-PDF helpers ----------
+from fastapi.responses import Response as _Response
+
+@app.get('/public/courtroom-prep')
+def public_courtroom_prep(case_type:str='', language:str='en', situation:str=''):
+    """General Georgia courtroom checklist, tailored by case type. No personal data is stored."""
+    from . import courtroom_prep as _prep
+    kind=(case_type or '').strip()
+    if kind and kind not in _prep.catalog()['types'] and kind not in ('general','any',''):
+        # Unknown keys still return the general checklist rather than failing the screen.
+        kind=''
+    pack=_prep.prep_for(kind or None, language=language, situation=situation or '')
+    pack['types']=_prep.case_types()
+    pack['text']=_prep.as_text(pack)
+    return pack
+
+@app.get('/public/voices')
+def public_voices():
+    """The two original Read aloud voices, plus Off. No trademarks or real-person voices."""
+    from . import read_aloud as _voice
+    return {"voices": _voice.catalog(), "notice": "These are original device voices (pitch and accent only), not a copy of any person or character."}
+
+@app.post('/documents/translate')
+def translate_document_reading(body:dict, user=Depends(require_paid)):
+    """Translate an already-read paper into Spanish (full text + plain-language breakdown)."""
+    from . import document_translate as _tr
+    from . import document_reader as _dr
+    if not (body.get('extracted_text') or body.get('summary') or body.get('answer')):
+        raise HTTPException(400, 'There is no paper text to translate yet. Photograph or upload the paper first.')
+    try:
+        translation=_tr.translate_result(body)
+    except RuntimeError:
+        raise HTTPException(503, 'The translator is busy right now. Please try again in a minute.')
+    return _dr.attach_spanish(dict(body), translation)
+
+@app.post('/public/plan-pdf')
+def public_plan_pdf(body:dict):
+    """Build a clean PDF of a defense plan or answer. The text is not stored."""
+    from . import plan_pdf as _pdf
+    title=str(body.get('title') or 'Your Defense Plan')[:200]
+    text_body=str(body.get('text') or body.get('answer') or '').strip()
+    if not text_body:
+        raise HTTPException(400, 'There is nothing to put in the PDF yet.')
+    if len(text_body)>80000:
+        raise HTTPException(400, 'That text is too long for one PDF.')
+    language=str(body.get('language') or 'en')
+    data=_pdf.build_pdf(title, text_body, language)
+    filename=(title.replace(' ', '_')[:40] or 'standalone-assistant') + '.pdf'
+    return _Response(content=data, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="{filename}"'})
+
 
 @app.get('/privacy', include_in_schema=False, response_class=HTMLResponse)
 def privacy_policy_page():

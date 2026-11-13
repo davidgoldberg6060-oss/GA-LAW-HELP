@@ -8,6 +8,8 @@ import ApprovedScreens from './ApprovedScreens';
 import FunnyGeorgia from './FunnyGeorgia';
 import './approvedScreens.css';
 import {initUsage,trackFeature} from './usage';
+import { readPaperAt, translatePaperAt } from './paperApi';
+import { getLang, languageInstruction } from './i18n';
 
 import {LawAccordion} from './LawAccordion';
 import MyCase,{detectStageLabel} from './MyCase';
@@ -185,7 +187,9 @@ async function chatApi<T=any>(path:string,options:RequestInit={}):Promise<T|null
  return null;
 }
 async function askAiHelp(text:string){
- const reply=await aiHelpAsk(api,text,await chatToken());
+ const lang=getLang();
+ const asked=lang==='es'?languageInstruction('es')+'\n\n'+text:text;
+ const reply=await aiHelpAsk(api,asked,await chatToken());
  // A stale device token is ignored by the server (plain guest answer); refresh it for the next turn.
  if(!reply.continuity&&!accessToken())sessionStorage.removeItem(CHAT_KEY);
  return reply;
@@ -534,7 +538,7 @@ export default function App(){
     <button disabled={researching}><Search size={15}/>{researching?<><LoaderCircle className="spin" size={17}/>Checking</>:'Free research'}</button></form>
    <small>Legal information and research assistance — not a substitute for advice from a licensed attorney.</small>
   </section>
-  <ApprovedScreens signedIn={!!user} onSignIn={()=>setAuthOpen(true)} onCases={openCaseWorkspace} onAnalysis={openCaseWorkspace} onLogout={logout} onRights={openRights} heroDraft={q} onAsk={(text)=>{if(text.trim())setQ(text);}} askGuest={askAiHelp} chatScreen={chatScreen} onOpenCase={(stage,situation)=>{setCaseStart({stage,situation});setTimeout(()=>document.getElementById('my-case')?.scrollIntoView({behavior:'smooth'}),50)}} />
+  <ApprovedScreens signedIn={!!user} onSignIn={()=>setAuthOpen(true)} onCases={openCaseWorkspace} onAnalysis={openCaseWorkspace} onLogout={logout} onRights={openRights} heroDraft={q} onAsk={(text)=>{if(text.trim())setQ(text);}} askGuest={askAiHelp} chatScreen={chatScreen} readPaper={async(files,opts)=>readPaperAt(API,await chatToken(),files,opts)} translatePaper={async(result)=>translatePaperAt(API,await chatToken(),result)} onOpenCase={(stage,situation)=>{setCaseStart({stage,situation});setTimeout(()=>document.getElementById('my-case')?.scrollIntoView({behavior:'smooth'}),50)}} />
   {(aiAnswer||research)&&<section className="results" id="research-results">
    {aiAnswer&&<><div className="resultHead"><MessageSquare/><div><span>Ask STANDALONE ASSISTANT</span><h2>AI legal information</h2></div></div><p className="question">“{aiAnswer.question}”</p><div className="aiAnswer" style={{whiteSpace:'pre-wrap'}}>{aiAnswer.answer}</div>{aiAnswer.case_stage&&detectStageLabel(aiAnswer.case_stage)&&<p><button type="button" className="mcRun" onClick={()=>{setCaseStart({stage:aiAnswer.case_stage!,situation:aiAnswer.question});setTimeout(()=>document.getElementById('my-case')?.scrollIntoView({behavior:'smooth'}),50)}}>Open My Case: {detectStageLabel(aiAnswer.case_stage)} ›</button></p>}<Glossary text={aiAnswer.answer} />{CUSTODY.test(aiAnswer.question + ' ' + aiAnswer.answer) && <HelpLovedOne />}<small>{aiAnswer.notice}</small></>}
    {research&&<><div className="resultHead" style={{marginTop:'1.5rem'}}><Search/><div><span>Verify and research</span><h2>{research.topic}</h2></div></div><p>{research.guidance}</p>{research.laws&&research.laws.length>0&&<><h3>Laws cited</h3><LawAccordion api={API} items={research.laws}/></>}<div className="sources">{research.resources.map(r=><a key={r.url} href={r.url} target="_blank" rel="noreferrer"><div><b>{r.title}</b><span>{r.official===false?r.kind+' · not a verified current citation':r.kind+' · Official source'}</span></div><ExternalLink size={18}/></a>)}</div><small>{research.notice}</small></>}

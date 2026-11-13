@@ -36,6 +36,9 @@ Read every page carefully, including small print, handwriting, stamps and dates.
 "summary": 2-4 plain-language sentences saying what this paper is and what it means,
 "key_dates": list of strings, each a date/time/deadline found on the paper and what it is for,
 "charges_or_claims": list of strings exactly as written on the paper (empty if none),
+"case_number": the case, citation, warrant or docket number exactly as written, or "",
+"court": the court name and county if listed, or "",
+"field_explanations": an object with optional keys "charge_or_claim", "dates", "case_number", "court" — each a one-line plain-English explanation of what that item means for the person (what it is, not legal advice),
 "next_steps": list of practical steps the person can take, most urgent first,
 "questions_for_lawyer": list of questions to ask their lawyer or public defender,
 "helpful_flags": list of short points in the paper that could help the person's defense or side, only if they are really on the paper: missing or wrong information (names, dates, case number, code section, court, officer or landlord details), an element of the charge or claim that the paper does not allege, a missing signature or notice, a defect in how or when it was served, inconsistent facts, or a date that may already be past (empty list if none),
@@ -244,6 +247,60 @@ def _as_list(value) -> list[str]:
     return []
 
 
+
+def _explanations(value) -> dict:
+    if not isinstance(value, dict):
+        return {}
+    out = {}
+    for key in ("charge_or_claim", "dates", "case_number", "court"):
+        item = str(value.get(key) or "").strip()
+        if item:
+            out[key] = item[:400]
+    return out
+
+
+def guess_case_fields(text: str) -> dict:
+    """Best-effort case number and court from text already read off the paper."""
+    found = {"case_number": "", "court": ""}
+    if not text:
+        return found
+    m = re.search(
+        r"(?im)\b(?:case|citation|warrant|docket|ticket|civil action|crim(?:inal)?(?: action)?)\s*(?:no\.?|number|#)\s*[:.]?\s*([A-Z0-9][A-Z0-9\- /]{2,40})",
+        text,
+    )
+    if m:
+        found["case_number"] = m.group(1).strip(" .;,/")
+    m = re.search(
+        r"(?i)\b((?:superior|state|magistrate|juvenile|probate|municipal|recorder'?s?|city|county|supreme|appeals)\s+court(?:\s+of\s+[A-Z][A-Za-z .'-]{2,40})?|[A-Z][A-Za-z .'-]{2,40}\s+(?:superior|state|magistrate|juvenile|probate|municipal)\s+court)",
+        text,
+    )
+    if m:
+        found["court"] = re.sub(r"\s+", " ", m.group(1)).strip(" .;,/")
+    return found
+
+
+def _explain(r: dict, key: str, fallback: str) -> str:
+    return ((r.get("field_explanations") or {}).get(key) or fallback).strip()
+
+
+def _quick(r: dict) -> str:
+    bits = []
+    if r.get("document_type"):
+        bits.append("This is a " + r["document_type"] + ((" from " + r["court"]) if r.get("court") else "") + ".")
+    elif r.get("summary"):
+        bits.append(r["summary"])
+    if r.get("charges_or_claims"):
+        bits.append("The charge or claim on the paper is " + r["charges_or_claims"][0] + ".")
+    dates = r.get("key_dates") or []
+    if dates:
+        bits.append("A date on the paper is " + dates[0] + ".")
+    if r.get("case_number") and "case number" not in " ".join(bits).lower():
+        bits.append("The case number is " + r["case_number"] + ".")
+    if not bits and r.get("summary"):
+        bits.append(r["summary"])
+    return " ".join(bits[:4]).strip()
+
+
 def parse_result(raw: str) -> dict:
     text = raw.strip()
     fenced = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.S)
@@ -264,36 +321,78 @@ def parse_result(raw: str) -> dict:
         "summary": str(data.get("summary") or "").strip()[:4000],
         "key_dates": _as_list(data.get("key_dates")),
         "charges_or_claims": _as_list(data.get("charges_or_claims")),
+        "case_number": str(data.get("case_number") or data.get("docket_number") or "").strip()[:120],
+        "court": str(data.get("court") or data.get("court_name") or "").strip()[:200],
+        "field_explanations": _explanations(data.get("field_explanations")),
         "next_steps": _as_list(data.get("next_steps")),
         "questions_for_lawyer": _as_list(data.get("questions_for_lawyer")),
         "helpful_flags": _as_list(data.get("helpful_flags")),
         "photo_tips": str(data.get("photo_tips") or "").strip()[:400],
     }
+    # If the model left case number or court out of the structured fields, try the extracted text.
+    if not out["case_number"] or not out["court"]:
+        guessed = guess_case_fields(out.get("extracted_text") or "")
+        out["case_number"] = out["case_number"] or guessed.get("case_number", "")
+        out["court"] = out["court"] or guessed.get("court", "")
     out["answer"] = format_answer(out)
     return out
 
 
 def format_answer(r: dict) -> str:
-    if not r["readable"] and not r["extracted_text"]:
-        return ("I couldn't read this paper clearly. " + (r["photo_tips"] or
+    """Plain-English paper reader: a short quick answer, then one-line explanations, then next steps."""
+    if not r.get("readable") and not r.get("extracted_text"):
+        return ("I couldn't read this paper clearly. " + (r.get("photo_tips") or
                 "Try again in good light, hold the phone flat over the page, and make sure all four corners are in the photo."))
-    lines = []
-    if r["document_type"]:
-        lines.append(r["document_type"])
-    if r["summary"]:
-        lines.append(r["summary"])
-    for title, key in (("Important dates", "key_dates"), ("Charges or claims on the paper", "charges_or_claims"),
-                       ("What could help in this paper", "helpful_flags"), ("What you can do next", "next_steps"),
+    lines = ["Quick answer", _quick(r) or (r.get("summary") or "I read this paper. Open the sections below for the charge, dates, case number and court.")]
+    charges = r.get("charges_or_claims") or []
+    if charges:
+        expl = _explain(r, "charge_or_claim", "This is the charge or claim written on the paper — what the other side says happened.")
+        rows = ["• " + charges[0] + " — " + expl]
+        rows.extend("• " + c for c in charges[1:])
+        lines.append("Charge or claim\n" + "\n".join(rows))
+    dates = r.get("key_dates") or []
+    if dates:
+        expl = _explain(r, "dates", "Check this date with the court clerk or your lawyer. Missing a court date can lead to a warrant or a default.")
+        rows = ["• " + dates[0] + ("" if " — " in dates[0] or " - " in dates[0] else " — " + expl)]
+        if " — " in dates[0] or " - " in dates[0]:
+            rows[0] = "• " + dates[0] + " — " + expl
+        rows.extend("• " + d for d in dates[1:])
+        lines.append("Important dates\n" + "\n".join(rows))
+    if r.get("case_number"):
+        expl = _explain(r, "case_number", "This is how the court files and looks up your case. Bring this number when you call the clerk.")
+        lines.append("Case number\n• " + r["case_number"] + " — " + expl)
+    if r.get("court"):
+        expl = _explain(r, "court", "This is the court named on the paper, and usually the courthouse you go to for your date.")
+        lines.append("Court\n• " + r["court"] + " — " + expl)
+    for title, key in (("What could help in this paper", "helpful_flags"), ("What you can do next", "next_steps"),
                        ("Questions to ask your lawyer", "questions_for_lawyer")):
         if r.get(key):
-            lines.append(title + ":\n" + "\n".join("• " + x for x in r[key]))
-    if r["photo_tips"]:
+            lines.append(title + "\n" + "\n".join("• " + x for x in r[key]))
+    if r.get("photo_tips"):
         lines.append("Photo tip: " + r["photo_tips"])
+    if r.get("answer_es"):
+        lines.append(r["answer_es"])
+    elif r.get("translation_notice"):
+        lines.append(r["translation_notice"])
     lines.append("This is legal information, not legal advice. Check every date with the court clerk or your lawyer.")
     return "\n\n".join(lines)
 
 
-def read_documents(files: list[tuple[str, bytes]], question: str = "") -> dict:
+def attach_spanish(result: dict, translation: dict) -> dict:
+    """Add a Spanish translation block to an already-read paper (original English still included)."""
+    from . import language as lang
+    result = dict(result)
+    result["translation"] = translation
+    result["answer_es"] = translation.get("answer_es") or ""
+    result["translation_notice"] = lang.TRANSLATION_NOTICE_ES
+    # Rebuild the English reader, then append the Spanish block (format_answer includes answer_es).
+    result["answer"] = format_answer({k: v for k, v in result.items() if k != "answer_es"})
+    if result.get("answer_es") and result["answer_es"] not in result["answer"]:
+        result["answer"] = result["answer"].rstrip() + "\n\n" + result["answer_es"]
+    return result
+
+
+def read_documents(files: list[tuple[str, bytes]], question: str = "", *, translate_spanish: bool = False) -> dict:
     validate(files)
     pdf_texts = []
     for mt, data in files:
@@ -306,4 +405,14 @@ def read_documents(files: list[tuple[str, bytes]], question: str = "") -> dict:
     result = parse_result(raw)
     result["model_used"] = model
     result["pages"] = len(files)
+    if translate_spanish and result.get("readable"):
+        try:
+            from . import document_translate as _tr
+            result = attach_spanish(result, _tr.translate_result(result))
+        except Exception:
+            # A failed translation must not hide the English reading.
+            from . import language as lang
+            result["translation_error"] = "The Spanish translation could not be completed right now. The English reading is below."
+            result["translation_notice"] = lang.TRANSLATION_NOTICE_ES
+            result["answer"] = format_answer(result)
     return result

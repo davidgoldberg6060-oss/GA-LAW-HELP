@@ -7,8 +7,8 @@ android {
         applicationId = "help.galaw.standalone"
         minSdk = 26
         targetSdk = 35
-        versionCode = 39
-        versionName = "1.7.4"
+        versionCode = 40
+        versionName = "1.7.5"
         val apiBaseUrl = providers.gradleProperty("GALAW_API_BASE_URL").orElse("https://api-production-60cc.up.railway.app").get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
@@ -83,5 +83,6 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.24")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }
 

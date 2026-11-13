@@ -1,0 +1,446 @@
+{
+  "disclaimer_en": "This is general information about going to a Georgia court, not legal advice and not a prediction of what will happen in your case. Court rules, security, and check-in can differ by courthouse. Confirm the time, courtroom, and what to bring with the clerk or your lawyer.",
+  "disclaimer_es": "Esto es información general sobre cómo presentarse en una corte de Georgia, no asesoramiento jurídico y no es una predicción de lo que pasará en su caso. Las reglas, la seguridad y el registro pueden variar según el tribunal. Confirme la hora, la sala y lo que debe llevar con el secretario o su abogado.",
+  "quick_en": "Arrive early, dress neatly, bring every paper you were given, address the judge as Your Honor, and do not discuss your case in the hallway.",
+  "quick_es": "Llegue temprano, vístase formal, lleve todos los papeles que le dieron, diríjase al juez como Your Honor y no hable de su caso en el pasillo.",
+  "sections": [
+    {
+      "id": "day_before",
+      "title_en": "The day before court",
+      "title_es": "El día antes de la corte"
+    },
+    {
+      "id": "day_of",
+      "title_en": "The day of court",
+      "title_es": "El día de la corte"
+    },
+    {
+      "id": "bring",
+      "title_en": "What to bring",
+      "title_es": "Qué llevar"
+    },
+    {
+      "id": "wear",
+      "title_en": "What to wear",
+      "title_es": "Qué ponerse"
+    },
+    {
+      "id": "arrive",
+      "title_en": "Arriving early",
+      "title_es": "Llegar temprano"
+    },
+    {
+      "id": "address_judge",
+      "title_en": "How to address the judge",
+      "title_es": "Cómo dirigirse al juez"
+    },
+    {
+      "id": "say",
+      "title_en": "What to say",
+      "title_es": "Qué decir"
+    },
+    {
+      "id": "dont_say",
+      "title_en": "What not to say",
+      "title_es": "Qué no decir"
+    }
+  ],
+  "general": {
+    "day_before": [
+      {
+        "en": "Confirm the date, time, courthouse address, and courtroom number on your papers. If anything is unclear, call the clerk.",
+        "es": "Confirme la fecha, la hora, la dirección del tribunal y el número de sala que aparecen en sus papeles. Si algo no está claro, llame al secretario."
+      },
+      {
+        "en": "Set out conservative clothes and a folder with every paper you were given, plus a photo ID.",
+        "es": "Prepare ropa formal y un folder con todos los papeles que le dieron, más una identificación con foto."
+      },
+      {
+        "en": "Arrange a ride, parking or transit, and childcare. Plan to arrive at least 30 to 45 minutes early.",
+        "es": "Organice transporte, estacionamiento o autobús, y el cuidado de niños. Planee llegar por lo menos 30 a 45 minutos antes."
+      },
+      {
+        "en": "Write short questions for your lawyer or public defender, and a list of what you brought.",
+        "es": "Escriba preguntas cortas para su abogado o defensor público, y una lista de lo que lleva."
+      },
+      {
+        "en": "Do not post about your case on social media, and do not contact the other party, alleged victim, or witnesses about the facts.",
+        "es": "No publique nada sobre su caso en las redes sociales, y no contacte a la otra parte, a la presunta víctima ni a los testigos sobre los hechos."
+      },
+      {
+        "en": "Get a good night's sleep. Charge your phone, but expect many Georgia courthouses to require phones off or left outside the courtroom.",
+        "es": "Duerma bien. Cargue su teléfono, pero sepa que en muchos tribunales de Georgia hay que apagarlo o dejarlo fuera de la sala."
+      }
+    ],
+    "day_of": [
+      {
+        "en": "Eat something and leave extra time for traffic, parking, and security screening.",
+        "es": "Coma algo y salga con tiempo de sobra para el tráfico, el estacionamiento y la revisión de seguridad."
+      },
+      {
+        "en": "Go through security. Do not bring weapons, tools, or anything the courthouse bans. If you are not sure, leave it at home or in the car.",
+        "es": "Pase por seguridad. No lleve armas, herramientas ni nada prohibido. Si no está seguro, déjelo en casa o en el auto."
+      },
+      {
+        "en": "Find your courtroom, then check in with the bailiff, clerk, or your lawyer if the court uses a check-in list.",
+        "es": "Encuentre su sala y regístrese con el alguacil, el secretario o su abogado si el tribunal usa una lista de registro."
+      },
+      {
+        "en": "Sit quietly in the gallery until your name is called. Stand when the judge enters or leaves, and when you speak to the judge.",
+        "es": "Siéntese en silencio en la galería hasta que digan su nombre. Póngase de pie cuando entre o salga el juez, y cuando le hable al juez."
+      },
+      {
+        "en": "Turn your phone all the way off in the courtroom unless the court clearly allows it.",
+        "es": "Apague el teléfono por completo en la sala, a menos que el tribunal lo permita claramente."
+      }
+    ],
+    "bring": [
+      {
+        "en": "A government photo ID and every paper the court, police, or the other side gave you (ticket, warrant, summons, complaint, order, or letter).",
+        "es": "Una identificación oficial con foto y todos los papeles que le dio el tribunal, la policía o la otra parte (multa, orden, citación, demanda o carta)."
+      },
+      {
+        "en": "A simple folder or envelope so papers stay together, and a pen and notepad for dates and instructions.",
+        "es": "Un folder o sobre para tener los papeles juntos, y un bolígrafo y una libreta para anotar fechas e instrucciones."
+      },
+      {
+        "en": "Proof that helps your side if you have it already: receipts, messages, photos, a lease, insurance, or payment records. Bring copies if you can.",
+        "es": "Pruebas que ayuden a su lado si ya las tiene: recibos, mensajes, fotos, un contrato de alquiler, seguro o pagos. Lleve copias si puede."
+      },
+      {
+        "en": "Your lawyer's or public defender's name and phone number, and any witness names the lawyer asked you to bring.",
+        "es": "El nombre y teléfono de su abogado o defensor público, y los nombres de testigos que el abogado le pidió llevar."
+      }
+    ],
+    "wear": [
+      {
+        "en": "Dress as if the judge is taking you seriously: slacks, a skirt or dress, a collared shirt or blouse, and closed shoes.",
+        "es": "Vístase como si el juez lo tomara en serio: pantalones, falda o vestido, camisa o blusa con cuello, y zapatos cerrados."
+      },
+      {
+        "en": "No shorts, hats, sunglasses, graphic or offensive shirts, tank tops, or very revealing clothes. Take off a hat in the courtroom.",
+        "es": "No use shorts, sombrero, lentes de sol, camisetas con gráficos ofensivos, camisetas sin mangas ni ropa muy reveladora. Quítese el sombrero en la sala."
+      },
+      {
+        "en": "Keep jewelry and logos simple. A clean, conservative look is safer than trying to impress.",
+        "es": "Mantenga simples las joyas y los logotipos. Un aspecto limpio y formal es más seguro que tratar de impresionar."
+      }
+    ],
+    "arrive": [
+      {
+        "en": "Plan to arrive at least 30 to 45 minutes early so you can park, go through security, find the room, and check in without rushing.",
+        "es": "Planee llegar por lo menos 30 a 45 minutos antes para estacionar, pasar seguridad, encontrar la sala y registrarse sin prisa."
+      },
+      {
+        "en": "If you might be late, call the clerk or your lawyer as soon as you know. Do not simply skip court. Missing court can lead to a warrant, a default, or, for some traffic cases, a license suspension.",
+        "es": "Si cree que va a llegar tarde, llame al secretario o a su abogado en cuanto lo sepa. No falte a la corte. Faltar puede llevar a una orden de arresto, un fallo en rebeldía o, en algunos casos de tráfico, la suspensión de la licencia."
+      },
+      {
+        "en": "Give yourself time to meet your lawyer in the hallway before the calendar is called.",
+        "es": "Déjese tiempo para reunirse con su abogado en el pasillo antes de que llamen el calendario."
+      }
+    ],
+    "address_judge": [
+      {
+        "en": "Call the judge \"Your Honor.\" Stand when you speak unless the judge tells you to sit.",
+        "es": "Diríjase al juez como \"Your Honor\" (Su Señoría). Póngase de pie cuando hable, a menos que el juez le diga que se siente."
+      },
+      {
+        "en": "Do not approach the bench, the clerk, or a witness unless the judge says you may.",
+        "es": "No se acerque al estrado, al secretario ni a un testigo a menos que el juez se lo permita."
+      },
+      {
+        "en": "Do not argue with the judge, the clerk, or the bailiff. If you do not understand something, say so calmly and ask the judge or your lawyer.",
+        "es": "No discuta con el juez, el secretario ni el alguacil. Si no entiende algo, dígalo con calma y pregunte al juez o a su abogado."
+      },
+      {
+        "en": "Speak one at a time. Do not interrupt the judge, the prosecutor, or the other side.",
+        "es": "Hable de uno a la vez. No interrumpa al juez, al fiscal ni a la otra parte."
+      }
+    ],
+    "say": [
+      {
+        "en": "If you have a lawyer, let the lawyer speak for you unless the judge asks you a direct question.",
+        "es": "Si tiene abogado, deje que el abogado hable por usted, a menos que el juez le haga una pregunta directa."
+      },
+      {
+        "en": "If you do not have a lawyer, you may tell the judge you want more time to get one, or that you want a public defender if the case qualifies. Ask, do not demand.",
+        "es": "Si no tiene abogado, puede decirle al juez que quiere más tiempo para conseguir uno, o que quiere un defensor público si el caso califica. Pídalo, no lo exija."
+      },
+      {
+        "en": "Answer only the question that was asked, in a short, clear, honest way. It is okay to say \"I do not know\" or \"I do not remember.\"",
+        "es": "Responda solo la pregunta que le hicieron, de forma corta, clara y honesta. Está bien decir \"No sé\" o \"No recuerdo.\""
+      },
+      {
+        "en": "If the judge asks whether you understand, say yes only if you really do. If you do not, say you do not understand and ask the judge to explain.",
+        "es": "Si el juez pregunta si entiende, diga que sí solo si de verdad entiende. Si no, diga que no entiende y pida una explicación."
+      }
+    ],
+    "dont_say": [
+      {
+        "en": "Do not discuss the facts of your case in the hallway, restroom, elevator, or on the phone at the courthouse. People around you may be witnesses, officers, or the other side.",
+        "es": "No hable de los hechos de su caso en el pasillo, el baño, el elevador ni por teléfono en el tribunal. Las personas a su alrededor pueden ser testigos, oficiales o la otra parte."
+      },
+      {
+        "en": "Do not volunteer extra stories, excuses, or apologies about the facts unless your lawyer has prepared you to speak.",
+        "es": "No ofrezca historias, excusas ni disculpas extra sobre los hechos a menos que su abogado lo haya preparado para hablar."
+      },
+      {
+        "en": "Do not admit guilt in casual conversation, and do not argue, swear, or talk over the judge.",
+        "es": "No admita culpabilidad en una conversación casual, y no discuta, no diga palabrotas ni hable por encima del juez."
+      },
+      {
+        "en": "Do not talk about your case on social media, and do not try to talk the other party or a witness out of coming to court.",
+        "es": "No hable de su caso en las redes sociales, y no intente convencer a la otra parte o a un testigo de que no vaya a la corte."
+      },
+      {
+        "en": "Never lie to the court, hide evidence, or ask anyone else to lie. That can create a new, more serious problem.",
+        "es": "Nunca mienta al tribunal, esconda pruebas ni le pida a nadie que mienta. Eso puede crear un problema nuevo y más grave."
+      }
+    ]
+  },
+  "types": {
+    "dui": {
+      "label_en": "DUI",
+      "label_es": "DUI",
+      "family": "criminal",
+      "quick_en": "For a Georgia DUI court date, bring the citation and any implied-consent or license papers, arrive early, and do not discuss the stop or the test in the hallway. There may be a separate, short driver's-license deadline on your papers — check it with the clerk or a lawyer.",
+      "quick_es": "Para una fecha de corte por DUI en Georgia, lleve la citación y cualquier papel de consentimiento implícito o de licencia, llegue temprano y no hable de la parada ni de la prueba en el pasillo. Puede haber un plazo aparte y corto sobre la licencia en sus papeles; confírmelo con el secretario o un abogado.",
+      "bring": [
+        {
+          "en": "The uniform traffic citation, any implied-consent or administrative license (ALS) papers, and any test or hearing notice you were given.",
+          "es": "La citación de tráfico, cualquier papel de consentimiento implícito o de licencia administrativa (ALS), y cualquier aviso de prueba o audiencia que le hayan dado."
+        },
+        {
+          "en": "Your driver's license if you still have it, insurance, and registration.",
+          "es": "Su licencia de conducir si todavía la tiene, el seguro y el registro."
+        }
+      ],
+      "day_before": [
+        {
+          "en": "Read every date on the ticket and any DDS or license paper. A license deadline can be separate from the court date and can be short.",
+          "es": "Lea cada fecha en la multa y en cualquier papel de DDS o de la licencia. Un plazo de la licencia puede ser aparte de la fecha de corte y puede ser corto."
+        }
+      ],
+      "dont_say": [
+        {
+          "en": "Do not discuss the traffic stop, field tests, or a blood or breath test in the hallway or with anyone but your lawyer.",
+          "es": "No hable de la parada de tráfico, de las pruebas de campo ni de una prueba de sangre o de aliento en el pasillo ni con nadie que no sea su abogado."
+        }
+      ]
+    },
+    "traffic": {
+      "label_en": "Traffic ticket",
+      "label_es": "Multa de tráfico",
+      "family": "criminal",
+      "quick_en": "For a Georgia traffic ticket, bring the citation, your license, insurance, and registration, and confirm whether you are in municipal, recorder's, or state court. Arrive early, be respectful, and ask the solicitor or your lawyer before you assume a plea, defensive driving, or points reduction is available.",
+      "quick_es": "Para una multa de tráfico en Georgia, lleve la citación, su licencia, el seguro y el registro, y confirme si está en un tribunal municipal, de recorder o estatal. Llegue temprano, sea respetuoso y pregunte al fiscal o a su abogado antes de asumir que hay un acuerdo, un curso de manejo o una reducción de puntos.",
+      "bring": [
+        {
+          "en": "The citation itself, your driver's license, proof of insurance, and vehicle registration.",
+          "es": "La citación, su licencia de conducir, el comprobante de seguro y el registro del vehículo."
+        }
+      ],
+      "day_before": [
+        {
+          "en": "Confirm the exact courthouse and courtroom. Some tickets are heard in municipal or recorder's court, others in state court.",
+          "es": "Confirme el tribunal y la sala exactos. Algunas multas se ven en un tribunal municipal o de recorder, otras en un tribunal estatal."
+        }
+      ],
+      "say": [
+        {
+          "en": "You may ask, calmly, whether options such as a defensive-driving course, reduced points, or a plea of nolo contendere are available in this court for this ticket. Do not assume they are.",
+          "es": "Puede preguntar, con calma, si en este tribunal hay opciones como un curso de manejo, menos puntos o una declaración de nolo contendere para esta multa. No asuma que las hay."
+        }
+      ]
+    },
+    "drugs": {
+      "label_en": "Drug possession",
+      "label_es": "Posesión de drogas",
+      "family": "criminal",
+      "quick_en": "For a Georgia drug-possession court date, bring every paper you were given, arrive early, and let a lawyer speak about the stop, the search, and the lab. Do not discuss where anything was found or who it belonged to in the hallway.",
+      "quick_es": "Para una fecha de corte por posesión de drogas en Georgia, lleve todos los papeles que le dieron, llegue temprano y deje que un abogado hable sobre la parada, el registro y el laboratorio. No discuta en el pasillo dónde se encontró algo ni a quién pertenecía.",
+      "dont_say": [
+        {
+          "en": "Do not talk about the search, whose bag or car it was, or what was found, except with your lawyer.",
+          "es": "No hable del registro, de quién era la bolsa o el auto, ni de lo que se encontró, excepto con su abogado."
+        }
+      ],
+      "say": [
+        {
+          "en": "Ask your lawyer about discovery, a motion to suppress if the stop or search may have been unlawful, and whether First Offender or conditional discharge could apply. Those are questions for counsel, not something to argue with the judge on your own.",
+          "es": "Pregunte a su abogado sobre la evidencia (discovery), una moción para suprimir pruebas si la parada o el registro pudieron ser ilegales, y si podría aplicar First Offender o la exoneración condicional. Eso se consulta con el abogado; no se discute solo con el juez."
+        }
+      ]
+    },
+    "theft": {
+      "label_en": "Theft or shoplifting",
+      "label_es": "Robo o hurto en tienda",
+      "family": "criminal",
+      "quick_en": "For a Georgia theft or shoplifting court date, bring the charging paper and any store or civil-demand letter, arrive early, and do not discuss what happened in the store except with your lawyer.",
+      "quick_es": "Para una fecha de corte por robo o hurto en tienda en Georgia, lleve el documento del cargo y cualquier carta de la tienda o de demanda civil, llegue temprano y no hable de lo que pasó en la tienda excepto con su abogado.",
+      "bring": [
+        {
+          "en": "The accusation, ticket, or warrant, and any civil-demand or store letter. A civil demand is not the same as the criminal case.",
+          "es": "La acusación, multa u orden, y cualquier carta civil o de la tienda. Una demanda civil no es lo mismo que el caso penal."
+        }
+      ]
+    },
+    "criminal": {
+      "label_en": "Criminal charge",
+      "label_es": "Cargo penal",
+      "family": "criminal",
+      "quick_en": "For a Georgia criminal court date, bring every charging and bond paper, arrive early to meet your lawyer, address the judge as Your Honor, and do not discuss the facts with anyone but your lawyer.",
+      "quick_es": "Para una fecha de corte penal en Georgia, lleve todos los papeles del cargo y de la fianza, llegue temprano para reunirse con su abogado, diríjase al juez como Your Honor y no hable de los hechos con nadie que no sea su abogado.",
+      "bring": [
+        {
+          "en": "The warrant, accusation or indictment, bond or release-conditions paper, and any notice of the hearing.",
+          "es": "La orden, acusación o acusación formal (indictment), el papel de fianza o de condiciones de libertad, y cualquier aviso de la audiencia."
+        }
+      ],
+      "say": [
+        {
+          "en": "You may clearly say you want a lawyer. You do not have to talk about the facts of the charge.",
+          "es": "Puede decir claramente que quiere un abogado. No tiene que hablar de los hechos del cargo."
+        }
+      ],
+      "dont_say": [
+        {
+          "en": "Do not talk to the alleged victim, witnesses, or the prosecutor about the facts without your lawyer.",
+          "es": "No hable con la presunta víctima, los testigos o el fiscal sobre los hechos sin su abogado."
+        }
+      ]
+    },
+    "probation": {
+      "label_en": "Probation violation",
+      "label_es": "Violación de libertad condicional",
+      "family": "criminal",
+      "quick_en": "For a Georgia probation-revocation hearing, bring proof of what you have done right (payments, treatment, work, community service) and every paper from your officer. You generally have a right to a hearing and to a lawyer. Do not argue with the officer in the hallway.",
+      "quick_es": "Para una audiencia de revocación de libertad condicional en Georgia, lleve pruebas de lo que ha cumplido (pagos, tratamiento, trabajo, servicio comunitario) y todos los papeles de su oficial. Por lo general tiene derecho a una audiencia y a un abogado. No discuta con el oficial en el pasillo.",
+      "bring": [
+        {
+          "en": "Proof of compliance if you have it: payment receipts, treatment or class attendance, community-service logs, a job letter, and messages from your probation officer.",
+          "es": "Pruebas de cumplimiento si las tiene: recibos de pago, asistencia a tratamiento o clases, registros de servicio comunitario, una carta de trabajo y mensajes de su oficial de libertad condicional."
+        },
+        {
+          "en": "The petition or warrant that lists the condition you are said to have violated.",
+          "es": "La petición o la orden que indica la condición que, según dicen, usted violó."
+        }
+      ]
+    },
+    "post_conviction": {
+      "label_en": "After a conviction",
+      "label_es": "Después de una condena",
+      "family": "criminal",
+      "quick_en": "If you are going to court after a conviction, bring your sentencing sheet, judgment, and any order, and confirm deadlines for a new-trial motion or appeal with a lawyer right away — some are very short.",
+      "quick_es": "Si va a la corte después de una condena, lleve la hoja de sentencia, el fallo y cualquier orden, y confirme de inmediato con un abogado los plazos para una moción de nuevo juicio o una apelación; algunos son muy cortos.",
+      "bring": [
+        {
+          "en": "The sentencing sheet, judgment, any motion or appeal paper already filed, and the notice of today's hearing.",
+          "es": "La hoja de sentencia, el fallo, cualquier moción o apelación ya presentada, y el aviso de la audiencia de hoy."
+        }
+      ],
+      "day_before": [
+        {
+          "en": "Ask a lawyer about the deadline for a motion for new trial or a notice of appeal. Do not guess; those windows can be short.",
+          "es": "Pregunte a un abogado sobre el plazo para una moción de nuevo juicio o un aviso de apelación. No adivine; esos plazos pueden ser cortos."
+        }
+      ]
+    },
+    "eviction": {
+      "label_en": "Eviction",
+      "label_es": "Desalojo",
+      "family": "civil",
+      "quick_en": "For a Georgia dispossessory (eviction) hearing, bring the summons, the lease, rent receipts, and any repair or message records. Arrive early, answer only what the judge asks, and confirm any answer deadline and appeal window with the clerk or a lawyer — they can be short.",
+      "quick_es": "Para una audiencia de desalojo (dispossessory) en Georgia, lleve la citación, el contrato de alquiler, los recibos de renta y cualquier registro de reparaciones o mensajes. Llegue temprano, responda solo lo que pregunte el juez y confirme con el secretario o un abogado el plazo para contestar y para apelar; pueden ser cortos.",
+      "bring": [
+        {
+          "en": "The dispossessory summons and affidavit, your lease, rent receipts or money-order stubs, photos of repairs, and messages or letters with the landlord.",
+          "es": "La citación y la declaración de desalojo, su contrato, recibos de renta o talones de giro, fotos de reparaciones y mensajes o cartas con el dueño."
+        }
+      ],
+      "day_before": [
+        {
+          "en": "Check the answer date on the summons. In many dispossessory cases the time to answer is short. Ask the clerk or a lawyer if you have not answered yet.",
+          "es": "Revise la fecha para contestar en la citación. En muchos casos de desalojo el plazo es corto. Pregunte al secretario o a un abogado si todavía no ha contestado."
+        }
+      ],
+      "say": [
+        {
+          "en": "You may calmly tell the judge if you offered or tendered rent, if repairs were needed, or if you were not properly served — but stick to facts you can show with papers or photos.",
+          "es": "Puede decirle al juez, con calma, si ofreció o consignó la renta, si hacían falta reparaciones o si no le entregaron los papeles correctamente; limítese a hechos que pueda mostrar con papeles o fotos."
+        }
+      ]
+    },
+    "custody": {
+      "label_en": "Custody or family case",
+      "label_es": "Custodia o caso familiar",
+      "family": "civil",
+      "quick_en": "For a Georgia custody or family hearing, bring the petition or order, a parenting-time calendar, and support payment records. Dress neatly, address the judge as Your Honor, and do not badmouth the other parent. Focus on the child's best interests.",
+      "quick_es": "Para una audiencia de custodia o de familia en Georgia, lleve la petición o la orden, un calendario de tiempo con los hijos y los registros de pensión. Vístase formal, diríjase al juez como Your Honor y no hable mal del otro padre. Enfóquese en el interés superior del niño.",
+      "bring": [
+        {
+          "en": "The petition, temporary order, or parenting plan, a calendar of parenting time, support payment records, and school or medical notes that are already in your possession.",
+          "es": "La petición, la orden temporal o el plan de crianza, un calendario del tiempo con los hijos, registros de pagos de pensión y notas escolares o médicas que ya tenga."
+        }
+      ],
+      "dont_say": [
+        {
+          "en": "Do not badmouth the other parent, coach a child on what to say, or argue about old personal grievances. The court looks at the child's best interests.",
+          "es": "No hable mal del otro padre, no le ensaye al niño lo que debe decir ni discuta agravios personales antiguos. El tribunal mira el interés superior del niño."
+        }
+      ],
+      "say": [
+        {
+          "en": "Speak about the child's schedule, safety, school, and your plan to co-parent, in short, factual answers.",
+          "es": "Hable del horario del niño, de su seguridad, de la escuela y de su plan para criar en conjunto, con respuestas cortas y basadas en hechos."
+        }
+      ]
+    },
+    "debt": {
+      "label_en": "Debt or collection lawsuit",
+      "label_es": "Deuda o demanda de cobro",
+      "family": "civil",
+      "quick_en": "For a Georgia debt or collection court date, bring the summons and complaint, account statements, and payment records. Confirm the deadline to answer so you do not default, arrive early, and do not admit the amount or the debt in casual conversation.",
+      "quick_es": "Para una fecha de corte por deuda o cobro en Georgia, lleve la citación y la demanda, los estados de cuenta y los registros de pago. Confirme el plazo para contestar y no quedar en rebeldía, llegue temprano y no admita el monto ni la deuda en una conversación casual.",
+      "bring": [
+        {
+          "en": "The summons and complaint, your account or billing statements, payment records, and any letter from the collector or original creditor.",
+          "es": "La citación y la demanda, sus estados de cuenta, registros de pago y cualquier carta del cobrador o del acreedor original."
+        }
+      ],
+      "day_before": [
+        {
+          "en": "Check the deadline to file an answer. Missing it can lead to a default judgment. If the deadline may have passed, ask a lawyer about a motion to open or set aside a default.",
+          "es": "Revise el plazo para presentar una contestación. Perderlo puede llevar a un fallo en rebeldía. Si el plazo ya pudo pasar, pregunte a un abogado sobre una moción para abrir o dejar sin efecto ese fallo."
+        }
+      ]
+    },
+    "employment": {
+      "label_en": "Job or wage dispute",
+      "label_es": "Disputa de trabajo o salarios",
+      "family": "civil",
+      "quick_en": "For a Georgia job or wage court date, bring the complaint or charge, pay stubs, schedules, and any termination or unemployment paper, and arrive early with your documents organized by date.",
+      "quick_es": "Para una fecha de corte por trabajo o salarios en Georgia, lleve la demanda o el cargo, los recibos de pago, los horarios y cualquier papel de despido o de desempleo, y llegue temprano con los documentos organizados por fecha.",
+      "bring": [
+        {
+          "en": "Pay stubs, time records, the offer or handbook if you have it, termination papers, and any agency charge or court complaint.",
+          "es": "Recibos de pago, registros de horas, la oferta o el manual si los tiene, papeles de despido y cualquier cargo ante una agencia o demanda judicial."
+        }
+      ]
+    },
+    "civil_suit": {
+      "label_en": "Lawsuit",
+      "label_es": "Demanda civil",
+      "family": "civil",
+      "quick_en": "For a Georgia civil court date, bring the summons, complaint, and your records, confirm that you have answered on time, and address the judge as Your Honor. Do not ignore papers and do not argue the whole case in the hallway.",
+      "quick_es": "Para una fecha de corte civil en Georgia, lleve la citación, la demanda y sus registros, confirme que contestó a tiempo y diríjase al juez como Your Honor. No ignore los papeles y no discuta todo el caso en el pasillo.",
+      "bring": [
+        {
+          "en": "The summons and complaint (or petition), your answer if you filed one, contracts, photos, and messages about the dispute.",
+          "es": "La citación y la demanda (o petición), su contestación si la presentó, contratos, fotos y mensajes sobre la disputa."
+        }
+      ]
+    }
+  }
+}

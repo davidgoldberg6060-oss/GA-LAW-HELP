@@ -11,6 +11,8 @@ export type ScreenId =
   | "court"
   | "forms"
   | "analysis"
+  | "prep"
+  | "paper"
   | "rights"
   | "resources"
   | "emergency"
@@ -29,6 +31,8 @@ export const homeTiles: ScreenItem[] = [
   { id: "court", label: "Court Info", hint: "Courts and procedure", requiresSignIn: false },
   { id: "forms", label: "Legal Forms", hint: "Criminal, civil, family", requiresSignIn: false },
   { id: "analysis", label: "Case Analysis", hint: "Upload stays private", requiresSignIn: true },
+  { id: "prep", label: "Courtroom prep", hint: "Day before and day of court", requiresSignIn: false },
+  { id: "paper", label: "Paper reader", hint: "Photograph a citation or order", requiresSignIn: false },
   { id: "rights", label: "Know Your Rights", hint: "Guest rights help", requiresSignIn: false },
   { id: "resources", label: "Resources", hint: "Help and support", requiresSignIn: false },
 ];

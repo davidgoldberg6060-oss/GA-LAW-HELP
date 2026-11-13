@@ -96,6 +96,8 @@ object GaScreens {
         var onClearChat: (() -> Unit)? = null
         /** Tap on a citation in an answer's "Laws cited" list. */
         var onLawTap: ((String) -> Unit)? = null
+        /** Tap a "Things you may not know to ask" question to send it as a follow-up. */
+        var onAsk: ((String) -> Unit)? = null
         private var last: LinearLayout? = null
         /** Smoothly scroll to the newest message without moving focus out of the input (no jump). */
         fun toEnd() { scroll.post { scroll.smoothScrollTo(0, (scroll.getChildAt(0)?.height ?: 0)) } }
@@ -104,7 +106,7 @@ object GaScreens {
         /** Append an extra card (e.g. the lawyer take) under the latest answer. */
         fun attach(v: View) { (last ?: messages).addView(v, ui.lp(8, 2)); toEnd() }
         /** Share / Copy row under the latest answer. */
-        fun actions(onShare: () -> Unit, onCopy: () -> Unit) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true)); toEnd() }
+        fun actions(onShare: () -> Unit, onCopy: () -> Unit, onPdf: (() -> Unit)? = null, onRead: (() -> Unit)? = null) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true, onPdf = onPdf, onRead = onRead)); toEnd() }
         /** Up to 3 small suggested follow-up question chips under the latest answer. */
         fun followUps(questions: List<String>, onTap: (String) -> Unit) {
             if (questions.isEmpty()) return
@@ -159,7 +161,7 @@ object GaScreens {
             }
             val structured = if (!mine && id != 0L) AnswerSections.structure(AnswerFormat.plain(text)) else null
             if (structured != null && structured.sections.isNotEmpty()) {
-                val card = answerCard(ui, structured, onLawTap).apply {
+                val card = answerCard(ui, structured, onLawTap, onAsk).apply {
                     background = ui.glowCard(Color.argb(235, 12, 40, 72), GaUi.STROKE, 12, glow = false)
                     isLongClickable = true; contentDescription = "STANDALONE ASSISTANT answer. Long-press for Copy, Share or Delete."
                     setOnLongClickListener { onMessageLongPress?.invoke(id); true }
@@ -192,7 +194,7 @@ object GaScreens {
      * An answer as a short "Quick answer" plus sections that open on tap ("Motions that could help (4)").
      * Opening/closing animates height + fade over ~200 ms; with system animations off it is instant.
      */
-    fun answerCard(ui: GaUi, a: AnswerSections.Structured, onLawTap: ((String) -> Unit)? = null): LinearLayout {
+    fun answerCard(ui: GaUi, a: AnswerSections.Structured, onLawTap: ((String) -> Unit)? = null, onAsk: ((String) -> Unit)? = null): LinearLayout {
         val dp = ui::dp
         val card = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(12), dp(12), dp(10)) }
         if (a.plan.isNotBlank()) card.addView(ui.text(a.plan.uppercase(), 12.5f, GaUi.BLUE_BRIGHT, ui.sansMedium).apply {
@@ -206,12 +208,12 @@ object GaScreens {
                 addView(ui.text(a.quick, 17f, GaUi.WHITE).apply { setLineSpacing(0f, 1.2f); setPadding(0, dp(4), 0, 0) })
             }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
         }
-        a.sections.forEach { s -> card.addView(answerSection(ui, s, onLawTap), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(7) }) }
+        a.sections.forEach { s -> card.addView(answerSection(ui, s, onLawTap, onAsk), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(7) }) }
         if (a.note.isNotBlank()) card.addView(ui.text(a.note, 11.5f, GaUi.MUTED).apply { setPadding(dp(2), dp(10), dp(2), 0) })
         return card
     }
 
-    private fun answerSection(ui: GaUi, s: AnswerSections.Section, onLawTap: ((String) -> Unit)?): View {
+    private fun answerSection(ui: GaUi, s: AnswerSections.Section, onLawTap: ((String) -> Unit)?, onAsk: ((String) -> Unit)? = null): View {
         val dp = ui::dp
         val box = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; background = ui.rounded(Color.argb(235, 2, 20, 35), 12, GaUi.STROKE_SOFT, 1f) }
         val count = s.items.size
@@ -231,8 +233,9 @@ object GaScreens {
         val body = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), 0, dp(14), dp(12)); visibility = View.GONE }
         fun item(it: AnswerSections.Item) = LinearLayout(ui.context).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(7), 0, dp(7))
-            val headText = ui.text("• " + it.head, 15f, if (s.kind == "laws") GaUi.BLUE_BRIGHT else GaUi.TEXT, if (s.kind == "motions" || s.kind == "help" || s.kind == "case" || s.kind == "fight") ui.sansMedium else null).apply { setLineSpacing(0f, 1.15f) }
+            val headText = ui.text("• " + it.head, 15f, if (s.kind == "laws" || s.kind == "ask") GaUi.BLUE_BRIGHT else GaUi.TEXT, if (s.kind == "motions" || s.kind == "help" || s.kind == "case" || s.kind == "fight" || s.kind == "ask") ui.sansMedium else null).apply { setLineSpacing(0f, 1.15f) }
             if (s.kind == "laws" && onLawTap != null) { headText.isClickable = true; headText.contentDescription = "Open " + it.head; val c = it.head; headText.setOnClickListener { v -> LawAccordion.toggle(v, c) } }
+            if (s.kind == "ask" && onAsk != null) { headText.isClickable = true; headText.contentDescription = "Ask: " + it.head; val q = it.head; headText.setOnClickListener { onAsk(q) } }
             addView(headText)
             it.detail?.let { d -> addView(ui.text(d, 14f, GaUi.MUTED).apply { setLineSpacing(0f, 1.15f); setPadding(dp(12), dp(2), 0, 0) }) }
             it.meta?.let { m -> addView(ui.text(m, 12.5f, GaUi.MUTED).apply { alpha = 0.85f; setPadding(dp(12), dp(3), 0, 0) }) }
@@ -290,10 +293,12 @@ object GaScreens {
         chatScreen(ui, nav, Tab.DOCUMENTS, "Case Chat", (if (caseTitle.isNotBlank()) "$caseTitle · " else "") + "Answers use your case file and verified Georgia authority only.", "Ask about this case...", onSend, chips)
 
     /** Share · Copy text actions (blue, small) used under answers and loophole results. */
-    fun shareRow(ui: GaUi, onShare: () -> Unit, onCopy: () -> Unit, indent: Boolean = false): View = LinearLayout(ui.context).apply {
+    fun shareRow(ui: GaUi, onShare: () -> Unit, onCopy: () -> Unit, indent: Boolean = false, onPdf: (() -> Unit)? = null, onRead: (() -> Unit)? = null): View = LinearLayout(ui.context).apply {
         orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(if (indent) ui.dp(48) else 0, ui.dp(6), 0, ui.dp(2))
         fun action(label: String, f: () -> Unit) = ui.text(label, 13.5f, Color.rgb(60, 190, 255), ui.sansMedium).apply { setPadding(0, ui.dp(4), ui.dp(18), ui.dp(4)); isClickable = true; contentDescription = label; setOnClickListener { f() } }
         addView(action("Share") { onShare() }); addView(action("Copy") { onCopy() })
+        if (onPdf != null) addView(action("Share as PDF") { onPdf() })
+        if (onRead != null) addView(action("Read aloud") { onRead() })
     }
 
     private fun chatScreen(ui: GaUi, nav: Nav, tab: Tab, title: String, subtitle: String, hintText: String, onSend: (String) -> Unit, chips: List<Pair<String, () -> Unit>>): Chat {
@@ -497,10 +502,11 @@ object GaScreens {
     }
 
     // ---------------- Settings ----------------
-    fun settings(ui: GaUi, nav: Nav, darkMode: Boolean, onRow: (Int) -> Unit): View {
+    fun settings(ui: GaUi, nav: Nav, darkMode: Boolean, voiceLabel: String, onRow: (Int) -> Unit): View {
         val (root, body) = page(ui, nav, Tab.MORE, "Settings", "Customize your app experience.")
         body.addView(ui.settingsList(listOf(
             Triple(R.drawable.ga_ic_language, "Language", null),
+            Triple(R.drawable.ga_ic_language, "Read aloud: $voiceLabel", null),
             Triple(R.drawable.ga_ic_dark_mode, "Dark Mode", ui.toggle(darkMode)),
             Triple(R.drawable.ga_ic_notifications, "Court date reminders", null),
             Triple(R.drawable.ga_ic_lock, "Privacy & Security", null),

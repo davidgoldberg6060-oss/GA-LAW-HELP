@@ -62,4 +62,16 @@ Laws cited
         assertEquals("You can ask for a bond hearing. A judge decides.", a.quick)
         assertTrue(a.sections.isEmpty())
     }
+
+    @Test fun hiddenIssueQuestionsBecomeTappableItemsWithAWhyLine() {
+        val a = AnswerSections.structure(
+            "Your Defense Plan: DUI\n\nQuick answer\nFight the stop.\n\nThings you may not know to ask\n" +
+                "• Do I have to appeal my license suspension within 30 days? Why it matters: The ALS appeal is separate from the criminal case.\n\n" +
+                "Questions to ask your lawyer\n• Can the stop be challenged?"
+        )
+        val s = a.sections.first { it.kind == "ask" }
+        assertEquals("Things you may not know to ask", s.title)
+        assertEquals("Do I have to appeal my license suspension within 30 days?", s.items[0].head)
+        assertEquals("Why it matters: The ALS appeal is separate from the criminal case.", s.items[0].detail)
+    }
 }
