@@ -41,7 +41,7 @@ def _drop_meta(line: str) -> str:
 
 
 _KNOWN_HEADINGS = {h.lower() for h in (
-    "Short answer", "How it works in Georgia", "Steps you can take", "Questions to ask your lawyer", "Deadlines and costs", "Where to get help",
+    "Short answer", "How it works in Georgia", "Steps you can take", "Questions to ask your lawyer", "Motions that could help", "Deadlines and costs", "Where to get help",
     "What's happening", "Stay safe right now", "Your rights", "What police can and can't do", "What to say or do",
     "Facts to confirm", "Legal issues", "The other side's arguments", "Your side's arguments", "Possible motions",
     "Next steps", "Your situation", "Rights that may apply", "What police can do", "What police can't do",

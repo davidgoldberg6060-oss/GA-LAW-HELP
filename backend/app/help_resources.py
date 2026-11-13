@@ -94,7 +94,8 @@ def route(question: str) -> list[dict]:
     from .civil_topics import PRISON, current_question
     q = current_question(question).lower()
     keys: list[str] = []
-    criminal = bool(re.search(CRIMINAL, q))
+    from .defense_help import is_broad_defense
+    criminal = bool(re.search(CRIMINAL, q)) or is_broad_defense(q)
     civil = bool(re.search(CIVIL, q))
     if re.search(DV, q):
         keys.append("dv_hotline")
@@ -187,7 +188,7 @@ LAWYER_QUESTIONS = (
     (r"custody|visitation|divorce|child support|alimony|parenting", ("What factors will matter most in my situation?", "What documents and records should I gather?", "What is the process and timeline in my county?", "What will it cost, and are there free or reduced-fee options?")),
     (r"debt|collector|garnish|lawsuit|sued|small claims", ("Is this claim valid, and what defenses might apply?", "What deadline is on the papers I received?", "What income or property might be protected?", "What are my options to settle or respond?")),
     (r"record restrict|expung|criminal record|first offender", ("Is my record eligible for restriction, and how do I request it?", "What records should I get first?", "How long does the process take, and what does it cost?")),
-    (r"arrest|charged?|warrant|bond|bail|probation|theft|shoplift|drug|assault|battery", ("What are the possible defenses and outcomes for this charge?", "What evidence matters, and how should it be preserved?", "What are the next court dates and deadlines?", "What would representation cost, or do I qualify for a public defender?")),
+    (r"arrest|charged?|warrant|bond|bail|probation|theft|shoplift|drug|assault|battery", ("What defenses could fit this charge, and what would the State have to prove?", "Could any stop, search, or statement be challenged with a motion?", "What evidence matters, and how should it be preserved?", "What are the next court dates and deadlines?", "What would representation cost, or do I qualify for a public defender?")),
     (r"injur|accident|wreck|negligen", ("Do I have a claim, and how long do I have to file?", "What evidence and records should I keep?", "How are fees usually handled for this kind of case?")),
 )
 _Q_HEAD = re.compile(r"(?im)^\s*questions to ask your lawyer\s*:?\s*$")
@@ -197,6 +198,9 @@ _STEPS_HEAD = re.compile(r"(?im)^\s*steps you can take\s*:?\s*$")
 def lawyer_questions(question: str) -> list[str]:
     from .civil_topics import current_question
     q = current_question(question).lower()
+    from .defense_help import is_broad_defense, BROAD_LAWYER_QUESTIONS
+    if is_broad_defense(q):
+        return list(BROAD_LAWYER_QUESTIONS)
     for pattern, items in LAWYER_QUESTIONS:
         if re.search(pattern, q):
             return list(items)
