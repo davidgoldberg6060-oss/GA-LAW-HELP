@@ -9,7 +9,8 @@ package help.galaw.standalone
 object AnswerSections {
     data class Item(val head: String, val detail: String? = null, val meta: String? = null)
     data class Section(val title: String, val kind: String, val items: MutableList<Item> = mutableListOf(), val notes: MutableList<String> = mutableListOf())
-    data class Structured(val quick: String, val sections: List<Section>, val note: String)
+    /** [plan]: "Your Defense Plan · DUI" when the answer is an automatic Defense Plan (its first line), else "". */
+    data class Structured(val quick: String, val sections: List<Section>, val note: String, val plan: String = "")
 
     const val VISIBLE = 4
     private const val QUICK_SENTENCES = 3
@@ -22,7 +23,12 @@ object AnswerSections {
         "what's happening", "stay safe right now", "your rights", "what police can and can't do", "what to say or do",
         "facts to confirm", "legal issues", "the other side's arguments", "your side's arguments", "possible motions",
         "next steps", "your situation", "rights that may apply", "what police can do", "what police can't do",
-        "your options", "the issue", "facts or evidence needed", "questions to check")
+        "your options", "the issue", "facts or evidence needed", "questions to check",
+        // "Your Defense Plan"
+        "how they'd build the case against you", "how to fight back", "your strongest defenses", "ways to challenge the evidence",
+        "ways to challenge their case", "options to lessen the outcome", "ways to resolve it", "motions and filings that could help",
+        "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out")
+    val PLAN_LINE = Regex("^Your Defense Plan(?:\\s*[:—–-]\\s*(.+))?$")
     private val RENAME = mapOf(
         "how it works in georgia" to "How it works", "challenging the evidence" to "Ways to fight the evidence",
         "rights and court procedure" to "Your rights in court", "information to gather for your lawyer" to "What to gather for your lawyer",
@@ -36,7 +42,8 @@ object AnswerSections {
     fun kindOf(title: String): String {
         val t = title.lowercase()
         return when {
-            "motion" in t -> "motions"; t.startsWith("questions") -> "questions"; t.startsWith("deadlines") -> "deadlines"
+            t.startsWith("how they") -> "case"; t.startsWith("how to fight back") -> "fight"
+            "motion" in t -> "motions"; t.startsWith("questions") -> "questions"; t.startsWith("deadlines") || t == "key deadlines" -> "deadlines"
             t == "laws cited" -> "laws"; t.startsWith("where to get help") -> "help"; else -> "info"
         }
     }
@@ -81,6 +88,17 @@ object AnswerSections {
             }
         }
         if (kind == "questions") return Item(t)
+        if (kind == "fight") {
+            // "Possession: The State cannot establish possession because … Challenge: … Motion: …"
+            Regex("^([^.!?]{3,70}):\\s+(.*)$").find(t)?.let { m ->
+                val rest = m.groupValues[2]
+                val challenge = Regex("\\bChallenge:\\s*(.*?)(?=\\s+Motion:|$)", RegexOption.IGNORE_CASE).find(rest)?.groupValues?.get(1)?.trim()?.trimEnd('.')
+                val motion = Regex("\\bMotion:\\s*(.*)$", RegexOption.IGNORE_CASE).find(rest)?.groupValues?.get(1)?.trim()?.trimEnd('.')
+                val argument = rest.split(Regex("\\s+Challenge:", RegexOption.IGNORE_CASE))[0].split(Regex("\\s+Motion:", RegexOption.IGNORE_CASE))[0].trim()
+                val meta = listOfNotNull(challenge?.takeIf { it.isNotBlank() }?.let { "Challenge: $it" }, motion?.takeIf { it.isNotBlank() }?.let { "Motion: $it" }).joinToString(" · ")
+                return Item(m.groupValues[1].trim(), argument.ifBlank { null }, meta.ifBlank { null })
+            }
+        }
         Regex("^([^.!?]{3,70}):\\s+(.*)$").find(t)?.let { return Item(it.groupValues[1].trim(), it.groupValues[2].trim().ifBlank { null }) }
         val s = sentences(t)
         return if (s.size > 1) Item(s[0], s.drop(1).joinToString(" ")) else Item(t)
@@ -98,6 +116,7 @@ object AnswerSections {
         var top = ""
         var cur: Section? = null
         var sawHeading = false
+        var plan = ""
         fun open(title: String) {
             val t = cleanTitle(title)
             cur = sections.firstOrNull { it.title.equals(t, true) } ?: Section(t, kindOf(t)).also { sections.add(it) }
@@ -106,6 +125,11 @@ object AnswerSections {
             val line = raw0.trim()
             if (line.isEmpty()) continue
             if (line.startsWith("Note:", true)) { note = line.substringAfter(":").trim(); continue }
+            val planMatch = if (!sawHeading && plan.isEmpty()) PLAN_LINE.matchEntire(line) else null
+            if (planMatch != null) {
+                val label = planMatch.groupValues[1].trim()
+                plan = if (label.isEmpty()) "Your Defense Plan" else "Your Defense Plan · $label"; continue
+            }
             val bullet = BULLET.containsMatchIn(line)
             if (!bullet && isTopHeading(line)) {
                 sawHeading = true; top = line.trimEnd(':').trim().lowercase(); cur = null
@@ -152,7 +176,7 @@ object AnswerSections {
             val at = kept.indexOfFirst { it.kind == "help" }
             if (at >= 0) kept.add(at, lawSec) else kept.add(lawSec)
         }
-        return Structured(quick, kept, note)
+        return Structured(quick, kept, note, plan)
     }
 
     /** "Motion to suppress evidence · Demand for speedy trial · …" under a closed Motions title. */

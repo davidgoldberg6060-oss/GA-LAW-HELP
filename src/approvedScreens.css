@@ -97,3 +97,13 @@ html[data-theme="light"] .approvedUser{background:#dcebf8;color:#102033}
 
 .funnyChips button.on,.funnyMode button.on{background:#e2b54e;color:#02111d}
 @media(max-width:480px){.approvedAssistant{padding:.55rem .55rem .4rem}.ansQuick{padding:.65rem .75rem}.ansQuickText{font-size:1.05rem}.ansSum{padding:.7rem .75rem}.ansItems{padding:0 .75rem .4rem}.ansSideNote{padding:0 .75rem .6rem}}
+
+/* Automatic Defense Plan */
+.ansPlan{margin:0 0 .5rem;font-size:.82rem;font-weight:700;letter-spacing:.02em;color:#7fd0ff;text-transform:uppercase}
+.ansActions{display:flex;flex-wrap:wrap;gap:.5rem;margin:.75rem 0 0}
+.ansBuild,.ansMaker{border-radius:999px;font-size:.85rem;padding:.45rem .9rem;cursor:pointer;min-height:40px}
+.ansBuild{background:#e2b54e;border:0;color:#102033;font-weight:700}
+.ansMaker{background:transparent;border:1px solid #e2b54e;color:#f3d48a}
+.ansSec-case .ansSecTitle,.ansSec-fight .ansSecTitle{color:#ffd9a0}
+html[data-theme="light"] .ansPlan{color:#0b5c8f}
+html[data-theme="light"] .ansMaker{color:#7a5a12}

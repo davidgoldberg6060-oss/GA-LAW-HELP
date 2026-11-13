@@ -195,6 +195,9 @@ object GaScreens {
     fun answerCard(ui: GaUi, a: AnswerSections.Structured, onLawTap: ((String) -> Unit)? = null): LinearLayout {
         val dp = ui::dp
         val card = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(12), dp(12), dp(10)) }
+        if (a.plan.isNotBlank()) card.addView(ui.text(a.plan.uppercase(), 12.5f, GaUi.BLUE_BRIGHT, ui.sansMedium).apply {
+            letterSpacing = 0.04f; setPadding(dp(2), 0, 0, dp(8)); contentDescription = a.plan
+        })
         if (a.quick.isNotBlank()) {
             card.addView(LinearLayout(ui.context).apply {
                 orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(10), dp(12), dp(12))
@@ -228,7 +231,7 @@ object GaScreens {
         val body = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), 0, dp(14), dp(12)); visibility = View.GONE }
         fun item(it: AnswerSections.Item) = LinearLayout(ui.context).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(7), 0, dp(7))
-            val headText = ui.text("• " + it.head, 15f, if (s.kind == "laws") GaUi.BLUE_BRIGHT else GaUi.TEXT, if (s.kind == "motions" || s.kind == "help") ui.sansMedium else null).apply { setLineSpacing(0f, 1.15f) }
+            val headText = ui.text("• " + it.head, 15f, if (s.kind == "laws") GaUi.BLUE_BRIGHT else GaUi.TEXT, if (s.kind == "motions" || s.kind == "help" || s.kind == "case" || s.kind == "fight") ui.sansMedium else null).apply { setLineSpacing(0f, 1.15f) }
             if (s.kind == "laws" && onLawTap != null) { headText.isClickable = true; headText.contentDescription = "Open " + it.head; val c = it.head; headText.setOnClickListener { v -> LawAccordion.toggle(v, c) } }
             addView(headText)
             it.detail?.let { d -> addView(ui.text(d, 14f, GaUi.MUTED).apply { setLineSpacing(0f, 1.15f); setPadding(dp(12), dp(2), 0, 0) }) }

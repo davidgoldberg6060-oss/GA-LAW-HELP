@@ -32,6 +32,8 @@ type Props = {
   /** Current text of the page's main question field (read-only; AI Help never writes to it). */
   heroDraft?: string;
   askGuest?: (question: string) => Promise<AiHelpReply>;
+  /** Opens My Case at a stage with the situation pre-filled (its motion maker drafts the motions). */
+  onOpenCase?: (stage: string, situation: string) => void;
   /** Server side of per-screen continuity (device token); every call may resolve to null for plain guests. */
   chatScreen?: {
     load: (feature: string) => Promise<Continuity | null>;
@@ -41,6 +43,7 @@ type Props = {
 };
 
 const AI_FEATURE = "ai_help";
+const BUILD_PREFIX = /^Build my defense plan for this:\s*/i;
 const AI_LABEL = "AI Help";
 const browserStore = () => (typeof window !== "undefined" ? window.localStorage : undefined);
 
@@ -92,6 +95,7 @@ function AnswerBody({ text, laws }: { text: string; laws?: LawRef[] }) {
   if (!a.sections.length) return <div className="chatAnswer"><p className="ansQuickText">{a.quick || text}</p></div>;
   return (
     <div className="chatAnswer">
+      {a.plan && <p className="ansPlan" role="heading" aria-level={3}>{a.plan}</p>}
       {a.quick && (
         <div className="ansQuick">
           <span className="ansQuickLabel">Quick answer</span>
@@ -122,6 +126,17 @@ export default function ApprovedScreens(props: Props) {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
 
+  /** The user's own situation for "Build my defense": their latest message that isn't the button itself. */
+  function lastSituation(rows: ChatLine[]): string {
+    const own = rows.filter((r) => r.role === "user").map((r) => r.text.replace(BUILD_PREFIX, "").trim()).filter((t) => t && !/^build my defen[cs]e/i.test(t));
+    return own[own.length - 1] || "";
+  }
+
+  function buildDefense() {
+    const situation = lastSituation(chat);
+    void askChat(situation ? "Build my defense plan for this: " + situation : "Build my defense plan");
+  }
+
   function sendGuestChat() {
     return askChat();
   }
@@ -144,7 +159,8 @@ export default function ApprovedScreens(props: Props) {
       const turn = reply.turnId;
       setChat((rows) => [
         ...rows.map((row) => (row.id === asked.id ? { ...row, turn } : row)),
-        { id: lineId(), role: "assistant", text: reply.answer || "No grounded answer was returned.", turn, laws: reply.laws, followUps: reply.followUps },
+        { id: lineId(), role: "assistant", text: reply.answer || "No grounded answer was returned.", turn, laws: reply.laws, followUps: reply.followUps,
+          caseStage: reply.caseStage, situation: textValue.replace(BUILD_PREFIX, "").slice(0, 2000) },
       ]);
       const carried = continuityLine(reply.continuity, AI_LABEL);
       if (carried) setCarryLine(carried);
@@ -382,6 +398,18 @@ export default function ApprovedScreens(props: Props) {
                 {chat.map((line, index) => (
                   <div key={line.id} className={line.role === "user" ? "chatMsg approvedUser" : "chatMsg approvedAssistant"}>
                     {line.role === "user" ? <p className="chatText">{line.text}</p> : <AnswerBody text={line.text} laws={line.laws} />}
+                    {line.role === "assistant" && index === chat.length - 1 && !chatBusy && chat.some((r) => r.role === "user") && (
+                      <div className="ansActions">
+                        <button type="button" className="ansBuild" onClick={buildDefense}>
+                          {/^Your Defense Plan:/.test(line.text) ? "Rebuild my defense plan" : "Build my defense"}
+                        </button>
+                        {line.caseStage && props.onOpenCase && (
+                          <button type="button" className="ansMaker" onClick={() => props.onOpenCase?.(line.caseStage!, line.situation || lastSituation(chat))}>
+                            Open My Case: draft these motions ›
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {line.role === "assistant" && index === chat.length - 1 && !chatBusy && !!line.followUps?.length && (
                       <div className="ansChips" aria-label="Suggested follow-ups">
                         {line.followUps.slice(0, 3).map((q) => (

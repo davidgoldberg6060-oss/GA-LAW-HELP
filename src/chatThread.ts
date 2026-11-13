@@ -8,6 +8,9 @@ export type ChatLine = {
   laws?: { citation: string; title?: string | null; id?: number | null }[];
   /** Suggested follow-ups (max 3) for an answer. */
   followUps?: string[];
+  /** Defense Plan answers: My Case stage for the motion maker, and the user's situation to pre-fill it. */
+  caseStage?: string;
+  situation?: string;
 };
 
 export const MAX_LINES = 40;
@@ -28,6 +31,8 @@ export function loadThread(store: Store | undefined, feature: string): ChatLine[
         turn: typeof r.turn === "number" ? r.turn : undefined,
         laws: Array.isArray(r.laws) ? r.laws.filter((l: { citation?: unknown }) => l && typeof l.citation === "string") : undefined,
         followUps: Array.isArray(r.followUps) ? r.followUps.filter((q: unknown) => typeof q === "string").slice(0, 3) : undefined,
+        caseStage: typeof r.caseStage === "string" ? r.caseStage : undefined,
+        situation: typeof r.situation === "string" ? r.situation.slice(0, 2000) : undefined,
       }))
       .slice(-MAX_LINES);
   } catch {

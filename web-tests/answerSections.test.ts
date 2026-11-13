@@ -85,3 +85,46 @@ test("helpers", () => {
   assert.equal(sentences("Under O.C.G.A. § 17-5-30, you can ask. Then wait.").length, 2);
   assert.equal(toItem("• Get a lawyer: call the public defender.", "info").head, "Get a lawyer");
 });
+
+const PLAN = `Your Defense Plan: DUI
+
+Quick answer
+Your strongest angle is the blood test. Ask for the license hearing right away.
+
+How they'd build the case against you
+• Likely charge: DUI (O.C.G.A. § 40-6-391).
+• Impairment: They'd point to the blood test. They'd still need a reliable lab result.
+• Weak spots: who drew the blood is unknown.
+
+How to fight back
+• Impairment: The State cannot establish impairment because the sample's handling is unproven. Challenge: chain of custody. Motion: Motion to suppress evidence.
+
+Key deadlines
+• Check your paperwork for the license deadline.
+
+Questions to ask your lawyer
+• Can the blood test be challenged?`;
+
+test("Defense Plan: title line becomes a badge, new sections are tap-to-open with their own kinds", () => {
+  const a = structureAnswer(PLAN);
+  assert.equal(a.plan, "Your Defense Plan · DUI");
+  assert.match(a.quick, /^Your strongest angle is the blood test\./);
+  const titles = a.sections.map((s) => s.title);
+  assert.deepEqual(titles.slice(0, 4), ["How they'd build the case against you", "How to fight back", "Key deadlines", "Questions to ask your lawyer"]);
+  const caseSec = a.sections[0];
+  assert.equal(caseSec.kind, "case");
+  assert.deepEqual(caseSec.items[1], { head: "Impairment", detail: "They'd point to the blood test. They'd still need a reliable lab result." });
+  const fight = a.sections[1];
+  assert.equal(fight.kind, "fight");
+  assert.deepEqual(fight.items[0], {
+    head: "Impairment",
+    detail: "The State cannot establish impairment because the sample's handling is unproven.",
+    meta: "Challenge: chain of custody · Motion: Motion to suppress evidence",
+  });
+  assert.equal(a.sections[2].kind, "deadlines");
+  assert.ok(a.laws.some((l) => l.citation === "O.C.G.A. § 40-6-391"));
+});
+
+test("A normal answer has no plan badge", () => {
+  assert.equal(structureAnswer(ANSWER).plan, undefined);
+});
