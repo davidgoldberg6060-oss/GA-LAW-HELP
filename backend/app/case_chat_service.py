@@ -80,9 +80,11 @@ def build_case_chat_request(*, user_message: str, history: list[CaseChatMessage]
     return assemble(lines)
 
 
-def analyze_case_conversation(*, user_message: str, history: list[CaseChatMessage] | None, case_summary: str | None, ask_ai, db=None) -> dict:
+def analyze_case_conversation(*, user_message: str, history: list[CaseChatMessage] | None, case_summary: str | None, ask_ai, db=None, conversation: list | None = None) -> dict:
+    """``conversation``: what the user asked on OTHER screens (conversation_memory), so Case Chat continues
+    from it too. This case's own recent turns still arrive in ``history``."""
     request = build_case_chat_request(user_message=user_message, history=history, case_summary=case_summary)
-    result = grounded_legal_response(request, "case_analysis", ask_ai, db=db)
+    result = grounded_legal_response(request, "case_analysis", ask_ai, db=db, **({"conversation": conversation} if conversation else {}))
     result["conversation"] = True
     result["user_message"] = (user_message or "").strip()
     result["lawyer_take"] = case_lawyer_take(result, user_message=user_message, ask_ai=ask_ai)

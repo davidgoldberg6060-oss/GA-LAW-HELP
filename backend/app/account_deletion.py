@@ -36,6 +36,9 @@ def delete_account(db: Session, user: models.User) -> dict:
         for cid in case_ids:
             delete_upload_sessions(uid, cid)
     db.query(models.CaseNote).filter(models.CaseNote.owner_id == uid).delete(synchronize_session=False)
+    # What the AI remembered across screens for this device/account.
+    from .conversation_memory import delete_for_account
+    delete_for_account(db, uid)
     db.query(models.UploadSession).filter(models.UploadSession.user_id == uid).delete(synchronize_session=False)
     if case_ids:
         db.query(models.Case).filter(models.Case.id.in_(case_ids)).delete(synchronize_session=False)

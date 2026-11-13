@@ -178,15 +178,19 @@ BROAD_DEFENSE = ("BROAD DEFENSE QUESTION: the user is asking in general what cou
                  "answer, say in 1-2 sentences that the strongest defense depends on the charge and the facts, and invite "
                  "them to share the charge and where the case stands so the answer can be more specific. Under How it "
                  "works in Georgia give an organized overview with these group labels, each on its own line ending with ':' "
-                 "and followed by 1-3 '- ' bullets: 'Challenging the evidence:' (illegal stop or search and a motion to "
-                 "suppress, statements to police, identification, witness credibility, chain of custody); 'Rights and court "
-                 "procedure:' (lawyer or public defender, discovery of the prosecution's evidence, speedy trial demand, time "
+                 "and followed by 1-3 '- ' bullets: 'Ways to fight the evidence:' (illegal stop or search and a motion to "
+                 "suppress, statements to police, identification, witness credibility, chain of custody); 'Your rights in court:' (lawyer or public defender, discovery of the prosecution's evidence, speedy trial demand, time "
                  "limits for prosecution); 'Defenses that may apply:' (justification, entrapment, mistake of fact, mental "
                  "capacity, alibi, each as 'may apply if ...' in one line; only mention self-defense as one example of "
                  "justification); 'Ways to lessen the outcome:' (First Offender, conditional discharge for a first drug "
-                 "possession, accountability courts, plea negotiations); 'Information to gather for your lawyer:' (witness "
+                 "possession, accountability courts, plea negotiations); 'What to gather for your lawyer:' (witness "
                  "names, texts, photos, video, receipts, records, a written timeline). Cite the listed laws where they fit. "
-                 "This answer may run up to about 450 words.")
+                 "This answer may run up to about 330 words; keep every bullet to one short line.")
+
+
+CHARGE_GROUPS = ("Under How it works in Georgia, group the bullets under 1-3 of these labels that fit, each label on "
+                 "its own line ending with ':' and followed by 2-4 short '- ' bullets: 'Ways to fight the evidence:', "
+                 "'Your rights in court:', 'Defenses that may apply:', 'Ways to lessen the outcome:'.")
 
 
 AFTER_CONVICTION = ("DEFENSE FOCUS (after a conviction, on probation, or about a record): emphasize the remedies that fit "
@@ -199,12 +203,12 @@ def prompt_block(question: str) -> str:
     if is_broad_defense(question):
         return DEFENSE_FOCUS + " " + BROAD_DEFENSE
     if is_criminal(question):
-        return DEFENSE_FOCUS if _allowed_stages(_q(question)) == _PRE else AFTER_CONVICTION
+        return DEFENSE_FOCUS + " " + CHARGE_GROUPS if _allowed_stages(_q(question)) == _PRE else AFTER_CONVICTION
     return ""
 
 
 def max_words(question: str) -> int:
-    return 560 if is_broad_defense(question) else (480 if is_criminal(question) else 420)
+    return 460 if is_broad_defense(question) else (400 if is_criminal(question) else 360)
 
 
 # ---------------------------------------------------------------- lawyer questions and follow-ups
@@ -239,8 +243,8 @@ _POST_STAGES = {"sentenced", "appeal", "prison", "probation", "record"}
 _POST = r"\b(convicted|found guilty|sentenced|verdict|after (the )?trial|appeal|habeas|new trial|in prison|serving (a |my |his |her )?(sentence|time)|parole)\b"
 _PROBATION = r"\bprobation|\bvop\b"
 _RECORD = r"expung|record restrict|clear (my|his|her) record|criminal record|pardon"
-MAX_MOTIONS = 5
-MAX_BROAD_MOTIONS = 6
+MAX_MOTIONS = 4
+MAX_BROAD_MOTIONS = 6  # broad questions keep the full set; the chat shows 4 and a "Show more" link
 
 
 @_lru_cache(maxsize=1)
@@ -333,7 +337,8 @@ def motions_section(motions: list[dict], has_case_stage: bool) -> str:
         cites = ", ".join(motions_cite_label(c) for c in m["citations"])
         head = f"{m['title']} ({cites})" if cites else m["title"]
         timing = f" Timing: {m['timing']}" if m.get("timing") else ""
-        lines.append(f"• {head}: {m['purpose']} {m['when_it_applies']} How it can help: {m['how_it_helps']}{timing}")
+        # One short line each; the full "when it applies" text stays in suggested_motions for My Case.
+        lines.append(f"• {head}: {m['purpose']} How it can help: {m['how_it_helps']}{timing}")
     if has_case_stage and any(m["draftable"] for m in motions):
         lines.append("• Tap \"Open My Case\" below to see motions for your case stage and draft a fill-in-the-blank version to review with a lawyer.")
     lines.append("• A lawyer should decide whether and when to file any motion; deadlines can be short.")

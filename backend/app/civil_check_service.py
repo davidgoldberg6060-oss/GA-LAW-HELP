@@ -45,9 +45,12 @@ HELP_RESOURCES = [
     {"title": "State Bar of Georgia — find a lawyer / referral", "url": "https://www.gabar.org/public/find-a-lawyer"},
 ]
 
+from .conversation_memory import CONTINUITY_RULES, context_block, focus_question
 
-def _candidate_prompt(situation: str, case_summary: str | None) -> str:
+
+def _candidate_prompt(situation: str, case_summary: str | None, conversation: str = "") -> str:
     extra = f"\nCASE FILE (user supplied):\n{case_summary[:3000]}\n" if case_summary else ""
+    extra += f"\n{conversation}\n" if conversation else ""
     return f"""You help a Georgia civil-law research tool find statutes. Do not give advice here.
 DISPUTE (user supplied, unverified):
 {situation}
@@ -56,8 +59,9 @@ List up to 10 Official Code of Georgia Annotated section numbers most relevant t
 Return ONLY JSON: {{"sections":["44-7-34","44-7-35"]}}"""
 
 
-def _analysis_prompt(situation: str, case_summary: str | None, context: str) -> str:
+def _analysis_prompt(situation: str, case_summary: str | None, context: str, conversation: str = "") -> str:
     extra = f"\nCASE FILE (user supplied, unverified):\n{case_summary[:3000]}\n" if case_summary else ""
+    extra += f"\n{conversation}\n{CONTINUITY_RULES}\n" if conversation else ""
     return f"""GA.LAW.HELP Civil Case Check (Georgia). A person describes a civil dispute. Identify the likely claims or defenses, the court, deadlines, evidence to gather, weak spots for each side, and the lowest-cost lawful ways to resolve it.
 DISPUTE (user supplied, unverified):
 {situation}
@@ -152,8 +156,12 @@ def _base(situation: str, emergency: bool) -> dict:
             "grounded_authority_count": 0}
 
 
-def analyze_civil_check(situation: str, ask_ai, db=None, *, case_summary: str | None = None, lookup=None) -> dict:
+def analyze_civil_check(situation: str, ask_ai, db=None, *, case_summary: str | None = None, lookup=None, conversation: list | None = None) -> dict:
+    """``conversation``: recent turns from other screens (conversation_memory) so a follow-up like
+    'what could I be charged with for that?' continues from the earlier situation."""
     situation = (situation or "").strip()
+    convo = context_block(conversation or [])
+    focus = focus_question(situation, conversation or [])
     if not situation:
         raise ValueError("Describe the dispute to check it.")
     if len(situation) > MAX_SITUATION_CHARS:
@@ -162,17 +170,17 @@ def analyze_civil_check(situation: str, ask_ai, db=None, *, case_summary: str | 
     if is_evasion_request(situation) or re.search(r"(?i)\b(hide|move|transfer)\s+(my\s+)?(money|assets|property)\b.{0,40}\b(judgment|ex|wife|husband|creditor|divorce)", situation):
         return {**result, "refused": True, "message": REFUSAL}
     lookup = lookup or (lambda sections: lookup_sections(db, sections))
-    raw = _parse_obj(ask_ai(_candidate_prompt(situation, case_summary)))
+    raw = _parse_obj(ask_ai(_candidate_prompt(situation, case_summary, convo)))
     proposed = raw.get("sections") if isinstance(raw.get("sections"), list) else []
     sections = [s for s in (normalize_section(x) for x in proposed[:MAX_CANDIDATES]) if s]
     from .slang import plain_terms
-    sections += [s for s in topic_sections(situation + " " + plain_terms(situation)) if s not in sections]
+    sections += [s for s in topic_sections(focus + " " + plain_terms(focus)) if s not in sections]
     verified = _verified_hits({"hits": lookup(sections + [s for s in BASE_SECTIONS if s not in sections])})
     topical = [h for h in verified if normalize_section(h.get("citation")) in sections]
     if not topical:
         return {**result, "message": NONE_FOUND, "authorities": [_cite_view(h) for h in verified],
                 "grounded_authority_count": len(verified)}
-    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(topical + [h for h in verified if h not in topical], excerpt_chars=CHECK_EXCERPT_CHARS))))
+    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(topical + [h for h in verified if h not in topical], excerpt_chars=CHECK_EXCERPT_CHARS), convo)))
     kept, dropped = validate_civil_check(data, verified)
     take = validate_lawyer_take(data.get("lawyer_take"), verified)
     if take and is_evasion(take["text"]):

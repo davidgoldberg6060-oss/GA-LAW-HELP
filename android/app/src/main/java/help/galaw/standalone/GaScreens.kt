@@ -97,37 +97,39 @@ object GaScreens {
         /** Tap on a citation in an answer's "Laws cited" list. */
         var onLawTap: ((String) -> Unit)? = null
         private var last: LinearLayout? = null
+        /** Smoothly scroll to the newest message without moving focus out of the input (no jump). */
+        fun toEnd() { scroll.post { scroll.smoothScrollTo(0, (scroll.getChildAt(0)?.height ?: 0)) } }
         fun bot(text: String, time: String, id: Long = 0L) = add(text, time, false, id)
         fun user(text: String, time: String, id: Long = 0L) = add(text, time, true, id)
         /** Append an extra card (e.g. the lawyer take) under the latest answer. */
-        fun attach(v: View) { (last ?: messages).addView(v, ui.lp(8, 2)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
+        fun attach(v: View) { (last ?: messages).addView(v, ui.lp(8, 2)); toEnd() }
         /** Share / Copy row under the latest answer. */
-        fun actions(onShare: () -> Unit, onCopy: () -> Unit) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
-        /** 2-3 suggested follow-up question chips under the latest answer. */
+        fun actions(onShare: () -> Unit, onCopy: () -> Unit) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true)); toEnd() }
+        /** Up to 3 small suggested follow-up question chips under the latest answer. */
         fun followUps(questions: List<String>, onTap: (String) -> Unit) {
             if (questions.isEmpty()) return
             val dp = ui::dp
             val col = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(48), dp(6), 0, 0) }
-            col.addView(ui.text("Suggested follow-ups", 11.5f, GaUi.MUTED, ui.sansMedium))
-            questions.forEach { q ->
-                col.addView(ui.text(q, 13.5f, GaUi.TEXT).apply {
-                    background = ui.rounded(Color.argb(220, 10, 26, 45), 18, GaUi.STROKE_SOFT, 1.2f); setPadding(dp(12), dp(8), dp(12), dp(8))
+            col.addView(ui.text("Suggested follow-ups", 11f, GaUi.MUTED, ui.sansMedium))
+            questions.take(3).forEach { q ->
+                col.addView(ui.text(q, 12.5f, GaUi.TEXT).apply {
+                    background = ui.rounded(Color.argb(160, 10, 26, 45), 16, GaUi.STROKE_SOFT, 1f); setPadding(dp(10), dp(5), dp(10), dp(5))
                     isClickable = true; contentDescription = "Ask: $q"; setOnClickListener { onTap(q) }
                 }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) })
             }
-            (last ?: messages).addView(col); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            (last ?: messages).addView(col); toEnd()
         }
         /** "Find legal help" link under the latest answer. */
         fun findHelp(onTap: () -> Unit) {
             (last ?: messages).addView(ui.text("⚖ Find legal help", 13.5f, GaUi.GOLD, ui.sansMedium).apply {
                 setPadding(ui.dp(48), ui.dp(8), 0, ui.dp(2)); isClickable = true; contentDescription = "Find legal help"; setOnClickListener { onTap() }
-            }); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            }); toEnd()
         }
         /** Retry button under a failed answer. */
         fun retry(onRetry: () -> Unit) {
             (last ?: messages).addView(ui.primaryButton("Retry") { onRetry() }.apply { contentDescription = "Retry question" },
                 LinearLayout.LayoutParams(ui.dp(140), -2).apply { leftMargin = ui.dp(48); topMargin = ui.dp(8) })
-            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            toEnd()
         }
         /** Rotating, fading progress line while waiting for an answer. Returns a stop function. */
         fun progress(steps: List<String> = LoadingLines.AI_HELP): () -> Unit {
@@ -136,7 +138,7 @@ object GaScreens {
                 setPadding(dp(48), dp(10), 0, dp(4)); tag = "progress"
                 contentDescription = "Loading. ${steps.first()}"
             }
-            messages.addView(view); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            messages.addView(view); toEnd()
             val stopRotate = LoadingLines.rotate(view, steps, contentPrefix = "Loading")
             return { stopRotate(); messages.removeView(view) }
         }
@@ -155,6 +157,21 @@ object GaScreens {
                 }
                 row.addView(avatar, LinearLayout.LayoutParams(dp(38), dp(38)).apply { rightMargin = dp(10) })
             }
+            val structured = if (!mine && id != 0L) AnswerSections.structure(AnswerFormat.plain(text)) else null
+            if (structured != null && structured.sections.isNotEmpty()) {
+                val card = answerCard(ui, structured, onLawTap).apply {
+                    background = ui.glowCard(Color.argb(235, 12, 40, 72), GaUi.STROKE, 12, glow = false)
+                    isLongClickable = true; contentDescription = "STANDALONE ASSISTANT answer. Long-press for Copy, Share or Delete."
+                    setOnLongClickListener { onMessageLongPress?.invoke(id); true }
+                }
+                row.addView(card, LinearLayout.LayoutParams(0, -2, 1f))
+                group.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+                group.addView(ui.text(time, 10.5f, GaUi.MUTED, null, Gravity.START).apply { setPadding(dp(48), dp(3), dp(4), 0); alpha = 0.8f })
+                messages.addView(group, LinearLayout.LayoutParams(-1, -2))
+                last = group
+                toEnd()
+                return
+            }
             val shown: CharSequence = if (mine) text else AnswerFormat.styled(text, GaUi.GOLD, onLawTap)
             val bubble = ui.text(shown, 15f, GaUi.TEXT).apply {
                 if (!mine && onLawTap != null) movementMethod = android.text.method.LinkMovementMethod.getInstance()
@@ -163,11 +180,100 @@ object GaScreens {
                 if (id != 0L) { isLongClickable = true; contentDescription = (if (mine) "Your message" else "STANDALONE ASSISTANT answer") + ". Long-press for Copy, Share or Delete."; setOnLongClickListener { onMessageLongPress?.invoke(id); true } }
             }
             row.addView(bubble, LinearLayout.LayoutParams(0, -2, 1f).apply { if (mine) leftMargin = dp(56) })
-            group.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
-            group.addView(ui.text(time, 11f, GaUi.MUTED, null, if (mine) Gravity.END else Gravity.START).apply { setPadding(if (mine) 0 else dp(48), dp(4), dp(4), 0) })
+            group.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (mine) 16 else 10) })
+            group.addView(ui.text(time, 10.5f, GaUi.MUTED, null, if (mine) Gravity.END else Gravity.START).apply { setPadding(if (mine) 0 else dp(48), dp(3), dp(4), 0); alpha = 0.8f })
             messages.addView(group, LinearLayout.LayoutParams(-1, -2))
             last = group
-            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            toEnd()
+        }
+    }
+
+    /**
+     * An answer as a short "Quick answer" plus sections that open on tap ("Motions that could help (4)").
+     * Opening/closing animates height + fade over ~200 ms; with system animations off it is instant.
+     */
+    fun answerCard(ui: GaUi, a: AnswerSections.Structured, onLawTap: ((String) -> Unit)? = null): LinearLayout {
+        val dp = ui::dp
+        val card = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(12), dp(12), dp(10)) }
+        if (a.quick.isNotBlank()) {
+            card.addView(LinearLayout(ui.context).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(10), dp(12), dp(12))
+                background = ui.rounded(Color.argb(255, 10, 42, 68), 10, GaUi.GOLD, 0f)
+                addView(ui.text("Quick answer", 12f, GaUi.GOLD, ui.sansMedium))
+                addView(ui.text(a.quick, 17f, GaUi.WHITE).apply { setLineSpacing(0f, 1.2f); setPadding(0, dp(4), 0, 0) })
+            }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
+        }
+        a.sections.forEach { s -> card.addView(answerSection(ui, s, onLawTap), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(7) }) }
+        if (a.note.isNotBlank()) card.addView(ui.text(a.note, 11.5f, GaUi.MUTED).apply { setPadding(dp(2), dp(10), dp(2), 0) })
+        return card
+    }
+
+    private fun answerSection(ui: GaUi, s: AnswerSections.Section, onLawTap: ((String) -> Unit)?): View {
+        val dp = ui::dp
+        val box = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; background = ui.rounded(Color.argb(235, 2, 20, 35), 12, GaUi.STROKE_SOFT, 1f) }
+        val count = s.items.size
+        val head = LinearLayout(ui.context).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); minimumHeight = dp(48); isClickable = true; isFocusable = true
+        }
+        val titleRow = LinearLayout(ui.context).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        titleRow.addView(ui.text(s.title + if (count > 0) "  ($count)" else "", 15.5f, GaUi.WHITE, ui.sansMedium), LinearLayout.LayoutParams(0, -2, 1f))
+        val chevron = ui.icon(R.drawable.ga_ic_chevron_right, GaUi.MUTED, 22)
+        titleRow.addView(chevron, LinearLayout.LayoutParams(dp(22), dp(22)))
+        head.addView(titleRow)
+        val peek = AnswerSections.teaser(s).takeIf { it.isNotBlank() }?.let { t ->
+            ui.text(t, 12.5f, GaUi.MUTED).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(0, dp(3), 0, 0) }
+        }
+        peek?.let { head.addView(it) }
+        box.addView(head)
+        val body = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), 0, dp(14), dp(12)); visibility = View.GONE }
+        fun item(it: AnswerSections.Item) = LinearLayout(ui.context).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(7), 0, dp(7))
+            val headText = ui.text("• " + it.head, 15f, if (s.kind == "laws") GaUi.BLUE_BRIGHT else GaUi.TEXT, if (s.kind == "motions" || s.kind == "help") ui.sansMedium else null).apply { setLineSpacing(0f, 1.15f) }
+            if (s.kind == "laws" && onLawTap != null) { headText.isClickable = true; headText.contentDescription = "Open " + it.head; val c = it.head; headText.setOnClickListener { v -> LawAccordion.toggle(v, c) } }
+            addView(headText)
+            it.detail?.let { d -> addView(ui.text(d, 14f, GaUi.MUTED).apply { setLineSpacing(0f, 1.15f); setPadding(dp(12), dp(2), 0, 0) }) }
+            it.meta?.let { m -> addView(ui.text(m, 12.5f, GaUi.MUTED).apply { alpha = 0.85f; setPadding(dp(12), dp(3), 0, 0) }) }
+        }
+        s.items.take(AnswerSections.VISIBLE).forEach { body.addView(item(it)) }
+        val extra = s.items.drop(AnswerSections.VISIBLE)
+        if (extra.isNotEmpty()) {
+            body.addView(ui.text("Show ${extra.size} more", 13.5f, Color.rgb(60, 190, 255), ui.sansMedium).apply {
+                setPadding(dp(14), dp(6), 0, dp(6)); isClickable = true
+                setOnClickListener { v -> val i = body.indexOfChild(v); body.removeView(v); extra.forEachIndexed { k, e -> body.addView(item(e), i + k) } }
+            })
+        }
+        s.notes.forEach { body.addView(ui.text(it, 12.5f, GaUi.MUTED).apply { setPadding(dp(2), dp(6), 0, 0) }) }
+        box.addView(body, LinearLayout.LayoutParams(-1, -2))
+        fun describe(open: Boolean) { head.contentDescription = s.title + ", " + count + " items, " + if (open) "expanded. Tap to collapse." else "collapsed. Tap to expand." }
+        describe(false)
+        head.setOnClickListener {
+            val opening = body.visibility != View.VISIBLE
+            describe(opening)
+            chevron.animate().rotation(if (opening) 90f else 0f).setDuration(200).start()
+            peek?.visibility = if (opening) View.GONE else View.VISIBLE
+            toggleAnimated(body, opening)
+        }
+        return box
+    }
+
+    /** Height + fade (~200 ms). ValueAnimator follows the system animation scale, so "Remove animations" makes it instant. */
+    fun toggleAnimated(v: View, open: Boolean, durationMs: Long = 200L) {
+        val width = (v.parent as? View)?.width?.takeIf { it > 0 } ?: v.resources.displayMetrics.widthPixels
+        v.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+        val full = v.measuredHeight
+        val from = if (open) 0 else v.height; val to = if (open) full else 0
+        if (open) { v.layoutParams.height = 0; v.alpha = 0f; v.visibility = View.VISIBLE }
+        android.animation.ValueAnimator.ofInt(from, to).apply {
+            duration = durationMs; interpolator = android.view.animation.DecelerateInterpolator()
+            addUpdateListener { a -> v.layoutParams.height = a.animatedValue as Int; v.alpha = if (open) a.animatedFraction else 1f - a.animatedFraction; v.requestLayout() }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    v.layoutParams.height = LinearLayout.LayoutParams.WRAP_CONTENT; v.alpha = 1f
+                    if (!open) v.visibility = View.GONE
+                    v.requestLayout()
+                }
+            })
+            start()
         }
     }
 
@@ -195,7 +301,7 @@ object GaScreens {
         body.addView(ui.title(title))
         body.addView(ui.subtitle(subtitle))
         lateinit var chat: Chat
-        body.addView(ui.text("Clear chat", 13.5f, Color.rgb(60, 190, 255), ui.sansMedium, Gravity.END).apply { setPadding(0, dp(2), 0, dp(4)); isClickable = true; contentDescription = "Clear chat"; setOnClickListener { chat.onClearChat?.invoke() } }, LinearLayout.LayoutParams(-1, -2))
+        body.addView(ui.text("Start fresh", 13f, Color.rgb(60, 190, 255), ui.sansMedium, Gravity.END).apply { setPadding(0, dp(2), 0, dp(2)); isClickable = true; contentDescription = "Start fresh: clear this chat"; setOnClickListener { chat.onClearChat?.invoke() } }, LinearLayout.LayoutParams(-1, -2))
         val messages = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL }
         body.addView(messages)
         val scroll = ScrollView(ui.context).apply { isFillViewport = true; addView(body) }

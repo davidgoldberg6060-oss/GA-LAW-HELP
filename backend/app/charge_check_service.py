@@ -70,6 +70,8 @@ _EMERGENCY = re.compile(
 )
 _SECTION = re.compile(r"^\s*(?:o\.?c\.?g\.?a\.?\s*)?(?:§+\s*)?(\d{1,2}[A-Za-z]?-\d{1,3}[A-Za-z]?-\d{1,4}(?:\.\d{1,3})?)\s*$", re.I)
 
+from .conversation_memory import CONTINUITY_RULES, context_block, focus_question
+
 
 _EVASION_REQUEST = re.compile(
     r"(?i)\b(how\s+(do|can|should|could)\s+i|should\s+i|can\s+i|help\s+me|i\s+(want|need|plan)\s+to|best\s+way\s+to|ways?\s+to)\s+"
@@ -143,8 +145,9 @@ def lookup_sections(db, sections: list[str]) -> list[dict]:
     return hits
 
 
-def _candidate_prompt(situation: str, case_summary: str | None) -> str:
+def _candidate_prompt(situation: str, case_summary: str | None, conversation: str = "") -> str:
     extra = f"\nCASE FILE (user supplied):\n{case_summary[:3000]}\n" if case_summary else ""
+    extra += f"\n{conversation}\n" if conversation else ""
     return f"""You help a Georgia criminal-law research tool find statutes. Do not give advice here.
 SITUATION (user supplied, unverified):
 {situation}
@@ -153,8 +156,9 @@ List up to 10 Official Code of Georgia Annotated section numbers that police or 
 Return ONLY JSON: {{"sections":["16-8-2","16-8-12"]}}"""
 
 
-def _analysis_prompt(situation: str, case_summary: str | None, context: str) -> str:
+def _analysis_prompt(situation: str, case_summary: str | None, context: str, conversation: str = "") -> str:
     extra = f"\nCASE FILE (user supplied, unverified):\n{case_summary[:3000]}\n" if case_summary else ""
+    extra += f"\n{conversation}\n{CONTINUITY_RULES}\n" if conversation else ""
     return f"""GA.LAW.HELP Charge Check (Georgia). A person describes a situation; estimate what they could be charged with and lawful ways to defend it and reach the lowest lawful outcome.
 SITUATION (user supplied, unverified):
 {situation}
@@ -249,8 +253,12 @@ def _base(situation: str, emergency: bool) -> dict:
             "authorities": [], "lawyer_take": None, "dropped_items": 0, "grounded_authority_count": 0}
 
 
-def analyze_charge_check(situation: str, ask_ai, db=None, *, case_summary: str | None = None, lookup=None) -> dict:
+def analyze_charge_check(situation: str, ask_ai, db=None, *, case_summary: str | None = None, lookup=None, conversation: list | None = None) -> dict:
+    """``conversation``: recent turns from other screens (conversation_memory) so a follow-up like
+    'what could I be charged with for that?' continues from the earlier situation."""
     situation = (situation or "").strip()
+    convo = context_block(conversation or [])
+    focus = focus_question(situation, conversation or [])
     if not situation:
         raise ValueError("Describe what happened to check possible charges.")
     if len(situation) > MAX_SITUATION_CHARS:
@@ -259,18 +267,18 @@ def analyze_charge_check(situation: str, ask_ai, db=None, *, case_summary: str |
     if is_evasion_request(situation):
         return {**result, "refused": True, "message": REFUSAL}
     lookup = lookup or (lambda sections: lookup_sections(db, sections))
-    raw = _parse_obj(ask_ai(_candidate_prompt(situation, case_summary)))
+    raw = _parse_obj(ask_ai(_candidate_prompt(situation, case_summary, convo)))
     proposed = raw.get("sections") if isinstance(raw.get("sections"), list) else []
     sections = [s for s in (normalize_section(x) for x in proposed[:MAX_CANDIDATES]) if s]
     from .civil_topics import topic_sections
     from .slang import plain_terms
-    sections += [s for s in topic_sections(situation + " " + plain_terms(situation)) if s not in sections]
+    sections += [s for s in topic_sections(focus + " " + plain_terms(focus)) if s not in sections]
     verified = _verified_hits({"hits": lookup(sections + list(OUTCOME_SECTIONS))})
     offense = [h for h in verified if normalize_section(h.get("citation")) in sections]
     if not offense:
         return {**result, "message": NONE_FOUND,
                 "authorities": [_cite_view(h) for h in verified], "grounded_authority_count": len(verified)}
-    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(offense + [h for h in verified if h not in offense], excerpt_chars=CHECK_EXCERPT_CHARS))))
+    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(offense + [h for h in verified if h not in offense], excerpt_chars=CHECK_EXCERPT_CHARS), convo)))
     kept, dropped = validate_charge_check(data, verified)
     take = validate_lawyer_take(data.get("lawyer_take"), verified)
     if take and is_evasion(take["text"]):

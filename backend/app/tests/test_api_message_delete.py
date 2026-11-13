@@ -100,8 +100,9 @@ def test_android_chats_offer_copy_share_delete_and_clear_with_confirmation():
     screens = (KOTLIN / "GaScreens.kt").read_text(encoding="utf-8")
     transcript = (KOTLIN / "ChatTranscript.kt").read_text(encoding="utf-8")
     assert 'arrayOf("Copy","Share","Delete")' in home
-    assert "Delete this message?" in home and "Clear this chat?" in home
+    # "Clear chat" is now the per-screen "Start fresh" (also clears what the AI remembers for that screen).
+    assert "Delete this message?" in home and "Start fresh?" in home
     assert home.count("wireChatDelete(c,") == 2  # Talk to Me and Case Chat
     assert "talk.transcript()" in home and "t.roleHistory(20)" in home  # AI context rebuilt after deletes
-    assert "setOnLongClickListener" in screens and '"Clear chat"' in screens
+    assert "setOnLongClickListener" in screens and '"Start fresh"' in screens
     assert "fun delete(id: Long)" in transcript and "fun clear()" in transcript

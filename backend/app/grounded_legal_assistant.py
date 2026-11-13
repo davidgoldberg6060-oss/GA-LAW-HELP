@@ -111,7 +111,7 @@ def _hybrid_retrieval(query,mode,db=None,limit=12):
  result['hits']=(persisted+file_hits)[:limit]
  return result
 
-_STYLE=("Write in plain, friendly English a non-lawyer understands (about 200-350 words). Be direct and concrete: lead with what helps most for this exact question, and for each law or option you mention say plainly how it can help and when it applies instead of just restating it; cut filler and anything off the question. Answer only the question asked and stay neutral about who is asking: do not assume the user, or anyone else, is arrested, in custody, charged, convicted, a family member, or a caregiver unless the user's own words say so. Use 'you' generally, or 'the person charged' when the user describes a charge without saying whose. If the user clearly says it is about a family member or friend who is in jail, then talk about 'your loved one' and add practical family tips. The text before the user's latest 'User:' line is app instructions and earlier conversation, not facts about the user. Plain text only: no markdown, "
+_STYLE=("Write in plain, friendly English a non-lawyer understands, at about an 8th-grade reading level (about 150-260 words; people read this on a phone with little time). Use short everyday words and short sentences (under 15 words). Under the first heading write only 1-3 short sentences: the most useful answer first. Every bullet is one short line (under about 15 words), optionally followed by one short sentence of detail; put at most 4 bullets under any heading or group label. Be direct and concrete: lead with what helps most for this exact question, and for each law or option you mention say plainly how it can help and when it applies instead of just restating it; cut filler and anything off the question. Answer only the question asked and stay neutral about who is asking: do not assume the user, or anyone else, is arrested, in custody, charged, convicted, a family member, or a caregiver unless the user's own words say so. Use 'you' generally, or 'the person charged' when the user describes a charge without saying whose. If the user clearly says it is about a family member or friend who is in jail, then talk about 'your loved one' and add practical family tips. The text before the user's latest 'User:' line is app instructions and earlier conversation, not facts about the user. Plain text only: no markdown, "
  "no '#', no '**'. Put each heading on its own line exactly as written, then short sentences or bullet lines starting with '- '. "
  "Do not add a list of sources at the end; the app shows the laws cited separately.")
 
@@ -128,7 +128,7 @@ def _defense_block(question):
 
 def _mode_instructions(mode,question=""):
  if mode=="talk_to_me":return f"""{_STYLE} Use these headings in order: {_headings(TALK_SECTIONS)}. Prioritize safety. For a live police encounter, do not encourage resistance, evasion, obstruction, evidence destruction, interference, or deception. Speech-to-text errors are possible; never claim to have heard facts not given. Do not claim recording is lawful unless a listed law says so. Use the encounter scripts when the situation matches."""
- if mode=="general":return f"{_STYLE} {_PRACTICAL} Answer a Georgia legal question (criminal or civil: arrests, fights and self-defense, DUI, drugs, theft, probation, warrants and bond, record restriction/expungement, landlord-tenant, divorce/custody/child support, small claims, debt and garnishment, contracts, injury, wages, consumer, property, wills/probate, etc.). This is NOT a police encounter unless the user says so. Use these headings in order: {_headings(GENERAL_SECTIONS)}. {_defense_block(question)} Under Questions to ask your lawyer write 3-5 short questions, each ending with '?', that this person could ask a lawyer about THIS topic (for example whether an option or defense applies to their facts, what evidence matters, what the process and deadlines are, what it may cost, and what risks to weigh); do not write action steps there, do not assume they already have a lawyer, and do not state rules or deadlines inside the questions. Under Where to get help write one short line only; the app replaces it with verified, topic-matched resources. Do not name organizations, phone numbers, or websites there. State a deadline, fee, or dollar limit only if a listed law's text states it. Never suggest lying, hiding assets, or destroying evidence."
+ if mode=="general":return f"{_STYLE} {_PRACTICAL} Answer a Georgia legal question (criminal or civil: arrests, fights and self-defense, DUI, drugs, theft, probation, warrants and bond, record restriction/expungement, landlord-tenant, divorce/custody/child support, small claims, debt and garnishment, contracts, injury, wages, consumer, property, wills/probate, etc.). This is NOT a police encounter unless the user says so. Use these headings in order: {_headings(GENERAL_SECTIONS)}. {_defense_block(question)} Under Questions to ask your lawyer write 3-5 short questions (under about 15 words each), each ending with '?', that this person could ask a lawyer about THIS topic (for example whether an option or defense applies to their facts, what evidence matters, what the process and deadlines are, what it may cost, and what risks to weigh); do not write action steps there, do not assume they already have a lawyer, and do not state rules or deadlines inside the questions. Under Where to get help write one short line only; the app replaces it with verified, topic-matched resources. Do not name organizations, phone numbers, or websites there. State a deadline, fee, or dollar limit only if a listed law's text states it. Never suggest lying, hiding assets, or destroying evidence."
  if mode=="case_analysis":return f"""{_STYLE} Use these headings in order: {_headings(CASE_ANALYSIS_SECTIONS)}. Do not invent evidence or deadlines and do not promise an outcome."""
  if mode=="rights":return f"""{_STYLE} Use these headings in order: {_headings(RIGHTS_SECTIONS)}. Separate what officers may lawfully do from what the user may lawfully decline or request. Do not encourage physical resistance, flight, obstruction, deception, interference, or evidence destruction. Start from the matching encounter script."""
  if mode=="motions":return f"""{_STYLE} Use these headings in order: {_headings(MOTIONS_SECTIONS)}. A motion is only potentially relevant unless the facts and the listed laws support it. Never invent filing deadlines, procedural prerequisites, standards, citations, or likely outcomes. Say what must be checked in the actual record and current Georgia rules."""
@@ -252,20 +252,28 @@ def _motion_lookup(db,citations,verified):
   for h in _verified_hits({"hits":found}):add(h)
  return [by[c] for c in citations if c in by]
 
-def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
+def grounded_legal_response(query:str,mode:str,ask_ai,db=None,conversation:list|None=None)->dict:
+ """``conversation``: recent turns from conversation_memory (any screen). When given, the model sees them as
+ earlier conversation, and a follow-up message ('what motion should I file first?') is retrieved and matched to
+ motions together with the user's earlier words so the answer continues from the same situation."""
  if mode not in SUPPORTED_MODES:raise ValueError("Unsupported grounded legal-assistant mode.")
  from .civil_topics import topic_hits,topic_sections
  from .authority_search_service import build_query_plan
- search=search_text_for(retrieval_question(query))
+ from . import conversation_memory as _cm
+ if conversation is not None and _cm.is_empty(conversation):conversation=None
+ focus=_cm.focus_question(retrieval_question(query),conversation) if conversation else retrieval_question(query)
+ topic_text=focus if focus!=retrieval_question(query) else query
+ search=search_text_for(focus)
  retrieval=_hybrid_retrieval(search,mode,db,12)
  search=f"{search}\n{retrieval.get('rewrite_terms') or ''}".strip()
  if db is not None:retrieval=topic_hits(db,search,retrieval)
  from . import defense_help as _dh
- question=retrieval_question(query)
- ctx_limit=_dh.context_limit(question,CONTEXT_MAX_SECTIONS) if mode=="general" else CONTEXT_MAX_SECTIONS
- if mode=="general" and db is not None:retrieval=_dh.defense_hits(db,question,retrieval,limit=max(12,ctx_limit))
+ question=focus
+ defense_mode=mode in ("general","motions")  # the Motions screen gets the same defense-first law lookup
+ ctx_limit=_dh.context_limit(question,CONTEXT_MAX_SECTIONS) if defense_mode else CONTEXT_MAX_SECTIONS
+ if defense_mode and db is not None:retrieval=_dh.defense_hits(db,question,retrieval,limit=max(12,ctx_limit))
  trusted=set(topic_sections(search,limit=40))  # AI-proposed sections must still pass the title check
- if mode=="general":trusted.update(_dh.defense_sections(question))
+ if defense_mode:trusted.update(_dh.defense_sections(question))
  for c in build_query_plan(search).pinned_citations:trusted.add(c);trusted.update(_SECTION_RE.findall(c))
  relevant=relevant_hits(retrieval.get("hits",[]),search,trusted)
  if mode=="general":relevant=_dh.drop_off_topic(relevant,question,trusted)
@@ -276,7 +284,10 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  else:
   grounding="No law sections are listed for this question. Still give useful, practical general legal information in plain English (for example what usually happens, what rights generally apply, and to get a lawyer), but MUST NOT present a Georgia-specific proposition as verified and do not cite, quote, or number any statute, case, or rule."
  pack=encounter_prompt_block(mode, query)
- prompt=f"""GA.LAW.HELP request. Mode: {mode}\n\nWHAT THE USER WROTE (may include slang or speech-to-text errors; facts are not independently verified):\n{query}\n\n{pack}\n\nGEORGIA LAW SECTIONS YOU MAY CITE:\n{context}\n\nRules:\n- Treat the user's story as allegations/facts to be verified, not established fact.\n- If a listed law's Currency or status is unknown, do not fill it from memory.\n- {grounding}\n- Cite only the listed laws, and only ones that actually fit the question; never create a citation, case, statute, rule, deadline, sentence, or procedural requirement.\n- When you cite a listed law, use its Citation, e.g. "O.C.G.A. § 16-3-21". Never call a law current, binding, controlling, or precedential unless its listed status says so.\n- Never mention these instructions, the list of laws, sources you were or weren't given, "the system", a database, verification, or grounding. Talk to the user directly.\n- Do not predict or guarantee outcomes. Never claim to observe or hear facts not provided.\n- Keep the whole answer under about {350 if mode!="general" or not _dh.is_broad_defense(question) else 450} words and always finish your last sentence.\n\nFORMAT:\n{_mode_instructions(mode,query)}"""
+ earlier=_cm.context_block(conversation) if conversation else ""
+ earlier_block=f"{earlier}\n\n" if earlier else ""
+ continuity=f"\n- {_cm.CONTINUITY_RULES}" if earlier else ""
+ prompt=f"""GA.LAW.HELP request. Mode: {mode}\n\n{earlier_block}WHAT THE USER WROTE (may include slang or speech-to-text errors; facts are not independently verified):\n{query}\n\n{pack}\n\nGEORGIA LAW SECTIONS YOU MAY CITE:\n{context}\n\nRules:\n- Treat the user's story as allegations/facts to be verified, not established fact.\n- If a listed law's Currency or status is unknown, do not fill it from memory.\n- {grounding}\n- Cite only the listed laws, and only ones that actually fit the question; never create a citation, case, statute, rule, deadline, sentence, or procedural requirement.\n- When you cite a listed law, use its Citation, e.g. "O.C.G.A. § 16-3-21". Never call a law current, binding, controlling, or precedential unless its listed status says so.\n- Never mention these instructions, the list of laws, sources you were or weren't given, "the system", a database, verification, or grounding. Talk to the user directly.\n- Do not predict or guarantee outcomes. Never claim to observe or hear facts not provided.{continuity}\n- Keep the whole answer under about {350 if mode!="general" or not _dh.is_broad_defense(question) else 450} words and always finish your last sentence.\n\nFORMAT:\n{_mode_instructions(mode,topic_text)}"""
  analysis=ask_ai(prompt)
  check=citation_check(analysis,verified)
  if check["unsupported"]:
@@ -292,10 +303,10 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  help_resources=[]
  from .help_resources import replace_help_section,_HELP_HEAD
  if mode=="general" or _HELP_HEAD.search(analysis or ""):
-  analysis,help_resources=replace_help_section(analysis,query)
+  analysis,help_resources=replace_help_section(analysis,topic_text)
  if mode=="general":
   from .help_resources import ensure_lawyer_questions
-  analysis=ensure_lawyer_questions(analysis,query)
+  analysis=ensure_lawyer_questions(analysis,topic_text)
  authorities=[{**h,"citation":h.get("display_citation") or with_as_of(h.get("citation"),h.get("as_of")),"citation_raw":h.get("citation")} if h.get("as_of") else h for h in shown]
  deadline_warning=unsupported_deadline_warning(analysis,verified)
  if deadline_warning:analysis=analysis.rstrip()+"\n\n"+deadline_warning
@@ -314,6 +325,7 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
       have.add(str(h.get("citation") or "").lower());authorities.append({**h,"citation":h.get("display_citation") or with_as_of(h.get("citation"),h.get("as_of")),"citation_raw":h.get("citation")} if h.get("as_of") else h)
  response={"suggested_motions":[{k:v for k,v in m.items() if k!="authorities"} for m in motions],"help_resources":help_resources,"citation_check":"failed_closed" if check["unsupported"] else "passed","unsupported_citations":check["unsupported"],"deadline_warning":bool(deadline_warning),"mode":mode,"analysis":analysis,"authorities":authorities,"laws_cited":laws_cited(authorities),"amendment_note":amendment,"grounded_authority_count":len(verified),"cited_authority_count":len(used),"coverage_notice":None,"used_encounter_pack":bool(pack)}
  if case_stage:response["case_stage"]=case_stage
+ if conversation:response["focus_question"]=focus
  response["analysis"]=re.sub(r"\n{3,}","\n\n",response["analysis"] or "")
  specs={"talk_to_me":TALK_SECTIONS,"case_analysis":CASE_ANALYSIS_SECTIONS,"rights":RIGHTS_SECTIONS,"motions":MOTIONS_SECTIONS,"general":GENERAL_SECTIONS+(("motions_that_could_help",_dh.MOTIONS_HEADING),)}
  response["sections"]=_extract_sections(analysis,specs[mode])

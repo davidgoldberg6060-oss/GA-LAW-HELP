@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { SECTION_VISIBLE, structureAnswer, teaser, type AnswerSection, type LawRef } from "./answerSections";
+import { continuityLine, lineId, loadThread, saveThread, type ChatLine } from "./chatThread";
+import type { AiHelpReply, Continuity } from "./guestPublic";
 import { aiHelpQuestionOnOpen } from "./aiHelpNav";
 import { CITIZEN_DISCLAIMER, CITIZEN_FEATURES } from "./citizenHelp";
 import {
@@ -28,10 +31,80 @@ type Props = {
   onAsk: (question: string) => void;
   /** Current text of the page's main question field (read-only; AI Help never writes to it). */
   heroDraft?: string;
-  askGuest?: (question: string) => Promise<{ answer: string; notice: string }>;
+  askGuest?: (question: string) => Promise<AiHelpReply>;
+  /** Server side of per-screen continuity (device token); every call may resolve to null for plain guests. */
+  chatScreen?: {
+    load: (feature: string) => Promise<Continuity | null>;
+    startFresh: (feature: string) => Promise<void>;
+    forgetTurn: (turn: number) => Promise<void>;
+  };
 };
 
-type ChatLine = { role: "user" | "assistant"; text: string };
+const AI_FEATURE = "ai_help";
+const AI_LABEL = "AI Help";
+const browserStore = () => (typeof window !== "undefined" ? window.localStorage : undefined);
+
+function SectionBlock({ section }: { section: AnswerSection }) {
+  const [open, setOpen] = useState(false);
+  const [all, setAll] = useState(false);
+  const shown = all ? section.items : section.items.slice(0, SECTION_VISIBLE);
+  const hidden = section.items.length - shown.length;
+  const peek = teaser(section);
+  const count = section.items.length;
+  const bodyId = "ans-" + useId();
+  return (
+    <div className={"ansSec ansSec-" + section.kind + (open ? " isOpen" : "")}>
+      <button type="button" className="ansSum" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((v) => !v)}>
+        <span className="ansSecTitle">
+          {section.title}
+          {count > 0 && <span className="ansCount" aria-label={count + " items"}> ({count})</span>}
+        </span>
+        <span className="ansChevron" aria-hidden="true" />
+        {peek && <span className="ansPeek" aria-hidden={open}>{peek}</span>}
+      </button>
+      {/* Height + fade (~200ms) via a 0fr→1fr grid row; instant when reduced motion is on. */}
+      <div id={bodyId} className="ansBody" role="region" aria-label={section.title} inert={!open}>
+        <div className="ansBodyInner">
+          {count > 0 && (
+            <ul className="ansItems">
+              {shown.map((item, i) => (
+                <li key={i}>
+                  <span className="ansHead">{item.head}</span>
+                  {item.detail && <span className="ansDetail">{item.detail}</span>}
+                  {item.meta && <span className="ansMeta">{item.meta}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {hidden > 0 && (
+            <button type="button" className="ansMore" onClick={() => setAll(true)}>Show {hidden} more</button>
+          )}
+          {section.notes.map((n, i) => <p key={i} className="ansSideNote">{n}</p>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** One answer: a short "Quick answer", then small sections that open on tap. */
+function AnswerBody({ text, laws }: { text: string; laws?: LawRef[] }) {
+  const a = structureAnswer(text, laws);
+  if (!a.sections.length) return <div className="chatAnswer"><p className="ansQuickText">{a.quick || text}</p></div>;
+  return (
+    <div className="chatAnswer">
+      {a.quick && (
+        <div className="ansQuick">
+          <span className="ansQuickLabel">Quick answer</span>
+          <p className="ansQuickText">{a.quick}</p>
+        </div>
+      )}
+      <div className="ansSections">
+        {a.sections.map((s) => <SectionBlock key={s.id} section={s} />)}
+      </div>
+      {a.note && <p className="ansFootnote">{a.note}</p>}
+    </div>
+  );
+}
 
 export default function ApprovedScreens(props: Props) {
   const [drawer, setDrawer] = useState(false);
@@ -41,33 +114,87 @@ export default function ApprovedScreens(props: Props) {
   const [dark, setDark] = useState(true);
   const [question, setQuestion] = useState("");
   const aiQuestionRef = useRef<HTMLTextAreaElement>(null);
-  const [chat, setChat] = useState<ChatLine[]>([]);
+  // AI Help keeps its own thread on this device and resumes it; other screens keep theirs.
+  const [chat, setChat] = useState<ChatLine[]>(() => loadThread(browserStore(), AI_FEATURE));
   const [chatBusy, setChatBusy] = useState(false);
   const [chatNotice, setChatNotice] = useState("");
+  const [carryLine, setCarryLine] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
 
-  async function sendGuestChat() {
-    const textValue = question.trim();
+  function sendGuestChat() {
+    return askChat();
+  }
+
+  async function askChat(asText?: string) {
+    const textValue = (asText ?? question).trim();
     if (!textValue || chatBusy) return;
-    setChat((rows) => [...rows, { role: "user", text: textValue }]);
-    setQuestion("");
+    const asked: ChatLine = { id: lineId(), role: "user", text: textValue };
+    setChat((rows) => [...rows, asked]);
+    if (asText === undefined) setQuestion("");
     setChatBusy(true);
     setChatNotice("");
     try {
       if (!props.askGuest) {
         props.onAsk(textValue);
-        setChat((rows) => [...rows, { role: "assistant", text: "Sent to guest research on /public/rights-assistant. This chat does not open a private case." }]);
+        setChat((rows) => [...rows, { id: lineId(), role: "assistant", text: "Sent to guest research on /public/rights-assistant. This chat does not open a private case." }]);
         return;
       }
       const reply = await props.askGuest(textValue);
-      setChat((rows) => [...rows, { role: "assistant", text: reply.answer || "No grounded guest answer was returned." }]);
+      const turn = reply.turnId;
+      setChat((rows) => [
+        ...rows.map((row) => (row.id === asked.id ? { ...row, turn } : row)),
+        { id: lineId(), role: "assistant", text: reply.answer || "No grounded answer was returned.", turn, laws: reply.laws, followUps: reply.followUps },
+      ]);
+      const carried = continuityLine(reply.continuity, AI_LABEL);
+      if (carried) setCarryLine(carried);
       setChatNotice(reply.notice || "");
     } catch (error) {
       setChatNotice(error instanceof Error ? error.message : "Guest research is unavailable.");
     } finally {
       setChatBusy(false);
+      aiQuestionRef.current?.focus();
     }
   }
+
+  function deleteLine(line: ChatLine) {
+    if (!window.confirm("Delete this message? It will be removed from this chat. This can't be undone.")) return;
+    // Deleting either half of a question-and-answer also stops the AI from building on it.
+    setChat((rows) => rows.filter((row) => row.id !== line.id && !(line.turn && row.turn === line.turn)));
+    if (line.turn) props.chatScreen?.forgetTurn(line.turn).catch(() => undefined);
+  }
+
+  function startFresh() {
+    if (!window.confirm("Start fresh? This screen's messages will be deleted and the AI won't build on them. This can't be undone.")) return;
+    setChat([]);
+    setCarryLine("");
+    setChatNotice("");
+    props.chatScreen?.startFresh(AI_FEATURE).catch(() => undefined);
+  }
+
+  useEffect(() => saveThread(browserStore(), AI_FEATURE, chat), [chat]);
+
+  // Signing out clears saved chats; show the (now empty) saved thread.
+  useEffect(() => {
+    if (!props.signedIn) setChat(loadThread(browserStore(), AI_FEATURE));
+  }, [props.signedIn]);
+
+  // Opening AI Help shows at most one quiet line about the last topic elsewhere in the app.
+  useEffect(() => {
+    if (panel !== "ai" || !props.chatScreen) return;
+    let live = true;
+    props.chatScreen.load(AI_FEATURE).then((c) => { if (live) setCarryLine(continuityLine(c, AI_LABEL)); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [panel, props.chatScreen]);
+
+  // Keep the newest message (or the typing indicator) in view, without jumping.
+  useLayoutEffect(() => {
+    if (panel !== "ai") return;
+    const end = chatEndRef.current;
+    if (!end || typeof end.scrollIntoView !== "function") return;
+    const reduce = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    end.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "end" });
+  }, [chat.length, chatBusy, panel]);
 
   function open(id: ScreenId) {
     if ((id === "cases" || id === "analysis") && !props.signedIn) {
@@ -241,43 +368,59 @@ export default function ApprovedScreens(props: Props) {
           )}
           {panel === "ai" && (
             <>
-              <h2>AI Help</h2>
-              <p>Guest chat uses /public/rights-assistant only. It does not read My Cases. {SAFETY_NOTICE}</p>
-              <div className="approvedChat" aria-live="polite">
-                {chat.length === 0 && <p>Ask a Georgia rights or procedure question. Answers are information, not legal advice.</p>}
+              <div className="chatHead">
+                <h2>AI Help</h2>
+                {chat.length > 0 && (
+                  <button type="button" className="chatFresh" onClick={startFresh}>Start fresh</button>
+                )}
+              </div>
+              {carryLine && <p className="chatCarry">{carryLine}</p>}
+              <div className="approvedChat" aria-live="polite" aria-busy={chatBusy}>
+                {chat.length === 0 && !chatBusy && (
+                  <p className="chatEmpty">Ask a Georgia legal question. Follow-ups build on what you asked before. Answers are information, not legal advice.</p>
+                )}
                 {chat.map((line, index) => (
-                  <p key={index} className={line.role === "user" ? "approvedUser" : "approvedAssistant"}>
-                    <strong>{line.role === "user" ? "You" : "Guest research"}</strong> {line.text}{" "}
-                    <button
-                      type="button"
-                      className="approvedChatDelete"
-                      aria-label="Delete this message"
-                      onClick={() => {
-                        if (window.confirm("Delete this message? It will be removed from this chat. This can't be undone.")) setChat((rows) => rows.filter((_, i) => i !== index));
-                      }}
-                    >
+                  <div key={line.id} className={line.role === "user" ? "chatMsg approvedUser" : "chatMsg approvedAssistant"}>
+                    {line.role === "user" ? <p className="chatText">{line.text}</p> : <AnswerBody text={line.text} laws={line.laws} />}
+                    {line.role === "assistant" && index === chat.length - 1 && !chatBusy && !!line.followUps?.length && (
+                      <div className="ansChips" aria-label="Suggested follow-ups">
+                        {line.followUps.slice(0, 3).map((q) => (
+                          <button key={q} type="button" className="ansChip" onClick={() => void askChat(q)}>{q}</button>
+                        ))}
+                      </div>
+                    )}
+                    <button type="button" className="approvedChatDelete" aria-label="Delete this message" title="Delete this message" onClick={() => deleteLine(line)}>
                       Delete
                     </button>
-                  </p>
+                  </div>
                 ))}
+                {chatBusy && (
+                  <div className="chatMsg approvedAssistant chatTyping" role="status" aria-label="Getting your answer">
+                    <span /><span /><span />
+                  </div>
+                )}
+                <div ref={chatEndRef} />
               </div>
-              {chat.length > 0 && (
-                <button
-                  type="button"
-                  className="approvedChatDelete"
-                  onClick={() => {
-                    if (window.confirm("Clear this chat? All messages will be deleted. This can't be undone.")) setChat([]);
+              <div className="chatComposer">
+                <label className="chatLabel" htmlFor="ai-help-question">Question</label>
+                <textarea
+                  ref={aiQuestionRef}
+                  id="ai-help-question"
+                  rows={2}
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                      event.preventDefault();
+                      void sendGuestChat();
+                    }
                   }}
-                >
-                  Clear chat
-                </button>
-              )}
-              <label>
-                Question
-                <textarea ref={aiQuestionRef} id="ai-help-question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Example: what should I say if I am stopped?" />
-              </label>
-              <button type="button" onClick={sendGuestChat} disabled={chatBusy}>{chatBusy ? "Asking…" : "Send guest question"}</button>
-              {chatNotice && <p>{chatNotice}</p>}
+                  placeholder={chat.length ? "Ask a follow-up…" : "Example: what should I say if I am stopped?"}
+                />
+                <button type="button" onClick={sendGuestChat} disabled={chatBusy || !question.trim()}>Send</button>
+              </div>
+              {chatNotice && <p className="chatNotice">{chatNotice}</p>}
+              <p className="chatNotice">{SAFETY_NOTICE}</p>
             </>
           )}
           {panel === "settings" && (

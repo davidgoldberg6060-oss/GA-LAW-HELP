@@ -7,7 +7,7 @@ package help.galaw.standalone
  * saved on-phone copy ([ChatStore]) is rewritten (or wiped) at the same moment.
  */
 class ChatTranscript(var onChange: ((ChatTranscript) -> Unit)? = null) {
-    data class Message(val id: Long, val mine: Boolean, val text: String, val time: String, val shareText: String = text, val inContext: Boolean = true)
+    data class Message(val id: Long, val mine: Boolean, val text: String, val time: String, val shareText: String = text, val inContext: Boolean = true, val turn: Long = 0L)
 
     private val items = mutableListOf<Message>()
     private var nextId = 1L
@@ -23,7 +23,7 @@ class ChatTranscript(var onChange: ((ChatTranscript) -> Unit)? = null) {
     fun clear() { items.clear(); onChange?.invoke(this) }
 
     fun toJson(): String = org.json.JSONArray().apply {
-        items.forEach { m -> put(org.json.JSONObject().put("id", m.id).put("mine", m.mine).put("text", m.text).put("time", m.time).put("share", m.shareText).put("ctx", m.inContext)) }
+        items.forEach { m -> put(org.json.JSONObject().put("id", m.id).put("mine", m.mine).put("text", m.text).put("time", m.time).put("share", m.shareText).put("ctx", m.inContext).put("turn", m.turn)) }
     }.toString()
 
     /** Restores a saved transcript (no [onChange] callback while loading). */
@@ -33,12 +33,23 @@ class ChatTranscript(var onChange: ((ChatTranscript) -> Unit)? = null) {
         for (i in 0 until arr.length()) {
             val o = arr.optJSONObject(i) ?: continue
             val text = o.optString("text"); if (text.isBlank()) continue
-            items.add(Message(o.optLong("id"), o.optBoolean("mine"), text, o.optString("time"), o.optString("share", text), o.optBoolean("ctx", true)))
+            items.add(Message(o.optLong("id"), o.optBoolean("mine"), text, o.optString("time"), o.optString("share", text), o.optBoolean("ctx", true), o.optLong("turn", 0L)))
         }
         nextId = (items.maxOfOrNull { it.id } ?: 0L) + 1
     }
 
     fun hasAnswer(): Boolean = items.any { !it.mine }
+
+    /** Links a question and its answer to the server's remembered exchange, so deleting either also
+     *  makes the AI forget it (the server keeps this screen's thread for continuity). */
+    fun tagTurn(ids: List<Long>, turn: Long) {
+        if (turn <= 0L) return
+        var changed = false
+        for (i in items.indices) if (items[i].id in ids) { items[i] = items[i].copy(turn = turn); changed = true }
+        if (changed) onChange?.invoke(this)
+    }
+
+    fun turnOf(id: Long): Long = items.firstOrNull { it.id == id }?.turn ?: 0L
 
     /** Case Chat history in the backend's {role, content} shape, most recent [max] turns. */
     fun roleHistory(max: Int = 20): List<Pair<String, String>> =
