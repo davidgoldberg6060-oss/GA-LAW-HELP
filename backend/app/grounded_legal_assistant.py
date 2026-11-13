@@ -287,6 +287,7 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None)->dict:
  shown=used or verified[:3]
  amendment=SHORT_AMENDMENT_NOTE if any(h.get("as_of") for h in shown) else None
  analysis=clean_answer(analysis,add_note=bool(amendment),max_words=_dh.max_words(question) if mode=="general" else 420)
+ if mode=="general":analysis=_dh.drop_empty_group_labels(analysis)
  analysis=ensure_sick_call(analysis,retrieval_question(query))
  help_resources=[]
  from .help_resources import replace_help_section,_HELP_HEAD

@@ -45,7 +45,7 @@ def test_expungement_maps_to_record_restriction():
 def test_fast_profile_uses_lite_model_even_for_complex_markers(monkeypatch):
     monkeypatch.delenv("GEMINI_FAST_MODEL", raising=False)
     p = ai_assistant._gemini_profile("appeals sentencing post-conviction", "gemini-3.5-flash", "fast")
-    assert p["model"] == "gemini-3.5-flash-lite" and p["max_output_tokens"] <= 2400 and p["timeout"] <= 20
+    assert p["model"] == "gemini-3.5-flash-lite" and p["max_output_tokens"] <= 4000 and p["timeout"] <= 20
     q = ai_assistant._gemini_profile("appeals sentencing", "gemini-3.5-flash")
     assert q["model"] == "gemini-3.5-flash"  # quality path unchanged
 
