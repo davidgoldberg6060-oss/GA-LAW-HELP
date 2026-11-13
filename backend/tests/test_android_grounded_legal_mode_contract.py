@@ -39,7 +39,7 @@ def test_guest_rights_modes_hit_the_grounded_public_endpoint():
     start = backend.index("@app.post('/public/rights-assistant')")
     end = backend.index("@app.", start + 1)
     route = backend[start:end]
-    assert "grounded_legal_response(query, mode, ask_fast, db=db)" in route
+    assert "grounded_legal_response(query, mode, ask_fast, db=db" in route
     assert "if mode not in PUBLIC_ASSISTANT_MODES" in route
     assert "PUBLIC_ASSISTANT_MODES={'rights','talk_to_me','general'}" in backend
     fallback_start = backend.index("def _guest_rights_without_corpus")

@@ -19,7 +19,9 @@ object GroundedConversation {
         val result: JSONObject,
         val answer: String,
         val authoritySummary: String,
-        val transcriptEntry: String
+        val transcriptEntry: String,
+        /** Server id of this remembered exchange (0 when answered as a guest). */
+        val turnId: Long = 0L
     )
 
     fun request(history: CharSequence, message: String, languageInstruction: String): String {
@@ -53,6 +55,20 @@ object GroundedConversation {
     }
 
     fun analyze(api: ApiClient, history: CharSequence, message: String, languageInstruction: String): Turn {
+        // With this device's session the server keeps the AI Help thread (and one line about the latest
+        // topic elsewhere in the app), so only the new message is sent. Without a session, fall back to
+        // the guest endpoint with the on-phone history.
+        val shared = runCatching { api.ensureSession(); api.token != null }.getOrDefault(false)
+        if (shared) {
+            val request = request("", message, languageInstruction)
+            val raw = api.aiHelp(request)
+            val answer = GroundedLegalResult.answer(raw).ifBlank {
+                "No grounded legal analysis was returned. Add specific facts, the court, case stage, charge, or legal issue and try again."
+            }
+            val authorities = GroundedLegalResult.authoritySummary(raw)
+            return Turn(request, raw, answer, authorities, entry(message, answer, authorities),
+                raw.optJSONObject("continuity")?.optLong("turn_id", 0L) ?: 0L)
+        }
         val request = request(history, message, languageInstruction)
         val grounded = GroundedLegalMode.analyze(api, GroundedLegalMode.Mode.TALK_TO_ME, request)
         val transcriptEntry = buildString {
@@ -68,5 +84,12 @@ object GroundedConversation {
             authoritySummary = grounded.authoritySummary,
             transcriptEntry = transcriptEntry
         )
+    }
+
+    private fun entry(message: String, answer: String, authorities: String) = buildString {
+        append("User: ").append(message.trim()).append('\n')
+        append("STANDALONE ASSISTANT: ").append(answer)
+        if (authorities.isNotBlank()) append("\n\n").append(authorities)
+        append("\n\n")
     }
 }

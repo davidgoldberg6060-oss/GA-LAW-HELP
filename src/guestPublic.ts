@@ -141,3 +141,31 @@ export function indexedAuthorityLinks(assistant: {authorities?: IndexedAuthority
     })
     .filter((row): row is GuestResource => row !== null);
 }
+
+/** What a screen continues from (server `continuity` block / GET /me/conversation). */
+export type Continuity = {
+  continued?: boolean;
+  turn_id?: number;
+  screen_last_topic?: string | null;
+  elsewhere_topic?: string | null;
+  elsewhere_screen?: string | null;
+};
+
+export type AiHelpReply = { answer: string; notice: string; turnId?: number; continuity?: Continuity | null };
+
+/**
+ * AI Help chat turn. With a device token the server continues this screen's own thread plus one
+ * short note about the latest topic elsewhere in the app; without one it answers as a plain guest.
+ */
+export async function aiHelpAsk(requestJson: GuestRequestJson, query: string, token?: string | null): Promise<AiHelpReply> {
+  const q = query.trim();
+  if (q.length > GUEST_QUERY_MAX_CHARS) throw new Error(GUEST_QUERY_TOO_LONG_MESSAGE);
+  const data = await requestJson<PublicRightsAssistantResponse & { continuity?: Continuity }>('/public/rights-assistant', {
+    method: 'POST',
+    headers: token ? { Authorization: 'Bearer ' + token } : {},
+    body: JSON.stringify({ query: q, mode: 'general', feature: 'ai_help' }),
+  });
+  const answer = typeof data.analysis === 'string' && data.analysis.trim() ? data.analysis : data.answer || 'No grounded answer was returned.';
+  const continuity = data.continuity && typeof data.continuity === 'object' ? data.continuity : null;
+  return { answer, notice: data.coverage_notice || '', turnId: continuity?.turn_id, continuity };
+}

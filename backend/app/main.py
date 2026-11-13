@@ -27,6 +27,8 @@ from .public_case_service import EXCLUDED_PUBLIC_STATUSES, public_case_payload, 
 from .ingestion.coverage import corpus_coverage
 from .encounter_prompt import encounter_prompt_block
 from .public_rights import official_indexes, router as public_rights_router
+from . import conversation_memory as convo
+from fastapi import Request as _Request
 
 def _delegated_ask_openai(prompt: str):
     return ask_openai(prompt)
@@ -171,6 +173,41 @@ def _guest_rights_without_corpus(query:str, mode:str) -> dict:
 
 PUBLIC_ASSISTANT_MODES={'rights','talk_to_me','general'}
 
+# ---------- One continuous conversation across every AI screen ----------
+def optional_user(request:_Request,db:Session=Depends(get_db)):
+    """The device/account behind a Bearer token, or None. Guest endpoints never fail on a bad token."""
+    header=request.headers.get('authorization','')
+    if not header.lower().startswith('bearer '):return None
+    try:
+        import jwt as _jwt
+        from .auth import SECRET,ALGORITHM,AUDIENCE,ISSUER
+        uid=int(_jwt.decode(header[7:].strip(),SECRET,algorithms=[ALGORITHM],audience=AUDIENCE,issuer=ISSUER)['sub'])
+    except Exception:return None
+    user=db.get(models.User,uid)
+    return user if user is not None and user.is_active else None
+
+def _use_context(body:dict)->bool:
+    """Clients may opt one request out of the shared conversation (e.g. a live-encounter one-liner)."""
+    return body.get('use_context',True) is not False
+
+def _remember(body:dict)->bool:
+    return body.get('remember',True) is not False
+
+def _ctx(ctx:dict)->dict:
+    """Keyword for the AI helpers only when there is context (keeps their no-context signature unchanged)."""
+    return {} if convo.is_empty(ctx) else {'conversation':ctx}
+
+def _thread(db,user,body:dict,feature:str,own_thread:bool=True)->dict:
+    """This screen's own recent turns + one line about the latest topic on another screen."""
+    if user is None or not _use_context(body):return {'feature':feature,'thread':[],'elsewhere':None}
+    return convo.load(db,user.id,feature,own_thread=own_thread)
+
+def _remember_turn(db,user,body:dict,feature:str,user_text:str,response:dict,turns:list)->dict:
+    """Record this exchange (when allowed) and attach the 'conversation' block every AI response carries."""
+    turn_id=convo.record(db,user.id,feature,user_text,response) if (user is not None and _remember(body) and not response.get('refused')) else None
+    response['continuity']=convo.summary_payload(turns,turn_id)
+    return response
+
 def _decorate_public(response:dict,query:str,mode:str)->dict:
     response['guest']=True
     response['login_required'] = False
@@ -210,21 +247,29 @@ def public_motion_draft(body:dict,db:Session=Depends(get_db)):
     except ValueError as e: raise HTTPException(400,str(e))
 
 @app.post('/public/rights-assistant')
-def public_rights_assistant(body:dict,db:Session=Depends(get_db)):
+def public_rights_assistant(body:dict,db:Session=Depends(get_db),user=Depends(optional_user)):
     """Guest grounded assistant. ``rights``/``talk_to_me`` = police encounter help; ``general`` = any
-    Georgia criminal or civil legal question (Talk to Me). Answers use the fast model and are cached
-    by normalized question + mode for 24 h (guest answers contain no account data)."""
+    Georgia criminal or civil legal question (Talk to Me). No sign-in needed. Answers use the fast model and
+    are cached by normalized question + mode for 24 h (guest answers contain no account data).
+
+    With the device's Bearer token, the answer continues the device's one conversation across every AI
+    screen. Such answers depend on that context, so they are never read from or written to the shared
+    cache (which is keyed only on the question text)."""
     query=str(body.get('query','')).strip();mode=str(body.get('mode','rights')).strip()
     if not query: raise HTTPException(400,'Describe the encounter or rights question.')
     if len(query)>4000: raise HTTPException(400,'Question is too long.')
     if mode not in PUBLIC_ASSISTANT_MODES: raise HTTPException(400,'Guest mode is limited to rights, live-encounter and general Georgia legal help.')
-    cached=answer_cache.get(query,mode,db=db)
-    if cached is not None:
-        cached['cached']=True
-        return cached
+    feature=convo.normalize_feature(body.get('feature'),'ai_help' if mode=='general' else mode)
+    turns=_thread(db,user,body,feature)
+    asked=current_question(query)
+    if convo.is_empty(turns):
+        cached=answer_cache.get(query,mode,db=db)
+        if cached is not None:
+            cached['cached']=True
+            return _remember_turn(db,user,body,feature,asked,cached,turns) if user is not None else cached
     _ai.last_model_used.value=None
     try:
-        response = grounded_legal_response(query, mode, ask_fast, db=db)
+        response = grounded_legal_response(query, mode, ask_fast, db=db, **_ctx(turns))
     except RuntimeError:
         # AI provider unavailable: return the static encounter pack instead of failing the guest.
         fallback = _guest_rights_without_corpus(query, mode)
@@ -235,8 +280,9 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db)):
         return _decorate_public(_guest_rights_without_corpus(query, mode),query,mode)
     response['login_required'] = False
     response['model_used']=_model_used()
-    response=_decorate_public(response,query,mode)
-    if response.get('answer'): answer_cache.put(query,mode,response,db=db)
+    response=_decorate_public(response,response.get('focus_question') or query,mode)
+    if response.get('answer') and convo.is_empty(turns): answer_cache.put(query,mode,response,db=db)
+    if user is not None: response=_remember_turn(db,user,body,feature,asked,response,turns)
     return response
 
 for _route in list(app.router.routes):
@@ -249,34 +295,45 @@ def private_motion_screen(case_id:int,body:dict,user=Depends(require_paid),db:Se
     facts=('Case title: '+(case.title or '')+'\nCase number: '+(case.case_number or 'Not entered')+'\nGeorgia county: '+(case.county or 'Not entered')+'\nCase type: '+(case.case_type or 'Not entered')+'\nCurrent stage: '+(case.stage or 'Not entered')+'\nCase narrative: '+(case.narrative or 'Not entered'))
     if additional:facts+='\nAdditional user-supplied facts (not independently verified): '+additional
     if len(facts)>12000:facts=facts[:12000]+'\n[Case text truncated for analysis]'
+    turns=_thread(db,user,body,'motion_screen')
+    if not convo.is_empty(turns):facts+='\n\n'+convo.context_block(turns)+'\n'+convo.CONTINUITY_RULES
     try:
         response=motion_screen_response(db, facts, ask_openai)
     except RuntimeError: raise HTTPException(503,'The motion screening assistant is temporarily unavailable.')
-    audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit();return _sanitize(response)
+    audit(db,user.id,'RUN_MOTION_SCREEN','case',case_id);db.commit()
+    return _remember_turn(db,user,body,'motion_screen',additional or ('Motion screen for case: '+(case.title or '')),_sanitize(response),turns)
 
 @app.post('/cases/{case_id}/innocence-analysis')
 def private_innocence_analysis(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     case=owned_case(case_id,user,db);additional=str(body.get('additional_facts','')).strip()
     if len(additional)>8000: raise HTTPException(400,'Additional case facts are too long.')
-    try: response=innocence_analysis_response(db,case,additional,ask_openai)
+    turns=_thread(db,user,body,'innocence_analysis')
+    with_context=(additional+'\n\n'+convo.context_block(turns)).strip() if not convo.is_empty(turns) else additional
+    try: response=innocence_analysis_response(db,case,with_context,ask_openai)
     except RuntimeError: raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
-    audit(db,user.id,'RUN_INNOCENCE_ANALYSIS','case',case_id);db.commit();return _sanitize(response)
+    audit(db,user.id,'RUN_INNOCENCE_ANALYSIS','case',case_id);db.commit()
+    return _remember_turn(db,user,body,'innocence_analysis',additional or ('Innocence & motion review for case: '+(case.title or '')),_sanitize(response),turns)
 
 @app.post('/cases/{case_id}/chat')
 def private_case_chat(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
     """Conversational grounded Case Analysis: case file + recent turns + current message."""
     case=owned_case(case_id,user,db)
+    # This case's own turns arrive in ``history`` (kept on the phone per case); add only the one-line
+    # note about the latest topic on another screen.
+    turns=_thread(db,user,body,'case_chat',own_thread=False)
+    elsewhere=turns
     try:
-        response=analyze_case_conversation(user_message=str(body.get('message','')),history=parse_history(body.get('history')),case_summary=case_summary_from_case(case),ask_ai=ask_fast,db=db)
+        response=analyze_case_conversation(user_message=str(body.get('message','')),history=parse_history(body.get('history')),case_summary=case_summary_from_case(case),ask_ai=ask_fast,db=db,**_ctx(elsewhere))
     except ValueError as error: raise HTTPException(400,str(error))
     except RuntimeError: raise HTTPException(503,'The case analysis assistant is temporarily unavailable.')
-    audit(db,user.id,'RUN_CASE_CHAT','case',case_id);db.commit();return _sanitize(response)
+    audit(db,user.id,'RUN_CASE_CHAT','case',case_id);db.commit()
+    return _remember_turn(db,user,body,'case_chat',str(body.get('message','')),_sanitize(response),turns)
 
 from fastapi import Form as _Form
 from . import document_reader as _docreader
 
 @app.post('/documents/read')
-def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form(''),case_id:str=_Form(''),user=Depends(require_paid),db:Session=Depends(get_db)):
+def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form(''),case_id:str=_Form(''),remember:str=_Form('true'),user=Depends(require_paid),db:Session=Depends(get_db)):
     """Read photos/PDF pages of case papers with a vision model and explain them (Scan a paper)."""
     case=None
     if str(case_id or '').strip():
@@ -293,6 +350,10 @@ def read_document_photos(files:list[UploadFile]=File(...),question:str=_Form('')
         db.add(models.CaseNote(case_id=case.id,owner_id=user.id,note_type='DOCUMENT_READ',title=('Scanned paper: '+(result.get('document_type') or 'document'))[:255],content=result['answer']+('\n\nText read from the paper:\n'+result['extracted_text'] if result.get('extracted_text') else ''),language='en'))
     result['case_id']=case.id if case is not None else None
     audit(db,user.id,'READ_DOCUMENT_PHOTOS','case',case.id if case is not None else None);db.commit()
+    # The paper's explanation joins the shared conversation so any screen can follow up on it.
+    remembered={'answer':('Paper read: '+(result.get('document_type') or 'document')+'. '+str(result.get('answer') or '')).strip()} if result.get('readable') else {}
+    turn_id=convo.record(db,user.id,'document_reader',(question or '').strip() or 'Read my paper and explain it.',remembered) if (remembered and str(remember).lower()!='false') else None
+    result['continuity']=convo.summary_payload({},turn_id)
     return result
 
 @app.post('/loopholes/analyze')
@@ -301,7 +362,8 @@ def loopholes_analyze(body:dict,user=Depends(require_paid),db:Session=Depends(ge
     try: response=analyze_loopholes(str(body.get('topic','')),ask_openai,db=db)
     except ValueError as error: raise HTTPException(400,str(error))
     except RuntimeError: raise HTTPException(503,'The legal analysis assistant is temporarily unavailable.')
-    audit(db,user.id,'RUN_LOOPHOLE_ANALYSIS','topic',None);db.commit();return _sanitize(response)
+    audit(db,user.id,'RUN_LOOPHOLE_ANALYSIS','topic',None);db.commit()
+    return _remember_turn(db,user,body,'loopholes','Legal Loopholes: '+str(body.get('topic','')).strip(),_sanitize(response),_thread(db,user,body,'loopholes'))
 
 def save_charge_check_note(db,case_id,user_id,text):
     db.add(models.CaseNote(case_id=case_id,owner_id=user_id,note_type='CHARGE_CHECK',title='Charge Check',content=text,language='en'))
@@ -319,7 +381,8 @@ def charge_check(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)
         except (TypeError,ValueError): raise HTTPException(400,'Invalid case id.')
     situation=str(body.get('situation','')).strip() or (str(case.narrative or '').strip() if case is not None else '')
     _ai.last_model_used.value=None
-    try: response=analyze_charge_check(situation,ask_openai,db=db,case_summary=case_summary_from_case(case) if case else None)
+    turns=_thread(db,user,body,'charge_check')
+    try: response=analyze_charge_check(situation,ask_openai,db=db,case_summary=case_summary_from_case(case) if case else None,**_ctx(turns))
     except ValueError as error: raise HTTPException(400,str(error))
     except RuntimeError: raise HTTPException(503,'GA.LAW.HELP is busy right now. Your question wasn’t lost — please tap Retry in a minute.')
     response['model_used']=_model_used()
@@ -330,7 +393,8 @@ def charge_check(body:dict,user=Depends(require_paid),db:Session=Depends(get_db)
         if case is not None:
             save_charge_check_note(db,case.id,user.id,charge_check_note_text(response))
     response['case_id']=case.id if case is not None else None
-    audit(db,user.id,'RUN_CHARGE_CHECK','case',case.id if case is not None else None);db.commit();return _sanitize(response)
+    audit(db,user.id,'RUN_CHARGE_CHECK','case',case.id if case is not None else None);db.commit()
+    return _remember_turn(db,user,body,'charge_check',situation,_sanitize(response),turns)
 
 @app.post('/cases/{case_id}/charge-check')
 def case_charge_check(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
@@ -352,7 +416,8 @@ def civil_check(body:dict,user=Depends(require_paid),db:Session=Depends(get_db))
         except (TypeError,ValueError): raise HTTPException(400,'Invalid case id.')
     situation=str(body.get('situation','')).strip() or (str(case.narrative or '').strip() if case is not None else '')
     _ai.last_model_used.value=None
-    try: response=analyze_civil_check(situation,ask_openai,db=db,case_summary=case_summary_from_case(case) if case else None)
+    turns=_thread(db,user,body,'civil_check')
+    try: response=analyze_civil_check(situation,ask_openai,db=db,case_summary=case_summary_from_case(case) if case else None,**_ctx(turns))
     except ValueError as error: raise HTTPException(400,str(error))
     except RuntimeError: raise HTTPException(503,'GA.LAW.HELP is busy right now. Your question wasn’t lost — please tap Retry in a minute.')
     response['model_used']=_model_used()
@@ -363,7 +428,8 @@ def civil_check(body:dict,user=Depends(require_paid),db:Session=Depends(get_db))
         if case is not None:
             save_civil_check_note(db,case.id,user.id,civil_check_note_text(response))
     response['case_id']=case.id if case is not None else None
-    audit(db,user.id,'RUN_CIVIL_CHECK','case',case.id if case is not None else None);db.commit();return _sanitize(response)
+    audit(db,user.id,'RUN_CIVIL_CHECK','case',case.id if case is not None else None);db.commit()
+    return _remember_turn(db,user,body,'civil_check',situation,_sanitize(response),turns)
 
 @app.post('/cases/{case_id}/civil-check')
 def case_civil_check(case_id:int,body:dict,user=Depends(require_paid),db:Session=Depends(get_db)):
@@ -397,9 +463,34 @@ def internal_grounded_legal_assistant(body:dict,user=Depends(require_paid),db:Se
     if not query: raise HTTPException(400,'Enter case facts, an encounter description, or a legal question.')
     if len(query)>12000: raise HTTPException(400,'Analysis text is too long.')
     if mode not in {'case_analysis','rights','motions','talk_to_me','general'}: raise HTTPException(400,'Unsupported grounded legal-assistant mode.')
-    try: return {**grounded_legal_response(query,mode,ask_openai,db=db),'model_used':_model_used()}
+    feature=convo.normalize_feature(body.get('feature'),{'motions':'motions','case_analysis':'case_analysis','rights':'rights','talk_to_me':'talk_to_me'}.get(mode,'ai_help'))
+    turns=_thread(db,user,body,feature)
+    try: response={**grounded_legal_response(query,mode,ask_openai,db=db,**_ctx(turns)),'model_used':_model_used()}
     except RuntimeError: raise HTTPException(503,'The grounded legal assistant is temporarily unavailable.')
+    return _remember_turn(db,user,body,feature,current_question(query),response,turns)
 
+
+# ---------- Shared conversation: view / Start fresh / forget one exchange ----------
+@app.get('/me/conversation')
+def my_conversation(feature:str='ai_help',user=Depends(current_user),db:Session=Depends(get_db)):
+    """What one screen will pick up from: its own last topic + one line about the latest topic elsewhere."""
+    f=convo.normalize_feature(feature,'ai_help')
+    ctx=convo.load(db,user.id,f)
+    return {'feature':f,'feature_label':convo.feature_label(f),**convo.summary_payload(ctx),
+            'turns':[{'id':t['id'],'question':t['user_text'],'created_at':t['created_at']} for t in ctx['thread']],
+            'ttl_hours':convo.TTL_SECONDS//3600}
+
+@app.delete('/me/conversation')
+def clear_my_conversation(feature:str='',user=Depends(current_user),db:Session=Depends(get_db)):
+    """'Start fresh' on one screen (``feature``), or forget every screen when no feature is given."""
+    f=convo.normalize_feature(feature,'') if feature else None
+    if feature and not f: raise HTTPException(400,'Unknown screen.')
+    return {'cleared':convo.clear(db,user.id,feature=f),'feature':f,'continued':False}
+
+@app.delete('/me/conversation/{turn_id}')
+def delete_conversation_turn(turn_id:int,user=Depends(current_user),db:Session=Depends(get_db)):
+    """Forget one question-and-answer (used when a chat message is deleted)."""
+    return {'deleted':convo.clear(db,user.id,turn_id)}
 
 # ---------- Privacy policy and account deletion (Google Play requirements) ----------
 from pathlib import Path as _Path

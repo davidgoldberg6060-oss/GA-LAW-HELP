@@ -97,12 +97,14 @@ object GaScreens {
         /** Tap on a citation in an answer's "Laws cited" list. */
         var onLawTap: ((String) -> Unit)? = null
         private var last: LinearLayout? = null
+        /** Smoothly scroll to the newest message without moving focus out of the input (no jump). */
+        fun toEnd() { scroll.post { scroll.smoothScrollTo(0, (scroll.getChildAt(0)?.height ?: 0)) } }
         fun bot(text: String, time: String, id: Long = 0L) = add(text, time, false, id)
         fun user(text: String, time: String, id: Long = 0L) = add(text, time, true, id)
         /** Append an extra card (e.g. the lawyer take) under the latest answer. */
-        fun attach(v: View) { (last ?: messages).addView(v, ui.lp(8, 2)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
+        fun attach(v: View) { (last ?: messages).addView(v, ui.lp(8, 2)); toEnd() }
         /** Share / Copy row under the latest answer. */
-        fun actions(onShare: () -> Unit, onCopy: () -> Unit) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true)); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) } }
+        fun actions(onShare: () -> Unit, onCopy: () -> Unit) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true)); toEnd() }
         /** 2-3 suggested follow-up question chips under the latest answer. */
         fun followUps(questions: List<String>, onTap: (String) -> Unit) {
             if (questions.isEmpty()) return
@@ -115,19 +117,19 @@ object GaScreens {
                     isClickable = true; contentDescription = "Ask: $q"; setOnClickListener { onTap(q) }
                 }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) })
             }
-            (last ?: messages).addView(col); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            (last ?: messages).addView(col); toEnd()
         }
         /** "Find legal help" link under the latest answer. */
         fun findHelp(onTap: () -> Unit) {
             (last ?: messages).addView(ui.text("⚖ Find legal help", 13.5f, GaUi.GOLD, ui.sansMedium).apply {
                 setPadding(ui.dp(48), ui.dp(8), 0, ui.dp(2)); isClickable = true; contentDescription = "Find legal help"; setOnClickListener { onTap() }
-            }); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            }); toEnd()
         }
         /** Retry button under a failed answer. */
         fun retry(onRetry: () -> Unit) {
             (last ?: messages).addView(ui.primaryButton("Retry") { onRetry() }.apply { contentDescription = "Retry question" },
                 LinearLayout.LayoutParams(ui.dp(140), -2).apply { leftMargin = ui.dp(48); topMargin = ui.dp(8) })
-            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            toEnd()
         }
         /** Rotating, fading progress line while waiting for an answer. Returns a stop function. */
         fun progress(steps: List<String> = LoadingLines.AI_HELP): () -> Unit {
@@ -136,7 +138,7 @@ object GaScreens {
                 setPadding(dp(48), dp(10), 0, dp(4)); tag = "progress"
                 contentDescription = "Loading. ${steps.first()}"
             }
-            messages.addView(view); scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            messages.addView(view); toEnd()
             val stopRotate = LoadingLines.rotate(view, steps, contentPrefix = "Loading")
             return { stopRotate(); messages.removeView(view) }
         }
@@ -163,11 +165,11 @@ object GaScreens {
                 if (id != 0L) { isLongClickable = true; contentDescription = (if (mine) "Your message" else "STANDALONE ASSISTANT answer") + ". Long-press for Copy, Share or Delete."; setOnLongClickListener { onMessageLongPress?.invoke(id); true } }
             }
             row.addView(bubble, LinearLayout.LayoutParams(0, -2, 1f).apply { if (mine) leftMargin = dp(56) })
-            group.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
-            group.addView(ui.text(time, 11f, GaUi.MUTED, null, if (mine) Gravity.END else Gravity.START).apply { setPadding(if (mine) 0 else dp(48), dp(4), dp(4), 0) })
+            group.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (mine) 16 else 10) })
+            group.addView(ui.text(time, 10.5f, GaUi.MUTED, null, if (mine) Gravity.END else Gravity.START).apply { setPadding(if (mine) 0 else dp(48), dp(3), dp(4), 0); alpha = 0.8f })
             messages.addView(group, LinearLayout.LayoutParams(-1, -2))
             last = group
-            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            toEnd()
         }
     }
 
@@ -195,7 +197,7 @@ object GaScreens {
         body.addView(ui.title(title))
         body.addView(ui.subtitle(subtitle))
         lateinit var chat: Chat
-        body.addView(ui.text("Clear chat", 13.5f, Color.rgb(60, 190, 255), ui.sansMedium, Gravity.END).apply { setPadding(0, dp(2), 0, dp(4)); isClickable = true; contentDescription = "Clear chat"; setOnClickListener { chat.onClearChat?.invoke() } }, LinearLayout.LayoutParams(-1, -2))
+        body.addView(ui.text("Start fresh", 13f, Color.rgb(60, 190, 255), ui.sansMedium, Gravity.END).apply { setPadding(0, dp(2), 0, dp(2)); isClickable = true; contentDescription = "Start fresh: clear this chat"; setOnClickListener { chat.onClearChat?.invoke() } }, LinearLayout.LayoutParams(-1, -2))
         val messages = LinearLayout(ui.context).apply { orientation = LinearLayout.VERTICAL }
         body.addView(messages)
         val scroll = ScrollView(ui.context).apply { isFillViewport = true; addView(body) }

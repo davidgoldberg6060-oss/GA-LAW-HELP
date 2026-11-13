@@ -113,9 +113,14 @@ def _token_subject(request: Request) -> str | None:
         return None
 
 
+# Guest AI Help answers stay on the per-network cap only. Sending the device token there (so the
+# answer continues the device's conversation) must not start counting them against the device cap.
+_IP_ONLY_PATHS = (re.compile(r"^/public/rights-assistant/?$"),)
+
+
 async def ai_rate_limit_middleware(request: Request, call_next):
     if is_ai_path(request.method, request.url.path):
-        subject = _token_subject(request)
+        subject = None if any(p.match(request.url.path) for p in _IP_ONLY_PATHS) else _token_subject(request)
         if subject is not None and not ai_counter.hit("user:" + subject, AI_DEVICE_DAILY_LIMIT):
             return JSONResponse({"detail": AI_LIMIT_MESSAGE, "rate_limited": True}, status_code=429, headers={"Retry-After": "3600"})
         if not ai_counter.hit("ip:" + client_ip(request), AI_IP_DAILY_LIMIT):

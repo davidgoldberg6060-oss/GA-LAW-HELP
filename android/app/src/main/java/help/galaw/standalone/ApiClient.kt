@@ -121,5 +121,14 @@ class ApiClient(private val context: Context) {
         result.put("answer", answer.ifBlank { "No grounded guest rights answer was returned. This is general information, not a citation of current Georgia law." })
         return result
     }
+    /** AI Help with this device's session: the server resumes the AI Help thread and adds one short line
+     *  about the latest topic on another screen. Never cached server-side when context exists. */
+    fun aiHelp(query:String, mode:String="general")=JSONObject(execute("/public/rights-assistant","POST",JSONObject().put("query",query).put("mode",mode).put("feature","ai_help"),readMs=AI_READ_MS))
+    /** One screen's continuity state: its last topic + the latest topic elsewhere (one line). */
+    fun conversation(feature:String)=JSONObject(execute("/me/conversation?feature="+java.net.URLEncoder.encode(feature,"UTF-8")))
+    /** Start fresh on one screen: the AI forgets that screen's earlier questions. */
+    fun startFresh(feature:String)=JSONObject(execute("/me/conversation?feature="+java.net.URLEncoder.encode(feature,"UTF-8"),"DELETE"))
+    /** Forget one remembered question-and-answer (a deleted chat message). */
+    fun forgetTurn(turn:Long)=JSONObject(execute("/me/conversation/$turn","DELETE"))
     fun searchAuthorities(query:String)=JSONObject(execute("/legal/authorities/search?query="+java.net.URLEncoder.encode(query,"UTF-8"))).optJSONArray("items")?:JSONArray()
 }

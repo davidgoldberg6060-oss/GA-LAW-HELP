@@ -3,7 +3,7 @@ import { CUSTODY } from './helpLovedOne';
 import { Glossary } from './Glossary';
 import React,{FormEvent,useEffect,useRef,useState}from'react';
 import{Scale,Search,FileText,ShieldCheck,MessageSquare,BookOpen,ExternalLink,X,LogOut,UserRound,LoaderCircle,Car,ShieldAlert,Mic,Volume2,LockKeyhole,ChevronRight,Square,Circle,Play,Download,Trash2,HardDrive,MapPin,Phone,Save,ClipboardList,UserPlus,Send,CheckCircle2,Fingerprint,Eye,EyeOff,Upload}from'lucide-react';
-import{guestEncounterReply,guestRightsAndEncounter}from'./guestPublic';
+import{aiHelpAsk,guestEncounterReply,guestRightsAndEncounter,type Continuity}from'./guestPublic';
 import ApprovedScreens from './ApprovedScreens';
 import FunnyGeorgia from './FunnyGeorgia';
 import './approvedScreens.css';
@@ -166,6 +166,34 @@ async function authApi(path:string,options:RequestInit={}){
 const DEVICE_KEY='ga_device_key';
 function deviceKey(){let k=localStorage.getItem(DEVICE_KEY);if(!k){const b=new Uint8Array(32);crypto.getRandomValues(b);k=btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');localStorage.setItem(DEVICE_KEY,k)}return k}
 async function anonymousSession(){const data=await api('/auth/anonymous',{method:'POST',body:JSON.stringify({device_key:deviceKey()})});saveSession(data.access_token,data.refresh_token);return authApi('/me')}
+
+/** AI Help continuity: a device-only token (separate from sign-in, never shown as "signed in") so each
+ * screen can resume its own thread. Any failure falls back to a plain guest answer. */
+const CHAT_KEY='ga_chat_access';
+async function chatToken(fresh=false):Promise<string|null>{
+ if(!fresh){const own=accessToken()||sessionStorage.getItem(CHAT_KEY);if(own)return own}
+ try{const data=await api('/auth/anonymous',{method:'POST',body:JSON.stringify({device_key:deviceKey()})});sessionStorage.setItem(CHAT_KEY,data.access_token);return data.access_token}
+ catch{return null}
+}
+async function chatApi<T=any>(path:string,options:RequestInit={}):Promise<T|null>{
+ for(const fresh of [false,true]){
+  const token=await chatToken(fresh);if(!token)return null;
+  try{return await api<T>(path,{...options,headers:{...(options.headers||{}),Authorization:'Bearer '+token}})}
+  catch(error){if(!(error instanceof ApiError)||error.status!==401||accessToken())return null;sessionStorage.removeItem(CHAT_KEY)}
+ }
+ return null;
+}
+async function askAiHelp(text:string){
+ const reply=await aiHelpAsk(api,text,await chatToken());
+ // A stale device token is ignored by the server (plain guest answer); refresh it for the next turn.
+ if(!reply.continuity&&!accessToken())sessionStorage.removeItem(CHAT_KEY);
+ return reply;
+}
+const chatScreen={
+ load:(feature:string)=>chatApi<Continuity>('/me/conversation?feature='+encodeURIComponent(feature)),
+ startFresh:async(feature:string)=>{await chatApi('/me/conversation?feature='+encodeURIComponent(feature),{method:'DELETE'})},
+ forgetTurn:async(turn:number)=>{await chatApi('/me/conversation/'+turn,{method:'DELETE'})},
+};
 
 const FREE_LAUNCH=true;
 
@@ -482,7 +510,9 @@ export default function App(){
   if(!installPrompt)return;await installPrompt.prompt();await installPrompt.userChoice.catch(()=>null);setInstallPrompt(null);
  }
  async function logout(){
-  const refresh=refreshToken();clearSession();localStorage.removeItem('ga_encounter_case_id');setUser(null);setNotice('You are signed out.');
+  const refresh=refreshToken();clearSession();localStorage.removeItem('ga_encounter_case_id');
+  // Signing out leaves no chat behind on a shared computer.
+  sessionStorage.removeItem(CHAT_KEY);Object.keys(localStorage).filter(k=>k.startsWith('ga_chat_')).forEach(k=>localStorage.removeItem(k));setUser(null);setNotice('You are signed out.');
   if(refresh)try{await api('/auth/logout',{method:'POST',body:JSON.stringify({refresh_token:refresh})})}catch{}
  }
 
@@ -502,7 +532,7 @@ export default function App(){
     <button disabled={researching}><Search size={15}/>{researching?<><LoaderCircle className="spin" size={17}/>Checking</>:'Free research'}</button></form>
    <small>Legal information and research assistance — not a substitute for advice from a licensed attorney.</small>
   </section>
-  <ApprovedScreens signedIn={!!user} onSignIn={()=>setAuthOpen(true)} onCases={openCaseWorkspace} onAnalysis={openCaseWorkspace} onLogout={logout} onRights={openRights} heroDraft={q} onAsk={(text)=>{if(text.trim())setQ(text);}} askGuest={async(text)=>{const packed=await guestRightsAndEncounter(API,api,text);return{answer:packed.answer.answer,notice:packed.answer.notice};}} />
+  <ApprovedScreens signedIn={!!user} onSignIn={()=>setAuthOpen(true)} onCases={openCaseWorkspace} onAnalysis={openCaseWorkspace} onLogout={logout} onRights={openRights} heroDraft={q} onAsk={(text)=>{if(text.trim())setQ(text);}} askGuest={askAiHelp} chatScreen={chatScreen} />
   {(aiAnswer||research)&&<section className="results" id="research-results">
    {aiAnswer&&<><div className="resultHead"><MessageSquare/><div><span>Ask STANDALONE ASSISTANT</span><h2>AI legal information</h2></div></div><p className="question">“{aiAnswer.question}”</p><div className="aiAnswer" style={{whiteSpace:'pre-wrap'}}>{aiAnswer.answer}</div>{aiAnswer.case_stage&&detectStageLabel(aiAnswer.case_stage)&&<p><button type="button" className="mcRun" onClick={()=>{setCaseStart({stage:aiAnswer.case_stage!,situation:aiAnswer.question});setTimeout(()=>document.getElementById('my-case')?.scrollIntoView({behavior:'smooth'}),50)}}>Open My Case: {detectStageLabel(aiAnswer.case_stage)} ›</button></p>}<Glossary text={aiAnswer.answer} />{CUSTODY.test(aiAnswer.question + ' ' + aiAnswer.answer) && <HelpLovedOne />}<small>{aiAnswer.notice}</small></>}
    {research&&<><div className="resultHead" style={{marginTop:'1.5rem'}}><Search/><div><span>Verify and research</span><h2>{research.topic}</h2></div></div><p>{research.guidance}</p>{research.laws&&research.laws.length>0&&<><h3>Laws cited</h3><LawAccordion api={API} items={research.laws}/></>}<div className="sources">{research.resources.map(r=><a key={r.url} href={r.url} target="_blank" rel="noreferrer"><div><b>{r.title}</b><span>{r.official===false?r.kind+' · not a verified current citation':r.kind+' · Official source'}</span></div><ExternalLink size={18}/></a>)}</div><small>{research.notice}</small></>}
