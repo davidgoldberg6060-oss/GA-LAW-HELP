@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test:web": "node --test --experimental-strip-types web-tests/aiHelpNav.test.ts web-tests/chatFormat.test.ts web-tests/answerSections.test.ts web-tests/usage.test.ts"
+    "test:web": "node --test --experimental-strip-types web-tests/aiHelpNav.test.ts web-tests/chatFormat.test.ts web-tests/answerSections.test.ts web-tests/usage.test.ts web-tests/courtroomPrep.test.ts web-tests/planPdf.test.ts web-tests/readAloud.test.ts web-tests/i18n.test.ts"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",

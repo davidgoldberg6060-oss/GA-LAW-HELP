@@ -104,7 +104,7 @@ object GaScreens {
         /** Append an extra card (e.g. the lawyer take) under the latest answer. */
         fun attach(v: View) { (last ?: messages).addView(v, ui.lp(8, 2)); toEnd() }
         /** Share / Copy row under the latest answer. */
-        fun actions(onShare: () -> Unit, onCopy: () -> Unit) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true)); toEnd() }
+        fun actions(onShare: () -> Unit, onCopy: () -> Unit, onPdf: (() -> Unit)? = null, onRead: (() -> Unit)? = null) { (last ?: messages).addView(shareRow(ui, onShare, onCopy, indent = true, onPdf = onPdf, onRead = onRead)); toEnd() }
         /** Up to 3 small suggested follow-up question chips under the latest answer. */
         fun followUps(questions: List<String>, onTap: (String) -> Unit) {
             if (questions.isEmpty()) return
@@ -290,10 +290,12 @@ object GaScreens {
         chatScreen(ui, nav, Tab.DOCUMENTS, "Case Chat", (if (caseTitle.isNotBlank()) "$caseTitle · " else "") + "Answers use your case file and verified Georgia authority only.", "Ask about this case...", onSend, chips)
 
     /** Share · Copy text actions (blue, small) used under answers and loophole results. */
-    fun shareRow(ui: GaUi, onShare: () -> Unit, onCopy: () -> Unit, indent: Boolean = false): View = LinearLayout(ui.context).apply {
+    fun shareRow(ui: GaUi, onShare: () -> Unit, onCopy: () -> Unit, indent: Boolean = false, onPdf: (() -> Unit)? = null, onRead: (() -> Unit)? = null): View = LinearLayout(ui.context).apply {
         orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(if (indent) ui.dp(48) else 0, ui.dp(6), 0, ui.dp(2))
         fun action(label: String, f: () -> Unit) = ui.text(label, 13.5f, Color.rgb(60, 190, 255), ui.sansMedium).apply { setPadding(0, ui.dp(4), ui.dp(18), ui.dp(4)); isClickable = true; contentDescription = label; setOnClickListener { f() } }
         addView(action("Share") { onShare() }); addView(action("Copy") { onCopy() })
+        if (onPdf != null) addView(action("Share as PDF") { onPdf() })
+        if (onRead != null) addView(action("Read aloud") { onRead() })
     }
 
     private fun chatScreen(ui: GaUi, nav: Nav, tab: Tab, title: String, subtitle: String, hintText: String, onSend: (String) -> Unit, chips: List<Pair<String, () -> Unit>>): Chat {
@@ -497,10 +499,11 @@ object GaScreens {
     }
 
     // ---------------- Settings ----------------
-    fun settings(ui: GaUi, nav: Nav, darkMode: Boolean, onRow: (Int) -> Unit): View {
+    fun settings(ui: GaUi, nav: Nav, darkMode: Boolean, voiceLabel: String, onRow: (Int) -> Unit): View {
         val (root, body) = page(ui, nav, Tab.MORE, "Settings", "Customize your app experience.")
         body.addView(ui.settingsList(listOf(
             Triple(R.drawable.ga_ic_language, "Language", null),
+            Triple(R.drawable.ga_ic_language, "Read aloud: $voiceLabel", null),
             Triple(R.drawable.ga_ic_dark_mode, "Dark Mode", ui.toggle(darkMode)),
             Triple(R.drawable.ga_ic_notifications, "Court date reminders", null),
             Triple(R.drawable.ga_ic_lock, "Privacy & Security", null),

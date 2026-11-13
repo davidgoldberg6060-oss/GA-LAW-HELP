@@ -16,7 +16,7 @@ object AnswerSections {
     private const val QUICK_SENTENCES = 3
 
     private val BULLET = Regex("^\\s*(?:[•●▪*-]|\\d{1,2}[.)])\\s+")
-    private val QUICK = Regex("^(short answer|quick answer|what's happening|your situation|the issue|facts to confirm)$", RegexOption.IGNORE_CASE)
+    private val QUICK = Regex("^(short answer|quick answer|respuesta r[aá]pida|respuesta corta|what's happening|your situation|the issue|facts to confirm)$", RegexOption.IGNORE_CASE)
     private val TOP = setOf(
         "short answer", "quick answer", "how it works in georgia", "how it works", "steps you can take", "questions to ask your lawyer",
         "motions that could help", "deadlines and costs", "where to get help", "laws cited",
@@ -27,7 +27,7 @@ object AnswerSections {
         // "Your Defense Plan"
         "how they'd build the case against you", "how to fight back", "your strongest defenses", "ways to challenge the evidence",
         "ways to challenge their case", "options to lessen the outcome", "ways to resolve it", "motions and filings that could help",
-        "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out")
+        "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out", "charge or claim", "important dates", "case number", "court", "what could help in this paper", "what you can do next", "traducción al español", "explicación en palabras sencillas", "cargo o demanda", "fechas importantes", "número de caso", "tribunal", "qué puede hacer ahora", "preguntas para su abogado", "original en inglés (el que cuenta en la corte)", "lo que podría ayudar en este papel")
     val PLAN_LINE = Regex("^Your Defense Plan(?:\\s*[:—–-]\\s*(.+))?$")
     private val RENAME = mapOf(
         "how it works in georgia" to "How it works", "challenging the evidence" to "Ways to fight the evidence",

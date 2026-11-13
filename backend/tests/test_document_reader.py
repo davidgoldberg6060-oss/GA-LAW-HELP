@@ -8,7 +8,7 @@ JPEG = b"\xff\xd8\xff\xe0" + b"0" * 100
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100
 GOOD = json.dumps({"readable": True, "document_type": "Notice of arraignment", "extracted_text": "Case No. SAMPLE-1",
                    "summary": "This is a court date notice.", "key_dates": ["December 9, 2026 9:00 AM - arraignment"],
-                   "charges_or_claims": ["Driving While License Suspended"], "next_steps": ["Go to court on time"],
+                   "charges_or_claims": ["Driving While License Suspended"], "case_number": "SAMPLE-1", "court": "Gwinnett State Court", "field_explanations": {"charge_or_claim": "This is the offense listed on the paper.", "dates": "This is when you must appear.", "case_number": "Use this number with the clerk.", "court": "This is the courthouse you go to."}, "next_steps": ["Go to court on time"],
                    "questions_for_lawyer": ["Can the charge be reduced?"], "photo_tips": ""})
 
 
@@ -87,3 +87,21 @@ def test_unreadable_photo_gives_tip():
 def test_endpoint_is_rate_limited_path():
     from app.anonymous_access import is_ai_path
     assert is_ai_path("POST", "/documents/read")
+
+def test_plain_english_reader_explains_charge_dates_case_number_and_court():
+    out = dr.parse_result(GOOD)
+    answer = out["answer"]
+    assert answer.startswith("Quick answer")
+    assert "Driving While License Suspended" in answer
+    assert "This is the offense listed on the paper." in answer
+    assert "December 9, 2026" in answer
+    assert "SAMPLE-1" in answer and "Case number" in answer
+    assert "Gwinnett State Court" in answer and "Court" in answer
+    assert "Questions to ask your lawyer" in answer
+    assert "not legal advice" in answer
+
+
+def test_guesses_case_number_from_extracted_text():
+    fields = dr.guess_case_fields("IN THE STATE COURT OF DEKALB COUNTY\nCase No. 26-CR-1234\nCharge: Battery")
+    assert fields["case_number"].startswith("26-CR-1234")
+    assert "State Court" in fields["court"] or "DEKALB" in fields["court"].upper() or "DeKalb" in fields["court"] or fields["court"]

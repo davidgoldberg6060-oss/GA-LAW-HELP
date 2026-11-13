@@ -128,3 +128,24 @@ html[data-theme="light"] .ansAsk{color:#0b5cad}
 .ansChipWhy{display:block;font-size:11.5px;font-weight:400;opacity:.75;margin-top:2px}
 .ansChip.hasWhy{display:block;width:100%;border-radius:14px;padding:.45rem .75rem}
 .ansChip.hasWhy .ansChipQ{display:block;font-weight:600}
+
+/* Courtroom prep, paper reader, language and voice settings */
+.settingBlock{margin:1rem 0;padding:.85rem;border:1px solid #1d3f58;border-radius:14px;background:#021423}
+.settingBlock h3{color:#e2b54e;margin:.1rem 0 .35rem}
+.settingChoices{display:flex;flex-direction:column;gap:.45rem;margin-top:.5rem}
+.settingChoices button{text-align:left;background:#0a273e;color:#fff;border:1px solid #26a9ff;padding:.65rem .8rem}
+.settingChoices button small{display:block;color:#afc2d0;font-weight:400;margin-top:.2rem}
+.settingChoices button.on{background:#e2b54e;color:#02111d;border-color:#e2b54e}
+.settingChoices button.on small{color:#3b2d10}
+.prepLabel{display:block;color:#afc2d0;font-size:.8rem;margin:.6rem 0 .25rem}
+.prepPanel select,.paperPanel select{width:100%;padding:.55rem .7rem;border-radius:10px;border:1px solid #2a4d66;background:#07101d;color:#eef3fa;font:inherit}
+.paperActions,.prepActions{display:flex;flex-wrap:wrap;gap:.5rem;margin:.75rem 0}
+.fileHidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.paperError{color:#ffb4b4;font-size:.9rem}
+.paperResult{margin-top:.8rem}
+.translationNotice{border-left:3px solid #e2b54e;padding-left:.6rem}
+.planPre{white-space:pre-wrap;background:#02111d;border:1px solid #1d3f58;border-radius:10px;padding:.7rem;color:#eef3fa;font:inherit;font-size:.9rem}
+.ansBody.isStatic{display:block;opacity:1}
+.ansSec[open] .ansPeek{opacity:0;height:0;margin:0}
+.ansSec[open] .ansChevron{transform:rotate(45deg)}
+.paperPlan{margin-top:1rem;padding-top:.5rem;border-top:1px solid #1d3f58}
