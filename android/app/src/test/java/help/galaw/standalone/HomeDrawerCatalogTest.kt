@@ -14,7 +14,7 @@ class HomeDrawerCatalogTest {
                 "Home", "My Case (start here)", "Case Workspace", "Talk to Me (AI)", "Georgia Laws",
                 "Funny & Weird Laws", "Motions & Legal Work", "Legal Forms", "Court Information",
                 "Know Your Rights", "Citizen Help", "Resources", "Emergency Information",
-                "Payments & Subscription", "Settings", "Profile", "Help & Support"
+                "Payments & Subscription", "Settings", "Send feedback", "Profile", "Help & Support"
             ),
             HomeDrawerCatalog.items.map { it.label }
         )
@@ -29,6 +29,7 @@ class HomeDrawerCatalogTest {
         assertTrue(home.contains("HomeDrawerCatalog.items"))
         assertTrue(home.contains("Guest rights stay on /public/rights-assistant"))
         assertTrue(home.contains("showCitizenHelpHub"))
+        assertTrue(home.contains("showFeedback"))
         assertTrue(home.contains("Criminal — public defender council"))
         assertTrue(home.contains("Civil — Georgia Courts self-help"))
         assertTrue(home.contains("Family — Georgia Legal Aid"))

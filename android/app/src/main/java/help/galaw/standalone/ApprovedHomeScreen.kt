@@ -21,7 +21,7 @@ class ApprovedHomeScreen(private val context: Context, private val actions: Acti
     interface Actions {
         fun openMenu(); fun openAccount(); fun ask(question: String); fun openCases(); fun openTalkToMe()
         fun openFunnyLaws(); fun openLegalTools(); fun openGeorgiaLaws(); fun openCourtInfo(); fun openLegalForms(); fun openCaseAnalysis()
-        fun openKnowYourRights(); fun openResources(); fun openEmergency(); fun openHome(); fun openDocuments()
+        fun openKnowYourRights(); fun openResources(); fun openEmergency(); fun openHome(); fun openDocuments(); fun openFeedback()
     }
 
     private val ui = GaUi(context)
@@ -47,6 +47,8 @@ class ApprovedHomeScreen(private val context: Context, private val actions: Acti
         body.addView(tiles(R.drawable.ga_home_tiles_2, 808, 1030, 3))
         body.addGap()
         body.addView(emergency())
+        body.addGap()
+        body.addView(feedbackBar())
         body.addGap()
         body.addView(footer(), LinearLayout.LayoutParams(-1, ui.u(FOOTER), 1f))
         shell.addView(ScrollView(context).apply { isFillViewport = true; isVerticalScrollBarEnabled = false; addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -137,6 +139,22 @@ class ApprovedHomeScreen(private val context: Context, private val actions: Acti
         ui.placeText(f, title, medium, Color.WHITE, t[0], t[1], t[2], originY = o)
         ui.placeText(f, sub, regular, Color.rgb(204, 221, 241), s[0], s[1], s[2], originY = o)
         ui.hit(f, x0, y0, x1, y1, "$title. $sub", 14, originY = o, action = action)
+    }
+
+    /** Clear home-screen entry for app feedback, kept off the photographic tiles. */
+    private fun feedbackBar(): View {
+        val row = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(ui.u(27), ui.dp(12), ui.u(27), ui.dp(12))
+            background = ui.rounded(Color.rgb(14, 27, 46), 14, Color.rgb(42, 60, 87), 1f)
+            isClickable = true
+            isFocusable = true
+            contentDescription = "Help us improve. Send feedback about the app."
+            setOnClickListener { actions.openFeedback() }
+        }
+        row.addView(ui.text("Help us improve", 16f, GaUi.GOLD, ui.sansMedium))
+        row.addView(ui.text("Send feedback about the app — a bug, the design, or an idea.", 13f, GaUi.MUTED))
+        return row
     }
 
     /** Emergency Information banner (mockup y 1030–1152). */

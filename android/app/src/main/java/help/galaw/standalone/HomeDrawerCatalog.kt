@@ -23,6 +23,7 @@ object HomeDrawerCatalog {
         HomeDrawerItem("emergency", "Emergency Information", false),
         HomeDrawerItem("payments", "Payments & Subscription", false),
         HomeDrawerItem("settings", "Settings", false),
+        HomeDrawerItem("feedback", "Send feedback", false),
         HomeDrawerItem("profile", "Profile", false),
         HomeDrawerItem("help", "Help & Support", false)
     )

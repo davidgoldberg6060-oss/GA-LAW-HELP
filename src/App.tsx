@@ -7,6 +7,7 @@ import{aiHelpAsk,guestEncounterReply,guestRightsAndEncounter,type Continuity}fro
 import ApprovedScreens from './ApprovedScreens';
 import FunnyGeorgia from './FunnyGeorgia';
 import './approvedScreens.css';
+import {initUsage,trackFeature} from './usage';
 
 import {LawAccordion} from './LawAccordion';
 import MyCase,{detectStageLabel} from './MyCase';
@@ -217,6 +218,7 @@ export default function App(){
   window.addEventListener('online',updateOnline);window.addEventListener('offline',updateOnline);window.addEventListener('beforeinstallprompt',captureInstall);
   return()=>{window.removeEventListener('online',updateOnline);window.removeEventListener('offline',updateOnline);window.removeEventListener('beforeinstallprompt',captureInstall)}
  },[]);
+ useEffect(()=>{initUsage({api:API,getToken:()=>chatToken()})},[]);
  useEffect(()=>{migrateLegacySession();if(!accessToken())return;
   authApi('/me').then(setUser).catch(()=>{clearSession();setUser(null)});
  },[]);
@@ -549,9 +551,9 @@ export default function App(){
    </div>
   </section>
   <section className="cards" aria-label="Your legal tools">
-   <button className="toolCard" onClick={()=>document.getElementById('law-library')?.scrollIntoView({behavior:'smooth'})}><FileText/><span><h3>Funny & Myth Checker</h3><p>Free: explore surprising Georgia-law claims and learn how to separate myths from verified law.</p></span><ChevronRight/></button>
-   <button className="toolCard" onClick={openCaseWorkspace}><MessageSquare/><span><h3>My Cases</h3><p>Create private cases, screen issues, test counterarguments and organize the record.</p></span><ChevronRight/></button>
-   <button className="toolCard" onClick={openCaseWorkspace}><HardDrive/><span><h3>My Documents</h3><p>Upload, verify and download case documents and preserved evidence.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={()=>{trackFeature('funny_laws');document.getElementById('law-library')?.scrollIntoView({behavior:'smooth'})}}><FileText/><span><h3>Funny & Myth Checker</h3><p>Free: explore surprising Georgia-law claims and learn how to separate myths from verified law.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={()=>{trackFeature('case_check');openCaseWorkspace()}}><MessageSquare/><span><h3>My Cases</h3><p>Create private cases, screen issues, test counterarguments and organize the record.</p></span><ChevronRight/></button>
+   <button className="toolCard" onClick={()=>{trackFeature('uploads');openCaseWorkspace()}}><HardDrive/><span><h3>My Documents</h3><p>Upload, verify and download case documents and preserved evidence.</p></span><ChevronRight/></button>
    <button className="toolCard" onClick={()=>{setScenario('traffic');openPolice()}}><Play/><span><h3>My Recordings</h3><p>Open legal-encounter recordings stored on this device and protected case copies.</p></span><ChevronRight/></button>
    <button className="toolCard" onClick={()=>openRights()}><ShieldAlert/><span><h3>Know My Rights</h3><p>Choose a situation and see calm, practical safety steps in plain language.</p></span><ChevronRight/></button>
    <button className="toolCard premiumCard" onClick={openPolice}><Car/><span><b className="premiumLabel"><ShieldCheck size={13}/> FREE WITH ACCOUNT</b><h3>Help Me Talk to Police</h3><p>Listen, suggest and read respectful responses aloud.</p></span><ChevronRight/></button>
@@ -653,6 +655,6 @@ export default function App(){
     {(mode==='forgot'||mode==='reset')&&<button type="button" className="authLink" onClick={()=>{if(mode==='reset')window.history.replaceState({},'', '/');setMode('login');setAuthError('');setPassword('')}}>Back to sign in</button>}
     {mode==='register'&&<small className="accountFinePrint">Public legal learning remains available without an account.</small>}
    </form></section></div>}
-  <footer className="appFooter" style={{padding:'16px',fontSize:'12px',opacity:.8,textAlign:'center'}}><p>STANDALONE ASSISTANT gives general information about Georgia law. It is not legal advice and does not create an attorney-client relationship. Questions may be processed by third-party AI providers; do not enter sensitive personal information.</p><p><a href={API+'/privacy'} target="_blank" rel="noreferrer">Privacy policy</a> · <a href="mailto:davidgoldberg6060@gmail.com">Contact</a></p><p>© 2026 Treyvon Pattillo. All rights reserved.</p></footer>
+  <footer className="appFooter" style={{padding:'16px',fontSize:'12px',opacity:.8,textAlign:'center'}}><p>STANDALONE ASSISTANT gives general information about Georgia law. It is not legal advice and does not create an attorney-client relationship. Questions may be processed by third-party AI providers; do not enter sensitive personal information.</p><p><a href={API+'/privacy'} target="_blank" rel="noreferrer">Privacy policy</a> · <a href="#feedback" onClick={(e)=>{e.preventDefault();window.dispatchEvent(new Event('ga-open-feedback'));document.getElementById('feedback-entry')?.scrollIntoView({behavior:'smooth'})}}>Send feedback</a> · <a href="mailto:davidgoldberg6060@gmail.com">Contact</a></p><p>© 2026 Treyvon Pattillo. All rights reserved.</p></footer>
  </main>
 }

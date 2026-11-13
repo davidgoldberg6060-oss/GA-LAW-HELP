@@ -16,6 +16,7 @@ export type ScreenId =
   | "emergency"
   | "dark"
   | "settings"
+  | "feedback"
   | "logout";
 
 export type ScreenItem = { id: ScreenId; label: string; hint: string; requiresSignIn: boolean };
@@ -38,6 +39,7 @@ export const drawerItems: ScreenItem[] = [
   { id: "emergency", label: "Emergency Help", hint: "Call 911 for danger", requiresSignIn: false },
   { id: "dark", label: "Dark Mode", hint: "Navy and gold", requiresSignIn: false },
   { id: "settings", label: "Settings", hint: "Account and notices", requiresSignIn: false },
+  { id: "feedback", label: "Send feedback", hint: "Help us improve the app", requiresSignIn: false },
   { id: "logout", label: "Log Out", hint: "End this session", requiresSignIn: false },
 ];
 
