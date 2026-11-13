@@ -27,7 +27,7 @@ object AnswerSections {
         // "Your Defense Plan"
         "how they'd build the case against you", "how to fight back", "your strongest defenses", "ways to challenge the evidence",
         "ways to challenge their case", "options to lessen the outcome", "ways to resolve it", "motions and filings that could help",
-        "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out", "charge or claim", "important dates", "case number", "court", "what could help in this paper", "what you can do next", "traducción al español", "explicación en palabras sencillas", "cargo o demanda", "fechas importantes", "número de caso", "tribunal", "qué puede hacer ahora", "preguntas para su abogado", "original en inglés (el que cuenta en la corte)", "lo que podría ayudar en este papel")
+        "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out", "things you may not know to ask", "charge or claim", "important dates", "case number", "court", "what could help in this paper", "what you can do next", "traducción al español", "explicación en palabras sencillas", "cargo o demanda", "fechas importantes", "número de caso", "tribunal", "qué puede hacer ahora", "preguntas para su abogado", "original en inglés (el que cuenta en la corte)", "lo que podría ayudar en este papel")
     val PLAN_LINE = Regex("^Your Defense Plan(?:\\s*[:—–-]\\s*(.+))?$")
     private val RENAME = mapOf(
         "how it works in georgia" to "How it works", "challenging the evidence" to "Ways to fight the evidence",
@@ -43,6 +43,7 @@ object AnswerSections {
         val t = title.lowercase()
         return when {
             t.startsWith("how they") -> "case"; t.startsWith("how to fight back") -> "fight"
+            t.startsWith("things you may not know") -> "ask"
             "motion" in t -> "motions"; t.startsWith("questions") -> "questions"; t.startsWith("deadlines") || t == "key deadlines" -> "deadlines"
             t == "laws cited" -> "laws"; t.startsWith("where to get help") -> "help"; else -> "info"
         }
@@ -88,6 +89,13 @@ object AnswerSections {
             }
         }
         if (kind == "questions") return Item(t)
+        if (kind == "ask") {
+            // "Do I have to appeal …? Why it matters: …" → tappable question + its one-line why.
+            Regex("^(.{3,140}?\\?)\\s*(?:Why it matters:\\s*)?(.*)$", RegexOption.IGNORE_CASE).find(t)?.let { m ->
+                val why = m.groupValues[2].trim()
+                return Item(m.groupValues[1].trim(), if (why.isNotBlank()) "Why it matters: $why" else null)
+            }
+        }
         if (kind == "fight") {
             // "Possession: The State cannot establish possession because … Challenge: … Motion: …"
             Regex("^([^.!?]{3,70}):\\s+(.*)$").find(t)?.let { m ->
