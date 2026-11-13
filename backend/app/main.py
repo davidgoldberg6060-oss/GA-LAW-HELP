@@ -37,8 +37,11 @@ _legacy_main.ask_openai = _delegated_ask_openai
 _legacy_main.grounded_public_ask = lambda question, db: grounded_legal_response(question, 'general', ask_openai, db=db)
 app.include_router(public_rights_router)
 from .anonymous_access import router as anonymous_router, ai_rate_limit_middleware
+from .usage_stats import router as usage_router, ai_usage_middleware
 app.include_router(anonymous_router)
+app.include_router(usage_router)
 app.middleware('http')(ai_rate_limit_middleware)
+app.middleware('http')(ai_usage_middleware)
 
 @app.middleware('http')
 async def crawler_policy_headers(request, call_next):

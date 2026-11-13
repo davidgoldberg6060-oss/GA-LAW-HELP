@@ -61,7 +61,7 @@ class ApiClient(private val context: Context) {
     /** A session that can no longer be refreshed falls back to this device's anonymous identity; no login screen. */
     private fun expireSession() { clearSession(); runCatching { anonymousSignIn() } }
     private fun connection(path:String,method:String):HttpURLConnection { return connection(path,method,30_000) }
-    private fun connection(path:String,method:String,readMs:Int):HttpURLConnection { require(BuildConfig.API_BASE_URL.startsWith("https://")||BuildConfig.DEBUG); return (URL(BuildConfig.API_BASE_URL.trimEnd('/')+path).openConnection() as HttpURLConnection).apply { requestMethod=method;connectTimeout=8_000;readTimeout=readMs;setRequestProperty("Accept","application/json");setRequestProperty("Connection","keep-alive");token?.let{setRequestProperty("Authorization","Bearer $it")} } }
+    private fun connection(path:String,method:String,readMs:Int):HttpURLConnection { require(BuildConfig.API_BASE_URL.startsWith("https://")||BuildConfig.DEBUG); return (URL(BuildConfig.API_BASE_URL.trimEnd('/')+path).openConnection() as HttpURLConnection).apply { requestMethod=method;connectTimeout=8_000;readTimeout=readMs;setRequestProperty("Accept","application/json");setRequestProperty("Connection","keep-alive");setRequestProperty("X-App-Platform","android");setRequestProperty("X-App-Version",BuildConfig.VERSION_NAME);token?.let{setRequestProperty("Authorization","Bearer $it")} } }
     private fun read(c:HttpURLConnection):Pair<Int,String>{val code=c.responseCode;var stream=if(code in 200..299)c.inputStream else c.errorStream;if(stream!=null&&c.contentEncoding?.contains("gzip",true)==true)stream=java.util.zip.GZIPInputStream(stream);return code to stream?.bufferedReader()?.use{it.readText()}.orEmpty()}
     private fun networkMessage(e:Exception):ApiNetworkException=when{
         e is ApiNetworkException->e
@@ -113,6 +113,8 @@ class ApiClient(private val context: Context) {
     /** Anonymous users delete their device's data with the device key; no password needed. */
     fun deleteDeviceData():JSONObject=deleteAccount("")
     fun logout(){val current=refreshToken;if(current!=null)runCatching{execute("/auth/logout","POST",JSONObject().put("refresh_token",current),false)};clearSession()}
+    fun reportUsage(events:JSONArray)=JSONObject(execute("/usage/events","POST",JSONObject().put("platform","android").put("app_version",BuildConfig.VERSION_NAME).put("events",events)))
+    fun sendFeedback(rating:Int?,category:String,comment:String,email:String,screen:String)=JSONObject(execute("/feedback","POST",JSONObject().put("platform","android").put("app_version",BuildConfig.VERSION_NAME).put("screen",screen).put("category",category).put("comment",comment.ifBlank{JSONObject.NULL}).put("contact_email",email.ifBlank{JSONObject.NULL}).put("rating",rating?:JSONObject.NULL)))
     fun caseNotes(id:Int)=JSONArray(execute("/cases/$id/notes"));fun saveCaseNote(id:Int,title:String,content:String,language:String)=JSONObject(execute("/cases/$id/notes","POST",JSONObject().put("title",title).put("content",content).put("note_type","LEGAL_RESEARCH").put("language",language)));fun deleteCaseNote(id:Int,noteId:Long)=JSONObject(execute("/cases/$id/notes/$noteId","DELETE"))
     fun publicAsk(question:String):JSONObject {
         GuestPublicApi.encounter(BuildConfig.API_BASE_URL, question)

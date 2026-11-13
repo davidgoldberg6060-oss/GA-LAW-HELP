@@ -18,6 +18,8 @@ import {
   rightsTopics,
   type ScreenId,
 } from "./approvedScreenCatalog";
+import FeedbackForm from "./FeedbackForm";
+import { markPromptSeen, promptDue, setScreen, trackFeature } from "./usage";
 
 type Scenario = "traffic" | "public" | "home" | "questioning" | "arrest" | "witness";
 
@@ -46,6 +48,14 @@ const AI_FEATURE = "ai_help";
 const BUILD_PREFIX = /^Build my defense plan for this:\s*/i;
 const AI_LABEL = "AI Help";
 const browserStore = () => (typeof window !== "undefined" ? window.localStorage : undefined);
+const FEATURE_BY_SCREEN: Partial<Record<ScreenId, "chat" | "case_check" | "motion_maker" | "funny_laws" | "find_legal_help" | "uploads">> = {
+  ai: "chat",
+  cases: "case_check",
+  analysis: "case_check",
+  tools: "motion_maker",
+  forms: "motion_maker",
+  resources: "find_legal_help",
+};
 
 function SectionBlock({ section }: { section: AnswerSection }) {
   const [open, setOpen] = useState(false);
@@ -123,6 +133,7 @@ export default function ApprovedScreens(props: Props) {
   const [chatBusy, setChatBusy] = useState(false);
   const [chatNotice, setChatNotice] = useState("");
   const [carryLine, setCarryLine] = useState("");
+  const [askFeedback, setAskFeedback] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
 
@@ -245,11 +256,28 @@ export default function ApprovedScreens(props: Props) {
     if (id === "rights") props.onRights("public");
     setPanel(id);
     setDrawer(false);
+    setScreen(id);
+    const feature = FEATURE_BY_SCREEN[id];
+    if (feature) trackFeature(feature);
   }
 
   useEffect(() => {
     if (panel === "ai") aiQuestionRef.current?.focus();
   }, [panel]);
+
+  useEffect(() => { setAskFeedback(promptDue()); }, []);
+
+  useEffect(() => {
+    function onOpen() { setPanel("feedback"); setDrawer(false); setScreen("feedback"); }
+    function onHash() { if (location.hash === "#feedback") onOpen(); }
+    window.addEventListener("ga-open-feedback", onOpen);
+    window.addEventListener("hashchange", onHash);
+    onHash();
+    return () => {
+      window.removeEventListener("ga-open-feedback", onOpen);
+      window.removeEventListener("hashchange", onHash);
+    };
+  }, []);
 
   return (
     <section className="approvedShell" aria-label="STANDALONE ASSISTANT screens">
@@ -280,6 +308,19 @@ export default function ApprovedScreens(props: Props) {
       <button type="button" className="approvedEmergency" onClick={() => open("emergency")}>
         Emergency Help
         <small>Important contacts. Call 911 if someone is in danger.</small>
+      </button>
+      {askFeedback && panel === "home" && (
+        <div className="feedbackPrompt" role="dialog" aria-label="How is the app so far?">
+          <span><strong>How's the app so far?</strong><small>A 10-second rating helps us improve. You can skip this.</small></span>
+          <span className="promptActions">
+            <button type="button" onClick={() => { markPromptSeen(); setAskFeedback(false); open("feedback"); }}>Rate the app</button>
+            <button type="button" onClick={() => { markPromptSeen(); setAskFeedback(false); }}>Not now</button>
+          </span>
+        </div>
+      )}
+      <button type="button" className="feedbackEntry" onClick={() => open("feedback")}>
+        <strong>Help us improve</strong>
+        <small>Send feedback about the app — a bug, the design, or an idea.</small>
       </button>
       {panel !== "home" && (
         <div className="approvedPanel">
@@ -456,8 +497,13 @@ export default function ApprovedScreens(props: Props) {
               <h2>Settings</h2>
               <p>{props.signedIn ? "Signed in. Private cases remain login-only." : "Guest mode. Sign in only for My Cases and Case Analysis."}</p>
               <p>Dark mode is {dark ? "on" : "off"}.</p>
+              <button type="button" className="feedbackEntry settingsFeedback" onClick={() => open("feedback")}>
+                <strong>Send feedback</strong>
+                <small>Help us improve the app.</small>
+              </button>
             </>
           )}
+          {panel === "feedback" && <FeedbackForm screen={panel} />}
           {panel === "dark" && <h2>Dark mode {dark ? "on" : "off"}</h2>}
         </div>
       )}

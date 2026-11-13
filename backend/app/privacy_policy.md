@@ -1,6 +1,6 @@
 # GA.LAW.HELP Privacy Policy
 
-Last updated: November 1, 2026
+Last updated: November 13, 2026
 
 GA.LAW.HELP is an app that gives general information about Georgia law. It is not a law firm and does not give legal advice. Nothing in the app is legal advice, and using it does not create an attorney-client relationship. For advice about your situation, talk to a licensed Georgia attorney. This policy explains what the Android app, the website and the GA.LAW.HELP server collect, why, and how you can delete it.
 
@@ -10,6 +10,8 @@ GA.LAW.HELP is an app that gives general information about Georgia law. It is no
 - **Questions you type or dictate.** Guest questions (for example Know Your Rights or Georgia law searches) are sent to the GA.LAW.HELP server to search our library of Georgia law and, for some features, to an AI provider to write an answer. Guest questions are not linked to an account.
 - **Anonymous device ID.** You do not need to sign in. The first time the app opens it creates a random device key on your phone (kept in Android encrypted storage). Our server keeps only a one-way hash of it, linked to an anonymous record with no name, email or phone number. This lets the app save your cases, Case Chat, Charge Check and Legal Loopholes results to your device's anonymous record, and lets us apply daily usage limits to AI features. Anything you save this way is treated like account case information below.
 - **IP address for usage limits.** To keep AI features free and prevent abuse, the server counts requests per device and per IP address for up to 24 hours in memory. These counts are not stored in our database.
+- **Anonymous usage counts.** The app and website send anonymous counts of opens, sessions, features used, first opens, installs, and AI questions asked. These counts are tied only to a one-way hash of your device record (or are stored with no device id if you are not signed in). We do not store IP addresses, your name, or the text of your questions in these counts. The owner uses them to see how the app is being used.
+- **Optional app feedback.** If you tap Send feedback or Help us improve, we store your star rating, category, comments, app version, platform (web or Android), the screen you were on, the time, and a one-way hash of your device record. If you choose to leave a contact email so we can reply, we store that email with your feedback. We do not attach your legal questions unless you type them into the feedback box yourself.
 
 ### If you create an account
 - **Account details:** your email address, a one-way hash of your password (we never store the password itself), your account type, when you verified your email, and when the account was created.
@@ -30,8 +32,9 @@ The app asks for microphone access only when you tap the microphone button. Spee
 - To answer your questions and analyze your cases using verified Georgia legal sources.
 - To sign you in, keep your account secure, verify your email and reset your password.
 - To email you account messages (verification, password reset, and a confirmation receipt when you upload an audio or video file).
+- To count anonymous app and website use, and to read optional feedback, so we can improve STANDALONE ASSISTANT.
 
-We do not sell your information, show ads, or use advertising or analytics trackers.
+We do not sell your information or show ads. We do not use third-party advertising or analytics trackers. Usage counts are first-party only, as described above.
 
 ## Who we share it with
 We share information only with the service providers needed to run the app:

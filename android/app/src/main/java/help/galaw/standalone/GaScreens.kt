@@ -54,7 +54,7 @@ object GaScreens {
         "laws" -> R.drawable.ga_ic_balance; "motions" -> R.drawable.ga_ic_edit_square; "forms" -> R.drawable.ga_ic_description
         "court" -> R.drawable.ga_ic_account_balance; "rights" -> R.drawable.ga_ic_groups; "resources" -> R.drawable.ga_ic_support
         "emergency" -> R.drawable.ga_ic_warning; "payments" -> R.drawable.ga_ic_payments; "settings" -> R.drawable.ga_ic_settings
-        "profile" -> R.drawable.ga_ic_person; "loopholes" -> R.drawable.ga_ic_search; "charges" -> R.drawable.ga_ic_error; "civil" -> R.drawable.ga_ic_balance; "funny" -> R.drawable.ga_ic_mood; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
+        "profile" -> R.drawable.ga_ic_person; "feedback" -> R.drawable.ga_ic_volunteer_activism; "loopholes" -> R.drawable.ga_ic_search; "charges" -> R.drawable.ga_ic_error; "civil" -> R.drawable.ga_ic_balance; "funny" -> R.drawable.ga_ic_mood; "help" -> R.drawable.ga_ic_help; else -> R.drawable.ga_ic_info
     }
 
     fun drawer(ui: GaUi, items: List<HomeDrawerItem>, versionName: String, onSelect: (HomeDrawerItem) -> Unit, onClose: () -> Unit): View {
@@ -505,6 +505,7 @@ object GaScreens {
             Triple(R.drawable.ga_ic_notifications, "Court date reminders", null),
             Triple(R.drawable.ga_ic_lock, "Privacy & Security", null),
             Triple(R.drawable.ga_ic_delete, "Clear App Data", null),
+            Triple(R.drawable.ga_ic_volunteer_activism, "Send feedback", null),
             Triple(R.drawable.ga_ic_info, "About STANDALONE ASSISTANT", null)), onRow), ui.lp(2, 8))
         return root
     }
@@ -546,6 +547,7 @@ object GaScreens {
             Triple(R.drawable.ga_ic_info, "App Tutorial", null),
             Triple(R.drawable.ga_ic_description, "Terms of Service", null),
             Triple(R.drawable.ga_ic_privacy_tip, "Privacy Policy", null),
+            Triple(R.drawable.ga_ic_volunteer_activism, "Send feedback", null),
             Triple(R.drawable.ga_ic_support_agent, "Contact Support", null)), onRow), ui.lp(2, 8))
         if (onSignOut != null) body.addView(ui.primaryButton("Sign Out") { onSignOut() }.apply { textSize = 18f }, ui.lp(16, 4))
         return root
