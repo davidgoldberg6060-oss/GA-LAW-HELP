@@ -559,7 +559,7 @@ export default function App(){
   <MyCase api={API} initial={caseStart} onCivil={()=>setTool('case')} onAsk={()=>setTool('avoid')}/>
   <section className="learn" id="law-library"><div className="sectionTitle"><BookOpen/><div><h2>Funny, Weird & Surprising Georgia Law</h2><p>Browse free as a guest: real Georgia laws and court cases that sound made up, each with its citation and source.</p></div></div>
    <FunnyGeorgia api={API}/></section>
-  <button className="encounterFab" onClick={()=>{setScenario('traffic');openPolice()}}><ShieldAlert size={20}/><span><b>Encounter Help</b><small>Open safety mode</small></span></button>
+  {/* No floating Encounter Help button: encounter/safety help is on the home "What is happening?" cards and the menu (Know Your Rights, Emergency Help). */}
   {tool&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)closeTool()}}><section className="toolModal" role="dialog" aria-modal="true" aria-label={tool==='avoid'?'Avoid trouble':tool==='case'?'Private case assistant':'Help me talk to police'}>
    <button className="close" onClick={closeTool} aria-label="Close"><X/></button>
    {tool==='avoid'?<><ShieldAlert className="modalLogo"/><h2>Avoid Trouble</h2><p>Choose the situation closest to what is happening. Safety comes first; this is general information, not a substitute for a lawyer.</p>
