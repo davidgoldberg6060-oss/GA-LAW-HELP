@@ -251,10 +251,11 @@ _FOCUS = {
     "drugs": "whether the stop and the car search were lawful (consent, probable cause, scope, K-9), who actually possessed the drugs "
              "(constructive possession, other passengers, whose car), lab testing and chain of custody, statements, and conditional discharge or First Offender",
     "theft": "intent (the State must prove intent to take), store video and loss-prevention reports, the value charged, how statements were taken, "
-             "civil demand letters versus the criminal case, and First Offender, diversion, or pretrial intervention for a first offense",
+             "civil demand letters versus the criminal case, and First Offender, diversion, or pretrial intervention for a first offense "
+             "(do not suggest a speedy-trial dismissal unless the user describes a long delay; Georgia shoplifting does not require leaving the store)",
     "traffic": "the officer's basis for the stop, how speed was measured (radar/laser calibration and training, pacing), errors on the citation, "
                "points and license consequences, and options like asking for reduced points, defensive driving, or a plea of nolo contendere "
-               "(conditional discharge is only for drug possession; do not suggest it for a traffic ticket)",
+               "(do not suggest First Offender, conditional discharge, or an accountability court for a traffic ticket)",
     "criminal": "what the State must prove for this charge, an unlawful stop, search, or arrest, identification, statements, witness credibility, "
                 "and options like First Offender or pretrial diversion",
     "probation": "the exact condition said to be violated, notice of the violation, the right to a hearing and to a lawyer, the lower burden of "
@@ -292,12 +293,16 @@ def prompt_block(plan: dict, app_motions: list[dict] | None = None) -> str:
                if criminal else
                "Under 'Motions and filings that could help' name 1-3 filings that fit these facts (for example an answer, a motion to "
                "dismiss, a motion to set aside a default judgment, an appeal, or a petition to modify), one line each: what it does and how it helps.")
-    lessen = ("Under 'Options to lessen the outcome' list only options that fit: First Offender, conditional discharge, diversion or pretrial "
-              "intervention, accountability courts, record restriction, mitigation, and plea considerations (what to weigh before any plea)."
+    lessen = ("Under 'Options to lessen the outcome' list only options that fit THIS charge: First Offender (not for traffic tickets), "
+              "conditional discharge (only for drug possession), diversion or pretrial intervention, an accountability court (only if the "
+              "user mentions addiction, substance use, mental health, or military service), record restriction, mitigation, and plea "
+              "considerations (what to weigh before any plea)."
               if criminal else
               "Under 'Ways to resolve it' list options like a payment plan, settlement, mediation, or a consent order, only where they fit.")
     challenge = ("Under 'Ways to challenge the evidence' cover only the angles that fit: an illegal stop or search, identification, chain of custody "
-                 "and testing, statements and Miranda, and the State's burden to prove every element beyond a reasonable doubt."
+                 "and testing, statements and Miranda, and " + ("the State's burden at a revocation hearing (lower than beyond a reasonable "
+                 "doubt; never say 'beyond a reasonable doubt' for probation)" if plan.get("case_type") == "probation" else
+                 "the State's burden to prove every element beyond a reasonable doubt") + "."
                  if criminal else
                  "Under 'Ways to challenge their case' cover only what fits: standing, proper notice and service, procedure, the statute of "
                  "limitations, the amount claimed, and the other side's burden of proof.")
@@ -308,13 +313,18 @@ def prompt_block(plan: dict, app_motions: list[dict] | None = None) -> str:
     case_against = (f"Under \"{CASE_AGAINST}\" think like {side} using ONLY the user's facts: first bullet 'Likely "
                     f"{'charge' if criminal else 'claim'}: <name> (cite the listed Georgia law that defines it, if listed)'. Then one bullet per legal "
                     "element (2-4 elements), each as '<element name in 1-4 plain words, without the word Element>: They'd point to <what they likely already have from these facts, e.g. "
-                    "bodycam, the search, statements, lab results, witnesses, the lease or ledger>. They'd still need <what is missing>.' Finish with "
-                    "one bullet 'Weak spots: <the gaps or weak points in their case>'. Never assume evidence the facts don't suggest; say 'likely' or 'may'.")
+                    "bodycam, the search, statements, lab results, witnesses, the lease or ledger, ONLY where the user mentioned it>. They'd still need <what is missing>.' "
+                    "For evidence the user did not mention, write it as what they would need or might have, in conditional terms ('They would need to show "
+                    "you meant to keep it; if there is store video, they may use it'). Never say what a video, report, witness, or test shows unless the "
+                    "user said so. Finish with one bullet 'Weak spots: <the gaps or weak points in their case>'.")
     fight_back = (f"Under \"{FIGHT_BACK}\" go element by element, matching the elements above: one bullet each as '<the same element name>: <one persuasive, "
                   f"motion-style sentence that starts like \"{'The State cannot establish possession because' if criminal else 'The landlord cannot show a proper demand for possession because'} ...\">. "
                   "Challenge: <the evidence challenge>. Motion: <the motion that attacks it>.' Write it the way a defense motion argues, built on "
                   "the user's facts and the listed laws. Use the exact motion names listed below when one fits. Later sections must not repeat "
                   "these points. "
+                  "After 'Motion:' name a motion that attacks that element (for example to suppress, exclude, dismiss, or get discovery), never a "
+                  "sentencing option like First Offender or conditional discharge. Only name a motion that fits this charge and these facts: no speedy-trial dismissal unless the user describes a long delay, no "
+                  "accountability court unless they mention addiction, substance use, mental health, or military service. "
                   "Add one last bullet for any complete defense that fits (for example justification, entrapment, mistake of fact, tender of rent), "
                   "as '<Defense>: why it helps. Applies if ...'. At most 5 bullets.")
     if app_motions:
@@ -322,7 +332,9 @@ def prompt_block(plan: dict, app_motions: list[dict] | None = None) -> str:
                        "; ".join(f"{m['title']} ({m['how_it_helps']})" for m in app_motions[:6]) + ".")
     return (f"AUTOMATIC DEFENSE PLAN ({plan.get('label')}): the user described their own situation. Build 'Your Defense Plan' for THESE "
             "facts. Be defense-first, strong and direct: you are on the user's side, so lead with what could help them most, without "
-            "predicting or promising an outcome and without assuming facts they did not give. Use these headings in this order, each on its "
+            "predicting or promising an outcome. NEVER invent facts: do not state anything the user did not say (no 'the video shows', 'the "
+            "officer saw', 'you admitted'); phrase unknown evidence as what the other side would need or might have ('if there is video', "
+            "'they may have'). Use these headings in this order, each on its "
             "own line exactly as written: " + "; ".join(heads) + ". Skip any heading (except Quick answer, Questions to ask your lawyer, and "
             "Where to get help) when nothing genuinely fits these facts; never pad. Under Quick answer write 2-3 short plain sentences (no bullets, "
             "no citations): first the strongest defense angle for these facts, then the most urgent next step. Never use the Quick answer to "
@@ -357,6 +369,88 @@ def max_words(plan: dict) -> int:
 
 def title_line(plan: dict) -> str:
     return f"{PLAN_TITLE}: {plan['label']}" if plan.get("label") else PLAN_TITLE
+
+
+_DELAY = re.compile(r"speedy|delay|taking (so|too) long|been (?:\w+ )?(?:months|years?)|no trial date|waiting (?:on|for) (?:court|trial)|"
+                    r"(?:months|years?) (?:and|with) no (?:trial|court)", re.I)
+_TREATMENT = re.compile(r"addict|substance (?:use|abuse)|dependen|rehab|treatment|relaps|mental(?:ly)? (?:health|ill)|ptsd|bipolar|"
+                        r"depress|schizo|veteran|military|served in the", re.I)
+
+
+def _unfit(plan: dict) -> list[re.Pattern]:
+    """Options/motions that don't fit this plan's charge and facts (dropped from motions and from bullet lines)."""
+    facts = plan.get("facts") or ""
+    kind = plan.get("case_type")
+    bad = []
+    if not _DELAY.search(facts):
+        bad.append(re.compile(r"speedy[- ]trial (?:right )?dismiss|dismiss\w* (?:for|on) (?:a )?(?:violation of )?(?:the )?(?:constitutional )?speedy", re.I))
+    if not _TREATMENT.search(facts):
+        bad.append(re.compile(r"accountability court|drug court|mental health court|veterans? court", re.I))
+    if kind == "traffic":
+        bad.append(re.compile(r"first offender|conditional discharge", re.I))
+    elif kind != "drugs":
+        bad.append(re.compile(r"conditional discharge", re.I))
+    return bad
+
+
+def fit_motions(plan: dict, motions: list[dict]) -> list[dict]:
+    """Drop catalog motions that don't fit the charge (e.g. speedy-trial dismissal without a delay, First Offender for a ticket)."""
+    if not plan:
+        return motions
+    facts = plan.get("facts") or ""
+    kind = plan.get("case_type")
+    out = []
+    for m in motions or []:
+        k = m.get("key")
+        if k == "speedy_trial_constitutional" and not _DELAY.search(facts):
+            continue
+        if k == "accountability_court" and not _TREATMENT.search(facts):
+            continue
+        if k == "conditional_discharge" and kind != "drugs":
+            continue
+        if k in ("first_offender", "retroactive_first_offender") and kind == "traffic":
+            continue
+        out.append(m)
+    return out
+
+
+_SENTENCING = re.compile(r"first offender|conditional discharge|accountability court|pretrial (?:diversion|intervention)", re.I)
+_BULLET = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+")
+_CLAIMED = re.compile(r"\b(?:the |store |security |surveillance )?(video|footage|camera|body ?cam|dash ?cam)( clearly)? shows\b", re.I)
+
+
+def scrub(plan: dict, analysis: str) -> str:
+    """Server-side guard on the model's plan: drop bullets naming options that don't fit the charge, and turn an invented
+    'the video shows' (when the user never mentioned video) into a conditional."""
+    if not plan:
+        return analysis
+    bad = _unfit(plan)
+    facts = plan.get("facts") or ""
+    lines = []
+    for line in str(analysis or "").split("\n"):
+        head, sep, motion = line.partition(" Motion:")
+        if sep and _SENTENCING.search(motion):
+            line = head.rstrip()  # a sentencing option is not a motion that attacks an element
+        if _BULLET.match(line) and any(b.search(line) for b in bad):
+            head, sep, motion = line.partition(" Motion:")
+            if sep and any(b.search(motion) for b in bad) and not any(b.search(head) for b in bad):
+                line = head.rstrip()  # keep the argument, drop only the motion that doesn't fit
+            else:
+                continue
+        lines.append(line)
+    text = "\n".join(lines)
+    if not re.search(r"video|footage|camera|\bcam\b|bodycam|dashcam|recorded", facts, re.I):
+        text = _CLAIMED.sub(lambda m: f"any {m.group(1).lower()} would have to show", text)
+    return text
+
+
+def before_note(analysis: str, block: str) -> str:
+    """Put ``block`` (e.g. the deadline check) before the 'Note:' footnote, not after it."""
+    text = str(analysis or "").rstrip()
+    m = re.search(r"(?m)^Note:", text)
+    if not m:
+        return text + "\n\n" + block
+    return text[:m.start()].rstrip() + "\n\n" + block + "\n\n" + text[m.start():]
 
 
 def motion_question(plan: dict) -> str:

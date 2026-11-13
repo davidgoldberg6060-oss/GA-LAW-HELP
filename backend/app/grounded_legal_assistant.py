@@ -311,7 +311,7 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None,conversation:list|
  pre_motions=None
  if plan and plan.get("family")=="criminal":
   # Motions picked before the model call so "How to fight back" names the app's own motions (motion maker).
-  pre_motions=_dh.suggested_motions(_dp.motion_question(plan),lambda secs:_motion_lookup(db,secs,verified))
+  pre_motions=_dp.fit_motions(plan,_dh.suggested_motions(_dp.motion_question(plan),lambda secs:_motion_lookup(db,secs,verified)))
  pack=encounter_prompt_block(mode, query)
  earlier=_cm.context_block(conversation) if conversation else ""
  earlier_block=f"{earlier}\n\n" if earlier else ""
@@ -331,7 +331,7 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None,conversation:list|
  # Only list laws the answer actually cites; if it cites none, the top relevant verified laws.
  shown=used or verified[:3]
  amendment=SHORT_AMENDMENT_NOTE if any(h.get("as_of") for h in shown) else None
- if plan:analysis=re.sub(r"(?im)^(\s*(?:[-*•]|\d+[.)])\s+)element\s*(?:\d+\s*)?[:—-]\s*",r"\1",analysis)  # "- Element: Possession: ..." -> "- Possession: ..."
+ if plan:analysis=_dp.scrub(plan,re.sub(r"(?im)^(\s*(?:[-*•]|\d+[.)])\s+)element\s*(?:\d+\s*)?[:—-]\s*",r"\1",analysis))  # "- Element: Possession: ..." -> "- Possession: ..."
  analysis=clean_answer(analysis,add_note=bool(amendment),max_words=_dp.max_words(plan) if plan else (_dh.max_words(question) if mode=="general" else 420))
  if mode=="general":analysis=_dh.drop_empty_group_labels(analysis)
  analysis=ensure_sick_call(analysis,retrieval_question(query))
@@ -347,7 +347,7 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None,conversation:list|
   analysis=ensure_lawyer_questions(analysis,topic_text)
  authorities=[{**h,"citation":h.get("display_citation") or with_as_of(h.get("citation"),h.get("as_of")),"citation_raw":h.get("citation")} if h.get("as_of") else h for h in shown]
  deadline_warning=unsupported_deadline_warning(analysis,verified)
- if deadline_warning:analysis=analysis.rstrip()+"\n\n"+deadline_warning
+ if deadline_warning:analysis=_dp.before_note(analysis,deadline_warning)
  # Motions from the app's motion library, only when relevant and only with verified Georgia law.
  motions=[];case_stage=None
  if mode=="general" and not (plan and plan.get("family")=="civil"):
