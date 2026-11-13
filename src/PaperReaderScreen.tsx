@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { structureAnswer } from "./answerSections";
 import { getLang, getVoice, t, type Lang, type VoiceId } from "./i18n";
+import { canAddMore, capIncoming, counterLabel, MAX_PAGES_PER_BATCH } from "./pageBatch";
 import { downloadPdf } from "./planPdf";
 import { isSupported, speak, stop } from "./readAloud";
 import type { PaperResult, ReadPaper, TranslatePaper } from "./paperApi";
@@ -19,9 +20,27 @@ export default function PaperReaderScreen({ lang = getLang(), readPaper, transla
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [result, setResult] = useState<PaperResult | null>(null);
+  const [sessionId, setSessionId] = useState("");
+  const [awaitingNext, setAwaitingNext] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const voice = getVoice();
+  const room = Math.max(0, MAX_PAGES_PER_BATCH - files.length);
+  const addEnabled = canAddMore(files.length) && !busy && !awaitingNext;
+
+  function takeFiles(list: File[]) {
+    if (awaitingNext) return;
+    const next = capIncoming(files, list, MAX_PAGES_PER_BATCH, lang);
+    setFiles(next.pages);
+    setNotice(next.message);
+    if (next.message) setError("");
+  }
+
+  function clearFileInputs() {
+    if (fileRef.current) fileRef.current.value = "";
+    if (cameraRef.current) cameraRef.current.value = "";
+  }
 
   async function run(list: File[], translate: boolean) {
     if (!readPaper) {
@@ -33,15 +52,38 @@ export default function PaperReaderScreen({ lang = getLang(), readPaper, transla
       return;
     }
     setError("");
+    setNotice("");
     setBusy(translate ? "Photographing and translating…" : "Reading your paper…");
     try {
-      const out = await readPaper(list, { translate });
+      const out = await readPaper(list, { translate, sessionId: sessionId || undefined });
       setResult(out);
+      if (out.session_id) setSessionId(out.session_id);
+      setFiles([]);
+      clearFileInputs();
+      setAwaitingNext(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "The paper could not be read.");
     } finally {
       setBusy("");
     }
+  }
+
+  function addMorePages() {
+    setAwaitingNext(false);
+    setFiles([]);
+    setError("");
+    setNotice("");
+    clearFileInputs();
+  }
+
+  function startNewCase() {
+    setAwaitingNext(false);
+    setSessionId("");
+    setFiles([]);
+    setResult(null);
+    setError("");
+    setNotice("");
+    clearFileInputs();
   }
 
   async function translateExisting() {
@@ -62,24 +104,53 @@ export default function PaperReaderScreen({ lang = getLang(), readPaper, transla
   const caseType = result?.defense_plan && typeof (result.defense_plan as { case_type?: string }).case_type === "string"
     ? (result.defense_plan as { case_type?: string }).case_type || null
     : null;
+  const totalPages = result?.pages_total || result?.pages_this_batch || 0;
 
   return (
     <div className="paperPanel">
       <h2>{t("paperReader", lang)}</h2>
       <p className="muted">{t("paperHint", lang)}</p>
-      <div className="paperActions">
-        <button type="button" className="ansBuild" onClick={() => cameraRef.current?.click()}>{t("takePhoto", lang)}</button>
-        <button type="button" className="ansMaker" onClick={() => fileRef.current?.click()}>{t("chooseFile", lang)}</button>
-        <button type="button" className="ansMaker" onClick={() => {
-          const list = files.length ? files : Array.from(cameraRef.current?.files || []);
-          void run(list, true);
-        }}>{t("photoAndTranslate", lang)}</button>
-      </div>
-      <input ref={cameraRef} className="fileHidden" type="file" accept="image/*" capture="environment" multiple
-        onChange={(e) => { const list = Array.from(e.target.files || []); setFiles(list); if (list.length) void run(list, false); }} />
-      <input ref={fileRef} className="fileHidden" type="file" accept="image/*,application/pdf" multiple
-        onChange={(e) => { const list = Array.from(e.target.files || []); setFiles(list); if (list.length) void run(list, false); }} />
-      {files.length > 0 && <p className="muted">{files.length} file{files.length === 1 ? "" : "s"} selected.</p>}
+      <p className="pageCounter" aria-live="polite">
+        <strong>{counterLabel(awaitingNext ? 0 : files.length, MAX_PAGES_PER_BATCH, lang)}</strong>
+        <span className="pageLimitNote">{t("pageLimitNote", lang)}</span>
+      </p>
+      {awaitingNext ? (
+        <div className="paperContinue">
+          <p className="muted">
+            {totalPages > 0 ? (lang === "es" ? `${totalPages} páginas leídas en este caso. ` : `${totalPages} page${totalPages === 1 ? "" : "s"} read in this case. `) : ""}
+            {t("afterBatchHint", lang)}
+          </p>
+          <div className="paperActions">
+            <button type="button" className="ansBuild" onClick={addMorePages}>{t("addMorePages", lang)}</button>
+            <button type="button" className="ansMaker" onClick={startNewCase}>{t("startNewCase", lang)}</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="paperActions">
+            <button type="button" className="ansBuild" disabled={!addEnabled} onClick={() => cameraRef.current?.click()}>{t("takePhoto", lang)}</button>
+            <button type="button" className="ansMaker" disabled={!addEnabled} onClick={() => fileRef.current?.click()}>{t("chooseFile", lang)}</button>
+            <button type="button" className="ansMaker" disabled={!files.length || !!busy} onClick={() => void run(files, true)}>{t("photoAndTranslate", lang)}</button>
+            <button type="button" className="ansBuild" disabled={!files.length || !!busy} onClick={() => void run(files, false)}>{t("readPaper", lang)}</button>
+          </div>
+          <input ref={cameraRef} className="fileHidden" type="file" accept="image/*" capture="environment" multiple
+            onChange={(e) => { takeFiles(Array.from(e.target.files || [])); e.target.value = ""; }} />
+          <input ref={fileRef} className="fileHidden" type="file" accept="image/*,application/pdf" multiple
+            onChange={(e) => { takeFiles(Array.from(e.target.files || [])); e.target.value = ""; }} />
+          {files.length > 0 && (
+            <ul className="pageList">
+              {files.map((file, i) => (
+                <li key={file.name + i}>
+                  <span>{file.name || `Page ${i + 1}`}</span>
+                  <button type="button" className="pageRemove" onClick={() => { setFiles(files.filter((_, j) => j !== i)); setNotice(""); }}>{t("removePage", lang)}</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+      {room === 0 && !awaitingNext && <p className="muted">{t("afterBatchHint", lang)}</p>}
+      {notice && <p className="paperNotice" role="status">{notice}</p>}
       {busy && <p className="chatNotice" role="status">{busy}</p>}
       {error && <p className="paperError" role="alert">{error}</p>}
       {structured && (

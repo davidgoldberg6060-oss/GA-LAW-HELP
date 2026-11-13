@@ -15,10 +15,12 @@ SECTION_IDS = (
     "day_before", "day_of", "bring", "wear", "arrive", "address_judge", "say", "dont_say",
 )
 
+_HERE = Path(__file__).resolve().parent
 _CANDIDATES = (
-    Path(__file__).resolve().parents[2] / "config" / "courtroom_prep.json",
-    Path(__file__).resolve().parents[2] / "src" / "courtroomPrepData.json",
-    Path(__file__).resolve().parent / "data" / "courtroom_prep.json",
+    _HERE / "data" / "courtroom_prep.json",  # shipped inside the API image (backend/app/data)
+    _HERE.parents[1] / "config" / "courtroom_prep.json",  # /app/config in Docker, backend/config fallback
+    _HERE.parents[2] / "config" / "courtroom_prep.json",  # repo root when running from backend/app
+    _HERE.parents[2] / "src" / "courtroomPrepData.json",
 )
 
 
