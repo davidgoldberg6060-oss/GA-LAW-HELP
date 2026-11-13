@@ -163,7 +163,7 @@ def test_cache_key_bumped_so_old_answers_are_not_served():
 
 def test_no_custody_or_guilt_assumptions_in_plan_prompt():
     block = dp.prompt_block({"status": "build", "case_type": "theft", "label": "Theft or shoplifting", "family": "criminal"})
-    assert "without assuming facts" in block and "jail staff" not in block and "Never suggest lying" in block
+    assert "NEVER invent facts" in block and "jail staff" not in block and "Never suggest lying" in block
 
 
 # ---------------------------------------------------------------- uploaded papers
@@ -233,3 +233,80 @@ def test_documents_read_plan_failure_never_breaks_the_read(monkeypatch, wired):
     monkeypatch.setattr(main, "ask_fast", boom)
     out = main._document_defense_plan(EVICTION_PAPER, "", FakeDB())
     assert out["status"] == "unavailable" and "Build my defense" in out["message"]
+
+
+# --- Quality guards (no invented facts, motions that fit the charge, deadline check before the Note) ---
+
+def _m(key):
+    return {"key": key, "title": key}
+
+
+def test_fit_motions_drops_motions_that_do_not_fit_the_charge():
+    shop = {"case_type": "theft", "family": "criminal", "facts": "I'm 19 years old and got charged with shoplifting a $120 jacket, first offense"}
+    keys = [m["key"] for m in dp.fit_motions(shop, [_m("speedy_trial_constitutional"), _m("first_offender"), _m("suppress"), _m("accountability_court")])]
+    assert keys == ["first_offender", "suppress"]
+    ticket = {"case_type": "traffic", "family": "criminal", "facts": "speeding ticket, 20 over"}
+    assert [m["key"] for m in dp.fit_motions(ticket, [_m("first_offender"), _m("conditional_discharge"), _m("discovery")])] == ["discovery"]
+    probation = {"case_type": "probation", "family": "criminal", "facts": "missed two drug tests because I work double shifts"}
+    assert dp.fit_motions(probation, [_m("accountability_court")]) == []
+
+
+def test_fit_motions_keeps_them_when_the_facts_support_them():
+    delayed = {"case_type": "theft", "family": "criminal", "facts": "shoplifting charge, it's been two years and no trial date"}
+    assert [m["key"] for m in dp.fit_motions(delayed, [_m("speedy_trial_constitutional")])] == ["speedy_trial_constitutional"]
+    addicted = {"case_type": "probation", "family": "criminal", "facts": "I relapsed and missed drug tests, I'm fighting addiction"}
+    assert dp.fit_motions(addicted, [_m("accountability_court")])
+    drugs = {"case_type": "drugs", "family": "criminal", "facts": "they found weed in my car"}
+    assert dp.fit_motions(drugs, [_m("conditional_discharge")])
+
+
+def test_scrub_removes_unfit_options_and_invented_video():
+    shop = {"case_type": "theft", "family": "criminal", "facts": "charged with shoplifting a $120 jacket at Walmart"}
+    text = ("How to fight back\n• Concealment: The State cannot prove concealment because the video shows you held the item. Challenge: x. Motion: Motion to suppress evidence.\n"
+            "• Delay: Motion to dismiss for violation of the constitutional speedy-trial right.\n\nOptions to lessen the outcome\n"
+            "• Ask about an accountability court.\n• First Offender treatment.")
+    out = dp.scrub(shop, text)
+    assert "video shows" not in out and "any video would have to show" in out
+    assert "speedy" not in out and "accountability" not in out and "First Offender treatment" in out
+    told = {**shop, "facts": shop["facts"] + " and they said the camera saw me"}
+    assert "the video shows" in dp.scrub(told, "• the video shows you")
+
+
+def test_scrub_keeps_the_argument_when_only_the_motion_is_unfit():
+    prob = {"case_type": "probation", "family": "criminal", "facts": "missed drug tests because of double shifts"}
+    out = dp.scrub(prob, "• Willful: The State cannot establish a willful violation. Challenge: the PO's claim. Motion: Request for an accountability court.")
+    assert out == "• Willful: The State cannot establish a willful violation. Challenge: the PO's claim."
+
+
+def test_traffic_plan_drops_first_offender_lines():
+    ticket = {"case_type": "traffic", "family": "criminal", "facts": "speeding ticket"}
+    out = dp.scrub(ticket, "Options to lessen the outcome\n• Ask for First Offender.\n• Ask for reduced points.\n• Conditional discharge.")
+    assert out == "Options to lessen the outcome\n• Ask for reduced points."
+
+
+def test_prompt_forbids_invented_facts_and_unfit_motions():
+    p = dp.plan_for("I got charged with shoplifting at Walmart, build my defense")
+    block = dp.prompt_block(p, [])
+    assert "NEVER invent facts" in block and "if there is video" in block
+    assert "no speedy-trial dismissal unless the user describes a long delay" in block
+    assert "only if the user mentions addiction" in block
+    t = dp.plan_for("I got a speeding ticket going 20 over in Gwinnett, build my defense")
+    assert "do not suggest First Offender" in dp.prompt_block(t, [])
+
+
+def test_deadline_warning_goes_before_the_note():
+    out = dp.before_note("Key deadlines\n• 30 days.\n\nNote: Code edition.", "Deadline check: confirm it.")
+    assert out.index("Deadline check") < out.index("Note:")
+    assert dp.before_note("Body", "Deadline check: x") == "Body\n\nDeadline check: x"
+
+
+def test_probation_plan_does_not_use_the_criminal_trial_burden():
+    p = {"status": "build", "case_type": "probation", "label": "Probation violation", "family": "criminal", "facts": "missed drug tests"}
+    assert "never say 'beyond a reasonable doubt' for probation" in dp.prompt_block(p, [])
+
+
+def test_fight_back_motion_is_never_a_sentencing_option():
+    shop = {"case_type": "theft", "family": "criminal", "facts": "first offense shoplifting"}
+    out = dp.scrub(shop, "• Intent: The State cannot establish intent. Challenge: statements. Motion: First Offender treatment.")
+    assert out == "• Intent: The State cannot establish intent. Challenge: statements."
+    assert "never a sentencing option" in dp.prompt_block({**shop, "label": "Theft"}, [])
