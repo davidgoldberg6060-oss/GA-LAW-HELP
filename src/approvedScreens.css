@@ -29,12 +29,46 @@ html[data-theme="light"] body{background:#f4f7fb;color:#102033}
 .approvedUser{align-self:flex-end;max-width:85%;background:#0d3150;padding:.5rem .8rem;border-bottom-right-radius:4px}
 .approvedAssistant{align-self:stretch;background:#03182a;border:1px solid #1d3f58;padding:.7rem .9rem .5rem;border-bottom-left-radius:4px}
 .chatText{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
-.chatAnswer{font-size:.95rem;overflow-wrap:anywhere}
-.chatAnswer h4{margin:.85rem 0 .3rem;color:#e2b54e;font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
-.chatAnswer h4:first-child{margin-top:0}
-.chatAnswer p{margin:0 0 .5rem}
-.chatAnswer ul{margin:0 0 .5rem;padding-left:1.1rem;display:flex;flex-direction:column;gap:.35rem}
-.chatAnswer li b{color:#dfe9f2}
+/* Answers: a short Quick answer, then small sections that open on tap (short attention spans). */
+.chatAnswer{font-size:1rem;line-height:1.55;overflow-wrap:anywhere;max-width:62ch}
+.chatAnswer p{margin:0}
+.ansQuick{background:#0a2a44;border-left:4px solid #e2b54e;border-radius:10px;padding:.75rem .95rem;margin:0 0 .85rem}
+.ansQuickLabel{display:block;color:#e2b54e;font-size:.78rem;font-weight:700;margin-bottom:.25rem}
+.ansQuickText{font-size:1.1rem;line-height:1.55;color:#f3f8fc}
+.ansSections{display:flex;flex-direction:column;gap:.5rem}
+.ansSec{border:1px solid #1d3f58;border-radius:12px;background:#021423}
+.ansSec.isOpen{border-color:#2f5d7e}
+.ansSum{width:100%;background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:.6rem;padding:.8rem .95rem;min-height:2.9rem;border-radius:12px}
+.ansSum:focus-visible{outline:2px solid #e2b54e;outline-offset:2px}
+.ansSecTitle{font-weight:650;font-size:1rem;color:#f3f8fc}
+.ansCount{color:#8fb3cc;font-weight:500}
+.ansChevron{width:.55rem;height:.55rem;border-right:2px solid #8fb3cc;border-bottom:2px solid #8fb3cc;transform:rotate(-45deg);transition:transform .15s;margin-right:.2rem}
+.ansSec.isOpen .ansChevron{transform:rotate(45deg)}
+.ansPeek{grid-column:1/-1;color:#9fb6c8;font-size:.85rem;margin-top:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ansPeek{transition:opacity .2s ease}
+.ansSec.isOpen .ansPeek{opacity:0;height:0;margin:0}
+.ansBody{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .2s ease,opacity .2s ease}
+.ansSec.isOpen .ansBody{grid-template-rows:1fr;opacity:1}
+.ansBodyInner{min-height:0;overflow:hidden}
+.ansItems{list-style:none;margin:0;padding:0 .95rem .4rem;display:flex;flex-direction:column;gap:.85rem}
+.ansItems li{position:relative;padding-left:1rem}
+.ansItems li::before{content:"";position:absolute;left:0;top:.62em;width:.38rem;height:.38rem;border-radius:50%;background:#e2b54e}
+.ansHead{display:block;font-weight:600;color:#eef5fb}
+.ansDetail{display:block;color:#b9cad7;font-size:.94rem;margin-top:.15rem}
+.ansMeta{display:block;color:#8fa9bc;font-size:.84rem;margin-top:.2rem}
+.ansSec-questions .ansHead,.ansSec-info .ansHead,.ansSec-deadlines .ansHead{font-weight:500}
+.ansSec-laws .ansHead{font-weight:500;color:#9fd6ff}
+.ansMore{background:none;border:0;color:#3cbeff;font-size:.88rem;padding:.1rem .95rem .6rem 1.95rem;cursor:pointer}
+.ansSideNote{color:#8ea6b8;font-size:.82rem;padding:0 .95rem .7rem;margin:0}
+.ansFootnote{color:#7f98ab;font-size:.78rem;margin:.75rem 0 0}
+.ansChips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.75rem 0 0}
+.ansChip{background:transparent;border:1px solid #2a4d66;color:#cfe0ec;border-radius:999px;font-size:.8rem;padding:.3rem .7rem;cursor:pointer;max-width:100%;text-align:left}
+.ansChip:hover,.ansChip:focus-visible{border-color:#e2b54e;color:#fff}
+html[data-theme="light"] .ansQuick{background:#fff6df;border-left-color:#c99a2e}
+html[data-theme="light"] .ansQuickText,html[data-theme="light"] .ansSecTitle,html[data-theme="light"] .ansHead{color:#102033}
+html[data-theme="light"] .ansSec{background:#fff;border-color:#c9d6e2}
+html[data-theme="light"] .ansDetail{color:#3b5368}
+html[data-theme="light"] .ansChip{color:#102033;border-color:#c9d6e2}
 .approvedChatDelete{display:block;margin-left:auto;background:none;border:0;color:#7f98ab;font-size:.72rem;cursor:pointer;padding:.15rem 0 0;opacity:.55;transition:opacity .15s}
 .chatMsg:hover .approvedChatDelete,.approvedChatDelete:focus-visible{opacity:1;color:#3cbeff}
 .chatTyping{align-self:flex-start;display:flex;gap:.3rem;padding:.75rem .9rem}
@@ -50,10 +84,9 @@ html[data-theme="light"] body{background:#f4f7fb;color:#102033}
 .chatNotice{color:#8ea6b8;font-size:.76rem;margin:.45rem 0 0}
 @keyframes chatIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 @keyframes chatDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
-@media(prefers-reduced-motion:reduce){.chatMsg,.chatTyping span{animation:none}}
+@media(prefers-reduced-motion:reduce){.chatMsg,.chatTyping span{animation:none}.ansBody,.ansChevron,.ansPeek{transition:none}}
 html[data-theme="light"] .approvedAssistant{background:#fff;border-color:#c9d6e2;color:#102033}
 html[data-theme="light"] .approvedUser{background:#dcebf8;color:#102033}
-html[data-theme="light"] .chatAnswer li b{color:#102033}
 
 .citizenHelpList{list-style:none;padding:0;margin:.5rem 0 1rem;display:flex;flex-direction:column;gap:.65rem}
 .citizenHelpList li{background:#02111d;border:1px solid #194e70;border-radius:12px;padding:.65rem .75rem}
@@ -63,3 +96,4 @@ html[data-theme="light"] .chatAnswer li b{color:#102033}
 .muted{color:#afc2d0;font-size:.9rem}
 
 .funnyChips button.on,.funnyMode button.on{background:#e2b54e;color:#02111d}
+@media(max-width:480px){.approvedAssistant{padding:.55rem .55rem .4rem}.ansQuick{padding:.65rem .75rem}.ansQuickText{font-size:1.05rem}.ansSum{padding:.7rem .75rem}.ansItems{padding:0 .75rem .4rem}.ansSideNote{padding:0 .75rem .6rem}}

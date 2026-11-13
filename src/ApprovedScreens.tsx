@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { formatAnswer } from "./chatFormat";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { SECTION_VISIBLE, structureAnswer, teaser, type AnswerSection, type LawRef } from "./answerSections";
 import { continuityLine, lineId, loadThread, saveThread, type ChatLine } from "./chatThread";
 import type { AiHelpReply, Continuity } from "./guestPublic";
 import { aiHelpQuestionOnOpen } from "./aiHelpNav";
@@ -44,23 +44,64 @@ const AI_FEATURE = "ai_help";
 const AI_LABEL = "AI Help";
 const browserStore = () => (typeof window !== "undefined" ? window.localStorage : undefined);
 
-/** One answer, laid out as short sections instead of a wall of text. */
-function AnswerBody({ text }: { text: string }) {
+function SectionBlock({ section }: { section: AnswerSection }) {
+  const [open, setOpen] = useState(false);
+  const [all, setAll] = useState(false);
+  const shown = all ? section.items : section.items.slice(0, SECTION_VISIBLE);
+  const hidden = section.items.length - shown.length;
+  const peek = teaser(section);
+  const count = section.items.length;
+  const bodyId = "ans-" + useId();
+  return (
+    <div className={"ansSec ansSec-" + section.kind + (open ? " isOpen" : "")}>
+      <button type="button" className="ansSum" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((v) => !v)}>
+        <span className="ansSecTitle">
+          {section.title}
+          {count > 0 && <span className="ansCount" aria-label={count + " items"}> ({count})</span>}
+        </span>
+        <span className="ansChevron" aria-hidden="true" />
+        {peek && <span className="ansPeek" aria-hidden={open}>{peek}</span>}
+      </button>
+      {/* Height + fade (~200ms) via a 0fr→1fr grid row; instant when reduced motion is on. */}
+      <div id={bodyId} className="ansBody" role="region" aria-label={section.title} inert={!open}>
+        <div className="ansBodyInner">
+          {count > 0 && (
+            <ul className="ansItems">
+              {shown.map((item, i) => (
+                <li key={i}>
+                  <span className="ansHead">{item.head}</span>
+                  {item.detail && <span className="ansDetail">{item.detail}</span>}
+                  {item.meta && <span className="ansMeta">{item.meta}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {hidden > 0 && (
+            <button type="button" className="ansMore" onClick={() => setAll(true)}>Show {hidden} more</button>
+          )}
+          {section.notes.map((n, i) => <p key={i} className="ansSideNote">{n}</p>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** One answer: a short "Quick answer", then small sections that open on tap. */
+function AnswerBody({ text, laws }: { text: string; laws?: LawRef[] }) {
+  const a = structureAnswer(text, laws);
+  if (!a.sections.length) return <div className="chatAnswer"><p className="ansQuickText">{a.quick || text}</p></div>;
   return (
     <div className="chatAnswer">
-      {formatAnswer(text).map((block, i) =>
-        block.kind === "heading" ? (
-          <h4 key={i}>{block.text}</h4>
-        ) : block.kind === "list" ? (
-          <ul key={i}>
-            {block.items.map((item, j) => (
-              <li key={j}>{item.lead && <b>{item.lead}: </b>}{item.text}</li>
-            ))}
-          </ul>
-        ) : (
-          <p key={i}>{block.text}</p>
-        ),
+      {a.quick && (
+        <div className="ansQuick">
+          <span className="ansQuickLabel">Quick answer</span>
+          <p className="ansQuickText">{a.quick}</p>
+        </div>
       )}
+      <div className="ansSections">
+        {a.sections.map((s) => <SectionBlock key={s.id} section={s} />)}
+      </div>
+      {a.note && <p className="ansFootnote">{a.note}</p>}
     </div>
   );
 }
@@ -81,12 +122,16 @@ export default function ApprovedScreens(props: Props) {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const title = lawTitles.find((row) => row.number === titleNumber) || lawTitles[0];
 
-  async function sendGuestChat() {
-    const textValue = question.trim();
+  function sendGuestChat() {
+    return askChat();
+  }
+
+  async function askChat(asText?: string) {
+    const textValue = (asText ?? question).trim();
     if (!textValue || chatBusy) return;
     const asked: ChatLine = { id: lineId(), role: "user", text: textValue };
     setChat((rows) => [...rows, asked]);
-    setQuestion("");
+    if (asText === undefined) setQuestion("");
     setChatBusy(true);
     setChatNotice("");
     try {
@@ -99,7 +144,7 @@ export default function ApprovedScreens(props: Props) {
       const turn = reply.turnId;
       setChat((rows) => [
         ...rows.map((row) => (row.id === asked.id ? { ...row, turn } : row)),
-        { id: lineId(), role: "assistant", text: reply.answer || "No grounded answer was returned.", turn },
+        { id: lineId(), role: "assistant", text: reply.answer || "No grounded answer was returned.", turn, laws: reply.laws, followUps: reply.followUps },
       ]);
       const carried = continuityLine(reply.continuity, AI_LABEL);
       if (carried) setCarryLine(carried);
@@ -334,9 +379,16 @@ export default function ApprovedScreens(props: Props) {
                 {chat.length === 0 && !chatBusy && (
                   <p className="chatEmpty">Ask a Georgia legal question. Follow-ups build on what you asked before. Answers are information, not legal advice.</p>
                 )}
-                {chat.map((line) => (
+                {chat.map((line, index) => (
                   <div key={line.id} className={line.role === "user" ? "chatMsg approvedUser" : "chatMsg approvedAssistant"}>
-                    {line.role === "user" ? <p className="chatText">{line.text}</p> : <AnswerBody text={line.text} />}
+                    {line.role === "user" ? <p className="chatText">{line.text}</p> : <AnswerBody text={line.text} laws={line.laws} />}
+                    {line.role === "assistant" && index === chat.length - 1 && !chatBusy && !!line.followUps?.length && (
+                      <div className="ansChips" aria-label="Suggested follow-ups">
+                        {line.followUps.slice(0, 3).map((q) => (
+                          <button key={q} type="button" className="ansChip" onClick={() => void askChat(q)}>{q}</button>
+                        ))}
+                      </div>
+                    )}
                     <button type="button" className="approvedChatDelete" aria-label="Delete this message" title="Delete this message" onClick={() => deleteLine(line)}>
                       Delete
                     </button>

@@ -76,7 +76,7 @@ def test_exact_question_gets_broad_defense_retrieval_not_just_self_defense(wired
     for sec in ("16-3-21", "16-3-23.1", "16-3-24.2", "16-3-28"):
         assert f"O.C.G.A. § {sec}\n" not in p, sec
     assert "BROAD DEFENSE QUESTION" in p and "depends on the charge and the facts" in p
-    assert "Challenging the evidence:" in p and "Ways to lessen the outcome:" in p
+    assert "Ways to fight the evidence:" in p and "Ways to lessen the outcome:" in p
     assert r["citation_check"] == "passed"
 
 

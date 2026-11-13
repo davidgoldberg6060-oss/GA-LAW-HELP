@@ -106,7 +106,8 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"injur|accident|wreck", ("How long do I have to file an injury claim?", "What evidence should I keep after an accident?")),
     (r"small claims|magistrate|\bsue\b", ("How do I file in magistrate court?", "How much can I sue for in small claims?")),
     (r"\bbond\b|\bbail\b", ("How is bond set in Georgia?", "Can a bond amount be reduced?")),
-    (r"warrant", ("How can I check if there is a warrant?", "What happens after a warrant is served?")),
+    # "searched without a warrant" is about a search, not an arrest warrant.
+    (r"(?<!without a )(?<!no )(?<!a search )\bwarrant(?!less)", ("How can I check if there is a warrant?", "What happens after a warrant is served?")),
     (_DOC_PATTERN, ("What does this document mean?", "Is there a deadline in this document?", "What questions should I ask a lawyer about it?")),
 )
 # Jail/prison follow-ups only when the user's own current question is explicitly about custody or conditions.

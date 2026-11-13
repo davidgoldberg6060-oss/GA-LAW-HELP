@@ -1,5 +1,14 @@
 /** One AI screen's chat, kept on this device so the screen resumes where it left off. */
-export type ChatLine = { id: string; role: "user" | "assistant"; text: string; turn?: number };
+export type ChatLine = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  turn?: number;
+  /** Laws cited with an answer (citation + short title). */
+  laws?: { citation: string; title?: string | null; id?: number | null }[];
+  /** Suggested follow-ups (max 3) for an answer. */
+  followUps?: string[];
+};
 
 export const MAX_LINES = 40;
 const key = (feature: string) => `ga_chat_${feature}`;
@@ -12,7 +21,14 @@ export function loadThread(store: Store | undefined, feature: string): ChatLine[
     if (!Array.isArray(rows)) return [];
     return rows
       .filter((r) => r && (r.role === "user" || r.role === "assistant") && typeof r.text === "string")
-      .map((r, i) => ({ id: String(r.id || `r${i}`), role: r.role, text: r.text, turn: typeof r.turn === "number" ? r.turn : undefined }))
+      .map((r, i) => ({
+        id: String(r.id || `r${i}`),
+        role: r.role,
+        text: r.text,
+        turn: typeof r.turn === "number" ? r.turn : undefined,
+        laws: Array.isArray(r.laws) ? r.laws.filter((l: { citation?: unknown }) => l && typeof l.citation === "string") : undefined,
+        followUps: Array.isArray(r.followUps) ? r.followUps.filter((q: unknown) => typeof q === "string").slice(0, 3) : undefined,
+      }))
       .slice(-MAX_LINES);
   } catch {
     return [];

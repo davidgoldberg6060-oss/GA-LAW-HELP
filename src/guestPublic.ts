@@ -151,7 +151,16 @@ export type Continuity = {
   elsewhere_screen?: string | null;
 };
 
-export type AiHelpReply = { answer: string; notice: string; turnId?: number; continuity?: Continuity | null };
+export type AiHelpReply = {
+  answer: string;
+  notice: string;
+  turnId?: number;
+  continuity?: Continuity | null;
+  /** Laws the answer cites (shown in its "Laws cited" section). */
+  laws?: { citation: string; title?: string | null; id?: number | null }[];
+  /** Up to 3 short suggested follow-up questions. */
+  followUps?: string[];
+};
 
 /**
  * AI Help chat turn. With a device token the server continues this screen's own thread plus one
@@ -167,5 +176,12 @@ export async function aiHelpAsk(requestJson: GuestRequestJson, query: string, to
   });
   const answer = typeof data.analysis === 'string' && data.analysis.trim() ? data.analysis : data.answer || 'No grounded answer was returned.';
   const continuity = data.continuity && typeof data.continuity === 'object' ? data.continuity : null;
-  return { answer, notice: data.coverage_notice || '', turnId: continuity?.turn_id, continuity };
+  const raw = data as { laws_cited?: unknown; follow_ups?: unknown };
+  const laws = Array.isArray(raw.laws_cited)
+    ? (raw.laws_cited as { citation?: unknown; title?: unknown; id?: unknown }[])
+        .filter((l) => l && typeof l.citation === 'string' && l.citation.trim())
+        .map((l) => ({ citation: String(l.citation), title: typeof l.title === 'string' ? l.title : null, id: typeof l.id === 'number' ? l.id : null }))
+    : [];
+  const followUps = Array.isArray(raw.follow_ups) ? (raw.follow_ups as unknown[]).filter((q): q is string => typeof q === 'string' && !!q.trim()).slice(0, 3) : [];
+  return { answer, notice: data.coverage_notice || '', turnId: continuity?.turn_id, continuity, laws, followUps };
 }
