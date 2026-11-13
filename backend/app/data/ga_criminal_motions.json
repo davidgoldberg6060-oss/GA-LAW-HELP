@@ -1,0 +1,1439 @@
+{
+ "version": "2026-11-12",
+ "note": "Georgia criminal motions catalog. Legal information, not legal advice. 'ocga' and 'court_rules' were confirmed present in the GA.LAW.HELP law database on 2026-11-12 (O.C.G.A. text is the 2022 edition) and are re-checked at answer time; 'unverified_authority' is never shown to users.",
+ "motions": [
+  {
+   "key": "bond",
+   "name": "Motion for bond (bond hearing)",
+   "stages": [
+    "arrested",
+    "pretrial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the judge to set bond so the person can be released while the case is pending.",
+   "when_it_applies": "May apply when someone is being held and bond hasn't been set or was denied.",
+   "how_it_helps": "Release lets the person work, keep housing and help prepare the defense.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-6-1"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "bond_reduction",
+   "triggers": "\\bbond\\b|\\bbail\\b|held without bond|no bond|denied bond",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "bond_reduction",
+   "name": "Motion to reduce bond",
+   "stages": [
+    "arrested",
+    "pretrial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the judge to lower a bond that is more than the person can pay.",
+   "when_it_applies": "May apply when bond was set too high for the person's income or circumstances.",
+   "how_it_helps": "A reachable bond means release before trial.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-6-1"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "bond_reduction",
+   "triggers": "reduce (the |my |his |her )?bond|bond (is |was )?(too high|high)|can'?t (afford|pay|make) (the )?bond|lower (the )?bond",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "bond_modification",
+   "name": "Motion to modify bond conditions",
+   "stages": [
+    "arrested",
+    "pretrial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the judge to change bond conditions (curfew, ankle monitor, no-contact, travel).",
+   "when_it_applies": "May apply when bond conditions make it hard to work, care for family, or live at home.",
+   "how_it_helps": "Workable conditions lower the risk of a violation and re-arrest.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-6-1"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "bond condition|ankle monitor|curfew|no[- ]contact|modify (the )?bond|travel (while|on) bond",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "pretrial_habeas",
+   "name": "Petition for writ of habeas corpus (unlawful pretrial detention)",
+   "stages": [
+    "arrested",
+    "pretrial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks a superior court to review whether a person is being held unlawfully, for example with no bond decision.",
+   "when_it_applies": "May apply when someone is held with no lawful basis or bond is denied without a proper hearing.",
+   "how_it_helps": "Can lead to release or a proper bond hearing.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "9-14-1"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "held without (a )?(charge|bond|hearing)|illegal(ly)? (held|detained)|habeas",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "appointed_counsel",
+   "name": "Request for an appointed lawyer (public defender)",
+   "stages": [
+    "arrested",
+    "pretrial",
+    "plea",
+    "trial",
+    "appeal"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the court to appoint a public defender for someone who can't afford a lawyer.",
+   "when_it_applies": "May apply when the person can't afford a lawyer and faces a charge that requires one.",
+   "how_it_helps": "A lawyer is the single biggest help in finding and filing defenses.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-12-23",
+    "17-12-24"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "public defender|can'?t afford (a )?(lawyer|attorney)|appointed (lawyer|attorney|counsel)|no lawyer",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "suppress",
+   "name": "Motion to suppress evidence",
+   "stages": [
+    "pretrial",
+    "trial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the judge to throw out evidence from an illegal stop, search or seizure.",
+   "when_it_applies": "May apply if evidence came from a stop or search done without a valid warrant, consent, or legal reason.",
+   "how_it_helps": "Without the key evidence, charges are often reduced or dropped.",
+   "deadline": "Usually within ten days after arraignment unless the judge extends it.",
+   "deadline_source": "17-7-110",
+   "ocga": [
+    "17-5-30",
+    "17-5-21"
+   ],
+   "court_rules": [
+    "Unif. Super. Ct. R. 31.1"
+   ],
+   "unverified_authority": [
+    "Mapp v. Ohio, 367 U.S. 643 (1961)"
+   ],
+   "template_key": "suppress",
+   "triggers": "\\bsearch|searched|pulled (me |him |her |them |us )?over|traffic stop|\\bstopped\\b|\\bfound (drugs|a gun|weed|it|something)|without a warrant|no warrant|warrantless|seiz|suppress|evidence",
+   "broad_defense": true,
+   "default_criminal": true
+  },
+  {
+   "key": "franks",
+   "name": "Motion to suppress for a false or misleading warrant affidavit (Franks hearing)",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Challenges a search warrant that was based on false statements or left out important facts.",
+   "when_it_applies": "May apply if the officer's sworn statement for the warrant was untrue or misleading.",
+   "how_it_helps": "If the warrant falls, the evidence from it can be suppressed.",
+   "deadline": "Usually within ten days after arraignment unless the judge extends it.",
+   "deadline_source": "17-7-110",
+   "ocga": [
+    "17-5-30",
+    "17-5-21"
+   ],
+   "court_rules": [],
+   "unverified_authority": [
+    "Franks v. Delaware, 438 U.S. 154 (1978)"
+   ],
+   "template_key": "suppress",
+   "triggers": "(search )?warrant (was )?(based on|had) (lies|false)|lied (on|in) the (warrant|affidavit)|affidavit",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "return_of_property",
+   "name": "Motion for return of property",
+   "stages": [
+    "pretrial",
+    "sentenced"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the court to return property police seized that isn't contraband or needed as evidence.",
+   "when_it_applies": "May apply when police took a phone, money, car or other property.",
+   "how_it_helps": "Gets lawful property back.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-5-30"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "return (of )?(my |his |her )?(property|phone|money|car)|took (my|his|her) (phone|money|car|property)|seized (my|his|her)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "suppress_statements",
+   "name": "Motion to suppress statements (Jackson-Denno hearing)",
+   "stages": [
+    "pretrial",
+    "trial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the judge to hold a hearing and exclude statements to police that weren't voluntary or were taken in violation of Miranda.",
+   "when_it_applies": "May apply if statements were made after threats or promises, while badly impaired, or after asking for a lawyer.",
+   "how_it_helps": "Removing a confession or admission can seriously weaken the case.",
+   "deadline": "With pretrial motions, usually within ten days after arraignment unless extended.",
+   "deadline_source": "17-7-110",
+   "ocga": [
+    "24-8-824"
+   ],
+   "court_rules": [],
+   "unverified_authority": [
+    "Jackson v. Denno, 378 U.S. 368 (1964)",
+    "Miranda v. Arizona, 384 U.S. 436 (1966)"
+   ],
+   "template_key": "suppress_statements",
+   "triggers": "statement|confess|interrogat|questioned|(talked|spoke|told) (to )?(the )?(police|cops|officers?|detectives?)|miranda|admitted|didn'?t read (me|him|her|them) (my|his|her|their)? ?rights",
+   "broad_defense": true,
+   "default_criminal": false
+  },
+  {
+   "key": "suppress_identification",
+   "name": "Motion to suppress an out-of-court identification",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Challenges a lineup, photo array or show-up that was unfairly suggestive.",
+   "when_it_applies": "May apply if a witness picked someone out under suggestive conditions.",
+   "how_it_helps": "A shaky identification can be excluded or attacked at trial.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [],
+   "court_rules": [],
+   "unverified_authority": [
+    "Neil v. Biggers, 409 U.S. 188 (1972)"
+   ],
+   "template_key": null,
+   "triggers": "line ?up|photo (array|lineup)|identif(y|ied|ication)|picked (me|him|her) out|show[- ]?up|wrong (person|guy)|mistaken identity",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "suppress_chemical_test",
+   "name": "Motion to suppress a breath or blood test (DUI)",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Challenges how a breath, blood or urine test was requested, given or recorded.",
+   "when_it_applies": "May apply in a DUI case when implied-consent rules, testing procedures or the right to an independent test weren't followed.",
+   "how_it_helps": "Without the test result, a DUI case can become much weaker.",
+   "deadline": "Usually within ten days after arraignment unless extended.",
+   "deadline_source": "17-7-110",
+   "ocga": [
+    "40-6-392",
+    "40-5-67.1"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "\\bdui\\b|under the influence|breath(alyzer)? test|blood test|implied consent|intoxilyzer",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "general_demurrer",
+   "name": "General demurrer (motion to dismiss a charge that doesn't state a crime)",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Argues the indictment or accusation doesn't charge a crime at all, even if everything in it were true.",
+   "when_it_applies": "May apply when a required element of the crime is missing from the charging document.",
+   "how_it_helps": "If granted, that charge is dismissed.",
+   "deadline": "Within ten days after arraignment unless the judge extends it.",
+   "deadline_source": "17-7-110",
+   "ocga": [
+    "17-7-110",
+    "17-7-111",
+    "17-7-54"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "demurrer",
+   "triggers": "indictment|accusation|dismiss|thrown out|drop(ped)? (the )?charges?|wrong charge",
+   "broad_defense": true,
+   "default_criminal": false
+  },
+  {
+   "key": "special_demurrer",
+   "name": "Special demurrer (defects in how the charge is written)",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Challenges the form of the charge, such as a vague date, place or description.",
+   "when_it_applies": "May apply when the charge is too vague to prepare a defense.",
+   "how_it_helps": "Forces the State to fix or narrow the charge; uncorrected defects can lead to dismissal of that count.",
+   "deadline": "Before trial (form objections); pretrial motions are usually due within ten days after arraignment.",
+   "deadline_source": "17-7-113",
+   "ocga": [
+    "17-7-111",
+    "17-7-113"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "demurrer",
+   "triggers": "indictment|accusation|vague|wrong date|charging document",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "quash",
+   "name": "Motion to quash the indictment or accusation",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the court to void a charging document because of a legal defect in how it was brought.",
+   "when_it_applies": "May apply when the indictment or accusation was obtained or filed improperly.",
+   "how_it_helps": "A quashed charge must be re-brought; a second quashed indictment on the same charge can bar prosecution.",
+   "deadline": "Usually within ten days after arraignment unless extended.",
+   "deadline_source": "17-7-110",
+   "ocga": [
+    "17-7-111",
+    "17-7-53.1"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "demurrer",
+   "triggers": "quash|grand jury|indictment",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "statute_of_limitations",
+   "name": "Plea in bar: statute of limitation",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the court to dismiss a charge brought after the time limit for prosecution ran out.",
+   "when_it_applies": "May apply when the alleged offense happened long before the charge was filed.",
+   "how_it_helps": "If the time ran out, the charge must be dismissed.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-3-1",
+    "17-3-2"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "statute of limitation|time limit|years (ago|later)|too late to charge|long time ago",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "double_jeopardy",
+   "name": "Plea in bar: double jeopardy / former prosecution",
+   "stages": [
+    "pretrial",
+    "trial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the court to block a prosecution for the same crime and facts that were already prosecuted.",
+   "when_it_applies": "May apply when the person was already tried, convicted or acquitted for the same conduct.",
+   "how_it_helps": "If it applies, the new prosecution ends.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "16-1-7",
+    "16-1-8"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "double jeopardy|already (tried|charged|convicted|acquitted)|charged twice|same (crime|charge) again",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "discovery",
+   "name": "Discovery: get the prosecution's evidence",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Formally opts into Georgia criminal discovery so the State must share statements, reports, witness lists and physical evidence.",
+   "when_it_applies": "Applies in most felony cases once the defense opts in; the defense must share some of its own evidence too.",
+   "how_it_helps": "Knowing the evidence early shows weaknesses and the best defense.",
+   "deadline": "The State must disclose no later than ten days before trial unless the court orders otherwise.",
+   "deadline_source": "17-16-4",
+   "ocga": [
+    "17-16-4",
+    "17-16-1",
+    "17-16-2"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "discovery|evidence (they|the state|prosecution) (have|has)|police report|body ?cam|dash ?cam|video",
+   "broad_defense": true,
+   "default_criminal": true
+  },
+  {
+   "key": "compel_discovery",
+   "name": "Motion to compel discovery or for sanctions",
+   "stages": [
+    "pretrial",
+    "trial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the judge to order the State to turn over evidence it hasn't shared, or to exclude it.",
+   "when_it_applies": "May apply when the State missed discovery deadlines or is holding back evidence.",
+   "how_it_helps": "Evidence the State didn't disclose can be excluded or the case delayed in the defense's favor.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-16-6"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "compel|won'?t (give|turn over|share)|haven'?t (got|received|seen) (the )?(evidence|discovery|video|report)|withh[eo]ld",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "brady",
+   "name": "Brady motion for evidence favorable to the defense",
+   "stages": [
+    "pretrial",
+    "trial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the court to order the State to disclose evidence that helps the defense or hurts its witnesses' credibility.",
+   "when_it_applies": "May apply in any case where the State may have favorable evidence (deals with witnesses, inconsistent statements, other suspects).",
+   "how_it_helps": "Favorable evidence can create reasonable doubt; hiding it can lead to a new trial.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [],
+   "court_rules": [],
+   "unverified_authority": [
+    "Brady v. Maryland, 373 U.S. 83 (1963)",
+    "Giglio v. United States, 405 U.S. 150 (1972)"
+   ],
+   "template_key": null,
+   "triggers": "brady|exculpatory|evidence (that )?(helps|proves) (me|him|her)|hiding evidence|witness (got|has) a deal|snitch",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "informant",
+   "name": "Motion to reveal a confidential informant",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the court to require the State to identify an informant who witnessed or took part in the alleged crime.",
+   "when_it_applies": "May apply when an informant was a key witness or participant, such as a controlled buy.",
+   "how_it_helps": "Lets the defense test the informant's story and credibility.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [],
+   "court_rules": [],
+   "unverified_authority": [
+    "Roviaro v. United States, 353 U.S. 53 (1957)"
+   ],
+   "template_key": null,
+   "triggers": "informant|\\bci\\b|snitch|controlled buy|undercover",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "independent_testing",
+   "name": "Motion for independent testing of evidence",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks to examine or test physical evidence (drugs, DNA, firearms) with a defense expert.",
+   "when_it_applies": "May apply when lab results are central to the State's case.",
+   "how_it_helps": "An independent result can contradict the State's lab.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-16-4"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "lab (test|result|report)|crime lab|\\bgbi\\b|test(ed)? the (drugs|evidence|dna)|\\bdna\\b|fingerprint|ballistic",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "in_limine",
+   "name": "Motion in limine (keep unfair evidence out before trial)",
+   "stages": [
+    "pretrial",
+    "trial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the judge in advance to exclude unfairly prejudicial evidence, such as unrelated past acts or hearsay.",
+   "when_it_applies": "May apply when the State may try to use prior acts, character attacks or misleading evidence.",
+   "how_it_helps": "Keeps the jury focused on the actual charge.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "24-4-403",
+    "24-4-404",
+    "24-8-802"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "in limine|prior (record|acts|charges)|past (crimes|record)|character|hearsay|keep (that|it|evidence) out",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "severance",
+   "name": "Motion to sever (separate trials)",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks for a separate trial from co-defendants, or on unrelated counts.",
+   "when_it_applies": "May apply when a co-defendant's evidence or defense would unfairly hurt the person's own case.",
+   "how_it_helps": "Avoids guilt by association with co-defendants.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-8-4"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "co-?defendant|charged (with|together with) (someone|others|my friend)|jointly|sever",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "change_of_venue",
+   "name": "Motion for change of venue",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks to move the trial to another county because a fair jury can't be found locally.",
+   "when_it_applies": "May apply when heavy local publicity or bias makes a fair trial unlikely.",
+   "how_it_helps": "A fairer jury pool.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-7-150"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "change (of )?venue|publicity|news coverage|whole (town|county) knows|move the trial",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "recusal",
+   "name": "Motion to recuse the judge",
+   "stages": [
+    "pretrial",
+    "trial",
+    "sentenced"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks a judge to step aside because of bias or a conflict.",
+   "when_it_applies": "May apply when the judge has a personal conflict or has shown bias in the case.",
+   "how_it_helps": "A neutral judge.",
+   "deadline": "Court rule: within five days after learning of the grounds, with a supporting affidavit.",
+   "deadline_source": null,
+   "ocga": [],
+   "court_rules": [
+    "Unif. Super. Ct. R. 25.1"
+   ],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "recus|judge (is|was) (biased|unfair)|conflict of interest|judge knows",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "continuance",
+   "name": "Motion for continuance",
+   "stages": [
+    "pretrial",
+    "trial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the court for more time before a hearing or trial.",
+   "when_it_applies": "May apply when the defense needs time to get evidence, a witness or a lawyer.",
+   "how_it_helps": "Prevents being forced to trial unprepared.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-8-20",
+    "17-8-22"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "continuance|more time|postpone|not ready|need time",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "immunity",
+   "name": "Motion for self-defense immunity",
+   "stages": [
+    "pretrial",
+    "trial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks for a pretrial hearing to declare the person immune from prosecution for force used in lawful self-defense or defense of others.",
+   "when_it_applies": "May apply only if force was used to defend against an unlawful attack.",
+   "how_it_helps": "If granted, the case ends before trial.",
+   "deadline": "Before trial.",
+   "deadline_source": null,
+   "ocga": [
+    "16-3-24.2",
+    "16-3-21"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "immunity",
+   "triggers": "self[- ]?defen[cs]e|stand (my|your|their|his|her) ground|defend(ing|ed)? (my ?self|him ?self|her ?self|someone)|immunity",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "competency",
+   "name": "Motion for a competency evaluation",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the court to evaluate whether the person can understand the case and help the lawyer.",
+   "when_it_applies": "May apply when there are signs of serious mental illness or intellectual disability.",
+   "how_it_helps": "A person who isn't competent can't be tried until competency is restored.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-7-129",
+    "17-7-130"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "competen|mental(ly)? (ill|illness|health|disab)|intellectual disab|doesn'?t understand (the|his|her) case|psych(iatric)? eval",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "insanity_notice",
+   "name": "Notice of insanity or mental illness defense and evaluation",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Gives notice that the defense will raise insanity or mental illness and asks for an evaluation.",
+   "when_it_applies": "May apply if, at the time of the offense, the person couldn't tell right from wrong or acted under a delusional compulsion.",
+   "how_it_helps": "Can lead to a not-guilty-by-reason-of-insanity verdict or a guilty-but-mentally-ill outcome with treatment.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-7-130.1",
+    "17-7-131",
+    "16-3-2",
+    "16-3-3"
+   ],
+   "court_rules": [
+    "Unif. Super. Ct. R. 31.1"
+   ],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "insan|delusion|psychotic|schizo|mental(ly)? ill|didn'?t know (right from wrong|what (he|she|i) was doing)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "expert_funds",
+   "name": "Motion for funds for a defense expert",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the court to pay for an expert when the person can't afford one and the issue is critical.",
+   "when_it_applies": "May apply when the case turns on science, mental health or forensic evidence and the person is indigent.",
+   "how_it_helps": "An expert can rebut the State's expert.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [],
+   "court_rules": [],
+   "unverified_authority": [
+    "Ake v. Oklahoma, 470 U.S. 68 (1985)"
+   ],
+   "template_key": null,
+   "triggers": "expert|forensic|can'?t afford (an )?expert",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "alibi_notice",
+   "name": "Notice of alibi",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Tells the State the defense will show the person was somewhere else, with alibi witnesses.",
+   "when_it_applies": "May apply when the person was somewhere else when the crime happened.",
+   "how_it_helps": "Proper notice keeps alibi witnesses from being excluded.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-16-5"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "alibi|wasn'?t (even )?there|somewhere else|out of town|at work (when|at the time)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "speedy_trial",
+   "name": "Demand for speedy trial",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Formally demands trial; if the State doesn't try the case within the time the law sets, the law requires acquittal.",
+   "when_it_applies": "May apply when the defense is ready for trial and the State may not be.",
+   "how_it_helps": "Can end the case with an acquittal if the State delays.",
+   "deadline": "File at the court term when the indictment or accusation is filed or the next regular term (later only with court permission).",
+   "deadline_source": "17-7-170",
+   "ocga": [
+    "17-7-170",
+    "17-7-171"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "speedy_trial",
+   "triggers": "speedy|delay|taking (so|too) long|been (months|a year|years)|no trial date|waiting (on|for) (court|trial)|indict",
+   "broad_defense": true,
+   "default_criminal": true
+  },
+  {
+   "key": "speedy_trial_constitutional",
+   "name": "Motion to dismiss for violation of the constitutional speedy-trial right",
+   "stages": [
+    "pretrial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the court to dismiss because a long, unjustified delay hurt the defense.",
+   "when_it_applies": "May apply after a long delay caused mostly by the State that harmed the defense (lost witnesses, faded memories).",
+   "how_it_helps": "Dismissal of the charges.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [],
+   "court_rules": [],
+   "unverified_authority": [
+    "Barker v. Wingo, 407 U.S. 514 (1972)",
+    "Ga. Const. Art. I, Sec. I, Para. XI"
+   ],
+   "template_key": null,
+   "triggers": "speedy|delay|taking (so|too) long|(a|two|three|four|five|\\d+) years?|no trial date",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "conditional_discharge",
+   "name": "Conditional discharge (first drug possession)",
+   "stages": [
+    "pretrial",
+    "plea"
+   ],
+   "goal": "less_time",
+   "purpose": "Lets the court defer proceedings for a first drug-possession case and dismiss it after probation.",
+   "when_it_applies": "May apply to a first drug-possession case with no prior drug conviction.",
+   "how_it_helps": "No conviction if probation is completed.",
+   "deadline": "Ask before sentencing.",
+   "deadline_source": null,
+   "ocga": [
+    "16-13-2"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "conditional_discharge",
+   "triggers": "\\b(drugs?|marijuana|weed|cocaine|meth|pills|controlled substance|fentanyl|heroin)\\b",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "first_offender",
+   "name": "First Offender treatment",
+   "stages": [
+    "plea",
+    "sentenced"
+   ],
+   "goal": "less_time",
+   "purpose": "Lets the judge defer a judgment of guilt; completing the sentence means no conviction.",
+   "when_it_applies": "May apply if there is no prior felony conviction (some offenses are excluded).",
+   "how_it_helps": "Avoids a conviction and can keep the record restricted.",
+   "deadline": "Ask before sentencing.",
+   "deadline_source": null,
+   "ocga": [
+    "42-8-60"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "first_offender",
+   "triggers": "first offen|first time|no (prior )?record|never been (in trouble|arrested)|\\bplea\\b|plead",
+   "broad_defense": true,
+   "default_criminal": true
+  },
+  {
+   "key": "accountability_court",
+   "name": "Request for an accountability court (drug, mental health or veterans court)",
+   "stages": [
+    "pretrial",
+    "plea",
+    "probation"
+   ],
+   "goal": "less_time",
+   "purpose": "Asks to have the case handled in a treatment-focused court instead of the regular track.",
+   "when_it_applies": "May apply when substance use, mental illness, or military service is connected to the charge.",
+   "how_it_helps": "Treatment instead of jail, and charges can be reduced or dismissed on completion in many programs.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "15-1-15",
+    "15-1-16",
+    "15-1-17"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "\\b(drugs?|marijuana|weed|cocaine|meth|pills|controlled substance|fentanyl|heroin)\\b|addict|substance|mental(ly)? ill|mental health|veteran|drug court",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "nolo",
+   "name": "Request to enter a nolo contendere (no contest) plea",
+   "stages": [
+    "plea"
+   ],
+   "goal": "better_outcome",
+   "purpose": "A plea that accepts a sentence without admitting guilt; the court must agree.",
+   "when_it_applies": "May apply to non-capital cases when a plea is being considered.",
+   "how_it_helps": "Can limit some collateral effects compared with a guilty plea.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-7-95"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "no contest|nolo|plea (deal|offer|bargain)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "withdraw_plea",
+   "name": "Motion to withdraw guilty plea",
+   "stages": [
+    "plea",
+    "sentenced"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks to take back a guilty plea.",
+   "when_it_applies": "Before sentence is pronounced it can be withdrawn; after, only to correct a manifest injustice (for example, the plea wasn't knowing or voluntary).",
+   "how_it_helps": "Restores the right to fight the charge.",
+   "deadline": "Before judgment is pronounced as of right; after that, only on a timely motion showing manifest injustice.",
+   "deadline_source": "17-7-93",
+   "ocga": [
+    "17-7-93"
+   ],
+   "court_rules": [
+    "Unif. Super. Ct. R. 33.12"
+   ],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "withdraw (my |his |her |the )?(guilty )?plea|take back (my |the )?plea|regret (taking|the) plea|pleaded guilty",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "directed_verdict",
+   "name": "Motion for directed verdict of acquittal",
+   "stages": [
+    "trial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the judge to acquit because the State's evidence can't support a conviction.",
+   "when_it_applies": "May apply at trial when the evidence, even viewed for the State, demands acquittal.",
+   "how_it_helps": "Ends the case with an acquittal on that charge.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-9-1"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "directed verdict|not enough evidence|state (has|had) no (evidence|proof)|at trial",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "mistrial",
+   "name": "Motion for mistrial",
+   "stages": [
+    "trial"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the judge to stop the trial because something happened that makes a fair verdict impossible.",
+   "when_it_applies": "May apply when improper statements or evidence reach the jury and an instruction can't fix it.",
+   "how_it_helps": "A new trial with a new jury.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-8-75"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "mistrial|jury (heard|saw) something|prosecutor said|improper (argument|statement)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "lesser_offenses",
+   "name": "Request for jury instructions on lesser offenses",
+   "stages": [
+    "pretrial",
+    "trial"
+   ],
+   "goal": "less_time",
+   "purpose": "Asks that the jury be allowed to consider a lesser crime.",
+   "when_it_applies": "May apply when the evidence supports a lesser included offense (for example voluntary manslaughter instead of murder).",
+   "how_it_helps": "Can mean a much lower sentence.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "16-1-6"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "lesser_offenses",
+   "triggers": "murder|manslaughter|homicide|lesser (charge|offense)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "jury_charge_justification",
+   "name": "Request for jury charge on justification (self-defense)",
+   "stages": [
+    "trial"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the judge to instruct the jury that justified force is a complete defense.",
+   "when_it_applies": "May apply at trial when there is evidence of self-defense or defense of others.",
+   "how_it_helps": "Gives the jury a legal path to acquittal.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "16-3-20",
+    "17-8-58"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "jury_charge_justification",
+   "triggers": "self[- ]?defen[cs]e.*trial|trial.*self[- ]?defen[cs]e|jury (charge|instruction)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "new_trial",
+   "name": "Motion for new trial",
+   "stages": [
+    "sentenced"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the trial judge for a new trial because of legal errors, a verdict against the evidence, ineffective counsel or new evidence.",
+   "when_it_applies": "May apply after a trial with errors or other problems.",
+   "how_it_helps": "A new trial, and it preserves issues for appeal.",
+   "deadline": "Within 30 days after entry of the judgment.",
+   "deadline_source": "5-5-40",
+   "ocga": [
+    "5-5-40",
+    "5-5-20",
+    "5-5-21",
+    "5-5-23"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "new_trial",
+   "triggers": "new trial|found guilty|verdict|convicted at trial|lost (at|the) trial",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "arrest_of_judgment",
+   "name": "Motion in arrest of judgment",
+   "stages": [
+    "sentenced"
+   ],
+   "goal": "beat_case",
+   "purpose": "Challenges a judgment for a non-amendable defect that appears on the face of the record, such as an indictment that charges no crime.",
+   "when_it_applies": "May apply right after judgment when the record itself shows a fatal defect.",
+   "how_it_helps": "Can void the judgment.",
+   "deadline": "During the court term in which the judgment was obtained.",
+   "deadline_source": "17-9-61",
+   "ocga": [
+    "17-9-61"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "arrest of judgment|defect in the (indictment|record)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "sentence_mod",
+   "name": "Motion to modify or reduce sentence",
+   "stages": [
+    "sentenced",
+    "prison",
+    "probation"
+   ],
+   "goal": "less_time",
+   "purpose": "Asks the sentencing judge to reduce, suspend or probate the sentence.",
+   "when_it_applies": "May apply after sentencing, if filed in time.",
+   "how_it_helps": "Less time in custody or on probation.",
+   "deadline": "Within one year after sentencing, or 120 days after the remittitur following an appeal, whichever is later.",
+   "deadline_source": "17-10-1",
+   "ocga": [
+    "17-10-1"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "sentence_mod",
+   "triggers": "sentenc|reduce (my|the|his|her|their) (time|sentence)|too much time|less time|get (out|home) (early|sooner)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "void_sentence",
+   "name": "Motion to vacate a void (illegal) sentence",
+   "stages": [
+    "sentenced",
+    "prison",
+    "probation"
+   ],
+   "goal": "less_time",
+   "purpose": "Asks the court to correct a sentence the law doesn't allow, such as one above the legal maximum.",
+   "when_it_applies": "May apply when the sentence is outside what the law permits for that offense.",
+   "how_it_helps": "A lawful (often shorter) sentence.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-9-4",
+    "17-10-1"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "illegal sentence|void sentence|over the (max|maximum)|more than the (law|max)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "time_credit",
+   "name": "Motion for jail-time credit",
+   "stages": [
+    "sentenced",
+    "prison"
+   ],
+   "goal": "less_time",
+   "purpose": "Makes sure days in custody before sentencing count toward the sentence.",
+   "when_it_applies": "May apply when pretrial custody days weren't credited.",
+   "how_it_helps": "Shortens the time left to serve.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-10-11"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "time_credit",
+   "triggers": "time served|credit for (time|days)|jail credit|days (in jail|locked up) (before|didn'?t count)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "concurrent",
+   "name": "Request for concurrent sentences",
+   "stages": [
+    "plea",
+    "sentenced"
+   ],
+   "goal": "less_time",
+   "purpose": "Asks that sentences on multiple counts or cases run at the same time.",
+   "when_it_applies": "May apply when there are sentences on more than one count or case.",
+   "how_it_helps": "Less total time.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "17-10-10"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "concurrent",
+   "triggers": "consecutive|concurrent|back to back|stacked|multiple (counts|charges|cases)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "appeal",
+   "name": "Notice of appeal",
+   "stages": [
+    "sentenced",
+    "appeal"
+   ],
+   "goal": "beat_case",
+   "purpose": "Starts an appeal to a higher court.",
+   "when_it_applies": "May apply after a conviction or certain rulings.",
+   "how_it_helps": "Errors at trial can lead to reversal or a new trial.",
+   "deadline": "Within 30 days after the judgment, or after the ruling on a timely motion for new trial.",
+   "deadline_source": "5-6-38",
+   "ocga": [
+    "5-6-38"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "appeal",
+   "triggers": "\\bappeal|found guilty|convicted",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "out_of_time_appeal",
+   "name": "Out-of-time appeal (now usually through habeas)",
+   "stages": [
+    "appeal",
+    "prison"
+   ],
+   "goal": "beat_case",
+   "purpose": "Seeks an appeal after the deadline passed because the lawyer failed to file one.",
+   "when_it_applies": "May apply when a requested appeal was never filed. Georgia's Supreme Court has limited trial-court motions for this, so it is usually raised through habeas.",
+   "how_it_helps": "Restores a lost appeal.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "9-14-42"
+   ],
+   "court_rules": [],
+   "unverified_authority": [
+    "Cook v. State, 313 Ga. 471 (2022)"
+   ],
+   "template_key": null,
+   "triggers": "out[- ]of[- ]time|never filed (my|an|the) appeal|missed the appeal|lawyer didn'?t (file|appeal)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "habeas",
+   "name": "Petition for writ of habeas corpus",
+   "stages": [
+    "appeal",
+    "prison"
+   ],
+   "goal": "beat_case",
+   "purpose": "Challenges a conviction or sentence for constitutional violations, such as ineffective assistance of counsel.",
+   "when_it_applies": "May apply after the conviction is final, within the time limits.",
+   "how_it_helps": "Can vacate the conviction or sentence.",
+   "deadline": "Generally within four years for a felony and one year for a misdemeanor from when the conviction became final.",
+   "deadline_source": "9-14-42",
+   "ocga": [
+    "9-14-42",
+    "9-14-43",
+    "9-14-44"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "habeas",
+   "triggers": "habeas|ineffective|bad lawyer|lawyer (never|didn'?t|did not)|constitutional",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "extraordinary_mnt",
+   "name": "Extraordinary motion for new trial",
+   "stages": [
+    "prison",
+    "sentenced"
+   ],
+   "goal": "beat_case",
+   "purpose": "Seeks a new trial based on important evidence found after the regular deadline.",
+   "when_it_applies": "May apply when material new evidence turns up that couldn't have been found before trial.",
+   "how_it_helps": "A new trial.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "5-5-41"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "extraordinary_mnt",
+   "triggers": "new evidence|recant|new witness|found out (later|after)",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "dna_testing",
+   "name": "Motion for post-conviction DNA testing",
+   "stages": [
+    "prison",
+    "sentenced"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks the court to order DNA testing that could show innocence in a serious felony case.",
+   "when_it_applies": "May apply when DNA testing wasn't done or new methods could change the result.",
+   "how_it_helps": "DNA evidence can prove innocence.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "5-5-41"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "extraordinary_mnt",
+   "triggers": "\\bdna\\b",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "retroactive_first_offender",
+   "name": "Petition for retroactive First Offender treatment",
+   "stages": [
+    "sentenced",
+    "prison",
+    "probation",
+    "record"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the court to apply First Offender status after the fact when the person qualified but wasn't told.",
+   "when_it_applies": "May apply if the person was eligible for First Offender at sentencing but wasn't informed, and the prosecutor consents.",
+   "how_it_helps": "Exoneration and discharge without a conviction.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "42-8-66"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "first offender|wasn'?t told|didn'?t (know|tell me) about first offender|retroactive",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "record_restriction",
+   "name": "Record restriction (expungement)",
+   "stages": [
+    "record"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Restricts access to criminal history records for eligible arrests and convictions.",
+   "when_it_applies": "May apply to dismissed or dropped charges, some completed sentences and pardoned offenses.",
+   "how_it_helps": "Fewer barriers to jobs and housing.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "35-3-37"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "expung|record restrict|clear (my|his|her) record|seal (my|the) record|criminal record",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "early_termination_probation",
+   "name": "Request for early termination of probation",
+   "stages": [
+    "probation"
+   ],
+   "goal": "less_time",
+   "purpose": "Asks the court to end probation early for good compliance.",
+   "when_it_applies": "May apply after a period of compliance; long probated sentences are reviewed for early termination.",
+   "how_it_helps": "Ends supervision sooner.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "42-8-37"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "early termination|end (my|his|her) probation|get off probation|probation early",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "probation_revocation_hearing",
+   "name": "Defense at a probation revocation hearing",
+   "stages": [
+    "probation"
+   ],
+   "goal": "less_time",
+   "purpose": "Contests an alleged probation violation and asks for a lesser sanction.",
+   "when_it_applies": "May apply when a violation is alleged.",
+   "how_it_helps": "Avoids or limits revocation time.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "42-8-38",
+    "42-8-34"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "violat(ed|ion) (of )?(my |his |her )?probation|probation violation|\\bvop\\b|revoc",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "parole",
+   "name": "Parole application support",
+   "stages": [
+    "prison"
+   ],
+   "goal": "less_time",
+   "purpose": "Supports a parole request with programs, letters and a release plan.",
+   "when_it_applies": "May apply when the person is or will soon be eligible for parole.",
+   "how_it_helps": "Earlier release.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "42-9-42",
+    "42-9-43"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": "parole",
+   "triggers": "parole|board of pardons|release date|tentative parole",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "pardon",
+   "name": "Pardon application",
+   "stages": [
+    "record",
+    "prison"
+   ],
+   "goal": "better_outcome",
+   "purpose": "Asks the State Board of Pardons and Paroles for a pardon after the sentence.",
+   "when_it_applies": "May apply after completing a sentence and a waiting period set by the Board.",
+   "how_it_helps": "Restores rights and can help with jobs.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "42-9-42"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "pardon|restore (my )?rights|gun rights back|clemency",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "medical_reprieve",
+   "name": "Medical reprieve / compassionate release request",
+   "stages": [
+    "prison"
+   ],
+   "goal": "less_time",
+   "purpose": "Asks the Board of Pardons and Paroles for relief from a sentence because of serious illness or incapacity.",
+   "when_it_applies": "May apply when someone in custody is seriously ill or incapacitated.",
+   "how_it_helps": "Release to receive care.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [
+    "42-9-42"
+   ],
+   "court_rules": [],
+   "unverified_authority": [],
+   "template_key": null,
+   "triggers": "compassionate release|medical reprieve|terminal(ly)? ill|dying|serious(ly)? ill",
+   "broad_defense": false,
+   "default_criminal": false
+  },
+  {
+   "key": "federal_habeas",
+   "name": "Federal habeas corpus petition",
+   "stages": [
+    "appeal",
+    "prison"
+   ],
+   "goal": "beat_case",
+   "purpose": "Asks a federal court to review a state conviction for federal constitutional violations.",
+   "when_it_applies": "May apply after state appeals and state habeas are finished; strict federal deadlines apply.",
+   "how_it_helps": "Can vacate an unconstitutional conviction.",
+   "deadline": null,
+   "deadline_source": null,
+   "ocga": [],
+   "court_rules": [],
+   "unverified_authority": [
+    "28 U.S.C. § 2254",
+    "28 U.S.C. § 2244(d)"
+   ],
+   "template_key": null,
+   "triggers": "federal habeas|2254|federal court",
+   "broad_defense": false,
+   "default_criminal": false
+  }
+ ]
+}

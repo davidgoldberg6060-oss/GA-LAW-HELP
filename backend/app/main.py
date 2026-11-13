@@ -180,7 +180,7 @@ def _decorate_public(response:dict,query:str,mode:str)->dict:
     response.setdefault('follow_ups',follow_ups(question,str(response.get('answer') or '')))
     response.setdefault('help_links',HELP_LINKS)
     from .case_guide import detect_stage,STAGE_LABELS
-    stage=detect_stage(question)
+    stage=detect_stage(question) or response.get('case_stage')
     if stage and not re.search(r"(?i)landlord|tenant|evict|deposit|divorce|custody|child support|debt|wage",question):
         response['case_stage']=stage;response['case_stage_label']=STAGE_LABELS[stage]
     return response

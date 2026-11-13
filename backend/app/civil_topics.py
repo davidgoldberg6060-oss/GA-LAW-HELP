@@ -127,7 +127,14 @@ def follow_ups(question: str, answer: str = "", n: int = 3) -> list[str]:
     q = current_question(question).lower()
     if re.search(PRISON, q):
         return list(PRISON_FOLLOW_UPS[:n])
+    from .defense_help import is_broad_defense, BROAD_FOLLOW_UPS
+    if is_broad_defense(q):
+        return list(BROAD_FOLLOW_UPS[:n])
     for text, from_answer in ((q, False), ((answer or "").lower(), True)):
+        if from_answer:
+            from .defense_help import is_criminal, CHARGE_FOLLOW_UPS, _allowed_stages, _PRE
+            if is_criminal(q) and _allowed_stages(q) == _PRE:
+                return list(CHARGE_FOLLOW_UPS[:n])
         for pattern, items in FOLLOW_UPS:
             if from_answer and pattern == _DOC_PATTERN:
                 continue  # answers mention documents generically; only the question can pick this topic
