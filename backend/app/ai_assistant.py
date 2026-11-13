@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import threading
 import time
 import socket
@@ -123,7 +124,7 @@ def _request_profile(question: str, default_model: str) -> dict:
         }
     return {
         "model": os.getenv("OPENAI_FAST_MODEL", default_model).strip() or default_model,
-        "max_output_tokens": int(os.getenv("OPENAI_FAST_MAX_OUTPUT_TOKENS", "900")),
+        "max_output_tokens": int(os.getenv("OPENAI_FAST_MAX_OUTPUT_TOKENS", "1600")),
         "reasoning": {"effort": os.getenv("OPENAI_FAST_REASONING_EFFORT", "none")},
         "timeout": float(os.getenv("OPENAI_FAST_TIMEOUT_SECONDS", "30")),
     }
@@ -192,7 +193,7 @@ def _gemini_profile(question: str, default_model: str, speed: str | None = None)
         }
     return {
         "model": os.getenv("GEMINI_FAST_MODEL", GEMINI_FAST_DEFAULT_MODEL).strip() or GEMINI_FAST_DEFAULT_MODEL,
-        "max_output_tokens": int(os.getenv("GEMINI_FAST_MAX_OUTPUT_TOKENS", "2400")),
+        "max_output_tokens": int(os.getenv("GEMINI_FAST_MAX_OUTPUT_TOKENS", "4000")),  # thinking tokens count too
         "thinking_level": os.getenv("GEMINI_FAST_THINKING_LEVEL", "low").strip(),
         "timeout": float(os.getenv("GEMINI_FAST_TIMEOUT_SECONDS", "20")),
     }
@@ -201,13 +202,17 @@ def _gemini_profile(question: str, default_model: str, speed: str | None = None)
 def trim_to_last_sentence(text: str) -> str:
     """End a truncated answer cleanly at its last complete sentence (or line)."""
     text = (text or "").rstrip()
-    if not text or text[-1] in ".!?)\"”:":
+    if not text or (text[-1] in ".!?)\"”:" and not re.search(r"(?:\b[A-Z]\.)+$|§\s*$", text)):
         return text
-    cut = max(text.rfind(". "), text.rfind(".\n"), text.rfind("! "), text.rfind("? "), text.rfind("?\n"), text.rfind("!\n"))
+    # Drop an unfinished last line (e.g. a bullet cut off mid-citation) when the text before it is complete.
+    nl = text.rfind("\n")
+    if nl >= len(text) * 0.4:
+        return text[:nl].rstrip()
+    # Sentence ends only: never inside an abbreviation such as "O.C.G.A." or "U.S.".
+    cut = max((m.start() for m in re.finditer(r"(?<!\b[A-Z])[.!?](?=\s)", text)), default=-1)
     if cut >= len(text) * 0.4:
         return text[: cut + 1].rstrip()
-    nl = text.rfind("\n")
-    return text[:nl].rstrip() if nl >= len(text) * 0.4 else text + "…"
+    return text + "…"
 
 
 last_model_used = threading.local()

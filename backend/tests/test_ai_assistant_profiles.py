@@ -13,7 +13,7 @@ def test_simple_question_stays_on_fast_profile(monkeypatch):
     monkeypatch.delenv("OPENAI_FAST_REASONING_EFFORT", raising=False)
     profile = _request_profile("What does arraignment mean?", "test-default-model")
     assert profile["reasoning"]["effort"] == "none"
-    assert profile["max_output_tokens"] == 900
+    assert profile["max_output_tokens"] == 1600
     assert profile["timeout"] == 30.0
 
 

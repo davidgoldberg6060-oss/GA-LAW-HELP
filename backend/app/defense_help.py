@@ -363,3 +363,19 @@ def default_stage(question: str) -> str | None:
     if is_broad_defense(q) or (is_criminal(q) and motion_keys(q) and _allowed_stages(q) == _PRE):
         return "pretrial"
     return None
+
+
+_GROUP_LABEL = re.compile(r"^[A-Z][A-Za-z ,'/&()-]{2,60}:$")
+
+
+def drop_empty_group_labels(analysis: str) -> str:
+    """Remove a group label line ('Ways to lessen the outcome:') left with no bullet under it (e.g. after a cut-off)."""
+    lines = str(analysis or "").split("\n")
+    out = []
+    for i, line in enumerate(lines):
+        if _GROUP_LABEL.match(line.strip()):
+            nxt = next((x.strip() for x in lines[i + 1:] if x.strip()), "")
+            if not nxt or not (nxt.startswith("•") or nxt.startswith("-")):
+                continue
+        out.append(line)
+    return "\n".join(out)
