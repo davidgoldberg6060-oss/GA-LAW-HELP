@@ -332,7 +332,7 @@ def ask_openai(question: str, speed: str | None = None) -> str:
     """Free-model rotation: Gemini chain (fastest-first for chat, quality-first for checks), then any
     OpenAI-compatible free providers with keys set, then xAI/OpenAI. Cooling-down models are skipped."""
     started = time.monotonic()
-    budget = float(os.getenv("AI_CHAIN_BUDGET_SECONDS", "50"))
+    budget = float(os.getenv("AI_CHAIN_BUDGET_SECONDS", "60"))  # a bit more room for free-tier fallbacks
     gemini = _gemini_provider()
     kind = _chain_kind(question, speed)
     if gemini["api_key"]:
@@ -346,6 +346,7 @@ def ask_openai(question: str, speed: str | None = None) -> str:
             text = _try_model("gemini:" + model, lambda m=model, cap=min(left, 25.0): _ask_gemini(gemini, question, speed, model_override=m, timeout_cap=cap))
             if text:
                 return _answered("gemini:" + model, started, text)
+    logger.info("AI chain: Gemini phase done or skipped; trying %d compatible providers", len(list(ai_models.compat_providers())))
     for provider in ai_models.compat_providers():
         for model in provider["models"]:
             if time.monotonic() - started > budget:

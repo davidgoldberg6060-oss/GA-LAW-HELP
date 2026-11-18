@@ -156,7 +156,8 @@ def _guest_rights_without_corpus(query:str, mode:str) -> dict:
         'For Georgia civil and criminal questions, free help is available from Georgia Legal Services Program (https://www.glsp.org/), '
         'Atlanta Legal Aid (https://atlantalegalaid.org/), Georgia Courts self-help (https://georgiacourts.gov/a2j/) and the '
         'State Bar of Georgia (https://www.gabar.org/public/find-a-lawyer). Do not miss any court date or deadline on papers you received. '
-        'The AI service is temporarily unavailable — please try again in a minute.')
+        'The AI service is temporarily unavailable — please try again in a minute. '
+        'You can still look up Georgia laws by citation or keyword while you wait.')
     notice = (
         'No indexed Georgia authority was available for this guest request. '
         'This is general encounter information, not a verified citation and not a claim that any rule is current Georgia law. '

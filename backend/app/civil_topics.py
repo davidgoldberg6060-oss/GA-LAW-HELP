@@ -47,6 +47,11 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"debt|collector|collection|credit card|owe", ("9-3-24", "9-3-25", "18-4-5")),
     (r"contract|agreement|breach|warranty", ("13-1-1", "13-6-11", "9-3-24", "9-3-25")),
     (r"injur|accident|slip|negligen|wreck|dog bit", ("9-3-33", "51-1-6", "51-12-4", "9-3-31")),
+    # Everyday civil: insurance, fire/property damage, workplace injury, slip-and-fall
+    (r"insur|claim (denied|rejected)|coverage|premium|policy", ("33-4-6", "33-7-11", "9-3-33")),
+    (r"fire|burn|smoke damage|property damage|house fire|apartment fire", ("51-1-6", "51-12-4", "9-3-31", "44-7-14")),
+    (r"workplace|work injury|on the job|workers.?comp|hurt at work|fell at work", ("34-9-1", "34-9-8", "34-9-11", "9-3-33")),
+    (r"slip and fall|tripped|wet floor|premises liability", ("51-1-6", "51-3-1", "9-3-33")),
     (r"wage|paycheck|fired|employ|overtime|final pay", ("34-7-1", "34-7-2", "34-4-3")),
     (r"scam|consumer|refund|deceptive|car dealer|lemon", ("10-1-393", "10-1-399")),
     (r"neighbor|trespass|nuisance|fence|property line|tree", ("41-1-1", "41-1-4", "51-9-1")),
