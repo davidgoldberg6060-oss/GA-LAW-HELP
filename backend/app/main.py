@@ -156,7 +156,7 @@ def _guest_rights_without_corpus(query:str, mode:str) -> dict:
         'For Georgia civil and criminal questions, free help is available from Georgia Legal Services Program (https://www.glsp.org/), '
         'Atlanta Legal Aid (https://atlantalegalaid.org/), Georgia Courts self-help (https://georgiacourts.gov/a2j/) and the '
         'State Bar of Georgia (https://www.gabar.org/public/find-a-lawyer). Do not miss any court date or deadline on papers you received. '
-        'Please try again in a minute.')
+        'The AI service is temporarily unavailable — please try again in a minute.')
     notice = (
         'No indexed Georgia authority was available for this guest request. '
         'This is general encounter information, not a verified citation and not a claim that any rule is current Georgia law. '
@@ -277,7 +277,9 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db),user=Depends(op
         # Any failure (AI provider, retrieval, formatting, DB, etc.) returns the safe fallback
         # instead of an unhandled 500 that the Android app shows as "Request failed (500)".
         import logging
-        logging.getLogger(__name__).exception("public_rights_assistant failed; returning fallback: %s", type(exc).__name__)
+        log = logging.getLogger(__name__)
+        log.exception("public_rights_assistant failed (query=%r mode=%s); returning fallback: %s: %s",
+                      query[:120], mode, type(exc).__name__, exc)
         if isinstance(exc, SQLAlchemyError):
             try:
                 db.rollback()
@@ -285,6 +287,7 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db),user=Depends(op
                 pass
         fallback = _guest_rights_without_corpus(query, mode)
         fallback['ai_unavailable'] = True
+        fallback['error_type'] = type(exc).__name__
         return _decorate_public(fallback, query, mode)
     response['login_required'] = False
     response['model_used']=_model_used()
