@@ -7,8 +7,8 @@ android {
         applicationId = "help.galaw.standalone"
         minSdk = 26
         targetSdk = 35
-        versionCode = 45
-        versionName = "1.8.0"
+        versionCode = 46
+        versionName = "1.8.1"
         val apiBaseUrl = providers.gradleProperty("GALAW_API_BASE_URL").orElse("https://api-production-60cc.up.railway.app").get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
