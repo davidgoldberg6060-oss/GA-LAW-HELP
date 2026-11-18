@@ -59,6 +59,8 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"unemployment|jobless|laid off|severance", ("34-8-1", "34-8-193", "34-8-195")),
     (r"discrimination|harassment|wrongful termination|fired because", ("34-5-1", "34-5-3", "34-7-1")),
     (r"identity theft|stolen identity|credit report|fraudulent account", ("16-9-120", "16-9-121", "10-1-393")),
+    (r"student loan|student debt|default on loan", ("9-3-24", "9-3-25", "18-4-5")),
+    (r"medical malpractice|doctor mistake|hospital negligence|wrong diagnosis", ("9-3-71", "9-3-73", "51-1-27")),
     (r"wage|paycheck|fired|employ|overtime|final pay", ("34-7-1", "34-7-2", "34-4-3")),
     (r"scam|consumer|refund|deceptive|car dealer|lemon", ("10-1-393", "10-1-399")),
     (r"neighbor|trespass|nuisance|fence|property line|tree", ("41-1-1", "41-1-4", "51-9-1")),
@@ -127,6 +129,8 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"unemployment|laid off|jobless", ("How do I file for unemployment in Georgia?", "What if my unemployment claim is denied?", "How long can I receive unemployment benefits?")),
     (r"discrimination|harassment|wrongful termination", ("What counts as workplace discrimination in Georgia?", "How do I report harassment at work?", "What should I do if I was fired unfairly?")),
     (r"identity theft|stolen identity|credit report", ("What should I do if someone stole my identity?", "How do I dispute a fraudulent charge?", "Can I freeze my credit in Georgia?")),
+    (r"student loan|student debt", ("How long can a student loan collector sue in Georgia?", "What happens if I default on a student loan?", "Can student loans be discharged in bankruptcy?")),
+    (r"medical malpractice|doctor mistake|hospital", ("How long do I have to sue for medical malpractice in Georgia?", "What do I have to prove in a malpractice case?", "Do I need an expert affidavit?")),
     (r"small claims|magistrate|\bsue\b", ("How do I file in magistrate court?", "How much can I sue for in small claims?")),
     (r"\bbond\b|\bbail\b", ("How is bond set in Georgia?", "Can a bond amount be reduced?")),
     # "searched without a warrant" is about a search, not an arrest warrant.
