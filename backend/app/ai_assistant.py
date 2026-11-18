@@ -301,6 +301,7 @@ def _answered(key: str, started: float, text: str) -> str:
 def _try_model(key: str, call):
     """Run one model call; returns text or None (after putting the model on cooldown when appropriate)."""
     if ai_models.is_cooling(key):
+        logger.info("AI model skipped (cooling down): %s", key)
         return None
     try:
         return call()
