@@ -109,6 +109,10 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"child support", ("How is child support calculated in Georgia?", "How do I change a child support order?")),
     (r"debt|garnish|collector", ("How long can a creditor sue over a debt in Georgia?", "What income is protected from garnishment?", "What should I do if I'm served with a lawsuit?")),
     (r"injur|accident|wreck", ("How long do I have to file an injury claim?", "What evidence should I keep after an accident?")),
+    (r"insur|claim denied|coverage", ("What should I do if my insurance claim is denied?", "How long do I have to file an insurance claim in Georgia?", "What documents should I keep for an insurance claim?")),
+    (r"fire|property damage|smoke", ("What can I recover for fire or property damage?", "How long do I have to sue for property damage in Georgia?", "What evidence should I keep after a fire?")),
+    (r"workplace|work injury|workers.?comp|hurt at work", ("Do I have to report a work injury right away?", "What does workers' compensation cover in Georgia?", "Can I sue my employer for a work injury?")),
+    (r"slip and fall|tripped|wet floor|premises", ("What do I have to prove in a slip-and-fall case?", "How long do I have to file a premises liability claim?", "What evidence helps a slip-and-fall claim?")),
     (r"small claims|magistrate|\bsue\b", ("How do I file in magistrate court?", "How much can I sue for in small claims?")),
     (r"\bbond\b|\bbail\b", ("How is bond set in Georgia?", "Can a bond amount be reduced?")),
     # "searched without a warrant" is about a search, not an arrest warrant.

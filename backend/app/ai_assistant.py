@@ -363,7 +363,7 @@ def ask_openai(question: str, speed: str | None = None) -> str:
     if not gemini["api_key"] and not others and not ai_models.compat_providers():
         logger.error("AI provider configuration failure: no AI provider keys are set")
         raise RuntimeError("AI service is not configured")
-    logger.error("AI unavailable: every model in the %s chain failed or is cooling down", kind)
+    logger.error("AI unavailable: every model in the %s chain failed or is cooling down (budget=%.0fs elapsed=%.1fs)", kind, budget, time.monotonic() - started)
     raise RuntimeError("AI provider is temporarily unavailable")
 
 

@@ -35,7 +35,11 @@ private fun apiErrorMessage(statusCode: Int, responseBody: String): String {
         }
     }
     if (detail is String && detail.isNotBlank()) return detail
-    return if (statusCode == 422) "Check the information and try again." else "Request failed ($statusCode)."
+    return when (statusCode) {
+        422 -> "Check the information and try again."
+        500, 502, 503, 504 -> "The assistant is temporarily unavailable. Please try again in a minute."
+        else -> "Request failed ($statusCode)."
+    }
 }
 class ApiException(val statusCode: Int, responseBody: String) : RuntimeException(apiErrorMessage(statusCode, responseBody))
 class ApiNetworkException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
