@@ -100,7 +100,15 @@ object GaScreens {
         var onAsk: ((String) -> Unit)? = null
         private var last: LinearLayout? = null
         /** Smoothly scroll to the newest message without moving focus out of the input (no jump). */
-        fun toEnd() { scroll.post { scroll.smoothScrollTo(0, (scroll.getChildAt(0)?.height ?: 0)) } }
+        fun toEnd() {
+            scroll.post {
+                val lastMsg = messages.getChildAt(messages.childCount - 1) ?: return@post
+                val top = lastMsg.top
+                // Keep the start of the newest message near the top of the visible area so the user doesn't have to scroll up
+                val target = (top - ui.dp(12)).coerceAtLeast(0)
+                scroll.smoothScrollTo(0, target)
+            }
+        }
         fun bot(text: String, time: String, id: Long = 0L) = add(text, time, false, id)
         fun user(text: String, time: String, id: Long = 0L) = add(text, time, true, id)
         /** Append an extra card (e.g. the lawyer take) under the latest answer. */
@@ -154,8 +162,8 @@ object GaScreens {
             val row = LinearLayout(ui.context).apply { orientation = LinearLayout.HORIZONTAL; gravity = if (mine) Gravity.END else Gravity.START }
             if (!mine) {
                 val avatar = FrameLayout(ui.context).apply {
-                    background = GradientDrawable().apply { shape = GradientDrawable.OVAL; colors = intArrayOf(Color.rgb(40, 140, 255), Color.rgb(12, 80, 200)); setStroke(dp(2), Color.rgb(120, 190, 255)) }
-                    addView(ui.icon(R.drawable.ga_ic_support_agent, GaUi.WHITE, 22), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
+                    background = GradientDrawable().apply { shape = GradientDrawable.OVAL; colors = intArrayOf(Color.rgb(200, 214, 229), Color.rgb(140, 160, 185)); setStroke(dp(1), Color.rgb(230, 240, 250)) }
+                    addView(ui.icon(R.drawable.ga_ic_sonny, Color.TRANSPARENT, 28), FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
                 }
                 row.addView(avatar, LinearLayout.LayoutParams(dp(38), dp(38)).apply { rightMargin = dp(10) })
             }
@@ -175,13 +183,19 @@ object GaScreens {
                 return
             }
             val shown: CharSequence = if (mine) text else AnswerFormat.styled(text, GaUi.GOLD, onLawTap)
-            val bubble = ui.text(shown, 15f, GaUi.TEXT).apply {
+            val bubble = ui.text(shown, 15f, if (mine) Color.WHITE else GaUi.TEXT).apply {
                 if (!mine && onLawTap != null) movementMethod = android.text.method.LinkMovementMethod.getInstance()
                 setPadding(dp(14), dp(11), dp(14), dp(11)); setLineSpacing(0f, 1.15f)
-                background = if (mine) ui.glowCard(Color.argb(235, 14, 34, 58), GaUi.STROKE_SOFT, 12, glow = false) else ui.glowCard(Color.argb(235, 12, 40, 72), GaUi.STROKE, 12, glow = false)
+                background = if (mine) {
+                    ui.glowCard(Color.rgb(30, 136, 229), Color.rgb(100, 181, 246), 18, glow = false)
+                } else {
+                    ui.glowCard(Color.argb(235, 12, 40, 72), GaUi.STROKE, 12, glow = false)
+                }
                 if (id != 0L) { isLongClickable = true; contentDescription = (if (mine) "Your message" else "STANDALONE ASSISTANT answer") + ". Long-press for Copy, Share or Delete."; setOnLongClickListener { onMessageLongPress?.invoke(id); true } }
             }
-            row.addView(bubble, LinearLayout.LayoutParams(0, -2, 1f).apply { if (mine) leftMargin = dp(56) })
+            val bubbleLp = LinearLayout.LayoutParams(0, -2, 1f)
+            if (mine) { bubbleLp.leftMargin = dp(72); bubbleLp.rightMargin = 0 }
+            row.addView(bubble, bubbleLp)
             group.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (mine) 16 else 10) })
             group.addView(ui.text(time, 10.5f, GaUi.MUTED, null, if (mine) Gravity.END else Gravity.START).apply { setPadding(if (mine) 0 else dp(48), dp(3), dp(4), 0); alpha = 0.8f })
             messages.addView(group, LinearLayout.LayoutParams(-1, -2))
