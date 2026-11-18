@@ -278,8 +278,6 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db),user=Depends(op
         # instead of an unhandled 500 that the Android app shows as "Request failed (500)".
         import logging
         log = logging.getLogger(__name__)
-        import traceback
-        tb = traceback.format_exc()
         log.exception("public_rights_assistant failed (query=%r mode=%s); returning fallback: %s: %s",
                       query[:120], mode, type(exc).__name__, exc)
         if isinstance(exc, SQLAlchemyError):
@@ -290,7 +288,6 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db),user=Depends(op
         fallback = _guest_rights_without_corpus(query, mode)
         fallback['ai_unavailable'] = True
         fallback['error_type'] = type(exc).__name__
-        fallback['error_trace'] = tb[-1500:]  # last part of traceback for debugging
         return _decorate_public(fallback, query, mode)
     response['login_required'] = False
     response['model_used']=_model_used()

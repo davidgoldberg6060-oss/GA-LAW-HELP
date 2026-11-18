@@ -18,11 +18,19 @@ HEADING = "Problem with my public defender?"
 MOTION_KEY = "discharge_appointed_counsel"
 
 _HERE = Path(__file__).resolve().parent
-_CANDIDATES = (
-    _HERE / "data" / "public_defender_problems.json",
-    _HERE.parents[1] / "config" / "public_defender_problems.json",
-    _HERE.parents[2] / "config" / "public_defender_problems.json",
-    _HERE.parents[2] / "src" / "publicDefenderProblemsData.json",
+def _safe_parent(n: int) -> Path | None:
+    try:
+        return _HERE.parents[n]
+    except IndexError:
+        return None
+
+_CANDIDATES = tuple(
+    c for c in (
+        _HERE / "data" / "public_defender_problems.json",
+        (_safe_parent(1) / "config" / "public_defender_problems.json") if _safe_parent(1) else None,
+        (_safe_parent(2) / "config" / "public_defender_problems.json") if _safe_parent(2) else None,
+        (_safe_parent(2) / "src" / "publicDefenderProblemsData.json") if _safe_parent(2) else None,
+    ) if c is not None
 )
 
 # Counsel the person already has (appointed / public defender / "my lawyer" in a distrust setting).
