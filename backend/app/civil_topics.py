@@ -76,6 +76,8 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"name change|change my name|petition to change name", ("19-12-1", "19-12-2")),
     (r"will|probate|estate|inherit|died without a will", ("53-4-20", "53-2-1", "15-9-30")),
     (r"small claims limit|magistrate court limit|how much can I sue", ("15-10-2", "15-10-43")),
+    (r"traffic ticket|speeding ticket|red light|points on license", ("40-6-181", "40-13-1", "40-5-57")),
+    (r"license suspension|suspended license|reinstatement", ("40-5-57", "40-5-58", "40-5-67.1")),
     (r"wage|paycheck|fired|employ|overtime|final pay", ("34-7-1", "34-7-2", "34-4-3")),
     (r"scam|consumer|refund|deceptive|car dealer|lemon", ("10-1-393", "10-1-399")),
     (r"neighbor|trespass|nuisance|fence|property line|tree", ("41-1-1", "41-1-4", "51-9-1")),
@@ -161,6 +163,8 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"name change|change my name", ("How do I change my name in Georgia?", "What do I need for a name change petition?", "How long does a name change take?")),
     (r"will|probate|estate|inherit", ("Do I need a will in Georgia?", "What happens if someone dies without a will?", "How does probate work?")),
     (r"small claims|magistrate court limit", ("What is the small claims limit in Georgia?", "How do I file in magistrate court?", "What if the amount is over the limit?")),
+    (r"traffic ticket|speeding|red light|points", ("How do points on a Georgia license work?", "Can I contest a traffic ticket?", "What happens if I miss my court date?")),
+    (r"license suspension|suspended license", ("How do I reinstate a suspended license?", "What is a limited permit?", "How long does a suspension last?")),
     (r"small claims|magistrate|\bsue\b", ("How do I file in magistrate court?", "How much can I sue for in small claims?")),
     (r"\bbond\b|\bbail\b", ("How is bond set in Georgia?", "Can a bond amount be reduced?")),
     # "searched without a warrant" is about a search, not an arrest warrant.
