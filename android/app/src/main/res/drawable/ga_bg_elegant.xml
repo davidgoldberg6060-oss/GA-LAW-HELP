@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft navy gradient with a hint of ripple depth -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:type="linear"
+        android:angle="160"
+        android:startColor="#061428"
+        android:centerColor="#0A1E38"
+        android:endColor="#05101C" />
+</shape>
