@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 def _public_link(path: str, token: str) -> str:
     base = os.getenv("PUBLIC_APP_URL", "").rstrip("/")
     if not base:
-        raise RuntimeError("PUBLIC_APP_URL is required for email delivery")
+        logger.warning("PUBLIC_APP_URL is not set; email link will be incomplete")
+        return f"{path}?{urlencode({'token': token})}"
     return f"{base}{path}?{urlencode({'token': token})}"
 
 
@@ -73,11 +74,19 @@ def deliver_encounter_notice(to_email: str, filename: str, sha256: str, size_byt
 
 def deliver_verification(to_email: str, token: str) -> bool:
     if os.getenv("MAIL_DELIVERY_MODE", "disabled").lower() != "smtp": return False
-    link = _public_link("/verify-email", token)
-    return _send(to_email, "Verify your GA.LAW.HELP email", f"Verify your email:\n\n{link}\n\nIf you did not create this account, ignore this message.")
+    try:
+        link = _public_link("/verify-email", token)
+        return _send(to_email, "Verify your GA.LAW.HELP email", f"Verify your email:\n\n{link}\n\nIf you did not create this account, ignore this message.")
+    except Exception:
+        logger.exception("deliver_verification failed")
+        return False
 
 
 def deliver_password_reset(to_email: str, token: str) -> bool:
     if os.getenv("MAIL_DELIVERY_MODE", "disabled").lower() != "smtp": return False
-    link = _public_link("/reset-password", token)
-    return _send(to_email, "Reset your GA.LAW.HELP password", f"Reset your password:\n\n{link}\n\nIf you did not request this, ignore this message.")
+    try:
+        link = _public_link("/reset-password", token)
+        return _send(to_email, "Reset your GA.LAW.HELP password", f"Reset your password:\n\n{link}\n\nIf you did not request this, ignore this message.")
+    except Exception:
+        logger.exception("deliver_password_reset failed")
+        return False
