@@ -52,6 +52,8 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"fire|burn|smoke damage|property damage|house fire|apartment fire", ("51-1-6", "51-12-4", "9-3-31", "44-7-14")),
     (r"workplace|work injury|on the job|workers.?comp|hurt at work|fell at work", ("34-9-1", "34-9-8", "34-9-11", "9-3-33")),
     (r"slip and fall|tripped|wet floor|premises liability", ("51-1-6", "51-3-1", "9-3-33")),
+    (r"car insurance|auto insurance|uninsured motorist|um coverage", ("33-7-11", "40-6-10", "9-3-33")),
+    (r"medical bill|hospital bill|doctor bill after (accident|wreck|injury)", ("9-3-33", "51-1-6", "51-12-4")),
     (r"wage|paycheck|fired|employ|overtime|final pay", ("34-7-1", "34-7-2", "34-4-3")),
     (r"scam|consumer|refund|deceptive|car dealer|lemon", ("10-1-393", "10-1-399")),
     (r"neighbor|trespass|nuisance|fence|property line|tree", ("41-1-1", "41-1-4", "51-9-1")),
@@ -113,6 +115,8 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"fire|property damage|smoke", ("What can I recover for fire or property damage?", "How long do I have to sue for property damage in Georgia?", "What evidence should I keep after a fire?")),
     (r"workplace|work injury|workers.?comp|hurt at work", ("Do I have to report a work injury right away?", "What does workers' compensation cover in Georgia?", "Can I sue my employer for a work injury?")),
     (r"slip and fall|tripped|wet floor|premises", ("What do I have to prove in a slip-and-fall case?", "How long do I have to file a premises liability claim?", "What evidence helps a slip-and-fall claim?")),
+    (r"car insurance|auto insurance|uninsured", ("What does uninsured motorist coverage do in Georgia?", "Do I have to report a car accident to my insurance?", "What if the other driver has no insurance?")),
+    (r"medical bill|hospital bill", ("Can I recover medical bills after an accident?", "What if my health insurance paid some of the bills?", "How long do I have to claim medical expenses?")),
     (r"small claims|magistrate|\bsue\b", ("How do I file in magistrate court?", "How much can I sue for in small claims?")),
     (r"\bbond\b|\bbail\b", ("How is bond set in Georgia?", "Can a bond amount be reduced?")),
     # "searched without a warrant" is about a search, not an arrest warrant.

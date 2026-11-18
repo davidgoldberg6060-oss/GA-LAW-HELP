@@ -289,6 +289,7 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db),user=Depends(op
         fallback = _guest_rights_without_corpus(query, mode)
         fallback['ai_unavailable'] = True
         fallback['error_type'] = type(exc).__name__
+        log.warning("Returning AI fallback for query=%r (error=%s)", query[:80], type(exc).__name__)
         return _decorate_public(fallback, query, mode)
     response['login_required'] = False
     response['model_used']=_model_used()
