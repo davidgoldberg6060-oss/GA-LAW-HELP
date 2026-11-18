@@ -54,6 +54,8 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"slip and fall|tripped|wet floor|premises liability", ("51-1-6", "51-3-1", "9-3-33")),
     (r"car insurance|auto insurance|uninsured motorist|um coverage", ("33-7-11", "40-6-10", "9-3-33")),
     (r"medical bill|hospital bill|doctor bill after (accident|wreck|injury)", ("9-3-33", "51-1-6", "51-12-4")),
+    (r"restraining order|protective order|tpo|family violence", ("19-13-1", "19-13-3", "19-13-4")),
+    (r"hoa|homeowners association|condo association|special assessment", ("44-3-100", "44-3-106", "44-3-109")),
     (r"wage|paycheck|fired|employ|overtime|final pay", ("34-7-1", "34-7-2", "34-4-3")),
     (r"scam|consumer|refund|deceptive|car dealer|lemon", ("10-1-393", "10-1-399")),
     (r"neighbor|trespass|nuisance|fence|property line|tree", ("41-1-1", "41-1-4", "51-9-1")),
@@ -117,6 +119,8 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"slip and fall|tripped|wet floor|premises", ("What do I have to prove in a slip-and-fall case?", "How long do I have to file a premises liability claim?", "What evidence helps a slip-and-fall claim?")),
     (r"car insurance|auto insurance|uninsured", ("What does uninsured motorist coverage do in Georgia?", "Do I have to report a car accident to my insurance?", "What if the other driver has no insurance?")),
     (r"medical bill|hospital bill", ("Can I recover medical bills after an accident?", "What if my health insurance paid some of the bills?", "How long do I have to claim medical expenses?")),
+    (r"restraining order|protective order|tpo|family violence", ("How do I get a temporary protective order in Georgia?", "What happens at a TPO hearing?", "How long does a protective order last?")),
+    (r"hoa|homeowners association|condo", ("What can an HOA enforce in Georgia?", "Can I challenge an HOA fine or assessment?", "What are my rights if the HOA won't make repairs?")),
     (r"small claims|magistrate|\bsue\b", ("How do I file in magistrate court?", "How much can I sue for in small claims?")),
     (r"\bbond\b|\bbail\b", ("How is bond set in Georgia?", "Can a bond amount be reduced?")),
     # "searched without a warrant" is about a search, not an arrest warrant.

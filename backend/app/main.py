@@ -673,7 +673,13 @@ import os
 @app.get('/health/ai')
 def health_ai():
     """Cooldown / probe state of each model in the free rotation (no secrets, no prompts)."""
-    return {"status": "ok", "last_probe_note": "1-token probe runs once per process at startup", **_ai_models.status()}
+    import os
+    status = _ai_models.status()
+    status["free_fallbacks"] = {
+        "groq": bool(os.getenv("GROQ_API_KEY", "").strip()),
+        "openrouter": bool(os.getenv("OPENROUTER_API_KEY", "").strip()),
+    }
+    return {"status": "ok", "last_probe_note": "1-token probe runs once per process at startup", **status}
 
 # The app uses a lifespan handler (on_event hooks never fire), so start the probe at import time.
 if os.getenv('AI_STARTUP_PROBE','1')!='0' and (os.getenv('GEMINI_API_KEY','').strip() or os.getenv('OPENROUTER_API_KEY','').strip()):
