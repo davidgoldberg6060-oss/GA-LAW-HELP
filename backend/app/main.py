@@ -273,14 +273,19 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db),user=Depends(op
     _ai.last_model_used.value=None
     try:
         response = grounded_legal_response(query, mode, ask_fast, db=db, **_ctx(turns))
-    except RuntimeError:
-        # AI provider unavailable: return the static encounter pack instead of failing the guest.
+    except Exception as exc:
+        # Any failure (AI provider, retrieval, formatting, DB, etc.) returns the safe fallback
+        # instead of an unhandled 500 that the Android app shows as "Request failed (500)".
+        import logging
+        logging.getLogger(__name__).exception("public_rights_assistant failed; returning fallback: %s", type(exc).__name__)
+        if isinstance(exc, SQLAlchemyError):
+            try:
+                db.rollback()
+            except Exception:
+                pass
         fallback = _guest_rights_without_corpus(query, mode)
         fallback['ai_unavailable'] = True
-        return _decorate_public(fallback,query,mode)
-    except SQLAlchemyError:
-        db.rollback()
-        return _decorate_public(_guest_rights_without_corpus(query, mode),query,mode)
+        return _decorate_public(fallback, query, mode)
     response['login_required'] = False
     response['model_used']=_model_used()
     response=_decorate_public(response,response.get('focus_question') or query,mode)
