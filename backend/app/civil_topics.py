@@ -1353,11 +1353,15 @@ def follow_ups(question: str, answer: str = "", n: int = 3) -> list[str]:
     from .defense_help import is_broad_defense, BROAD_FOLLOW_UPS, is_criminal, CHARGE_FOLLOW_UPS, _allowed_stages, _PRE
     if is_broad_defense(q):
         return list(BROAD_FOLLOW_UPS[:n])
-    # General criminal charge questions keep the standard defense follow-ups
-    # unless a more specific topic pattern matches first.
-    if is_criminal(q) and _allowed_stages(q) == _PRE and not any(re.search(pat, q) for pat, _ in FOLLOW_UPS if "possession" not in pat and "search" not in pat and "warrant" not in pat):
-        # Still allow specific matches below; this is a soft preference.
-        pass
+    # General "I was charged..." questions get the standard defense follow-ups
+    # unless a clearly specific topic (not just possession/search/warrant) matches.
+    specific = False
+    for pat, _ in FOLLOW_UPS:
+        if re.search(pat, q) and not any(x in pat for x in ("possession", "search", "warrant", "car")):
+            specific = True
+            break
+    if is_criminal(q) and _allowed_stages(q) == _PRE and not specific:
+        return list(CHARGE_FOLLOW_UPS[:n])
     for text, from_answer in ((q, False), ((answer or "").lower(), True)):
         if from_answer:
             from .defense_help import is_criminal, CHARGE_FOLLOW_UPS, _allowed_stages, _PRE
