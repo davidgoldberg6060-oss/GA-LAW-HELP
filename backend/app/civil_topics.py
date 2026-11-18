@@ -583,7 +583,7 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"dog sniff|\bk9\b|drug dog|alert", ("17-5-1", "16-13-30")),
     (r"assault|battery|fight|affray", ("16-5-20", "16-5-21", "16-5-23")),
     (r"theft|shoplifting|stolen property", ("16-8-2", "16-8-14", "16-8-7")),
-    (r"drug|controlled substance|marijuana|possession", ("16-13-30", "16-13-2")),
+    (r"drug possession|controlled substance|marijuana|possession of (?:marijuana|drugs|controlled)", ("16-13-30", "16-13-2")),
     (r"firearm|weapon|gun|carry permit", ("16-11-126", "16-11-127", "16-11-129")),
     (r"dui|driving under the influence|implied consent", ("40-6-391", "40-5-67.1", "40-6-392")),
     (r"bond|bail|bond reduction|cash bond", ("17-6-1", "17-6-2")),
@@ -1248,7 +1248,7 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"pretrial immunity|immunity hearing", ("How do I request a pretrial immunity hearing?", "What do I have to prove for immunity?", "What happens if immunity is granted?")),
     (r"assault|battery|fight", ("What is the difference between assault and battery?", "What are the penalties?", "Can I claim self-defense?")),
     (r"theft|shoplifting|stolen", ("What is the difference between theft and shoplifting?", "What are the penalties for theft?", "Can theft charges be restricted?")),
-    (r"drug|controlled substance|marijuana|possession", ("What are the penalties for possession?", "Can drug charges be restricted?", "What is a conditional discharge for drugs?")),
+    (r"drug possession|controlled substance|marijuana|possession of (?:marijuana|drugs|controlled)", ("What are the penalties for possession?", "Can drug charges be restricted?", "What is a conditional discharge for drugs?")),
     (r"firearm|weapon|gun|carry", ("Do I need a permit to carry in Georgia?", "What are the rules for carrying a firearm?", "What happens if I carry in a prohibited place?")),
     (r"dui|driving under the influence", ("What are the penalties for a first DUI?", "How do I request an ALS hearing?", "What is an ignition interlock permit?")),
     (r"bond|bail|bond reduction", ("How is bond set in Georgia?", "Can I get a bond reduction?", "What is a cash bond?")),
@@ -1350,9 +1350,14 @@ def follow_ups(question: str, answer: str = "", n: int = 3) -> list[str]:
     q = current_question(question).lower()
     if re.search(PRISON, q):
         return list(PRISON_FOLLOW_UPS[:n])
-    from .defense_help import is_broad_defense, BROAD_FOLLOW_UPS
+    from .defense_help import is_broad_defense, BROAD_FOLLOW_UPS, is_criminal, CHARGE_FOLLOW_UPS, _allowed_stages, _PRE
     if is_broad_defense(q):
         return list(BROAD_FOLLOW_UPS[:n])
+    # General criminal charge questions keep the standard defense follow-ups
+    # unless a more specific topic pattern matches first.
+    if is_criminal(q) and _allowed_stages(q) == _PRE and not any(re.search(pat, q) for pat, _ in FOLLOW_UPS if "possession" not in pat and "search" not in pat and "warrant" not in pat):
+        # Still allow specific matches below; this is a soft preference.
+        pass
     for text, from_answer in ((q, False), ((answer or "").lower(), True)):
         if from_answer:
             from .defense_help import is_criminal, CHARGE_FOLLOW_UPS, _allowed_stages, _PRE
