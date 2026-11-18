@@ -71,7 +71,11 @@ object DeadlineReminders {
 class DeadlineReminderReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
-        if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel(DeadlineReminders.CHANNEL, "Case deadlines", NotificationManager.IMPORTANCE_HIGH))
+        if (Build.VERSION.SDK_INT >= 26) {
+            val ch = NotificationChannel(DeadlineReminders.CHANNEL, "Case deadlines", NotificationManager.IMPORTANCE_HIGH)
+            ch.description = "Reminders for court dates and case deadlines"
+            nm.createNotificationChannel(ch)
+        }
         val open = PendingIntent.getActivity(ctx, 0, Intent(ctx, HomeActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val n = android.app.Notification.Builder(ctx, DeadlineReminders.CHANNEL).setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("STANDALONE ASSISTANT deadline reminder").setContentText(intent.getStringExtra("msg") ?: "A case deadline is coming up.")

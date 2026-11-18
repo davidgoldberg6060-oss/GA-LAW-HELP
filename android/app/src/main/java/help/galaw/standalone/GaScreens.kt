@@ -164,6 +164,8 @@ object GaScreens {
                 val avatar = FrameLayout(ui.context).apply {
                     background = GradientDrawable().apply { shape = GradientDrawable.OVAL; colors = intArrayOf(Color.rgb(200, 214, 229), Color.rgb(140, 160, 185)); setStroke(dp(1), Color.rgb(230, 240, 250)) }
                     addView(ui.icon(R.drawable.ga_ic_sonny, Color.TRANSPARENT, 28), FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
+                    contentDescription = "STANDALONE ASSISTANT"
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
                 }
                 row.addView(avatar, LinearLayout.LayoutParams(dp(38), dp(38)).apply { rightMargin = dp(10) })
             }
@@ -191,7 +193,12 @@ object GaScreens {
                 } else {
                     ui.glowCard(Color.argb(235, 12, 40, 72), GaUi.STROKE, 12, glow = false)
                 }
-                if (id != 0L) { isLongClickable = true; contentDescription = (if (mine) "Your message" else "STANDALONE ASSISTANT answer") + ". Long-press for Copy, Share or Delete."; setOnLongClickListener { onMessageLongPress?.invoke(id); true } }
+                if (id != 0L) {
+                    isLongClickable = true
+                    val preview = text.take(80).replace("\n", " ")
+                    contentDescription = (if (mine) "Your message: $preview" else "STANDALONE ASSISTANT answer: $preview") + ". Long-press for Copy, Share or Delete."
+                    setOnLongClickListener { onMessageLongPress?.invoke(id); true }
+                }
             }
             val bubbleLp = LinearLayout.LayoutParams(0, -2, 1f)
             if (mine) { bubbleLp.leftMargin = dp(72); bubbleLp.rightMargin = 0 }
