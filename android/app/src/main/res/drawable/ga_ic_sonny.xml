@@ -1,29 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Elegant Sonny-style robot head with water-ripple metallic sheen -->
+<!-- 3D chrome Sonny-style robot head — looks raised off the surface -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="64dp" android:height="64dp"
-    android:viewportWidth="64" android:viewportHeight="64">
-    <!-- Outer glow ring -->
-    <path android:fillColor="#1A4A7A" android:fillAlpha="0.35" android:pathData="M32,2c-16.6,0-30,13.4-30,30s13.4,30,30,30s30-13.4,30-30S48.6,2,32,2z"/>
-    <!-- Head base - deep metallic -->
-    <path android:fillColor="#8BA4BC" android:pathData="M32,6c-14.4,0-26,11.6-26,26c0,9.8,5.4,18.3,13.5,22.8V58h25v-3.2C52.6,50.3,58,41.8,58,32C58,17.6,46.4,6,32,6z"/>
-    <!-- Soft upper highlight (ripple-like) -->
-    <path android:fillColor="#D4E4F0" android:pathData="M32,8c-13.3,0-24,10.7-24,24c0,3.2,0.6,6.2,1.8,9C13.5,32.2,22,25,32,25s18.5,7.2,22.2,16c1.2-2.8,1.8-5.8,1.8-9C56,18.7,45.3,8,32,8z"/>
-    <!-- Inner face plate -->
-    <path android:fillColor="#6E8499" android:pathData="M32,18c-9.4,0-17,7.6-17,17c0,6.2,3.3,11.6,8.2,14.5V54h17.6v-4.5C45.7,46.6,49,41.2,49,35C49,25.6,41.4,18,32,18z"/>
-    <!-- Subtle center panel line -->
-    <path android:fillColor="#00000000" android:strokeColor="#A8C0D4" android:strokeWidth="0.6" android:pathData="M32,20v28"/>
-    <!-- Eyes - deep -->
-    <path android:fillColor="#0A1628" android:pathData="M23,30m-4.2,0a4.2,4.2 0,1 1,8.4 0a4.2,4.2 0,1 1,-8.4 0"/>
-    <path android:fillColor="#0A1628" android:pathData="M41,30m-4.2,0a4.2,4.2 0,1 1,8.4 0a4.2,4.2 0,1 1,-8.4 0"/>
-    <!-- Eye iris glow -->
-    <path android:fillColor="#5CB8FF" android:pathData="M23,30m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
-    <path android:fillColor="#5CB8FF" android:pathData="M41,30m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
-    <!-- Eye catchlights -->
-    <path android:fillColor="#FFFFFF" android:pathData="M21.8,28.4m-0.9,0a0.9,0.9 0,1 1,1.8 0a0.9,0.9 0,1 1,-1.8 0"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M39.8,28.4m-0.9,0a0.9,0.9 0,1 1,1.8 0a0.9,0.9 0,1 1,-1.8 0"/>
-    <!-- Gentle mouth -->
-    <path android:fillColor="#00000000" android:strokeColor="#4A5E72" android:strokeWidth="1.4" android:strokeLineCap="round" android:pathData="M26,40.5c2,1.6,4,2.4,6,2.4s4-0.8,6-2.4"/>
-    <!-- Side accents -->
-    <path android:fillColor="#00000000" android:strokeColor="#7A94AA" android:strokeWidth="0.8" android:pathData="M12,30h5M47,30h5"/>
+    android:width="72dp" android:height="72dp"
+    android:viewportWidth="72" android:viewportHeight="72">
+    <!-- Soft drop shadow -->
+    <path android:fillColor="#000000" android:fillAlpha="0.35" android:pathData="M38,58c12,2 22,-4 24,-10c-2,8 -12,16 -24,14c-10,-2 -18,-10 -16,-16c2,6 8,12 16,12z"/>
+    <!-- Outer bevel ring (dark edge) -->
+    <path android:fillColor="#3A4A5C" android:pathData="M36,4c-17.7,0-32,14.3-32,32s14.3,32,32,32s32-14.3,32-32S53.7,4,36,4z"/>
+    <!-- Main head — bright chrome -->
+    <path android:fillColor="#C5D4E4" android:pathData="M36,7c-16,0-29,13-29,29s13,29,29,29s29-13,29-29S52,7,36,7z"/>
+    <!-- Upper highlight (strong 3D sheen) -->
+    <path android:fillColor="#F0F6FC" android:pathData="M36,9c-14.5,0-26.2,11.7-26.2,26.2c0,4.2,1,8.1,2.8,11.6C16.5,36.5,25.5,30,36,30s19.5,6.5,23.4,16.8c1.8-3.5,2.8-7.4,2.8-11.6C62.2,20.7,50.5,9,36,9z"/>
+    <!-- Side rim light -->
+    <path android:fillColor="#E8F0F8" android:pathData="M12,36c0-8.5,4.5-16,11.5-20.2C16,22,12,28.5,12,36s4,14,11.5,20.2C16.5,52,12,44.5,12,36z"/>
+    <!-- Inner face plate — slightly recessed -->
+    <path android:fillColor="#7A90A8" android:pathData="M36,20c-10.5,0-19,8.5-19,19c0,7,3.8,13.1,9.4,16.4V60h19.2v-4.6C51.2,52.1,55,46,55,39C55,28.5,46.5,20,36,20z"/>
+    <!-- Center seam -->
+    <path android:fillColor="#00000000" android:strokeColor="#B0C4D8" android:strokeWidth="0.7" android:pathData="M36,22v34"/>
+    <!-- Eyes — deep sockets -->
+    <path android:fillColor="#0A1420" android:pathData="M26.5,34m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+    <path android:fillColor="#0A1420" android:pathData="M45.5,34m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+    <!-- Eye glow -->
+    <path android:fillColor="#6EC8FF" android:pathData="M26.5,34m-2.4,0a2.4,2.4 0,1 1,4.8 0a2.4,2.4 0,1 1,-4.8 0"/>
+    <path android:fillColor="#6EC8FF" android:pathData="M45.5,34m-2.4,0a2.4,2.4 0,1 1,4.8 0a2.4,2.4 0,1 1,-4.8 0"/>
+    <!-- Catchlights -->
+    <path android:fillColor="#FFFFFF" android:pathData="M25,32.2m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M44,32.2m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
+    <!-- Mouth -->
+    <path android:fillColor="#00000000" android:strokeColor="#3A4E62" android:strokeWidth="1.6" android:strokeLineCap="round" android:pathData="M29,46c2.2,1.8,4.4,2.6,7,2.6s4.8-0.8,7-2.6"/>
+    <!-- Chin highlight -->
+    <path android:fillColor="#D8E6F2" android:pathData="M30,52c2,3 4,4.5 6,4.5s4-1.5,6-4.5"/>
 </vector>
