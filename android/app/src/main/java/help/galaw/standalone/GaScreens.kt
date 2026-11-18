@@ -163,7 +163,11 @@ object GaScreens {
             if (!mine) {
                 val avatar = FrameLayout(ui.context).apply {
                     background = GradientDrawable().apply { shape = GradientDrawable.OVAL; colors = intArrayOf(Color.rgb(200, 214, 229), Color.rgb(140, 160, 185)); setStroke(dp(1), Color.rgb(230, 240, 250)) }
-                    addView(ui.icon(R.drawable.ga_ic_sonny, Color.TRANSPARENT, 28), FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
+                    addView(ImageView(ui.context).apply {
+                        setImageResource(R.drawable.ga_ic_sonny)
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                        imageTintList = null
+                    }, FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
                     contentDescription = "STANDALONE ASSISTANT"
                     importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
                 }
