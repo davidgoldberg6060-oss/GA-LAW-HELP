@@ -45,11 +45,13 @@ object ShareText {
         if (r.claims.isNotEmpty()) { append("\n\nLIKELY CLAIMS & DEFENSES"); r.claims.forEach { c -> append("\n• [").append(c.sideLabel).append("] ").append(c.claim).append(" — ").append(c.cite.citation) } }
         r.court?.let { append("\n\nCOURT: ").append(it.label); it.limit?.let { l -> append("\n  From the law: “").append(l).append("”") } }
         if (r.deadlines.isNotEmpty()) { append("\n\nDEADLINES"); r.deadlines.forEach { d -> append("\n• ").append(d.title).append(": “").append(d.quote).append("” (").append(d.cite.citation).append(")") } }
+        if (r.steps.isNotEmpty()) { append("\n\nSTEPS TO TAKE NOW"); r.steps.forEach { append("\n• ").append(it) } }
         if (r.evidence.isNotEmpty()) { append("\n\nEVIDENCE TO GATHER"); r.evidence.forEach { append("\n• ").append(it) } }
         listOf("WEAK SPOTS" to r.weakSpots, "LOWEST-COST PATHS" to r.lowCost).forEach { (h, list) ->
             if (list.isNotEmpty()) { append("\n\n").append(h); list.forEach { o -> append("\n• ").append(o.title).append(": ").append(o.explanation.trim()); if (o.citations.isNotEmpty()) append("\n").append(cites(o.citations)) } }
         }
         append(lawyerBlock(r.lawyer))
+        if (r.questions.isNotEmpty()) { append("\n\nQUESTIONS TO ASK A LAWYER"); r.questions.forEach { append("\n• ").append(it) } }
         if (r.help.isNotEmpty()) { append("\n\nFIND LEGAL HELP"); r.help.forEach { append("\n• ").append(it.title).append(": ").append(it.url) } }
         append("\n\n").append(r.disclaimer)
     }

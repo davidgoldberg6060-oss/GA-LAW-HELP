@@ -63,6 +63,30 @@ TYPES: tuple[tuple[str, str, str, str], ...] = (
      r"|\b(accident|wreck|contract|breach|deposit|damage|loan|repairs?).{0,80}\b(sued|suing|lawsuit|small claims|magistrate court)\b"),
 )
 _TYPE = {k: (label, family) for k, label, family, _ in TYPES}
+# Civil problems from the civil guide (civil_guide.CATEGORIES). Existing plan keys keep their names.
+GUIDE_TO_PLAN = {"landlord_tenant": "eviction", "custody": "custody", "debt": "debt", "employment": "employment",
+                 "small_claims": "civil_suit"}
+PLAN_TO_GUIDE = {v: k for k, v in GUIDE_TO_PLAN.items()}
+
+
+def _guide_types() -> None:
+    from . import civil_guide as _cg
+    for c in _cg.CATEGORIES:
+        key = GUIDE_TO_PLAN.get(c["key"], c["key"])
+        if key not in _TYPE:
+            _TYPE[key] = (c["label"], "civil")
+
+
+_guide_types()
+
+
+def guide_for(plan: dict | None) -> dict | None:
+    """The civil-guide entry behind a civil plan (or None)."""
+    if not plan or plan.get("family") != "civil":
+        return None
+    from . import civil_guide as _cg
+    key = plan.get("case_type") or ""
+    return _cg.get(PLAN_TO_GUIDE.get(key, key))
 # Vague: a case exists but no charge or claim is named.
 _VAGUE_CRIMINAL = (r"\b(arrest\w*|charged|charges?|warrant|in jail|locked up|booked|indict\w*|arraign\w*|court date|criminal case|"
                    r"public defender|bond|bail|the police|cops?|detective|got caught|picked up)\b")
@@ -81,6 +105,15 @@ def _q(text: str) -> str:
 def detect(text: str) -> str | None:
     """Case type named in ``text`` (already the current message), or None."""
     q = str(text or "").lower()
+    from . import civil_guide as _cg
+    if not _cg.is_accused(q):
+        # A car wreck, a fall, a work injury, fire damage, a protective order ... is a civil problem even when it
+        # mentions a red light, "my job", stalking, or fraud; criminal types win only when the person is accused.
+        cat = _cg.detect(q)
+        if cat and cat["key"] == "small_claims" and not re.search(r"small claims|magistrate", q):
+            cat = None  # a bare "I'm being sued" is decided below (named claim -> Lawsuit, else ask)
+        if cat:
+            return GUIDE_TO_PLAN.get(cat["key"], cat["key"])
     for key, _label, _family, pat in TYPES:
         if re.search(pat, q):
             return key
@@ -121,6 +154,15 @@ def _earlier_user_text(query: str, conversation) -> str:
     return " ".join(e.strip() for e in earlier if e and e.strip())[-1500:]
 
 
+_INFO_Q = re.compile(r"^(can|could|how|what|whats|what's|is|are|does|do|did|when|where|who|why|should|will|would|am|may|which)\b[^.!]*\??$")
+
+
+def is_info_question(q: str) -> bool:
+    """A single general question ('Can my landlord keep my deposit?'), not a story about what happened."""
+    q = q.strip()
+    return bool(_INFO_Q.match(q)) and len(q.split()) <= 16 and not re.search(_EVENT, q)
+
+
 def plan_for(query: str, conversation=None, *, force: bool = False) -> dict | None:
     """Decide whether this message gets an automatic Defense Plan.
 
@@ -137,6 +179,8 @@ def plan_for(query: str, conversation=None, *, force: bool = False) -> dict | No
     event = bool(re.search(_EVENT, q))
     if not (force or explicit or (personal and kind) or (event and _vague_family(q))):
         return None
+    if kind and not (force or explicit) and _TYPE.get(kind, ("", ""))[1] == "civil" and is_info_question(q):
+        return None  # "How long do I have to answer a lawsuit?" gets the normal answer (with the civil guide)
     facts = q
     if not kind and (explicit or force):
         earlier = _earlier_user_text(query, conversation).lower()
@@ -201,12 +245,21 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 
 
 def plan_sections(plan: dict | None) -> list[str]:
-    return list(SECTIONS.get((plan or {}).get("case_type") or "", ()))
+    own = list(SECTIONS.get((plan or {}).get("case_type") or "", ()))
+    guide = guide_for(plan)
+    if guide:
+        from . import civil_guide as _cg
+        own += [x for x in _cg.sections_for(guide, (plan or {}).get("facts") or "") if x not in own]
+    return own[:16]
 
 
 def plan_hits(db, plan: dict | None, retrieval: dict, limit: int = 14) -> dict:
     """Put the case type's exact-citation sections first (verified-hit filter still applies)."""
-    sections = plan_sections(plan)
+    return pin_hits(db, plan_sections(plan), retrieval, limit)
+
+
+def pin_hits(db, sections: list[str], retrieval: dict, limit: int = 14) -> dict:
+    """Put these exact-citation sections first (verified-hit filter still applies)."""
     if not sections or db is None:
         return retrieval
     from .charge_check_service import lookup_sections
@@ -232,13 +285,43 @@ CRIMINAL_HEADINGS = ("Quick answer", CASE_AGAINST, FIGHT_BACK, "Ways to challeng
 CIVIL_HEADINGS = ("Quick answer", CASE_AGAINST, FIGHT_BACK, "Ways to challenge their case", "Your rights",
                   "Motions and filings that could help", "Ways to resolve it", "Key deadlines", "Evidence to gather now",
                   "Questions to ask your lawyer", "Where to get help")
+# Claim side: the person wants something fixed, paid, or ordered (a car wreck, a fall, fire damage, a divorce ...).
+NEED_TO_SHOW = "What you'd need to show"
+OTHER_SIDE_SAYS = "What the other side may say"
+STEPS_HEADING = "Steps to take now"
+CLAIM_HEADINGS = ("Quick answer", NEED_TO_SHOW, OTHER_SIDE_SAYS, "Your rights", STEPS_HEADING, "Ways to resolve it", "Key deadlines",
+                  "Evidence to gather now", "Questions to ask your lawyer", "Where to get help")
 PAPERWORK_HEADING = "What helps in your paperwork"
-ALL_HEADINGS = tuple(dict.fromkeys(CRIMINAL_HEADINGS + CIVIL_HEADINGS + (PAPERWORK_HEADING, "While you find that out")))
+ALL_HEADINGS = tuple(dict.fromkeys(CRIMINAL_HEADINGS + CIVIL_HEADINGS + CLAIM_HEADINGS + (PAPERWORK_HEADING, "While you find that out")))
+
+
+_SERVED = (r"\b(i'?m|i am|we'?re|we are|i was|we were|i got|we got|i'?ve been|we'?ve been|being|been|getting) (sued|served)\b|"
+           r"served (me |us )?(with )?(court )?papers|\bsummons\b|(filed|filing) (a |an )?(lawsuit|case|suit|eviction|dispossessory|complaint|claim) against (me|us)|"
+           r"\bsu(ed|ing) (me|us)\b|tak(e|ing) (me|us) to court")
+
+
+def is_claim(plan: dict | None) -> bool:
+    """Civil plan where the person is the one asking for something (not defending a suit/eviction/collection)."""
+    g = guide_for(plan)
+    if not g:
+        return False
+    if plan.get("source") == "document" or re.search(_SERVED, plan.get("facts") or "", re.I):
+        return False  # served with papers or being sued: defend
+    if g["key"] == "landlord_tenant":  # a deposit or repairs problem is a claim; an eviction is defended
+        return not re.search(r"evict|dispossessory|notice to (vacate|quit)|behind on|(can'?t|couldn'?t|didn'?t) pay|lock(ed)? (me|us) out|kick\w* (me|us) out",
+                             plan.get("facts") or "", re.I)
+    return g.get("side") == "claim"
+
+
+def headings(plan: dict) -> tuple[str, ...]:
+    if plan.get("family") == "criminal":
+        return CRIMINAL_HEADINGS
+    return CLAIM_HEADINGS if is_claim(plan) else CIVIL_HEADINGS
 _KEYS = {h: re.sub(r"[^a-z]+", "_", h.lower()).strip("_") for h in ALL_HEADINGS}
 
 
 def section_spec(plan: dict) -> tuple[tuple[str, str], ...]:
-    heads = CRIMINAL_HEADINGS if plan.get("family") == "criminal" else CIVIL_HEADINGS
+    heads = headings(plan)
     extra = (PAPERWORK_HEADING,) if plan.get("source") == "document" else ()
     from .defense_help import MOTIONS_HEADING
     from .hidden_issues import HEADING as HIDDEN
@@ -276,14 +359,50 @@ _FOCUS = {
             "answering before the deadline to avoid a default judgment, setting aside a default, and income protected from garnishment",
     "employment": "the type of employment (at-will or contract), unpaid wages and final pay, discrimination or retaliation, deadlines for agency "
                   "charges, and unemployment benefits",
+    "foreclosure": "the notice the lender must send before a foreclosure sale, the sale date, loss-mitigation options like a loan "
+                   "modification or repayment plan, housing counseling, and asking a court to stop a sale only where the facts support it",
     "civil_suit": "standing, proper service, answering on time, the statute of limitations, defenses and counterclaims, default judgments, "
                   "and settlement",
 }
 
 
+def claim_prompt_block(plan: dict) -> str:
+    """Civil plan where the user is the one with the claim (injury, property damage, insurance, divorce ...)."""
+    g = guide_for(plan) or {}
+    heads = list(CLAIM_HEADINGS)
+    steps = "; ".join(g.get("steps") or ())
+    return (f"AUTOMATIC CIVIL PLAN ({plan.get('label')}): the user described their own civil problem. This is NOT a criminal case: "
+            "never mention charges, the State, prosecutors, plea deals, suppressing evidence, speedy trial, bond, or a public defender. "
+            "Be on the user's side and practical, without predicting or promising an outcome. NEVER invent facts: do not state anything "
+            "the user did not say. Use these headings in this order, each on its own line exactly as written: " + "; ".join(heads) + ". "
+            "Skip any heading (except Quick answer, Steps to take now, Questions to ask your lawyer, and Where to get help) when nothing "
+            "genuinely fits; never pad. Under Quick answer write 2-3 short plain sentences (no bullets, no citations): whether they may "
+            "have a claim or option under Georgia law, then the most urgent next step. "
+            f"Under \"{NEED_TO_SHOW}\" first bullet 'Likely claim: <name> (cite the listed Georgia law that supports it, if listed)', then "
+            "one bullet per thing the user would need to prove (2-4), each as '<point in 1-4 plain words>: <what in their facts helps>. "
+            "You'd still need <what is missing>.' Write to the user as 'you'. "
+            f"Under \"{OTHER_SIDE_SAYS}\" list 1-3 arguments the other side (the other driver, the store, the employer, the insurer, the "
+            "other spouse ...) or their insurance company may raise, each with one line on how to answer it. "
+            "Under 'Your rights' cover the rights that matter now (for example to medical care, to see the policy, to a hearing, to file "
+            "with an agency). "
+            f"Under '{STEPS_HEADING}' write 3-5 concrete steps in order, most urgent first, fitted to these facts; good steps for this kind "
+            f"of problem include: {steps}. "
+            "Under 'Ways to resolve it' list options like an insurance claim, a demand letter, settlement, mediation, an agency complaint, "
+            "small claims (magistrate) court, or a lawsuit, only where they fit. "
+            "Under 'Key deadlines' list only deadlines a listed law states (quote or closely paraphrase it and cite it) or dates the user "
+            "gave; otherwise one bullet saying to ask a lawyer soon because Georgia has time limits for filing. Never say what a law "
+            "'expects', 'requires' or allows about timing unless the listed text says it. Under 'Evidence to gather "
+            "now' list 3-4 concrete items for these facts. Under 'Questions to ask your lawyer' write 3-5 short questions ending with '?'. "
+            "Under 'Where to get help' write one short line only; the app adds free legal help itself. Wherever you cite a listed law, "
+            "add a plain clause on how it helps. Every bullet is one short line; at most 4 bullets under any heading (5 under Steps to take "
+            "now); leave a blank line between headings. Never suggest lying, hiding assets, or destroying evidence.")
+
+
 def prompt_block(plan: dict, app_motions: list[dict] | None = None) -> str:
     """Format instructions for a Defense Plan answer (replaces the general headings). ``app_motions``: the
     catalog motions already matched (verified) for these facts, named in "How to fight back"."""
+    if is_claim(plan):
+        return claim_prompt_block(plan)
     criminal = plan.get("family") == "criminal"
     heads = list(CRIMINAL_HEADINGS if criminal else CIVIL_HEADINGS)
     if plan.get("source") == "document":
@@ -498,7 +617,9 @@ def follow_ups(plan: dict) -> list[str]:
     if plan.get("status") == "clarify":
         return list(CLARIFY_EXAMPLES[plan.get("family") or "criminal"])
     from . import hidden_issues as _hi
-    return _hi.chips(hidden_issues(plan)) or list(FOLLOW_UPS.get(plan.get("case_type") or "", ()))
+    g = guide_for(plan)
+    return (_hi.chips(hidden_issues(plan)) or list(FOLLOW_UPS.get(plan.get("case_type") or "", ()))
+            or list((g or {}).get("follow_ups") or ()))
 
 
 def hidden_issues(plan: dict) -> list[dict]:
@@ -517,6 +638,39 @@ def add_hidden_issues(plan: dict, analysis: str) -> str:
         return analysis
     placed = insert_before(analysis, sec, ("Questions to ask your lawyer", "Where to get help"))
     return placed if placed is not None else before_note(analysis, sec)
+
+
+def add_civil_guide(plan: dict, analysis: str, deadlines: list[dict]) -> str:
+    """Civil plans: make sure 'Steps to take now' (claim side) and a verified deadline quote are present."""
+    g = guide_for(plan)
+    if not g:
+        return analysis
+    from . import civil_guide as _cg
+    text = str(analysis or "")
+    if is_claim(plan):
+        m = re.search(rf"(?im)^\s*{re.escape(STEPS_HEADING)}\s*:?\s*$", text)
+        if not m:
+            placed = insert_before(text, _cg.steps_section(g), ("Ways to resolve it", "Key deadlines", "Evidence to gather now",
+                                                                "Questions to ask your lawyer", "Where to get help"))
+            text = placed if placed is not None else before_note(text, _cg.steps_section(g))
+    return add_deadline_quotes(text, deadlines, ("Key deadlines",), ("Evidence to gather now", "Questions to ask your lawyer", "Where to get help"))
+
+
+def add_deadline_quotes(text: str, deadlines: list[dict], heads: tuple[str, ...], before: tuple[str, ...]) -> str:
+    """Add verbatim deadline quotes (from verified law text) the answer doesn't already cite."""
+    from . import civil_guide as _cg
+    from .grounded_legal_assistant import _SECTION_RE
+    new = [d for d in deadlines if not any(s in text for s in _SECTION_RE.findall(str(d["hit"].get("citation") or "")))]
+    if not new:
+        return text
+    bullets = "\n".join(_cg.deadline_bullets(new[:2]))
+    for h in heads:
+        m = re.search(rf"(?im)^\s*{re.escape(h)}\s*:?\s*$", text)
+        if m:
+            return text[:m.end()] + "\n" + bullets + text[m.end():]
+    section = heads[0] + "\n" + bullets
+    placed = insert_before(text, section, before)
+    return placed if placed is not None else before_note(text, section)
 
 
 def meta(plan: dict) -> dict:

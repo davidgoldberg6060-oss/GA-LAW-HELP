@@ -840,13 +840,14 @@ object GaScreens {
         val claims: List<CivilClaim>, val court: CivilCourt?, val deadlines: List<CivilDeadline>, val evidence: List<String>,
         val weakSpots: List<ChargeOption>, val lowCost: List<ChargeOption>, val help: List<HelpLink>, val lawyer: LawyerTake?,
         val message: String?, val refused: Boolean, val estimateNote: String, val disclaimer: String,
-        val emergency: List<Pair<String, String>>, val caseId: Int?
+        val emergency: List<Pair<String, String>>, val caseId: Int?,
+        val category: String? = null, val steps: List<String> = emptyList(), val questions: List<String> = emptyList()
     )
 
     const val CIVIL_DISCLAIMER = "This is legal information, not legal advice. Talk to a Georgia lawyer or a legal aid office before you decide anything or miss a deadline."
 
     fun civilCheck(ui: GaUi, nav: Nav, caseTitle: String?, onCheck: (String) -> Unit): ChargeCheckForm {
-        val (root, body) = page(ui, nav, Tab.LAWS, "Civil Case Check", "Describe the dispute — landlord, divorce or custody, debt, contract, injury, wages, a neighbor, a will. See the likely claims and defenses, which court, deadlines, and low-cost ways to resolve it.")
+        val (root, body) = page(ui, nav, Tab.LAWS, "Civil Case Check", "Describe the problem — divorce or custody, a car wreck, a fall, a work injury, an insurance claim, fire or property damage, landlord, debt, contract, wages, a neighbor, a will, or anything else. See the likely claims and defenses, which court, deadlines, and low-cost ways to resolve it.")
         if (!caseTitle.isNullOrBlank()) body.addView(ui.text("Case: $caseTitle", 13.5f, GaUi.GOLD, ui.sansMedium), ui.lp(2, 4))
         val situation = ui.input("What is the dispute? Who, what, when, how much money, any papers you got…", true).apply { minLines = 5 }
         body.addView(situation, ui.lp(8, 8))
@@ -873,8 +874,10 @@ object GaScreens {
         }
         if (r.refused) { container.addView(ui.emptyCard(R.drawable.ga_ic_error, "Can’t help with that", r.message ?: ""), ui.lp(4, 4)); return }
         container.addView(ui.note(r.estimateNote))
+        if (!r.category.isNullOrBlank()) container.addView(ui.text("Type of problem: ${r.category}", 14f, GaUi.GOLD, ui.sansMedium), ui.lp(4, 2))
         container.addView(ui.sectionHeader("Likely Claims & Defenses (${r.claims.size})"))
-        if (r.claims.isEmpty()) container.addView(ui.emptyCard(R.drawable.ga_ic_search, "No verified match yet", (r.message ?: "") + "\n\n" + COVERAGE_HINT), ui.lp(4, 4))
+        if (r.claims.isEmpty()) container.addView(ui.emptyCard(R.drawable.ga_ic_search, "No verified match yet", (r.message ?: "") + if (r.steps.isEmpty()) "\n\n" + COVERAGE_HINT else ""), ui.lp(4, 4))
+        if (r.steps.isNotEmpty()) { container.addView(ui.sectionHeader("Steps to Take Now")); container.addView(simpleCard(ui, null, "Start here", r.steps.joinToString("\n") { "• $it" }, emptyList(), onCite), ui.lp(5, 5)) }
         r.claims.forEach { c -> container.addView(simpleCard(ui, c.sideLabel, c.claim, c.why, listOf(c.cite), onCite), ui.lp(5, 5)) }
         r.court?.let { c ->
             container.addView(ui.sectionHeader("Which Court"))
@@ -886,6 +889,7 @@ object GaScreens {
         if (r.weakSpots.isNotEmpty()) { container.addView(ui.sectionHeader("Weak Spots for Each Side")); r.weakSpots.forEach { container.addView(optionCard(ui, it, onCite), ui.lp(5, 5)) } }
         if (r.lowCost.isNotEmpty()) { container.addView(ui.sectionHeader("Lowest-Cost Ways to Resolve It")); r.lowCost.forEach { container.addView(optionCard(ui, it, onCite), ui.lp(5, 5)) } }
         if (r.lawyer != null) container.addView(lawyerCard(ui, r.lawyer, onCite), ui.lp(10, 6))
+        if (r.questions.isNotEmpty()) { container.addView(ui.sectionHeader("Questions to Ask a Lawyer")); container.addView(simpleCard(ui, null, "Bring these to your lawyer or legal aid", r.questions.joinToString("\n") { "• $it" }, emptyList(), onCite), ui.lp(5, 5)) }
         if (r.help.isNotEmpty()) {
             container.addView(LinearLayout(ui.context).apply {
                 orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(12)); background = ui.glowCard(GaUi.CARD, GaUi.GOLD, 12, glow = false)
@@ -895,6 +899,6 @@ object GaScreens {
         }
         container.addView(ui.note(r.disclaimer))
         if (r.caseId != null) container.addView(ui.note("Saved to your case notes."))
-        if (share != null && (r.claims.isNotEmpty() || r.lawyer != null)) container.addView(shareRow(ui, share.first, share.second))
+        if (share != null && (r.claims.isNotEmpty() || r.lawyer != null || r.steps.isNotEmpty())) container.addView(shareRow(ui, share.first, share.second))
     }
 }

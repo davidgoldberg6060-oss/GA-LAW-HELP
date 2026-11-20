@@ -84,6 +84,68 @@ R = {
         "what": "Connects you to the nearest certified domestic violence shelter and advocates. In immediate danger, call 911.",
         "next": "Call any time.", "url": "https://gcadv.org/get-help/call-24-hour-statewide-hotline/", "phone": "1-800-334-2836",
         "source": "https://gcadv.org/get-help/call-24-hour-statewide-hotline/"},
+    # Civil agencies (checked against each agency's own page on 2026-11-20).
+    "sbwc": {
+        "name": "State Board of Workers' Compensation", "cost": "Free to file a claim",
+        "what": "The state agency for work injury claims. Its Claims Assistance staff explain the process; they are not your lawyer.",
+        "next": "Read 'File a Claim' on the Board's site, or call (404) 656-3818 (metro Atlanta) or (800) 533-0682.",
+        "url": "https://sbwc.georgia.gov/file-claim", "phone": "800-533-0682", "source": "https://sbwc.georgia.gov/file-claim"},
+    "insurance_commissioner": {
+        "name": "Georgia Insurance Commissioner — consumer complaints", "cost": "Free to file a complaint",
+        "what": "Takes complaints about insurance companies, including denied, delayed or low claims. It does not act as your lawyer.",
+        "next": "File a consumer insurance complaint online with your policy and claim letters.",
+        "url": "https://oci.georgia.gov/file-consumer-insurance-complaint", "phone": "800-656-2298",
+        "source": "https://oci.georgia.gov/file-consumer-insurance-complaint"},
+    "medical_board": {
+        "name": "Georgia Composite Medical Board — file a complaint", "cost": "Free to file",
+        "what": "Reviews complaints about doctors. A complaint does not get you money; a lawsuit is separate.",
+        "next": "Read the Board's complaint page and file online.",
+        "url": "https://medicalboard.georgia.gov/consumer-resources/file-complaint", "phone": None,
+        "source": "https://medicalboard.georgia.gov/consumer-resources/file-complaint"},
+    "child_support_services": {
+        "name": "Georgia Division of Child Support Services (DCSS)", "cost": "Agency",
+        "what": "Can help open, change, or enforce a child support case.",
+        "next": "Use DCSS online services or call (877) 423-4746.",
+        "url": "https://childsupport.georgia.gov/", "phone": "877-423-4746", "source": "https://childsupport.georgia.gov/"},
+    "housing_counselor": {
+        "name": "HUD-approved housing counselor (CFPB search)", "cost": "Free or low cost",
+        "what": "Counselors can help with foreclosure, loan modifications, and talking to your lender.",
+        "next": "Search for a counselor near you.",
+        "url": "https://www.consumerfinance.gov/find-a-housing-counselor/", "phone": None,
+        "source": "https://www.consumerfinance.gov/find-a-housing-counselor/"},
+    "cfpb": {
+        "name": "Consumer Financial Protection Bureau — submit a complaint", "cost": "Free",
+        "what": "Takes complaints about debt collectors, credit reports, banks, and loans.",
+        "next": "Submit a complaint online with copies of letters and statements.",
+        "url": "https://www.consumerfinance.gov/complaint/", "phone": None, "source": "https://www.consumerfinance.gov/complaint/"},
+    "identity_theft_gov": {
+        "name": "IdentityTheft.gov (Federal Trade Commission)", "cost": "Free",
+        "what": "Report identity theft and get a step-by-step recovery plan and letters.",
+        "next": "Report it online and follow the recovery plan.",
+        "url": "https://www.identitytheft.gov/", "phone": None, "source": "https://www.identitytheft.gov/"},
+    "wage_hour": {
+        "name": "U.S. Labor Department — Wage and Hour Division", "cost": "Free",
+        "what": "Takes confidential complaints about unpaid wages, minimum wage, and overtime.",
+        "next": "Call 1-866-487-9243.",
+        "url": "https://www.dol.gov/agencies/whd/contact/complaints", "phone": "866-487-9243",
+        "source": "https://www.dol.gov/agencies/whd/contact/complaints"},
+    "eeoc": {
+        "name": "U.S. Equal Employment Opportunity Commission (EEOC)", "cost": "Free",
+        "what": "Where to file a job discrimination or retaliation charge. Charge deadlines are short.",
+        "next": "Read how to file a charge, or call 1-800-669-4000.",
+        "url": "https://www.eeoc.gov/how-file-charge-employment-discrimination", "phone": "800-669-4000",
+        "source": "https://www.eeoc.gov/how-file-charge-employment-discrimination"},
+    "ga_labor": {
+        "name": "Georgia Department of Labor — unemployment", "cost": "Free",
+        "what": "File for unemployment benefits or appeal a denial.",
+        "next": "File online; the deadline to appeal is on your decision letter.",
+        "url": "https://dol.georgia.gov/file-unemployment-insurance-claim", "phone": None,
+        "source": "https://dol.georgia.gov/file-unemployment-insurance-claim"},
+    "probate_courts": {
+        "name": "Georgia probate courts (Council of Probate Court Judges)", "cost": "Court fees apply",
+        "what": "Probate courts handle wills, estates, and guardianships. Find your county's probate court and its forms.",
+        "next": "Look up the probate court for the county where the person lived.",
+        "url": "https://gaprobate.gov/", "phone": None, "source": "https://gaprobate.gov/"},
     "gdc_family": {
         "name": "Georgia Department of Corrections — friends and family questions", "cost": "Agency",
         "what": "Where to ask about someone in state prison custody, including conditions and the Ombudsman.",
@@ -93,7 +155,7 @@ R = {
 }
 
 CRIMINAL = r"\b(arrest|charged?|charges|crime|criminal|self[- ]defen[cs]e|immunity hearing|stand your ground|assault|battery|theft|shoplift|robbery|burglary|drugs?|marijuana|possession|warrant|bond|bail|probation|indict|plea|misdemeanor|felony|dui|under the influence|murder|manslaughter|appeal (?:a|my|the|his|her) conviction|convict)"
-CIVIL = r"\b(evict|dispossessory|landlord|tenant|lease|rent|deposit|debt|collector|garnish|divorce|custody|visitation|child support|alimony|benefits|snap|medicaid|unemployment|wages?|fired|employer|consumer|scam|refund|small claims|sue|lawsuit|foreclos|will|probate|estate|name change)"
+CIVIL = r"\b(evict|dispossessory|landlord|tenant|lease|rent|deposit|debt|collector|garnish|divorce|custody|visitation|child support|alimony|benefits|snap|medicaid|unemployment|wages?|fired|employer|consumer|scam|refund|small claims|sue\b|sued|lawsuit|foreclos|probate|estate|name change)"
 DUI = r"\b(dui|under the influence|implied consent|license suspen|als hearing)"
 CONSUMER = r"\b(scam|consumer|refund|deceptive|car dealer|lemon|warranty)"
 DV = r"\b(domestic violence|abus(e|ive)|protective order|tpo|stalk|threaten(ed|ing) me|hit me|beat(s|ing)? me)"
@@ -114,7 +176,13 @@ def route(question: str) -> list[dict]:
     keys: list[str] = []
     from .defense_help import is_broad_defense
     criminal = bool(re.search(CRIMINAL, q)) or is_broad_defense(q)
-    civil = bool(re.search(CIVIL, q))
+    from . import civil_guide as _cg
+    accused = _cg.is_accused(q)
+    guide = [] if accused else _cg.help_ids(q)
+    civil = bool(re.search(CIVIL, q)) or bool(_cg.detect_all(q))
+    if guide or (civil and _cg.detect_all(q) and not accused):
+        # A victim of identity theft, a stalker, or a hit-and-run is not facing charges: no public defender.
+        criminal = criminal and bool(re.search(r"\b(arrest|charged|crime i|criminal case|warrant for)", q))
     if re.search(DV, q):
         keys.append("dv_hotline")
     if re.search(DUI, q):
@@ -130,6 +198,7 @@ def route(question: str) -> list[dict]:
     if re.search(PRISON, q):
         keys.append("gdc_family")
     if civil or re.search(DV, q):
+        keys += [k for k in guide if k in R]
         county = named_county(q)
         if county in METRO_COUNTIES:
             keys.append("atlanta_legal_aid")
@@ -226,9 +295,14 @@ _STEPS_HEAD = re.compile(r"(?im)^\s*steps you can take\s*:?\s*$")
 def lawyer_questions(question: str) -> list[str]:
     from .civil_topics import current_question
     q = current_question(question).lower()
-    from .defense_help import is_broad_defense, BROAD_LAWYER_QUESTIONS
+    from .defense_help import is_broad_defense, BROAD_LAWYER_QUESTIONS, is_criminal
     if is_broad_defense(q):
         return list(BROAD_LAWYER_QUESTIONS)
+    from . import civil_guide as _cg
+    if not _cg.is_accused(q) and not is_criminal(q):
+        cat = _cg.detect(q)
+        if cat:
+            return list(cat["questions"])
     for pattern, items in LAWYER_QUESTIONS:
         if re.search(pattern, q):
             return list(items)

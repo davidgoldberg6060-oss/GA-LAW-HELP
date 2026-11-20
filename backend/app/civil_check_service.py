@@ -38,6 +38,9 @@ REFUSAL = ("GA.LAW.HELP can't help with lying, hiding or moving assets to avoid 
            "lawful defenses, deadlines and low-cost ways to resolve it.")
 NONE_FOUND = ("No claim or defense could be matched to a verified Georgia Code section in GA.LAW.HELP's library "
               "for this dispute. Georgia Legal Aid or the court's self-help center can point you to the right law.")
+# Shown instead of NONE_FOUND when the civil guide still has steps, deadlines and help for this kind of problem.
+GUIDE_ONLY = ("We couldn't match specific claims to Georgia law for these exact facts, but the steps, deadlines and free help "
+              "below apply to this kind of problem. Georgia Legal Aid or a lawyer can tell you how the law fits your facts.")
 HELP_RESOURCES = [
     {"title": "Georgia Legal Aid (free civil legal help outside metro Atlanta)", "url": "https://www.glsp.org/"},
     {"title": "Atlanta Legal Aid Society (metro Atlanta)", "url": "https://atlantalegalaid.org/"},
@@ -46,6 +49,42 @@ HELP_RESOURCES = [
 ]
 
 from .conversation_memory import CONTINUITY_RULES, context_block, focus_question
+from . import civil_guide as _cg
+
+
+def _help_for(text: str) -> list[dict]:
+    """Topic-matched help (agency for this problem + legal aid by county), then the general civil links."""
+    from .help_resources import route
+    out, seen = [], set()
+    for r in route(text):
+        if r.get("id") in ("public_defender", "gpdc_contact"):
+            continue  # civil check: never a public defender
+        row = {"title": r["name"], "url": r["url"], "phone": r.get("phone"), "what": r.get("what"), "id": r.get("id")}
+        if row["url"] not in seen:
+            seen.add(row["url"]); out.append(row)
+    for r in HELP_RESOURCES:
+        if r["url"] not in seen:
+            seen.add(r["url"]); out.append(dict(r))
+    return out[:8]
+
+
+def _guide_fields(cat: dict | None, text: str) -> dict:
+    if not cat:
+        return {"category": None, "steps": [], "lawyer_questions": []}
+    return {"category": {"key": cat["key"], "label": cat["label"]}, "steps": list(cat["steps"]),
+            "lawyer_questions": list(cat["questions"])}
+
+
+def _guide_deadlines(cat: dict | None, verified: list[dict], text: str, have: list[dict]) -> list[dict]:
+    """Verified, word-for-word deadline quotes for this kind of problem that the analysis didn't already give."""
+    from .grounded_legal_assistant import _SECTION_RE
+    cited = {s for d in have for s in _SECTION_RE.findall(str((d.get("citation") or {}).get("citation") or ""))}
+    out = []
+    for d in _cg.deadline_items(cat, verified, text):
+        if set(_SECTION_RE.findall(str(d["hit"].get("citation") or ""))) & cited:
+            continue
+        out.append({"title": d["title"], "quote": d["quote"][:800], "citation": _cite_view(d["hit"]), "source": "law_text"})
+    return out
 
 
 def _candidate_prompt(situation: str, case_summary: str | None, conversation: str = "") -> str:
@@ -153,12 +192,17 @@ def _base(situation: str, emergency: bool) -> dict:
             "emergency": EMERGENCY if emergency else None, "refused": False, "message": None,
             "claims": [], "court": None, "deadlines": [], "evidence": [], "weak_spots": [], "low_cost_paths": [],
             "help_resources": HELP_RESOURCES, "authorities": [], "lawyer_take": None, "dropped_items": 0,
+            "category": None, "steps": [], "lawyer_questions": [],
             "grounded_authority_count": 0}
 
 
 def analyze_civil_check(situation: str, ask_ai, db=None, *, case_summary: str | None = None, lookup=None, conversation: list | None = None) -> dict:
     """``conversation``: recent turns from other screens (conversation_memory) so a follow-up like
-    'what could I be charged with for that?' continues from the earlier situation."""
+    'what could I be charged with for that?' continues from the earlier situation.
+
+    Every civil problem gets help: the civil guide (civil_guide.CATEGORIES, or the catch-all) adds its Georgia
+    Code sections to the lookup, verified word-for-word deadline quotes, practical steps, questions to ask a
+    lawyer, and topic-matched free help, even when the model's analysis comes back empty."""
     situation = (situation or "").strip()
     convo = context_block(conversation or [])
     focus = focus_question(situation, conversation or [])
@@ -169,24 +213,42 @@ def analyze_civil_check(situation: str, ask_ai, db=None, *, case_summary: str | 
     result = _base(situation, is_emergency(situation))
     if is_evasion_request(situation) or re.search(r"(?i)\b(hide|move|transfer)\s+(my\s+)?(money|assets|property)\b.{0,40}\b(judgment|ex|wife|husband|creditor|divorce)", situation):
         return {**result, "refused": True, "message": REFUSAL}
+    cat = _cg.detect(focus, fallback=True) or _cg.OTHER
+    result.update(_guide_fields(cat, focus), help_resources=_help_for(focus))
     lookup = lookup or (lambda sections: lookup_sections(db, sections))
-    raw = _parse_obj(ask_ai(_candidate_prompt(situation, case_summary, convo)))
-    proposed = raw.get("sections") if isinstance(raw.get("sections"), list) else []
-    sections = [s for s in (normalize_section(x) for x in proposed[:MAX_CANDIDATES]) if s]
+    guide_secs = _cg.sections_for(cat, focus)
+    sections: list[str] = []
+    if cat["key"] == "other_civil":
+        # Unlisted problem: ask the model which sections apply (a listed problem already has curated ones; skipping
+        # this call keeps the check well inside the app's 90-second limit).
+        try:
+            raw = _parse_obj(ask_ai(_candidate_prompt(situation, case_summary, convo)))
+        except RuntimeError:
+            raw = {}
+        proposed = raw.get("sections") if isinstance(raw.get("sections"), list) else []
+        sections = [s for s in (normalize_section(x) for x in proposed[:MAX_CANDIDATES]) if s]
+    sections += [s for s in guide_secs if s not in sections]
     from .slang import plain_terms
     sections += [s for s in topic_sections(focus + " " + plain_terms(focus)) if s not in sections]
     verified = _verified_hits({"hits": lookup(sections + [s for s in BASE_SECTIONS if s not in sections])})
     topical = [h for h in verified if normalize_section(h.get("citation")) in sections]
+    guide_deadlines = _guide_deadlines(cat, verified, focus, [])
     if not topical:
-        return {**result, "message": NONE_FOUND, "authorities": [_cite_view(h) for h in verified],
+        return {**result, "message": GUIDE_ONLY if (result["steps"] or guide_deadlines) else NONE_FOUND,
+                "deadlines": guide_deadlines, "authorities": [_cite_view(h) for h in verified],
                 "grounded_authority_count": len(verified)}
-    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(topical + [h for h in verified if h not in topical], excerpt_chars=CHECK_EXCERPT_CHARS), convo)))
+    # Curated sections for this problem lead the context, so the model sees the right law first.
+    order = {s: i for i, s in enumerate(guide_secs)}
+    topical.sort(key=lambda h: order.get(normalize_section(h.get("citation")), 999))
+    data = _parse_obj(ask_ai(_analysis_prompt(situation, case_summary, _authority_context(topical + [h for h in verified if h not in topical], limit=10, excerpt_chars=CHECK_EXCERPT_CHARS), convo)))
     kept, dropped = validate_civil_check(data, verified)
+    kept["deadlines"] = kept["deadlines"] + _guide_deadlines(cat, verified, focus, kept["deadlines"])
     take = validate_lawyer_take(data.get("lawyer_take"), verified)
     if take and is_evasion(take["text"]):
         take = None
     result = with_amendment_note(result, verified)
-    return {**result, **kept, "message": None if kept["claims"] else NONE_FOUND, "lawyer_take": take,
+    message = None if kept["claims"] else (GUIDE_ONLY if (result["steps"] or kept["deadlines"]) else NONE_FOUND)
+    return {**result, **kept, "message": message, "lawyer_take": take,
             "authorities": [_cite_view(h) for h in _used(verified, kept, take)], "dropped_items": dropped,
             "grounded_authority_count": len(verified)}
 
@@ -206,12 +268,16 @@ def civil_check_note_text(result: dict) -> str:
         c = result["court"]; lines.append(f"\nCOURT: {c['court_label']}" + (f" — \"{c['limit']}\"" if c.get("limit") else ""))
     if result.get("deadlines"):
         lines.append("\nDEADLINES"); lines += [f"- {d['title']}: \"{d['quote']}\" ({d['citation']['citation']})" for d in result["deadlines"]]
+    if result.get("steps"):
+        lines.append("\nSTEPS TO TAKE NOW"); lines += [f"- {e}" for e in result["steps"]]
     if result.get("evidence"):
         lines.append("\nEVIDENCE TO GATHER"); lines += [f"- {e}" for e in result["evidence"]]
     for key, label in (("weak_spots", "WEAK SPOTS"), ("low_cost_paths", "LOWEST-COST PATHS")):
         if result.get(key):
             lines.append("\n" + label)
             lines += [f"- {d['title']}: {d['explanation']}" + (f" [{', '.join(c['citation'] for c in d['citations'])}]" if d['citations'] else "") for d in result[key]]
+    if result.get("lawyer_questions"):
+        lines.append("\nQUESTIONS TO ASK A LAWYER"); lines += [f"- {e}" for e in result["lawyer_questions"]]
     if result.get("lawyer_take"):
         lines += ["\nIF I WAS YOUR LAWYER, I WOULD SAY", result["lawyer_take"]["text"]]
     if result.get("message"):
