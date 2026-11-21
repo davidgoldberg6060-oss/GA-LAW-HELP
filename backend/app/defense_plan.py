@@ -18,6 +18,9 @@ from __future__ import annotations
 import re
 
 PLAN_TITLE = "Your Defense Plan"
+# A civil problem where the person is asking for something (a car wreck, a fall, a work injury, a divorce ...) is not a
+# defense: it gets "Your Civil Plan". Being sued, evicted or collected on is defended, so it keeps PLAN_TITLE.
+CIVIL_PLAN_TITLE = "Your Civil Plan"
 
 # ------------------------------------------------------------------ detection
 _PERSONAL = (r"\b(i|i'm|im|i've|ive|i'd|my|me|mine|we|we're|our|us|he|he's|she|she's|they|they're|his|her|their|"
@@ -223,7 +226,7 @@ _MEANWHILE = {
 def clarify_text(plan: dict) -> str:
     fam = plan.get("family") or "criminal"
     q1, q2 = plan["questions"][:2]
-    return (f"{PLAN_TITLE}\n\nQuick answer\nI can build your defense plan as soon as I know two things. {q1} {q2}\n\n"
+    return (f"{plan_title(plan)}\n\nQuick answer\nI can build your plan as soon as I know two things. {q1} {q2}\n\n"
             "While you find that out\n" + "\n".join("• " + x for x in _MEANWHILE[fam]) + "\n\nWhere to get help\n• See below.")
 
 
@@ -490,8 +493,14 @@ def max_words(plan: dict) -> int:
     return 760 if plan.get("source") == "document" else 700
 
 
+def plan_title(plan: dict) -> str:
+    """'Your Civil Plan' for a civil claim (the person wants something fixed, paid or ordered), else 'Your Defense Plan'."""
+    return CIVIL_PLAN_TITLE if plan.get("family") == "civil" and is_claim(plan) else PLAN_TITLE
+
+
 def title_line(plan: dict) -> str:
-    return f"{PLAN_TITLE}: {plan['label']}" if plan.get("label") else PLAN_TITLE
+    title = plan_title(plan)
+    return f"{title}: {plan['label']}" if plan.get("label") else title
 
 
 _DELAY = re.compile(r"speedy|delay|taking (so|too) long|been (?:\w+ )?(?:months|years?)|no trial date|waiting (?:on|for) (?:court|trial)|"
@@ -654,6 +663,26 @@ def add_civil_guide(plan: dict, analysis: str, deadlines: list[dict]) -> str:
                                                                 "Questions to ask your lawyer", "Where to get help"))
             text = placed if placed is not None else before_note(text, _cg.steps_section(g))
     return add_deadline_quotes(text, deadlines, ("Key deadlines",), ("Evidence to gather now", "Questions to ask your lawyer", "Where to get help"))
+
+
+_DEADLINE_BEFORE = ("Evidence to gather now", "Questions to ask your lawyer", "Where to get help")
+
+
+def add_deadline_note(text: str, cat: dict | None, heads: tuple[str, ...] = ("Key deadlines", "Deadlines and costs")) -> str:
+    """Put the category's fixed deadline caution (insurance: the policy's own deadline to sue) first under 'Key deadlines'."""
+    from . import civil_guide as _cg
+    note = _cg.deadline_note(cat)
+    text = str(text or "")
+    if not note or note in text:
+        return text
+    bullet = "• " + note
+    for h in heads:
+        m = re.search(rf"(?im)^\s*{re.escape(h)}\s*:?\s*$", text)
+        if m:
+            return text[:m.end()] + "\n" + bullet + text[m.end():]
+    section = heads[0] + "\n" + bullet
+    placed = insert_before(text, section, _DEADLINE_BEFORE)
+    return placed if placed is not None else before_note(text, section)
 
 
 def add_deadline_quotes(text: str, deadlines: list[dict], heads: tuple[str, ...], before: tuple[str, ...]) -> str:

@@ -28,8 +28,15 @@ def normalize(question: str) -> str:
     return re.sub(r"[^a-z0-9 ]+", "", re.sub(r"\s+", " ", (question or "").lower())).strip()
 
 
+# Bump VERSION when answers change shape. The deployed commit (set by Railway on every deploy) is part of the key too,
+# so a new release never serves answers cached by the old code (Nov 20: a work-injury question kept getting the
+# pre-#272 "Job or wage dispute" plan for up to 24 h after the civil fix went live).
+VERSION = "v9"  # v9: "Your Civil Plan", Spanish questions answered in Spanish, policy deadline note
+DEPLOY = (os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("SOURCE_COMMIT") or "")[:12]
+
+
 def key(question: str, mode: str) -> str:
-    return hashlib.sha256(f"v8\x00{mode}\x00{normalize(question)}".encode()).hexdigest()  # v8: plan quality fixes + "Things you may not know to ask"
+    return hashlib.sha256(f"{VERSION}{DEPLOY}\x00{mode}\x00{normalize(question)}".encode()).hexdigest()
 
 
 def _ensure_table(db) -> None:
