@@ -155,3 +155,21 @@ test("Spanish 'Nota:' footnote is treated like the English 'Note:' line", () => 
   assert.equal(out.note, "Esta es información legal, no asesoramiento legal.");
   assert.ok(!out.quick.includes("Nota"));
 });
+
+test("Spanish plan titles and headings are understood like the English ones", async () => {
+  const m = await import("../src/answerSections.ts");
+  const text = "Su plan de defensa: Desalojo\n\nRespuesta rápida\nPuede responder a la demanda.\n\n" +
+    "Cómo armarían el caso en su contra\n• Likely claim: falta de pago.\n\nCómo defenderse\n• Aviso: el aviso no fue correcto.\n\n" +
+    "Plazos clave\n• Revise su citación.\n\nPreguntas para su abogado\n• ¿Puedo pagar ahora?\n\nNota: Esta es información legal, no asesoramiento legal.";
+  const out = structureAnswer(text);
+  assert.equal(out.plan, "Su plan de defensa · Desalojo");
+  assert.equal(out.quick, "Puede responder a la demanda.");
+  const kinds = Object.fromEntries(out.sections.map((s) => [s.title, s.kind]));
+  assert.equal(kinds["Cómo armarían el caso en su contra"], "case");
+  assert.equal(kinds["Cómo defenderse"], "fight");
+  assert.equal(kinds["Plazos clave"], "deadlines");
+  assert.equal(kinds["Preguntas para su abogado"], "questions");
+  assert.ok(m.isPlanAnswer(text) && !m.isCivilPlanAnswer(text));
+  assert.ok(m.isCivilPlanAnswer("Su plan civil: Problema con un reclamo de seguro\n\nRespuesta rápida\nx"));
+  assert.ok(m.isPlanAnswer("Your Defense Plan: Eviction\n\nQuick answer\nx"));
+});

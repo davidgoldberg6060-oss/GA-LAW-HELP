@@ -26,18 +26,18 @@ def slow(seconds, text="slow answer"):
 
 def test_hedge_starts_a_second_model_when_the_first_is_slow():
     started = time.monotonic()
-    key, text = ai._run_chain([("a", slow(5)), ("b", slow(0.1, "fast answer"))], started + 10, 5, 0.3, 2)
-    assert (key, text) == ("b", "fast answer") and time.monotonic() - started < 1.5
+    key, text = ai._run_chain([("hedge-slow", slow(5)), ("hedge-fast", slow(0.1, "fast answer"))], started + 10, 5, 0.3, 2)
+    assert (key, text) == ("hedge-fast", "fast answer") and time.monotonic() - started < 1.5
 
 
 def test_failed_model_moves_on_immediately_and_deadline_is_respected():
     def boom(timeout):
         raise RuntimeError("AI provider is temporarily unreachable")
     started = time.monotonic()
-    key, text = ai._run_chain([("a", boom), ("b", slow(0.05, "ok"))], started + 5, 5, None, 1)
-    assert key == "b" and time.monotonic() - started < 1
+    key, text = ai._run_chain([("boom-a", boom), ("boom-b", slow(0.05, "ok"))], started + 5, 5, None, 1)
+    assert key == "boom-b" and time.monotonic() - started < 1
     started = time.monotonic()
-    key, _ = ai._run_chain([("a", slow(30)), ("b", slow(30))], started + 5, 30, None, 1)
+    key, _ = ai._run_chain([("hang-1", slow(30)), ("hang-2", slow(30))], started + 5, 30, None, 1)
     assert key is None and time.monotonic() - started < 5.5  # never past the deadline
 
 
@@ -47,14 +47,15 @@ def test_each_call_is_capped_by_the_time_left():
     def record(timeout):
         seen.append(timeout)
         return "x"
-    ai._run_chain([("a", record)], time.monotonic() + 6, 15, None, 1)
+    # Unique key: a call abandoned by an earlier test can finish late and cool down a shared name like "a".
+    ai._run_chain([("cap-check", record)], time.monotonic() + 6, 15, None, 1)
     assert seen and seen[0] <= 6
 
 
 def test_cooling_models_are_skipped():
-    ai_models.mark_cooldown("a", 60, "test")
-    key, _ = ai._run_chain([("a", slow(0, "a")), ("b", slow(0, "b"))], time.monotonic() + 5, 5, None, 1)
-    assert key == "b"
+    ai_models.mark_cooldown("cool-a", 60, "test")
+    key, _ = ai._run_chain([("cool-a", slow(0, "a")), ("cool-b", slow(0, "b"))], time.monotonic() + 5, 5, None, 1)
+    assert key == "cool-b"
 
 
 def test_request_budget_limits_the_whole_chain(monkeypatch):
