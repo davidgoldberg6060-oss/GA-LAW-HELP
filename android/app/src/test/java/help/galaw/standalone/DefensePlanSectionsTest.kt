@@ -41,4 +41,9 @@ Questions to ask your lawyer
     @Test fun normalAnswerHasNoBadge() {
         assertEquals("", AnswerSections.structure("Short answer\nYes.\n\nHow it works in Georgia\n• A point.").plan)
     }
+    @Test fun civilPlanBadge() {
+        val a = AnswerSections.structure("Your Civil Plan: Car wreck injury\n\nQuick answer\nGet medical care.\n\nSteps to take now\n• Get the police report.")
+        assertEquals("Your Civil Plan · Car wreck injury", a.plan)
+        assertTrue(a.quick.startsWith("Get medical care."))
+    }
 }

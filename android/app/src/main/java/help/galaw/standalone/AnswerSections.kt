@@ -9,7 +9,7 @@ package help.galaw.standalone
 object AnswerSections {
     data class Item(val head: String, val detail: String? = null, val meta: String? = null)
     data class Section(val title: String, val kind: String, val items: MutableList<Item> = mutableListOf(), val notes: MutableList<String> = mutableListOf())
-    /** [plan]: "Your Defense Plan · DUI" when the answer is an automatic Defense Plan (its first line), else "". */
+    /** [plan]: "Your Defense Plan · DUI" or "Your Civil Plan · Divorce" when the answer is an automatic Defense Plan (its first line), else "". */
     data class Structured(val quick: String, val sections: List<Section>, val note: String, val plan: String = "")
 
     const val VISIBLE = 4
@@ -28,7 +28,7 @@ object AnswerSections {
         "how they'd build the case against you", "how to fight back", "what you'd need to show", "what the other side may say", "steps to take now", "your strongest defenses", "ways to challenge the evidence",
         "ways to challenge their case", "options to lessen the outcome", "ways to resolve it", "motions and filings that could help",
         "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out", "things you may not know to ask", "charge or claim", "important dates", "case number", "court", "what could help in this paper", "what you can do next", "traducción al español", "explicación en palabras sencillas", "cargo o demanda", "fechas importantes", "número de caso", "tribunal", "qué puede hacer ahora", "preguntas para su abogado", "original en inglés (el que cuenta en la corte)", "lo que podría ayudar en este papel")
-    val PLAN_LINE = Regex("^Your Defense Plan(?:\\s*[:—–-]\\s*(.+))?$")
+    val PLAN_LINE = Regex("^(Your (?:Defense|Civil) Plan)(?:\\s*[:—–-]\\s*(.+))?$")
     private val RENAME = mapOf(
         "how it works in georgia" to "How it works", "challenging the evidence" to "Ways to fight the evidence",
         "rights and court procedure" to "Your rights in court", "information to gather for your lawyer" to "What to gather for your lawyer",
@@ -135,8 +135,9 @@ object AnswerSections {
             if (line.startsWith("Note:", true)) { note = line.substringAfter(":").trim(); continue }
             val planMatch = if (!sawHeading && plan.isEmpty()) PLAN_LINE.matchEntire(line) else null
             if (planMatch != null) {
-                val label = planMatch.groupValues[1].trim()
-                plan = if (label.isEmpty()) "Your Defense Plan" else "Your Defense Plan · $label"; continue
+                val title = planMatch.groupValues[1]
+                val label = planMatch.groupValues[2].trim()
+                plan = if (label.isEmpty()) title else "$title · $label"; continue
             }
             val bullet = BULLET.containsMatchIn(line)
             if (!bullet && isTopHeading(line)) {

@@ -30,6 +30,14 @@ ACCUSED = (r"\b(charged|arrested|accused of|indicted|arraign\w*|booked|locked up
 _DEFEND = "defend"   # someone is coming after the user (eviction, debt suit): "How they'd build the case against you"
 _CLAIM = "claim"     # the user wants to get something fixed, paid, or ordered
 
+# Shown under "Key deadlines" for insurance and property-damage problems (no number on purpose: it depends on the policy).
+POLICY_DEADLINE_NOTE = ("Your insurance policy may set its own deadline to sue the company, and it is often much shorter than the "
+                        "general time limits in Georgia law. Look for a part called \"Suit against us\" or \"Legal action against us\" "
+                        "in your policy, and ask a lawyer about it right away.")
+# General catch-all limits. They are only added for another problem the text mentions when the main problem has no
+# deadline of its own; otherwise "my boss says not to report my work injury" would get the 20-year statutory-rights limit.
+GENERIC_DEADLINES = frozenset({"9-3-22", "9-3-24", "9-3-25"})
+
 # key, label, plan side, pattern, sections, deadline sections (in order), steps, lawyer questions, help ids, follow-ups
 CATEGORIES: tuple[dict, ...] = (
     dict(key="protective_order", label="Protective order", side=_CLAIM,
@@ -140,8 +148,11 @@ CATEGORIES: tuple[dict, ...] = (
     dict(key="insurance_claim", label="Insurance claim problem", side=_CLAIM,
          pattern=r"insur\w*.{0,80}\b(den\w*|refus\w*|won'?t pay|not paying|slow|delay\w*|lowball|low offer|offer\w*|cancel\w*|dropped|claim|adjuster|bad faith)|"
                  r"claim (was )?(denied|rejected|refused)|adjuster|bad faith|(homeowners'?|renters'?|auto|car|life|health|flood|fire) (insurance|policy|claim)",
-         sections=("33-4-6", "33-4-7", "33-6-34", "33-24-40", "33-32-1", "13-6-11", "9-3-24"),
+         # No general contract limit (9-3-24, six years) here: an insurance policy usually sets its own, shorter
+         # deadline to sue, so telling the user "six years" could make them miss it. See deadline_note.
+         sections=("33-4-6", "33-4-7", "33-6-34", "33-24-40", "33-32-1", "13-6-11"),
          deadlines=(),
+         deadline_note=POLICY_DEADLINE_NOTE,
          steps=("Get the denial or offer in writing, and ask for a full copy of your policy.",
                 "Read the policy parts the company relies on, including any deadline to sue that the policy itself sets.",
                 "Send the company everything it asks for, and keep copies and dates of every call and letter.",
@@ -160,6 +171,7 @@ CATEGORIES: tuple[dict, ...] = (
                  r"damaged (my|our) (house|home|car|fence|roof|property|yard)|vandaliz\w*|mold (in|damage)",
          sections=("51-1-6", "51-12-4", "9-3-30", "9-3-31", "33-4-6", "33-32-1", "44-7-14", "41-1-4"),
          deadlines=("9-3-30", "9-3-31"),
+         deadline_note=POLICY_DEADLINE_NOTE,
          steps=("Make sure everyone is safe, and get the fire or police report.",
                 "Take photos and video of all the damage before cleaning up, and keep damaged items if you can.",
                 "Tell your insurance company in writing right away and ask for a copy of your policy.",
@@ -465,7 +477,7 @@ def sections_for(cat: dict | None, text: str = "", limit: int = 14) -> list[str]
     others.sort(key=lambda c: c["key"] != "small_claims")  # "can I take him to small claims?" keeps the court sections
     for other in others:
         if other["key"] != cat["key"]:
-            out += [s for s in other["sections"][:4] if s not in out]
+            out += [s for s in other["sections"][:4] if s not in out and not ((cat.get("deadlines") or cat.get("deadline_note")) and s in GENERIC_DEADLINES)]
     return out[:limit]
 
 
@@ -491,9 +503,17 @@ def deadline_secs(cat: dict | None, text: str = "") -> list[str]:
     if not cat:
         return []
     out = list(cat.get("deadlines") or ())
+    own = bool(out or cat.get("deadline_note"))
     for other in detect_all(text) if text else []:
-        out += [s for s in other.get("deadlines") or () if s not in out]
+        if other["key"] == cat["key"]:
+            continue
+        out += [s for s in other.get("deadlines") or () if s not in out and not (own and s in GENERIC_DEADLINES)]
     return out[:4]
+
+
+def deadline_note(cat: dict | None) -> str:
+    """A fixed caution for the category's "Key deadlines" (insurance policies set their own deadline to sue), or ''."""
+    return str((cat or {}).get("deadline_note") or "")
 
 
 def deadline_items(cat: dict | None, hits: list[dict], text: str = "") -> list[dict]:

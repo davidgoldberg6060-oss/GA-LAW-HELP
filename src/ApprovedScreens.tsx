@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { SECTION_VISIBLE, structureAnswer, teaser, type AnswerSection, type LawRef } from "./answerSections";
+import { SECTION_VISIBLE, isPlanAnswer, structureAnswer, teaser, type AnswerSection, type LawRef } from "./answerSections";
 import { continuityLine, lineId, loadThread, saveThread, type ChatLine } from "./chatThread";
 import type { AiHelpReply, Continuity } from "./guestPublic";
 import { aiHelpQuestionOnOpen } from "./aiHelpNav";
@@ -467,7 +467,7 @@ export default function ApprovedScreens(props: Props) {
                     {line.role === "assistant" && index === chat.length - 1 && !chatBusy && chat.some((r) => r.role === "user") && (
                       <div className="ansActions">
                         <button type="button" className="ansBuild" onClick={buildDefense}>
-                          {/^Your Defense Plan:/.test(line.text) ? "Rebuild my defense plan" : "Build my defense"}
+                          {/^Your Civil Plan:/.test(line.text) ? "Rebuild my plan" : isPlanAnswer(line.text) ? "Rebuild my defense plan" : "Build my defense"}
                         </button>
                         {line.caseStage && props.onOpenCase && (
                           <button type="button" className="ansMaker" onClick={() => props.onOpenCase?.(line.caseStage!, line.situation || lastSituation(chat))}>
@@ -479,12 +479,12 @@ export default function ApprovedScreens(props: Props) {
                             {t("pdProblems", lang)}
                           </button>
                         )}
-                        {/^Your Defense Plan:/.test(line.text) && (
+                        {isPlanAnswer(line.text) && (
                           <button type="button" className="ansMaker" onClick={() => { setPrepType(""); open("prep"); }}>
                             {t("courtroomPrep", lang)}
                           </button>
                         )}
-                        <button type="button" className="ansMaker" onClick={() => downloadPdf(/^Your Defense Plan:/.test(line.text) ? (line.text.split("\n")[0] || "Your Defense Plan") : "STANDALONE ASSISTANT answer", line.text, t("notice", lang))}>
+                        <button type="button" className="ansMaker" onClick={() => downloadPdf(isPlanAnswer(line.text) ? (line.text.split("\n")[0] || "Your plan") : "STANDALONE ASSISTANT answer", line.text, t("notice", lang))}>
                           {t("downloadPdf", lang)}
                         </button>
                         {isSupported() && voice !== "off" && (
