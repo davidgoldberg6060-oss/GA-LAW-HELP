@@ -31,7 +31,7 @@ def normalize(question: str) -> str:
 # Bump VERSION when answers change shape. The deployed commit (set by Railway on every deploy) is part of the key too,
 # so a new release never serves answers cached by the old code (Nov 20: a work-injury question kept getting the
 # pre-#272 "Job or wage dispute" plan for up to 24 h after the civil fix went live).
-VERSION = "v9"  # v9: "Your Civil Plan", Spanish questions answered in Spanish, policy deadline note
+VERSION = "v10"  # v10: Spanish headings and plan titles; insurance questions no longer filed as protective orders
 DEPLOY = (os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("SOURCE_COMMIT") or "")[:12]
 
 

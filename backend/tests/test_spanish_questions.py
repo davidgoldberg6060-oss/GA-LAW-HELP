@@ -67,3 +67,65 @@ def test_spanish_plan_answer_ends_with_nota(monkeypatch):
     r = service.grounded_legal_response(q, "general", lambda p: "Quick answer\nLlame a un abogado.\n\nWhere to get help\n- x")
     last = r["analysis"].rstrip().splitlines()[-1]
     assert last.startswith("Nota: Esta es información legal, no asesoramiento legal.") and "Note:" not in r["analysis"]
+
+
+PLAN_EN = ("Your Defense Plan: Eviction\n\nQuick answer\n• Puede ofrecer pagar la renta.\n\n"
+           "How they'd build the case against you\n• Likely claim: posesión por falta de pago.\n\n"
+           "How to fight back\n• Demand for possession: el aviso no fue correcto.\n\n"
+           "Key deadlines\n• Revise su citación.\n\nQuestions to ask your lawyer\n• ¿Puedo pagar ahora?\n\nWhere to get help\n• x")
+
+
+def test_spanish_answers_get_spanish_titles_and_headings():
+    out = L.localize_headings(PLAN_EN, "es")
+    lines = out.splitlines()
+    assert lines[0] == "Su plan de defensa: Desalojo"
+    for h in ("Respuesta rápida", "Cómo armarían el caso en su contra", "Cómo defenderse", "Plazos clave",
+              "Preguntas para su abogado", "Dónde obtener ayuda"):
+        assert h in lines, h
+    for h in ("Quick answer", "How to fight back", "Key deadlines", "Where to get help"):
+        assert h not in lines, h
+    # bullets and sentences are never touched (even ones that start like a heading)
+    assert "• Demand for possession: el aviso no fue correcto." in lines
+    assert L.localize_headings(PLAN_EN, "en") == PLAN_EN  # English unchanged
+    assert L.plan_title_es("Your Civil Plan: Insurance claim problem") == "Su plan civil: Problema con un reclamo de seguro"
+    assert L.plan_title_es("Your Civil Plan: Car wreck injury") == "Su plan civil: Lesión por accidente de auto"
+    assert L.plan_title_es("Your Defense Plan") == "Su plan de defensa"
+
+
+def test_every_plan_label_has_a_spanish_title():
+    from app import defense_plan as dp
+    from app import civil_guide as cg
+    labels = {label for label, _f in dp._TYPE.values()} | {c["label"] for c in cg.CATEGORIES} | {cg.OTHER["label"]}
+    missing = sorted(lab for lab in labels if lab not in L.PLAN_LABELS_ES)
+    assert not missing, missing
+
+
+def test_every_known_heading_has_a_spanish_heading():
+    from app.answer_format import _KNOWN_HEADINGS
+    missing = sorted(h for h in _KNOWN_HEADINGS if h not in L.HEADINGS_ES)
+    assert not missing, missing
+
+
+def test_spanish_plan_route_has_spanish_title_and_headings(monkeypatch):
+    from app import grounded_legal_assistant as service
+    monkeypatch.setattr(service, "_hybrid_retrieval", lambda q, m, db, l: {"hits": []})
+    q = L.with_language("Mi casero me dio un aviso de desalojo en Georgia. ¿Qué puedo hacer?")
+    model = ("Quick answer\nPuede responder a la demanda.\n\nHow they'd build the case against you\n- Likely claim: falta de pago.\n\n"
+             "How to fight back\n- Aviso: el aviso no fue correcto.\n\nWhere to get help\n- x")
+    r = service.grounded_legal_response(q, "general", lambda p: model)
+    lines = r["analysis"].splitlines()
+    assert lines[0] == "Su plan de defensa: Desalojo", lines[:3]
+    assert "Respuesta rápida" in lines and "Cómo defenderse" in lines and "Quick answer" not in lines
+    assert r["defense_plan"]["title"] == "Su plan de defensa: Desalojo"
+    assert lines[-1].startswith("Nota: ")
+
+
+def test_english_plan_route_is_unchanged(monkeypatch):
+    from app import grounded_legal_assistant as service
+    monkeypatch.setattr(service, "_hybrid_retrieval", lambda q, m, db, l: {"hits": []})
+    model = ("Quick answer\nYou can answer the case.\n\nHow they'd build the case against you\n- Likely claim: unpaid rent.\n\n"
+             "How to fight back\n- Notice: the notice was wrong.\n\nWhere to get help\n- x")
+    r = service.grounded_legal_response("My landlord gave me an eviction notice in Georgia. What can I do?", "general", lambda p: model)
+    lines = r["analysis"].splitlines()
+    assert lines[0] == "Your Defense Plan: Eviction" and "Quick answer" in lines and "How to fight back" in lines
+    assert r["defense_plan"]["title"] == "Your Defense Plan: Eviction" and lines[-1].startswith("Note: ")

@@ -34,10 +34,66 @@ const TOP_HEADINGS = new Set([
   "número de caso", "tribunal", "qué puede hacer ahora", "preguntas para su abogado",
   "original en inglés (el que cuenta en la corte)", "lo que podría ayudar en este papel",
 ]);
-/** First line of an automatic Defense Plan answer. */
-export const PLAN_LINE = /^(Your (?:Defense|Civil) Plan)(?:\s*[:—–-]\s*(.+))?$/;
-/** True when an answer starts with an automatic plan title ("Your Defense Plan: DUI", "Your Civil Plan: Divorce"). */
-export const isPlanAnswer = (text: string): boolean => /^Your (?:Defense|Civil) Plan:/.test(text);
+/** Spanish answers get Spanish headings from the server (backend/app/language.py HEADINGS_ES); they mean the same sections. */
+const SPANISH_HEADINGS: Record<string, string> = {
+  "respuesta corta": "short answer",
+  "respuesta rápida": "quick answer",
+  "cómo funciona en georgia": "how it works in georgia",
+  "cómo funciona": "how it works",
+  "pasos que puede tomar": "steps you can take",
+  "preguntas para su abogado": "questions to ask your lawyer",
+  "mociones que podrían ayudar": "motions that could help",
+  "plazos y costos": "deadlines and costs",
+  "dónde obtener ayuda": "where to get help",
+  "qué está pasando": "what's happening",
+  "manténgase seguro ahora": "stay safe right now",
+  "sus derechos": "your rights",
+  "lo que la policía puede y no puede hacer": "what police can and can't do",
+  "qué decir o hacer": "what to say or do",
+  "hechos que confirmar": "facts to confirm",
+  "asuntos legales": "legal issues",
+  "argumentos de la otra parte": "the other side's arguments",
+  "sus argumentos": "your side's arguments",
+  "posibles mociones": "possible motions",
+  "próximos pasos": "next steps",
+  "su situación": "your situation",
+  "derechos que pueden aplicar": "rights that may apply",
+  "lo que la policía puede hacer": "what police can do",
+  "lo que la policía no puede hacer": "what police can't do",
+  "sus opciones": "your options",
+  "el asunto": "the issue",
+  "hechos o pruebas necesarios": "facts or evidence needed",
+  "preguntas para verificar": "questions to check",
+  "cosas que quizás no sepa preguntar": "things you may not know to ask",
+  "cómo armarían el caso en su contra": "how they'd build the case against you",
+  "cómo defenderse": "how to fight back",
+  "sus mejores defensas": "your strongest defenses",
+  "formas de cuestionar las pruebas": "ways to challenge the evidence",
+  "formas de cuestionar su caso": "ways to challenge their case",
+  "opciones para reducir las consecuencias": "options to lessen the outcome",
+  "formas de resolverlo": "ways to resolve it",
+  "mociones y escritos que podrían ayudar": "motions and filings that could help",
+  "plazos clave": "key deadlines",
+  "pruebas que reunir ahora": "evidence to gather now",
+  "lo que ayuda en sus papeles": "what helps in your paperwork",
+  "mientras lo averigua": "while you find that out",
+  "¿problemas con mi defensor público?": "problem with my public defender?",
+  "lo que tendría que demostrar": "what you'd need to show",
+  "lo que podría decir la otra parte": "what the other side may say",
+  "pasos que tomar ahora": "steps to take now",
+  "leyes citadas": "laws cited",
+};
+/** The English heading a (possibly Spanish) heading stands for, lower-case. */
+export function canonicalHeading(title: string): string {
+  const t = title.replace(/[:：]\s*$/, "").trim().toLowerCase();
+  return SPANISH_HEADINGS[t] || t;
+}
+/** First line of an automatic Defense Plan answer (English, or Spanish: "Su plan de defensa: Desalojo"). */
+export const PLAN_LINE = /^(Your (?:Defense|Civil) Plan|Su plan (?:de defensa|civil))(?:\s*[:—–-]\s*(.+))?$/;
+/** True when an answer starts with an automatic plan title ("Your Defense Plan: DUI", "Su plan civil: Divorcio"). */
+export const isPlanAnswer = (text: string): boolean => /^(?:Your (?:Defense|Civil) Plan|Su plan (?:de defensa|civil)):/.test(text);
+/** True for a civil-claim plan ("Your Civil Plan: …" or "Su plan civil: …"). */
+export const isCivilPlanAnswer = (text: string): boolean => /^(?:Your Civil Plan|Su plan civil):/.test(text);
 const RENAME: Record<string, string> = {
   "how it works in georgia": "How it works",
   "challenging the evidence": "Ways to fight the evidence",
@@ -52,7 +108,7 @@ const CITE_PAREN = /\s*\((?:[^()]*?)(?:O\.C\.G\.A\.|Unif\.\s*\w+\.\s*Ct\.\s*R\.)
 const SIDE_NOTE = /^(tap\s+["“]?open my case|a lawyer should decide|providers decide eligibility|contacting them doesn'?t guarantee)/i;
 
 function kindOf(title: string): SectionKind {
-  const t = title.toLowerCase();
+  const t = canonicalHeading(title);
   if (t.startsWith("how they")) return "case";
   if (t.startsWith("how to fight back")) return "fight";
   if (t.startsWith("things you may not know")) return "ask";
@@ -71,7 +127,7 @@ function cleanTitle(raw: string): string {
 
 export function isTopHeading(line: string): boolean {
   const t = line.trim().replace(/:$/, "");
-  if (TOP_HEADINGS.has(t.toLowerCase())) return true;
+  if (TOP_HEADINGS.has(t.toLowerCase()) || TOP_HEADINGS.has(canonicalHeading(t))) return true;
   // Unknown short title-like line (no sentence ending, not a bullet).
   if (!t || t.length > 50 || BULLET.test(t) || /[.,;!?]$/.test(line.trim())) return false;
   return /^[A-Z]/.test(t) && t.split(/\s+/).length <= 7 && !/:$/.test(line.trim());
@@ -200,7 +256,7 @@ export function structureAnswer(raw: string, known: LawRef[] = []): StructuredAn
     if (planMatch) { plan = planMatch[2] ? planMatch[1] + " · " + planMatch[2].trim() : planMatch[1]; continue; }
     if (!BULLET.test(line) && isTopHeading(line)) {
       sawHeading = true;
-      top = line.replace(/:$/, "").trim().toLowerCase();
+      top = canonicalHeading(line);
       cur = null;
       if (!QUICK_HEADINGS.test(top) && top !== "laws cited") open(line);
       continue;

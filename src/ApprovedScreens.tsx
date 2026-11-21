@@ -1,6 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { STILL_WORKING_MS, isRetryable } from "./slowAnswer";
-import { SECTION_VISIBLE, isPlanAnswer, structureAnswer, teaser, type AnswerSection, type LawRef } from "./answerSections";
+import { SECTION_VISIBLE, isCivilPlanAnswer, isPlanAnswer, structureAnswer, teaser, type AnswerSection, type LawRef } from "./answerSections";
 import { continuityLine, lineId, loadThread, saveThread, type ChatLine } from "./chatThread";
 import type { AiHelpReply, Continuity } from "./guestPublic";
 import { aiHelpQuestionOnOpen } from "./aiHelpNav";
@@ -481,7 +481,7 @@ export default function ApprovedScreens(props: Props) {
                     {line.role === "assistant" && index === chat.length - 1 && !chatBusy && chat.some((r) => r.role === "user") && (
                       <div className="ansActions">
                         <button type="button" className="ansBuild" onClick={buildDefense}>
-                          {/^Your Civil Plan:/.test(line.text) ? "Rebuild my plan" : isPlanAnswer(line.text) ? "Rebuild my defense plan" : "Build my defense"}
+                          {isCivilPlanAnswer(line.text) ? "Rebuild my plan" : isPlanAnswer(line.text) ? "Rebuild my defense plan" : "Build my defense"}
                         </button>
                         {line.caseStage && props.onOpenCase && (
                           <button type="button" className="ansMaker" onClick={() => props.onOpenCase?.(line.caseStage!, line.situation || lastSituation(chat))}>

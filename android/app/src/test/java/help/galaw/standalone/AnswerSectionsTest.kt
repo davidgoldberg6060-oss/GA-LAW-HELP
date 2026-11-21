@@ -80,4 +80,16 @@ Laws cited
         assertTrue(a.note.contains("Esta es información legal"))
         assertTrue(!a.quick.contains("Nota"))
     }
+
+    @Test fun spanishPlanTitleAndHeadingsKeepTheirSections() {
+        val a = AnswerSections.structure("Su plan de defensa: Desalojo\n\nRespuesta rápida\nPuede responder a la demanda.\n\n" +
+            "Cómo armarían el caso en su contra\n• Likely claim: falta de pago.\n\nCómo defenderse\n• Aviso: el aviso no fue correcto.\n\n" +
+            "Plazos clave\n• Revise su citación.\n\nNota: Esta es información legal, no asesoramiento legal.")
+        assertEquals("Su plan de defensa · Desalojo", a.plan)
+        assertEquals("Puede responder a la demanda.", a.quick)
+        val kinds = a.sections.associate { it.title to it.kind }
+        assertEquals("case", kinds["Cómo armarían el caso en su contra"])
+        assertEquals("fight", kinds["Cómo defenderse"])
+        assertEquals("deadlines", kinds["Plazos clave"])
+    }
 }

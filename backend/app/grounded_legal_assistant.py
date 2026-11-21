@@ -286,12 +286,14 @@ def _clarify_response(plan,query,mode):
  q=plan.get("facts") or retrieval_question(query)
  pd_lang="es" if "Respond in Spanish" in (query or "") else "en"
  analysis,pd_hit=_pd.attach(analysis,q,pd_lang)
+ plan_meta=_dp.meta(plan)
  if pd_lang=="es":
-  from .language import localize_note
-  analysis=localize_note(analysis,"es")
+  from .language import localize_headings,localize_note,plan_title_es
+  analysis=localize_note(localize_headings(analysis,"es"),"es")
+  plan_meta["title"]=plan_title_es(plan_meta["title"])
  out={"suggested_motions":[],"help_resources":help_resources,"citation_check":"passed","unsupported_citations":[],"deadline_warning":False,"mode":mode,
   "analysis":analysis,"authorities":[],"laws_cited":[],"amendment_note":None,"grounded_authority_count":0,"cited_authority_count":0,"coverage_notice":None,
-  "used_encounter_pack":False,"defense_plan":_dp.meta(plan),"follow_ups":_dp.follow_ups(plan),"sections":{},"public_defender_problems":pd_hit}
+  "used_encounter_pack":False,"defense_plan":plan_meta,"follow_ups":_dp.follow_ups(plan),"sections":{},"public_defender_problems":pd_hit}
  if pd_hit:
   out["follow_ups"]=_pd.merge_follow_ups(out.get("follow_ups"),q,pd_lang)[:3]
   out["follow_up_details"]=_pd.merge_follow_up_details(out.get("follow_up_details"),q,pd_lang)[:3]
@@ -461,8 +463,12 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None,conversation:list|
  response["public_defender_problems"]=pd_hit
  if pd_lang=="es":
   # The disclaimer footnote matches the answer's language ("Nota: Esta es información legal, no asesoramiento legal.").
-  from .language import localize_note
-  response["analysis"]=localize_note(response["analysis"],"es")
+  # Spanish answers also get Spanish titles and section headings ("Su plan de defensa: Desalojo", "Respuesta rápida").
+  from .language import localize_headings,localize_note
+  response["analysis"]=localize_note(localize_headings(response["analysis"],"es"),"es")
+  if isinstance(response.get("defense_plan"),dict) and response["defense_plan"].get("title"):
+   from .language import plan_title_es
+   response["defense_plan"]["title"]=plan_title_es(response["defense_plan"]["title"])
  if pd_hit:
   response["follow_ups"]=_pd.merge_follow_ups(response.get("follow_ups"),topic_text,pd_lang)[:3]
   response["follow_up_details"]=_pd.merge_follow_up_details(response.get("follow_up_details"),topic_text,pd_lang)[:3]
