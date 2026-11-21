@@ -24,6 +24,6 @@ class UsageAnalyticsTest {
         assertNull(UsageAnalytics.validateFeedback(null, "bug", "It crashed.", ""))
         assertTrue(UsageAnalytics.validateFeedback(5, "other", "ok", "bad") != null)
         assertNull(UsageAnalytics.validateFeedback(5, "other", "ok", "a@b.co"))
-        assertEquals(listOf("bug", "design", "idea", "slow", "other"), UsageAnalytics.CATEGORIES.map { it.first })
+        assertEquals(listOf("answer", "bug", "design", "idea", "slow", "other"), UsageAnalytics.CATEGORIES.map { it.first })
     }
 }

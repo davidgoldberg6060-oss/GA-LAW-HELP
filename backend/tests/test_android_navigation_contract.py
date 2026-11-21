@@ -10,8 +10,10 @@ def test_home_preserves_approved_screen_and_back_navigation():
     source = HOME.read_text()
     compact = ''.join(source.split())
     assert 'ApprovedHomeScreen(this,homeActions).build()' in compact
-    assert 'override fun onBackPressed()' in source
-    assert 'if(!onHome)showHome()elsesuper.onBackPressed()' in compact
+    # Back uses the dispatcher (targetSdk 36: predictive back no longer calls onBackPressed()).
+    assert 'onBackPressedDispatcher.addCallback(this,backHandler)' in ''.join(source.split())
+    assert 'override fun onBackPressed()' not in source
+    assert 'if(!onHome){showHome();return}' in compact
     assert 'contentDescription="BacktoHome"' in compact
     assert 'setOnClickListener{showHome()}' in compact
 

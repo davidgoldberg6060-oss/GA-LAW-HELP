@@ -8,13 +8,14 @@ export const FEATURES = ["chat", "case_check", "motion_maker", "funny_laws", "fi
 export type Feature = (typeof FEATURES)[number];
 
 export const CATEGORIES: { id: FeedbackCategory; label: string }[] = [
+  { id: "answer", label: "Wrong, unsafe or offensive AI answer" },
   { id: "bug", label: "Bug or crash" },
   { id: "design", label: "Design or hard to use" },
   { id: "idea", label: "Missing feature or idea" },
   { id: "slow", label: "Slow" },
   { id: "other", label: "Other" },
 ];
-export type FeedbackCategory = "bug" | "design" | "idea" | "slow" | "other";
+export type FeedbackCategory = "answer" | "bug" | "design" | "idea" | "slow" | "other";
 
 const FIRST = "ga_usage_first_open";
 const LAST_SESSION = "ga_usage_last_session";

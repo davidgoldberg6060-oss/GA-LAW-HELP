@@ -43,6 +43,7 @@ FEATURES = frozenset({
     "uploads",
 })
 FEEDBACK_CATEGORIES = {
+    "answer": "Wrong, unsafe or offensive AI answer",  # Google Play AI-content policy: users can report answers
     "bug": "Bug or crash",
     "design": "Design or hard to use",
     "idea": "Missing feature or idea",

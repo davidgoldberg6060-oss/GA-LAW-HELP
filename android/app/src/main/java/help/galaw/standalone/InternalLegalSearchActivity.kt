@@ -1,8 +1,6 @@
 package help.galaw.standalone
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -12,7 +10,6 @@ import android.view.Gravity
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import org.json.JSONObject
 import kotlin.concurrent.thread
 
@@ -50,7 +47,6 @@ class InternalLegalSearchActivity : AppCompatActivity() {
 
 
     private val speechLauncher=registerForActivityResult(ActivityResultContracts.StartActivityForResult()){result->if(result.resultCode==RESULT_OK){val heard=result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim().orEmpty();if(heard.isNotBlank()){speechTarget?.let{target->val existing=target.text.toString().trim();target.setText(listOf(existing,heard).filter{it.isNotBlank()}.joinToString("\n"));target.setSelection(target.text.length)}}}}
-    private val microphonePermission=registerForActivityResult(ActivityResultContracts.RequestPermission()){granted->if(granted)startSpeechCapture()else Toast.makeText(this,"Microphone permission is needed only when you choose Listen.",Toast.LENGTH_LONG).show()}
 
     override fun onCreate(savedInstanceState:Bundle?){
         super.onCreate(savedInstanceState); SystemBars.apply(this);api=ApiClient(this);val mode=intent.getStringExtra("mode")?:"case_lookup";activeMode=mode;val title=intent.getStringExtra("title")?:titleFor(mode)
@@ -64,7 +60,8 @@ val gui=GaUi(this);val shell=LinearLayout(this).apply{orientation=LinearLayout.V
         search.setOnClickListener{val q=query.text.toString().trim();if(q.isBlank()){Toast.makeText(this,"Enter details first.",Toast.LENGTH_SHORT).show();return@setOnClickListener};search.isEnabled=false;results.removeAllViews();results.addView(GaScreens.loadingNote(gui, statusLines(mode), "Loading"));thread{try{val response=lookup(mode,q);runOnUiThread{render(results,response,grounded(mode)||guest(mode));search.isEnabled=true}}catch(e:Exception){runOnUiThread{results.removeAllViews();results.addView(text(e.message?:"Request failed. Edit the details and try again.",Color.rgb(245,150,150)));search.isEnabled=true}}}}
     }
 
-    private fun requestSpeechCapture(){if(ContextCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)startSpeechCapture()else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)}
+    // The system speech screen records the audio itself, so this app needs no microphone permission.
+    private fun requestSpeechCapture(){startSpeechCapture()}
     private fun startSpeechCapture(){val intent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);putExtra(RecognizerIntent.EXTRA_PROMPT,"Describe what is happening. You can edit the transcript before analysis.");putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1)};if(intent.resolveActivity(packageManager)==null){Toast.makeText(this,"Speech recognition is not available on this device. You can still type what is happening.",Toast.LENGTH_LONG).show();return};speechLauncher.launch(intent)}
 
     private fun render(root:LinearLayout,response:JSONObject,isGrounded:Boolean){

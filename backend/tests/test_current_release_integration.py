@@ -20,8 +20,10 @@ def test_live_motion_screen_uses_verified_service_and_audits():
 def test_approved_home_shell_and_back_navigation_remain_present():
     source = HOME.read_text()
     assert 'ApprovedHomeScreen(this,homeActions).build()' in ''.join(source.split())
-    assert 'override fun onBackPressed()' in source
-    assert 'if(!onHome)showHome()elsesuper.onBackPressed()' in ''.join(source.split())
+    # Back uses the dispatcher (targetSdk 36: predictive back no longer calls onBackPressed()).
+    assert 'onBackPressedDispatcher.addCallback(this,backHandler)' in ''.join(source.split())
+    assert 'override fun onBackPressed()' not in source
+    assert 'if(!onHome){showHome();return}' in ''.join(source.split())
 
 
 def test_expired_session_has_local_cleanup_and_login_redirect():

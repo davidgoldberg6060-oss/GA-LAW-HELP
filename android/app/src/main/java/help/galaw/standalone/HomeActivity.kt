@@ -136,11 +136,19 @@ class HomeActivity : AppCompatActivity() {
                     } } }
             catch (e: Exception) { runOnUiThread { stop(); val msg = AiErrors.message(e); val bot = talk.add(false, msg, now(), inContext = false); if (chat === c) { c.bot(bot.text, bot.time, bot.id); c.retry { talk.delete(bot.id); c.remove(bot.id); runDocumentRead(c, d, pages, caseId) } } } } }
     }
-    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); SystemBars.apply(this); api = ApiClient(this); docs = DocumentLibrary(this); ui = GaUi(this); showHome(); thread { runCatching { api.ensureSession() } } }
+    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); onBackPressedDispatcher.addCallback(this, backHandler); SystemBars.apply(this); api = ApiClient(this); docs = DocumentLibrary(this); ui = GaUi(this); showHome(); thread { runCatching { api.ensureSession() } } }
     override fun onStart() { super.onStart(); UsageAnalytics.onAppStart(this, api) }
     private var currentScreen = "home"
     private var askedFeedbackPrompt = false
-    @Deprecated("Deprecated in Java") override fun onBackPressed() { if (drawerView != null) { closeDrawer(); return }; if (!onHome) showHome() else super.onBackPressed() }
+    // Back: close the menu, then go Home, then leave the app. Uses the back dispatcher because on Android 16 (targetSdk 36)
+    // predictive back no longer calls onBackPressed(), so an override would let Back close the app from any screen.
+    private val backHandler = object : androidx.activity.OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (drawerView != null) { closeDrawer(); return }
+            if (!onHome) { showHome(); return }
+            isEnabled = false; onBackPressedDispatcher.onBackPressed(); isEnabled = true
+        }
+    }
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private val homeActions = object : ApprovedHomeScreen.Actions {
         override fun openMenu()=showMenu(); override fun openAccount()=showAccount(); override fun ask(question:String)=askFromHome(question); override fun openCases()=showCases(); override fun openTalkToMe()=showTalkToMe(); override fun openLegalTools()=showLegalTools(); override fun openGeorgiaLaws()=showGeorgiaLaws(); override fun openCourtInfo()=showCourtInfo(); override fun openLegalForms()=showLegalForms(); override fun openCaseAnalysis()=showMyCase(); override fun openKnowYourRights()=showKnowYourRights(); override fun openResources()=showResources(); override fun openEmergency()=showEmergency(); override fun openHome()=showHome(); override fun openDocuments()=showDocuments(); override fun openFunnyLaws()=showFunnyLaws(); override fun openFeedback()=showFeedback()

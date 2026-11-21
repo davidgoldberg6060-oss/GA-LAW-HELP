@@ -2,13 +2,13 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
 
 android {
     namespace = "help.galaw.standalone"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "help.galaw.standalone"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 49
-        versionName = "1.8.4"
+        targetSdk = 36  // Google Play: new apps and updates must target API 36 since Aug 31, 2026
+        versionCode = 50
+        versionName = "1.8.5"
         val apiBaseUrl = providers.gradleProperty("GALAW_API_BASE_URL").orElse("https://api-production-60cc.up.railway.app").get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
