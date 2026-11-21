@@ -149,3 +149,9 @@ test("civil claim plans show 'Your Civil Plan' and still count as a plan", () =>
   assert.match(a.quick, /^Get medical care\./);
   assert.ok(isPlanAnswer(civil) && isPlanAnswer("Your Defense Plan: DUI\n\nQuick answer\nx") && !isPlanAnswer("Short answer\nx"));
 });
+
+test("Spanish 'Nota:' footnote is treated like the English 'Note:' line", () => {
+  const out = structureAnswer("Quick answer\nLlame a un abogado.\n\nNota: Esta es información legal, no asesoramiento legal.");
+  assert.equal(out.note, "Esta es información legal, no asesoramiento legal.");
+  assert.ok(!out.quick.includes("Nota"));
+});

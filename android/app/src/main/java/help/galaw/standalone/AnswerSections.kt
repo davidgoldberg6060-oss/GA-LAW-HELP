@@ -132,7 +132,7 @@ object AnswerSections {
         for (raw0 in text.split("\n")) {
             val line = raw0.trim()
             if (line.isEmpty()) continue
-            if (line.startsWith("Note:", true)) { note = line.substringAfter(":").trim(); continue }
+            if (line.startsWith("Note:", true) || line.startsWith("Nota:", true)) { note = line.substringAfter(":").trim(); continue }
             val planMatch = if (!sawHeading && plan.isEmpty()) PLAN_LINE.matchEntire(line) else null
             if (planMatch != null) {
                 val title = planMatch.groupValues[1]

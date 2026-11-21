@@ -131,3 +131,33 @@ def with_language(query: str, language: str | None = None) -> str:
         head = q[: q.rstrip().rfind(asked)] if asked and asked in q else q + "\n"
         return instruction("es") + "\n\n" + head + asked_out
     return instruction("es") + "\n\nUser: " + asked_out
+
+
+# --------------------------------------------------------------- server-added footnote in the answer's language
+NOTE_ES = "Esta es información legal, no asesoramiento legal."
+AMENDMENT_NOTE_ES = ("El texto del Código de Georgia es de la edición de 2022; algunas secciones pueden haber cambiado. "
+                     "Consulte con un abogado antes de confiar en él.")
+_EN_AMENDMENT = ("Georgia Code text is from the 2022 edition; some sections may have changed since. "
+                 "Check with a lawyer before relying on it.")
+# The model's own Spanish disclaimer line (the instruction asks it to end with NOTICE_ES); the footnote replaces it.
+_ES_DISCLAIMER_LINE = _re.compile(r"(?im)^[ \t•*\-\"'“”]*(?:nota:[ \t]*)?(?:esto|esta) es informaci[oó]n legal,? (?:y )?no (?:es )?asesoramiento (?:jur[ií]dico|legal)\.?[ \t\"'“”]*$\n?")
+_NOTE_LINE = _re.compile(r"(?m)^Note:[ \t]*(.*)$")
+
+
+def localize_note(text: str | None, language: str | None = "es") -> str:
+    """Spanish answers: the server's 'Note: ...' footnote becomes 'Nota: Esta es información legal, no asesoramiento
+    legal.' (with the Code-edition note in Spanish), and a duplicate disclaimer line from the model is dropped."""
+    t = str(text or "")
+    if not is_spanish(language):
+        return t
+    t = _ES_DISCLAIMER_LINE.sub("", t).rstrip()
+    notes = list(_NOTE_LINE.finditer(t))
+    if notes:
+        m = notes[-1]
+        body = m.group(1).replace(NOTICE_EN, NOTE_ES).replace(_EN_AMENDMENT, AMENDMENT_NOTE_ES).strip()
+        if NOTE_ES not in body:
+            body = (NOTE_ES + " " + body).strip()
+        t = t[:m.start()] + "Nota: " + body + t[m.end():]
+    elif NOTE_ES not in t:
+        t += "\n\nNota: " + NOTE_ES
+    return _re.sub(r"\n{3,}", "\n\n", t)

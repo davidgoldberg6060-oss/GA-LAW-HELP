@@ -195,7 +195,7 @@ export function structureAnswer(raw: string, known: LawRef[] = []): StructuredAn
   for (const rawLine of text.split("\n")) {
     const line = rawLine.trim();
     if (!line) continue;
-    if (/^note:/i.test(line)) { note = line.replace(/^note:\s*/i, ""); continue; }
+    if (/^not[ea]:/i.test(line)) { note = line.replace(/^not[ea]:\s*/i, ""); continue; }  // "Nota:" in Spanish answers
     const planMatch = !sawHeading && plan === undefined ? line.match(PLAN_LINE) : null;
     if (planMatch) { plan = planMatch[2] ? planMatch[1] + " · " + planMatch[2].trim() : planMatch[1]; continue; }
     if (!BULLET.test(line) && isTopHeading(line)) {

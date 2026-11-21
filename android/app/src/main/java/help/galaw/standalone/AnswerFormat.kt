@@ -55,7 +55,7 @@ object AnswerFormat {
     private fun looksLikeHeading(line: String, next: String?): Boolean {
         val t = line.trim()
         if (t.isEmpty() || t.startsWith("•") || t.length > 60 || t.endsWith(".") || t.endsWith("?") || t.endsWith("!") || t.endsWith(",")) return false
-        if (t.startsWith("Note:")) return false
+        if (t.startsWith("Note:") || t.startsWith("Nota:")) return false
         return next != null && next.isNotBlank()
     }
 
@@ -86,7 +86,7 @@ object AnswerFormat {
                         }, start + 2, start + 2 + cite.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
                 }
-                line.startsWith("Note:") -> sb.setSpan(RelativeSizeSpan(0.88f), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                (line.startsWith("Note:") || line.startsWith("Nota:")) -> sb.setSpan(RelativeSizeSpan(0.88f), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
             if (i < lines.size - 1) sb.append('\n')
         }

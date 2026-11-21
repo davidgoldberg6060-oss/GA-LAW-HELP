@@ -46,3 +46,24 @@ def test_rights_assistant_answers_spanish_questions_in_spanish(monkeypatch):
         assert r.status_code == 200
     assert seen[0].startswith("Respond in Spanish.") and "arrested" in current_question(seen[0])
     assert seen[1] == "I was arrested for DUI last night"
+
+
+def test_spanish_answers_get_the_spanish_footnote():
+    en = ("Quick answer\nx\n\nEsto es información legal, no asesoramiento jurídico.\n\n"
+          "Note: This is legal information, not legal advice. Georgia Code text is from the 2022 edition; some sections may "
+          "have changed since. Check with a lawyer before relying on it.")
+    out = L.localize_note(en, "es")
+    assert out.endswith("Nota: Esta es información legal, no asesoramiento legal. El texto del Código de Georgia es de la "
+                        "edición de 2022; algunas secciones pueden haber cambiado. Consulte con un abogado antes de confiar en él.")
+    assert "Note:" not in out and "not legal advice" not in out and "asesoramiento jurídico" not in out and "x\n\nNota:" in out
+    assert L.localize_note("Respuesta corta\ny", "es").endswith("\n\nNota: " + L.NOTE_ES)
+    assert L.localize_note(en, "en") == en
+
+
+def test_spanish_plan_answer_ends_with_nota(monkeypatch):
+    from app import grounded_legal_assistant as service
+    monkeypatch.setattr(service, "_hybrid_retrieval", lambda q, m, db, l: {"hits": []})
+    q = L.with_language("Me arrestaron por DUI anoche en Atlanta. Que hago?")
+    r = service.grounded_legal_response(q, "general", lambda p: "Quick answer\nLlame a un abogado.\n\nWhere to get help\n- x")
+    last = r["analysis"].rstrip().splitlines()[-1]
+    assert last.startswith("Nota: Esta es información legal, no asesoramiento legal.") and "Note:" not in r["analysis"]

@@ -16,7 +16,9 @@ from .charge_check_service import analyze_charge_check, charge_check_note_text
 from .civil_check_service import analyze_civil_check, civil_check_note_text
 from .civil_topics import HELP_LINKS, follow_ups, current_question
 from . import answer_cache
-from .ai_assistant import ask_fast
+from .ai_assistant import ask_fast, request_budget
+import os as _os
+AI_REQUEST_BUDGET_SECONDS=float(_os.getenv('AI_REQUEST_BUDGET_SECONDS','48'))
 from . import ai_assistant as _ai
 from .answer_format import sanitize_result as _sanitize, SHORT_AMENDMENT_NOTE
 def _model_used():
@@ -276,7 +278,9 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db),user=Depends(op
             return _remember_turn(db,user,body,feature,asked,cached,turns) if user is not None else cached
     _ai.last_model_used.value=None
     try:
-        response = grounded_legal_response(query, mode, ask_fast, db=db, **_ctx(turns))
+        # Whole answer (first call plus any retry) inside the phone's 60 s wait.
+        with request_budget(AI_REQUEST_BUDGET_SECONDS):
+            response = grounded_legal_response(query, mode, ask_fast, db=db, **_ctx(turns))
     except Exception as exc:
         # Any failure (AI provider, retrieval, formatting, DB, etc.) returns the safe fallback
         # instead of an unhandled 500 that the Android app shows as "Request failed (500)".
@@ -354,7 +358,8 @@ def _document_defense_plan(result:dict,question:str,db)->dict|None:
     from .case_guide import STAGE_LABELS
     plan=_dp.document_plan(result)
     try:
-        r=grounded_legal_response(_dp.document_situation(result,question),'general',ask_fast,db=db,plan=plan)
+        with request_budget(AI_REQUEST_BUDGET_SECONDS):
+            r=grounded_legal_response(_dp.document_situation(result,question),'general',ask_fast,db=db,plan=plan)
     except (RuntimeError,SQLAlchemyError) as exc:
         if isinstance(exc,SQLAlchemyError): db.rollback()
         return {'status':'unavailable','message':'Your Defense Plan could not be built right now. Tap "Build my defense" to try again.'}

@@ -1,4 +1,5 @@
 import { HelpLovedOne } from './HelpLovedOne';
+import {fetchWithTimeout,friendlyFetchError} from './slowAnswer';
 import { CUSTODY } from './helpLovedOne';
 import { Glossary } from './Glossary';
 import React,{FormEvent,useEffect,useRef,useState}from'react';
@@ -148,9 +149,9 @@ async function uploadEncounterCopy(blob:Blob,scenario:ScenarioKey,recordingCaseI
 }
 
 async function api<T=any>(path:string,options:RequestInit={}):Promise<T>{
- const res=await fetch(API+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
+ const res=await fetchWithTimeout(API+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
  const data=await res.json().catch(()=>({detail:'The server returned an unreadable response.'}));
- if(!res.ok)throw new ApiError(res.status,typeof data.detail==='string'?data.detail:'Request failed');
+ if(!res.ok){const friendly=friendlyFetchError(null,res.status);if(friendly&&typeof data.detail!=='string')throw friendly;throw new ApiError(res.status,typeof data.detail==='string'?data.detail:'Request failed')}
  return data;
 }
 async function authApi(path:string,options:RequestInit={}){

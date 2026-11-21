@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { STILL_WORKING_MS, isRetryable } from "./slowAnswer";
 import { SECTION_VISIBLE, isPlanAnswer, structureAnswer, teaser, type AnswerSection, type LawRef } from "./answerSections";
 import { continuityLine, lineId, loadThread, saveThread, type ChatLine } from "./chatThread";
 import type { AiHelpReply, Continuity } from "./guestPublic";
@@ -149,6 +150,13 @@ export default function ApprovedScreens(props: Props) {
   const [chat, setChat] = useState<ChatLine[]>(() => loadThread(browserStore(), AI_FEATURE));
   const [chatBusy, setChatBusy] = useState(false);
   const [chatNotice, setChatNotice] = useState("");
+  const [retryText, setRetryText] = useState("");
+  const [stillWorking, setStillWorking] = useState(false);
+  useEffect(() => {
+    if (!chatBusy) { setStillWorking(false); return; }
+    const timer = window.setTimeout(() => setStillWorking(true), STILL_WORKING_MS);
+    return () => window.clearTimeout(timer);
+  }, [chatBusy]);
   const [carryLine, setCarryLine] = useState("");
   const [askFeedback, setAskFeedback] = useState(false);
   const [lang, setLangState] = useState<Lang>(() => getLang());
@@ -181,6 +189,7 @@ export default function ApprovedScreens(props: Props) {
     if (asText === undefined) setQuestion("");
     setChatBusy(true);
     setChatNotice("");
+    setRetryText("");
     try {
       if (!props.askGuest) {
         props.onAsk(textValue);
@@ -199,6 +208,11 @@ export default function ApprovedScreens(props: Props) {
       setChatNotice(reply.notice || "");
     } catch (error) {
       setChatNotice(error instanceof Error ? error.message : "Guest research is unavailable.");
+      if (isRetryable(error)) {
+        // Keep the question, but take it out of the thread so Retry doesn't show it twice.
+        setChat((rows) => rows.filter((row) => row.id !== asked.id));
+        setRetryText(textValue);
+      }
     } finally {
       setChatBusy(false);
       aiQuestionRef.current?.focus();
@@ -511,8 +525,9 @@ export default function ApprovedScreens(props: Props) {
                   </div>
                 ))}
                 {chatBusy && (
-                  <div className="chatMsg approvedAssistant chatTyping" role="status" aria-label="Getting your answer">
+                  <div className="chatMsg approvedAssistant chatTyping" role="status" aria-label={stillWorking ? "Still working on your answer" : "Getting your answer"}>
                     <span /><span /><span />
+                    {stillWorking && <p className="chatText">Still working on it — longer questions can take up to a minute.</p>}
                   </div>
                 )}
                 <div ref={chatEndRef} />
@@ -536,6 +551,9 @@ export default function ApprovedScreens(props: Props) {
                 <button type="button" onClick={sendGuestChat} disabled={chatBusy || !question.trim()}>Send</button>
               </div>
               {chatNotice && <p className="chatNotice">{chatNotice}</p>}
+              {retryText && !chatBusy && (
+                <button type="button" className="secondary" aria-label="Retry question" onClick={() => void askChat(retryText)}>Retry</button>
+              )}
               <p className="chatNotice">{SAFETY_NOTICE}</p>
             </>
           )}
