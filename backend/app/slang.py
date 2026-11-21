@@ -11,7 +11,7 @@ SLANG: tuple[tuple[str, str], ...] = (
     (r"locked up|lock(ed)? me up|booked|jail ?time|in jail|behind bars|catch(ing)? a case|caught a case", "arrest criminal charge sentence"),
     (r"(i'?m|i am|currently|been|still) (in|locked up in|stuck in) (prison|jail|a cell)|incarcerat|\binmates?\b|\bmy cell\b|cell ?block|\bco'?s\b|\bguards?\b|solitary|the hole|commissary|grievance|state pen", "inmate prison conditions sheriff corrections"),
     (r"no (water|food|bed|mattress|blanket|medical|doctor|meds|medication)|not feeding|starv|denied (medical|my meds)", "necessities food water medical treatment"),
-    (r"\bpopped\b|\bcaught\b|\bbusted\b|got arrested|picked up by", "arrest"),
+    (r"\bpopped\b|\bcaught\b(?! (on )?fire| a (cold|virus|bug)| the (flu|virus)| covid| in (the )?(rain|storm|traffic|middle))|\bbusted\b|got arrested|picked up by", "arrest"),
     (r"\bjumped\b|\bscrap(ped|ping)?\b|\bfade\b|\bbeef\b|squabble|\bfight\b|\bfought\b|\bthrew hands\b|\bswung on\b|\bhit me\b|\bpunch(ed)?\b", "fight battery assault affray"),
     (r"defend(ing|ed)? my ?self|self[- ]?defen[cs]e|stand (my|your) ground|protect(ing|ed)? my ?self", "self defense justification use of force"),
     (r"\bstrap(ped)?\b|\bblick\b|\bpole\b|\bglizzy\b|\bheat\b|\bpiece\b|\bburner\b|\bgun\b|\bfirearm\b", "firearm weapon carry"),

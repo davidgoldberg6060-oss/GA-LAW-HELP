@@ -14,7 +14,7 @@ PRISON = (r"(i'?m|i am|currently|been|still|son is|husband is|brother is|loved o
           r"correctional officers?|\bco'?s\b|\bguards?\b|solitary|the hole|commissary|grievance|department of corrections|state pen|penitentiary|"
           r"(prison|jail).{0,60}(no water|no food|no bed|no mattress|medical|cold|sick|conditions|mold)")
 # Topics that must not fire when the person is talking about jail/prison conditions.
-_NOT_IN_PRISON = ("evict", "contract", "neighbor", "wage")
+_NOT_IN_PRISON = ("evict", "contract", "neighbor", "wage", "habitab")
 
 TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     # Jail / prison conditions (sections confirmed present in the DB 2026-11-01).
@@ -49,7 +49,7 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"injur|accident|slip|negligen|wreck|dog bit", ("9-3-33", "51-1-6", "51-12-4", "9-3-31")),
     # Everyday civil: insurance, fire/property damage, workplace injury, slip-and-fall
     (r"insur|claim (denied|rejected)|coverage|premium|policy", ("33-4-6", "33-7-11", "9-3-33")),
-    (r"fire|burn|smoke damage|property damage|house fire|apartment fire", ("51-1-6", "51-12-4", "9-3-31", "44-7-14")),
+    (r"\bfire\b|caught fire|\bburn(ed|t|ing)?\b|smoke damage|property damage|house fire|apartment fire", ("51-1-6", "51-12-4", "9-3-31", "44-7-14")),
     (r"workplace|work injury|on the job|workers.?comp|hurt at work|fell at work", ("34-9-1", "34-9-8", "34-9-11", "9-3-33")),
     (r"slip and fall|tripped|wet floor|premises liability", ("51-1-6", "51-3-1", "9-3-33")),
     (r"car insurance|auto insurance|uninsured motorist|um coverage", ("33-7-11", "40-6-10", "9-3-33")),
@@ -74,7 +74,7 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"custody modification|change custody|modify custody", ("19-9-1", "19-9-3")),
     (r"alimony modification|change alimony|modify alimony", ("19-6-19", "19-6-1")),
     (r"name change|change my name|petition to change name", ("19-12-1", "19-12-2")),
-    (r"will|probate|estate|inherit|died without a will", ("53-4-20", "53-2-1", "15-9-30")),
+    (r"\b(a|my|the|his|her|their|no|last) will\b|\bwills\b|probate|estate|inherit|died without a will", ("53-4-20", "53-2-1", "15-9-30")),
     (r"small claims limit|magistrate court limit|how much can I sue", ("15-10-2", "15-10-43")),
     (r"traffic ticket|speeding ticket|red light|points on license", ("40-6-181", "40-13-1", "40-5-57")),
     (r"license suspension|suspended license|reinstatement", ("40-5-57", "40-5-58", "40-5-67.1")),
@@ -509,7 +509,7 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"consecutive|concurrent|stack sentences", ("17-10-10", "17-10-1")),
     (r"habitual|repeat offender|fourth felony|three strikes", ("17-10-7", "16-1-1")),
     (r"recidivist|prior conviction|enhanced sentence", ("17-10-7", "16-1-1")),
-    (r"death penalty|capital|life without parole|lwop", ("17-10-30", "16-5-1")),
+    (r"death penalty|capital (punishment|murder|case|offense|crime|felony)|life without parole|lwop", ("17-10-30", "16-5-1")),
     (r"parole eligibility|when eligible parole|minimum time", ("42-9-40", "17-10-1")),
     (r"clemency|commutation|reduce sentence board", ("42-9-42", "42-9-20")),
     (r"pardon application|apply pardon|board pardon", ("42-9-42", "42-9-43")),
@@ -665,7 +665,7 @@ TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"scam|consumer|refund|deceptive|car dealer|lemon", ("10-1-393", "10-1-399")),
     (r"neighbor|trespass|nuisance|fence|property line|tree", ("41-1-1", "41-1-4", "51-9-1")),
     (r"name change|change my name", ("19-12-1",)),
-    (r"\bwill\b|probate|estate|inherit|died without", ("53-4-20", "53-2-1", "15-9-30")),
+    (r"\b(a|my|the|his|her|their|no|last) will\b|\bwills\b|probate|estate|inherit|died without", ("53-4-20", "53-2-1", "15-9-30")),
 )
 
 
@@ -719,7 +719,7 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"debt|garnish|collector", ("How long can a creditor sue over a debt in Georgia?", "What income is protected from garnishment?", "What should I do if I'm served with a lawsuit?")),
     (r"injur|accident|wreck", ("How long do I have to file an injury claim?", "What evidence should I keep after an accident?", "Can I still recover if I was partly at fault?")),
     (r"insur|claim denied|coverage", ("What should I do if my insurance claim is denied?", "How long do I have to file an insurance claim in Georgia?", "What documents should I keep for an insurance claim?")),
-    (r"fire|property damage|smoke", ("What can I recover for fire or property damage?", "How long do I have to sue for property damage in Georgia?", "What evidence should I keep after a fire?")),
+    (r"\bfire\b|caught fire|property damage|smoke damage", ("What can I recover for fire or property damage?", "How long do I have to sue for property damage in Georgia?", "What evidence should I keep after a fire?")),
     (r"workplace|work injury|workers.?comp|hurt at work", ("Do I have to report a work injury right away?", "What does workers' compensation cover in Georgia?", "Can I sue my employer for a work injury?")),
     (r"slip and fall|tripped|wet floor|premises", ("What do I have to prove in a slip-and-fall case?", "How long do I have to file a premises liability claim?", "What evidence helps a slip-and-fall claim?")),
     (r"car insurance|auto insurance|uninsured", ("What does uninsured motorist coverage do in Georgia?", "Do I have to report a car accident to my insurance?", "What if the other driver has no insurance?")),
@@ -744,7 +744,7 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"custody modification|change custody", ("How do I change a custody order?", "What does the court consider for a custody change?", "How long does a custody modification take?")),
     (r"alimony modification|change alimony", ("How do I change an alimony order?", "What is a substantial change in circumstances?", "Can alimony be terminated?")),
     (r"name change|change my name", ("How do I change my name in Georgia?", "What do I need for a name change petition?", "How long does a name change take?")),
-    (r"will|probate|estate|inherit", ("Do I need a will in Georgia?", "What happens if someone dies without a will?", "How does probate work?")),
+    (r"\b(a|my|the|his|her|their|no|last) will\b|\bwills\b|probate|estate|inherit", ("Do I need a will in Georgia?", "What happens if someone dies without a will?", "How does probate work?")),
     (r"small claims|magistrate court limit", ("What is the small claims limit in Georgia?", "How do I file in magistrate court?", "What if the amount is over the limit?")),
     (r"traffic ticket|speeding|red light|points", ("How do points on a Georgia license work?", "Can I contest a traffic ticket?", "What happens if I miss my court date?")),
     (r"license suspension|suspended license", ("How do I reinstate a suspended license?", "What is a limited permit?", "How long does a suspension last?")),
@@ -1172,7 +1172,7 @@ FOLLOW_UPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (r"consecutive|concurrent|stack", ("What is the difference between consecutive and concurrent?", "How are sentences stacked?", "Who decides?")),
     (r"habitual|repeat offender|fourth felony|three strikes", ("What is the habitual offender law?", "What are the penalties?", "How many priors trigger it?")),
     (r"recidivist|prior conviction|enhanced", ("What is a recidivist enhancement?", "How do priors affect my sentence?", "Can they be challenged?")),
-    (r"death penalty|capital|life without|lwop", ("When is the death penalty available?", "What is life without parole?", "What is the process?")),
+    (r"death penalty|capital (punishment|murder|case|offense|crime|felony)|life without|lwop", ("When is the death penalty available?", "What is life without parole?", "What is the process?")),
     (r"parole eligibility|when eligible|minimum time", ("When am I eligible for parole?", "How is the minimum time calculated?", "Who decides?")),
     (r"clemency|commutation|reduce sentence", ("What is clemency or commutation?", "How do I apply?", "Who decides?")),
     (r"pardon application|apply pardon", ("How do I apply for a pardon?", "What is required?", "How long does it take?")),
@@ -1355,7 +1355,7 @@ def follow_ups(question: str, answer: str = "", n: int = 3) -> list[str]:
         return list(BROAD_FOLLOW_UPS[:n])
     # Plain "I was charged with X" questions get the standard defense follow-ups.
     # Only override when the question is clearly about a specific procedure or defense theory.
-    specific_markers = ("how do i", "how to", "what is the process", "dismiss", "immunity", "suppress", "plea", "bond", "expung", "first offender", "probation", "parole", "appeal", "motion")
+    specific_markers = ("dui", "under the influence", "warrant out", "is there a warrant", "how do i", "how to", "what is the process", "dismiss", "immunity", "suppress", "plea", "bond", "expung", "first offender", "probation", "parole", "appeal", "motion")
     is_specific = any(m in q for m in specific_markers)
     if is_criminal(q) and _allowed_stages(q) == _PRE and not is_specific:
         return list(CHARGE_FOLLOW_UPS[:n])

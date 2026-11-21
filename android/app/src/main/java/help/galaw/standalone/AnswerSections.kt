@@ -25,7 +25,7 @@ object AnswerSections {
         "next steps", "your situation", "rights that may apply", "what police can do", "what police can't do",
         "your options", "the issue", "facts or evidence needed", "questions to check",
         // "Your Defense Plan"
-        "how they'd build the case against you", "how to fight back", "your strongest defenses", "ways to challenge the evidence",
+        "how they'd build the case against you", "how to fight back", "what you'd need to show", "what the other side may say", "steps to take now", "your strongest defenses", "ways to challenge the evidence",
         "ways to challenge their case", "options to lessen the outcome", "ways to resolve it", "motions and filings that could help",
         "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out", "things you may not know to ask", "charge or claim", "important dates", "case number", "court", "what could help in this paper", "what you can do next", "traducción al español", "explicación en palabras sencillas", "cargo o demanda", "fechas importantes", "número de caso", "tribunal", "qué puede hacer ahora", "preguntas para su abogado", "original en inglés (el que cuenta en la corte)", "lo que podría ayudar en este papel")
     val PLAN_LINE = Regex("^Your Defense Plan(?:\\s*[:—–-]\\s*(.+))?$")
