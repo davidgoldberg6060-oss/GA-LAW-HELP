@@ -154,7 +154,7 @@ def test_car_wreck_plan_is_civil_with_steps_and_verified_deadline(wired):
     assert "AUTOMATIC CIVIL PLAN (Car wreck injury)" in p and "What you'd need to show" in p and "not a criminal case" in p.lower()
     assert "O.C.G.A. § 9-3-33" in p and "O.C.G.A. § 51-1-6" in p and "17-5-30" not in p
     a = r["analysis"]
-    assert a.startswith("Your Defense Plan: Car wreck injury\n")
+    assert a.startswith("Your Civil Plan: Car wreck injury\n")
     assert "Steps to take now" in a and "police accident report" in a
     assert '"Except as otherwise provided in this article, actions for injuries to the person shall be brought within two years' in a
     assert r["suggested_motions"] == [] and "Motions that could help" not in a and "suppress" not in a.lower()
@@ -207,3 +207,47 @@ def test_unlisted_civil_problem_gets_the_catch_all():
                             lambda p: "{}", lookup=lambda secs: [hit(s) for s in secs])
     assert r["category"]["key"] == "other_civil" and r["steps"] and r["lawyer_questions"] and r["help_resources"]
     assert r["message"]
+
+
+# ---------------------------------------------------------------- Nov 21 audit: titles and deadlines
+def test_civil_claims_get_your_civil_plan_and_defended_cases_keep_defense_plan():
+    claim = dp.plan_for("I was rear-ended at a red light and hurt my neck")
+    assert dp.title_line(claim) == "Your Civil Plan: Car wreck injury"
+    divorce = dp.plan_for("I want a divorce. We have two kids and a house in Gwinnett.")
+    assert dp.title_line(divorce).startswith("Your Civil Plan")
+    evict = dp.plan_for("My landlord filed a dispossessory because I'm two months behind on rent")
+    assert dp.title_line(evict) == "Your Defense Plan: Eviction"
+    dui = dp.plan_for("I was arrested for DUI last night in Atlanta")
+    assert dp.title_line(dui) == "Your Defense Plan: DUI"
+
+
+def test_work_injury_never_gets_the_20_year_or_wage_limit():
+    text = "I hurt my back lifting boxes at work and my boss says not to report it. He didn't pay me for the day."
+    cat = cg.detect(text)
+    assert cat["key"] == "workers_comp"
+    secs = cg.deadline_secs(cat, text)
+    assert secs[:2] == ["34-9-80", "34-9-82"] and "9-3-22" not in secs
+    assert "9-3-22" not in cg.sections_for(cat, text, limit=16)
+
+
+def test_insurance_denial_gets_the_policy_deadline_note_not_six_years():
+    text = "My house caught fire and my insurance company denied my claim."
+    for key in ("insurance_claim", "property_damage"):
+        cat = cg.get(key)
+        assert "9-3-24" not in cg.sections_for(cat, text, limit=16)
+        assert "policy may set its own deadline" in cg.deadline_note(cat)
+        assert not re.search(r"\b\d+\s*(days?|months?|years?)\b", cg.deadline_note(cat))
+    out = dp.add_deadline_note("Quick answer\nx\n\nKey deadlines\n• Ask a lawyer soon.\n\nWhere to get help\n• y", cg.get("insurance_claim"))
+    assert out.index("policy may set its own deadline") < out.index("Ask a lawyer soon")
+    assert dp.add_deadline_note(out, cg.get("insurance_claim")) == out  # added once
+    assert dp.add_deadline_note("Quick answer\nx", cg.get("car_wreck")) == "Quick answer\nx"  # no note for car wrecks
+
+
+def test_insurance_answer_has_note_and_prompt_forbids_general_limit(wired):
+    prompts = []
+    model = ("Short answer\nYou can challenge the denial.\n\nHow it works in Georgia\n- O.C.G.A. § 33-4-6 covers bad faith.\n\n"
+             "Questions to ask your lawyer\n- Does my policy cover this?\n\nDeadlines and costs\n- Ask a lawyer soon.\n\nWhere to get help\n- x")
+    r = service.grounded_legal_response("Can I sue if my homeowners insurance denied my claim?", "general",
+                                        lambda p: prompts.append(p) or model, db=FakeDB())
+    assert "Never give a general Georgia time limit" in prompts[0] and "O.C.G.A. § 9-3-24" not in prompts[0]
+    assert "policy may set its own deadline" in r["analysis"]

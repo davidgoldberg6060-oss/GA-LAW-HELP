@@ -263,6 +263,9 @@ def public_rights_assistant(body:dict,db:Session=Depends(get_db),user=Depends(op
     if not query: raise HTTPException(400,'Describe the encounter or rights question.')
     if len(query)>4000: raise HTTPException(400,'Question is too long.')
     if mode not in PUBLIC_ASSISTANT_MODES: raise HTTPException(400,'Guest mode is limited to rights, live-encounter and general Georgia legal help.')
+    # A question typed in Spanish gets a Spanish answer even when the app's language is still English.
+    from .language import with_language
+    query=with_language(query,body.get('language'))
     feature=convo.normalize_feature(body.get('feature'),'ai_help' if mode=='general' else mode)
     turns=_thread(db,user,body,feature)
     asked=current_question(query)

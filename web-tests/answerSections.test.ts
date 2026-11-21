@@ -1,7 +1,7 @@
 // Run: node --test --experimental-strip-types web-tests/
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { structureAnswer, stripCitationLists, teaser, toItem, sentences } from "../src/answerSections.ts";
+import { isPlanAnswer, structureAnswer, stripCitationLists, teaser, toItem, sentences } from "../src/answerSections.ts";
 
 const ANSWER = `Short answer
 • The search of your car can be challenged. A motion to suppress may keep the drugs out. This depends on why police searched. Extra sentence here.
@@ -140,4 +140,12 @@ test("hidden-issue questions become tappable items with a why line", () => {
   assert.equal(s!.title, "Things you may not know to ask");
   assert.equal(s!.items[0].head, "Do I have to appeal my license suspension within 30 days?");
   assert.equal(s!.items[0].detail, "Why it matters: The ALS appeal is separate from the criminal case.");
+});
+
+test("civil claim plans show 'Your Civil Plan' and still count as a plan", () => {
+  const civil = "Your Civil Plan: Car wreck injury\n\nQuick answer\nGet medical care.\n\nSteps to take now\n• Get the police report.\n\nKey deadlines\n• Ask a lawyer soon.";
+  const a = structureAnswer(civil);
+  assert.equal(a.plan, "Your Civil Plan · Car wreck injury");
+  assert.match(a.quick, /^Get medical care\./);
+  assert.ok(isPlanAnswer(civil) && isPlanAnswer("Your Defense Plan: DUI\n\nQuick answer\nx") && !isPlanAnswer("Short answer\nx"));
 });

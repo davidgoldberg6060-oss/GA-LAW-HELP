@@ -8,7 +8,7 @@ export type AnswerItem = { head: string; detail?: string; meta?: string };
 export type SectionKind = "info" | "case" | "fight" | "motions" | "questions" | "ask" | "deadlines" | "laws" | "help";
 export type AnswerSection = { id: string; title: string; kind: SectionKind; items: AnswerItem[]; notes: string[] };
 export type LawRef = { citation: string; title?: string | null; id?: number | null };
-/** `plan`: "Your Defense Plan: DUI" when the answer is an automatic Defense Plan (first line of the text). */
+/** `plan`: "Your Defense Plan · DUI" or "Your Civil Plan · Divorce" when the answer is an automatic Defense Plan (first line of the text). */
 export type StructuredAnswer = { quick: string; sections: AnswerSection[]; note: string; laws: LawRef[]; plan?: string };
 
 /** Items shown before a "Show more" link inside a section. */
@@ -35,7 +35,9 @@ const TOP_HEADINGS = new Set([
   "original en inglés (el que cuenta en la corte)", "lo que podría ayudar en este papel",
 ]);
 /** First line of an automatic Defense Plan answer. */
-export const PLAN_LINE = /^Your Defense Plan(?:\s*[:—–-]\s*(.+))?$/;
+export const PLAN_LINE = /^(Your (?:Defense|Civil) Plan)(?:\s*[:—–-]\s*(.+))?$/;
+/** True when an answer starts with an automatic plan title ("Your Defense Plan: DUI", "Your Civil Plan: Divorce"). */
+export const isPlanAnswer = (text: string): boolean => /^Your (?:Defense|Civil) Plan:/.test(text);
 const RENAME: Record<string, string> = {
   "how it works in georgia": "How it works",
   "challenging the evidence": "Ways to fight the evidence",
@@ -195,7 +197,7 @@ export function structureAnswer(raw: string, known: LawRef[] = []): StructuredAn
     if (!line) continue;
     if (/^note:/i.test(line)) { note = line.replace(/^note:\s*/i, ""); continue; }
     const planMatch = !sawHeading && plan === undefined ? line.match(PLAN_LINE) : null;
-    if (planMatch) { plan = planMatch[1] ? "Your Defense Plan · " + planMatch[1].trim() : "Your Defense Plan"; continue; }
+    if (planMatch) { plan = planMatch[2] ? planMatch[1] + " · " + planMatch[2].trim() : planMatch[1]; continue; }
     if (!BULLET.test(line) && isTopHeading(line)) {
       sawHeading = true;
       top = line.replace(/:$/, "").trim().toLowerCase();
