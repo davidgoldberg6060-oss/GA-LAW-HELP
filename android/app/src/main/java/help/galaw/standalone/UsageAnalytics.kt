@@ -17,6 +17,7 @@ object UsageAnalytics {
     const val COMMENT_MAX = 2000
     val FEATURES = setOf("chat", "case_check", "motion_maker", "funny_laws", "find_legal_help", "uploads")
     val CATEGORIES = listOf(
+        "answer" to "Wrong, unsafe or offensive AI answer",
         "bug" to "Bug or crash",
         "design" to "Design or hard to use",
         "idea" to "Missing feature or idea",

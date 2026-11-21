@@ -47,14 +47,24 @@ class ApiClient(private val context: Context) {
     /** AI screens (Talk to Me, Case Chat, Loopholes) wait up to 60 s for an answer. */
     companion object { const val AI_READ_MS = 60_000 }
     private val masterKey = MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
-    private val prefs = EncryptedSharedPreferences.create(context, "secure_auth", masterKey, EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV, EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM)
+    /** Encrypted prefs that can't be read (restored from another phone, or a wiped Keystore key) are reset instead of
+     *  crashing the app at launch. The session is anonymous and is simply recreated. */
+    private fun securePrefs(name: String): android.content.SharedPreferences {
+        fun open() = EncryptedSharedPreferences.create(context, name, masterKey, EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV, EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM)
+        return try { open() } catch (e: Exception) {
+            android.util.Log.w("ApiClient", "Resetting unreadable encrypted prefs '$name': ${e.javaClass.simpleName}")
+            context.deleteSharedPreferences(name)
+            open()
+        }
+    }
+    private val prefs = securePrefs("secure_auth")
     var token: String? get() = prefs.getString("access_token", null); private set(value) { prefs.edit().putString("access_token", value).apply() }
     private var refreshToken: String? get() = prefs.getString("refresh_token", null); set(value) { prefs.edit().putString("refresh_token", value).apply() }
     fun clearSession() { prefs.edit().clear().apply() }
     /** True when this device is using its anonymous identity (no login screen, no email). */
     val isAnonymous: Boolean get() = token == null || prefs.getBoolean("anonymous", false)
     /** Random per-install secret kept in its own encrypted file so signing out never loses it. */
-    private val devicePrefs by lazy { EncryptedSharedPreferences.create(context, "device_identity", masterKey, EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV, EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM) }
+    private val devicePrefs by lazy { securePrefs("device_identity") }
     val deviceKey: String @Synchronized get() = devicePrefs.getString("device_key", null) ?: newDeviceKey().also { devicePrefs.edit().putString("device_key", it).commit() }
     private fun newDeviceKey(): String { val b = ByteArray(32); java.security.SecureRandom().nextBytes(b); return android.util.Base64.encodeToString(b, android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP) }
     private fun rotateDeviceKey() { devicePrefs.edit().putString("device_key", newDeviceKey()).commit() }

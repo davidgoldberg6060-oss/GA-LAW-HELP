@@ -1,4 +1,6 @@
 name: Build signed release APK
+# Also builds the signed Android App Bundle (.aab) that Google Play requires for new apps; it is kept as a
+# private workflow artifact (download it from the run page), not attached to the public release.
 
 on:
   workflow_dispatch:
@@ -52,8 +54,8 @@ jobs:
             export ORG_GRADLE_PROJECT_GALAW_RELEASE_KEY_ALIAS="$KEY_ALIAS"
             export ORG_GRADLE_PROJECT_GALAW_RELEASE_KEY_PASSWORD="$KEY_PASSWORD"
           fi
-          ./gradlew assembleRelease "${ARGS[@]}" --stacktrace
-          ls -l app/build/outputs/apk/release/
+          ./gradlew assembleRelease bundleRelease "${ARGS[@]}" --stacktrace
+          ls -l app/build/outputs/apk/release/ app/build/outputs/bundle/release/
 
       - name: Verify signature
         run: |
@@ -64,6 +66,18 @@ jobs:
           VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           cp "$APK" "app/build/outputs/apk/release/ga-law-help-$VERSION-release.apk"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          AAB=$(ls app/build/outputs/bundle/release/*.aab | head -1)
+          jarsigner -verify "$AAB" | tail -1
+          if ! jarsigner -verify "$AAB" | grep -q "jar verified"; then echo "AAB is not signed (secrets missing?)"; exit 1; fi
+          cp "$AAB" "app/build/outputs/bundle/release/ga-law-help-$VERSION-release.aab"
+
+      - name: Keep the signed AAB for Google Play (private artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ga-law-help-${{ env.VERSION }}-release-aab
+          path: android/app/build/outputs/bundle/release/ga-law-help-${{ env.VERSION }}-release.aab
+          retention-days: 90
+          if-no-files-found: error
 
       - name: Publish GitHub release
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}

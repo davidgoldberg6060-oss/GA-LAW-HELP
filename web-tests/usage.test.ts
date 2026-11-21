@@ -23,7 +23,7 @@ describe("validateFeedback", () => {
     assert.equal(validateFeedback({ rating: 5, category: "other", comment: "ok", contactEmail: "bad" }) != null, true);
     assert.equal(validateFeedback({ rating: 5, category: "other", comment: "ok", contactEmail: "a@b.co" }), null);
   });
-  it("lists the five app-feedback categories", () => {
-    assert.deepEqual(CATEGORIES.map((c) => c.id), ["bug", "design", "idea", "slow", "other"]);
+  it("lists the six app-feedback categories", () => {
+    assert.deepEqual(CATEGORIES.map((c) => c.id), ["answer", "bug", "design", "idea", "slow", "other"]);
   });
 });
