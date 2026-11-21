@@ -16,11 +16,23 @@ SECTION_IDS = (
 )
 
 _HERE = Path(__file__).resolve().parent
-_CANDIDATES = (
-    _HERE / "data" / "courtroom_prep.json",  # shipped inside the API image (backend/app/data)
-    _HERE.parents[1] / "config" / "courtroom_prep.json",  # /app/config in Docker, backend/config fallback
-    _HERE.parents[2] / "config" / "courtroom_prep.json",  # repo root when running from backend/app
-    _HERE.parents[2] / "src" / "courtroomPrepData.json",
+
+def _safe_parent(n: int) -> Path | None:
+    # In the API image this file lives at /app/app/, which has only two parents,
+    # so parents[2] raised IndexError at import time and the endpoint returned 500.
+    try:
+        return _HERE.parents[n]
+    except IndexError:
+        return None
+
+
+_CANDIDATES = tuple(
+    c for c in (
+        _HERE / "data" / "courtroom_prep.json",  # shipped inside the API image (backend/app/data)
+        (_safe_parent(1) / "config" / "courtroom_prep.json") if _safe_parent(1) else None,
+        (_safe_parent(2) / "config" / "courtroom_prep.json") if _safe_parent(2) else None,
+        (_safe_parent(2) / "src" / "courtroomPrepData.json") if _safe_parent(2) else None,
+    ) if c is not None
 )
 
 

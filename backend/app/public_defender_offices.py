@@ -14,11 +14,23 @@ from pathlib import Path
 from . import language as lang
 
 _HERE = Path(__file__).resolve().parent
-_CANDIDATES = (
-    _HERE / "data" / "public_defender_offices.json",
-    _HERE.parents[1] / "config" / "public_defender_offices.json",
-    _HERE.parents[2] / "config" / "public_defender_offices.json",
-    _HERE.parents[2] / "src" / "publicDefenderOfficesData.json",
+
+def _safe_parent(n: int) -> Path | None:
+    # In the API image this file lives at /app/app/, which has only two parents,
+    # so parents[2] raised IndexError at import time and the endpoint returned 500.
+    try:
+        return _HERE.parents[n]
+    except IndexError:
+        return None
+
+
+_CANDIDATES = tuple(
+    c for c in (
+        _HERE / "data" / "public_defender_offices.json",  # shipped inside the API image (backend/app/data)
+        (_safe_parent(1) / "config" / "public_defender_offices.json") if _safe_parent(1) else None,
+        (_safe_parent(2) / "config" / "public_defender_offices.json") if _safe_parent(2) else None,
+        (_safe_parent(2) / "src" / "publicDefenderOfficesData.json") if _safe_parent(2) else None,
+    ) if c is not None
 )
 
 _WORD = re.compile(r"[a-z0-9]+")
