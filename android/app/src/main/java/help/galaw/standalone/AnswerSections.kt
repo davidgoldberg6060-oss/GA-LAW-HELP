@@ -28,7 +28,58 @@ object AnswerSections {
         "how they'd build the case against you", "how to fight back", "what you'd need to show", "what the other side may say", "steps to take now", "your strongest defenses", "ways to challenge the evidence",
         "ways to challenge their case", "options to lessen the outcome", "ways to resolve it", "motions and filings that could help",
         "key deadlines", "evidence to gather now", "what helps in your paperwork", "while you find that out", "things you may not know to ask", "charge or claim", "important dates", "case number", "court", "what could help in this paper", "what you can do next", "traducción al español", "explicación en palabras sencillas", "cargo o demanda", "fechas importantes", "número de caso", "tribunal", "qué puede hacer ahora", "preguntas para su abogado", "original en inglés (el que cuenta en la corte)", "lo que podría ayudar en este papel")
-    val PLAN_LINE = Regex("^(Your (?:Defense|Civil) Plan)(?:\\s*[:—–-]\\s*(.+))?$")
+    /** First line of an automatic plan, English or Spanish ("Su plan de defensa: Desalojo"). */
+    val PLAN_LINE = Regex("^(Your (?:Defense|Civil) Plan|Su plan (?:de defensa|civil))(?:\\s*[:—–-]\\s*(.+))?$")
+    /** Spanish answers get Spanish headings from the server (backend/app/language.py HEADINGS_ES). */
+    private val SPANISH = mapOf(
+        "respuesta corta" to "short answer",
+        "respuesta rápida" to "quick answer",
+        "cómo funciona en georgia" to "how it works in georgia",
+        "cómo funciona" to "how it works",
+        "pasos que puede tomar" to "steps you can take",
+        "preguntas para su abogado" to "questions to ask your lawyer",
+        "mociones que podrían ayudar" to "motions that could help",
+        "plazos y costos" to "deadlines and costs",
+        "dónde obtener ayuda" to "where to get help",
+        "qué está pasando" to "what's happening",
+        "manténgase seguro ahora" to "stay safe right now",
+        "sus derechos" to "your rights",
+        "lo que la policía puede y no puede hacer" to "what police can and can't do",
+        "qué decir o hacer" to "what to say or do",
+        "hechos que confirmar" to "facts to confirm",
+        "asuntos legales" to "legal issues",
+        "argumentos de la otra parte" to "the other side's arguments",
+        "sus argumentos" to "your side's arguments",
+        "posibles mociones" to "possible motions",
+        "próximos pasos" to "next steps",
+        "su situación" to "your situation",
+        "derechos que pueden aplicar" to "rights that may apply",
+        "lo que la policía puede hacer" to "what police can do",
+        "lo que la policía no puede hacer" to "what police can't do",
+        "sus opciones" to "your options",
+        "el asunto" to "the issue",
+        "hechos o pruebas necesarios" to "facts or evidence needed",
+        "preguntas para verificar" to "questions to check",
+        "cosas que quizás no sepa preguntar" to "things you may not know to ask",
+        "cómo armarían el caso en su contra" to "how they'd build the case against you",
+        "cómo defenderse" to "how to fight back",
+        "sus mejores defensas" to "your strongest defenses",
+        "formas de cuestionar las pruebas" to "ways to challenge the evidence",
+        "formas de cuestionar su caso" to "ways to challenge their case",
+        "opciones para reducir las consecuencias" to "options to lessen the outcome",
+        "formas de resolverlo" to "ways to resolve it",
+        "mociones y escritos que podrían ayudar" to "motions and filings that could help",
+        "plazos clave" to "key deadlines",
+        "pruebas que reunir ahora" to "evidence to gather now",
+        "lo que ayuda en sus papeles" to "what helps in your paperwork",
+        "mientras lo averigua" to "while you find that out",
+        "¿problemas con mi defensor público?" to "problem with my public defender?",
+        "lo que tendría que demostrar" to "what you'd need to show",
+        "lo que podría decir la otra parte" to "what the other side may say",
+        "pasos que tomar ahora" to "steps to take now",
+        "leyes citadas" to "laws cited")
+    /** The English heading a (possibly Spanish) heading stands for, lower-case. */
+    fun canonical(title: String): String { val t = title.trim().trimEnd(':').trim().lowercase(); return SPANISH[t] ?: t }
     private val RENAME = mapOf(
         "how it works in georgia" to "How it works", "challenging the evidence" to "Ways to fight the evidence",
         "rights and court procedure" to "Your rights in court", "information to gather for your lawyer" to "What to gather for your lawyer",
@@ -40,7 +91,7 @@ object AnswerSections {
     private val ABBR = Regex("\\b(O\\.C\\.G\\.A|U\\.S\\.C|U\\.S|Ga|App|Ct|R|Super|Unif|v|No|St|Mr|Ms|Dr)\\.")
 
     fun kindOf(title: String): String {
-        val t = title.lowercase()
+        val t = canonical(title)
         return when {
             t.startsWith("how they") -> "case"; t.startsWith("how to fight back") -> "fight"
             t.startsWith("things you may not know") -> "ask"
@@ -53,7 +104,7 @@ object AnswerSections {
 
     fun isTopHeading(line: String): Boolean {
         val l = line.trim(); val t = l.trimEnd(':')
-        if (t.lowercase() in TOP) return true
+        if (t.lowercase() in TOP || canonical(t) in TOP) return true
         if (t.isEmpty() || t.length > 50 || BULLET.containsMatchIn(t) || Regex("[.,;!?:]$").containsMatchIn(l)) return false
         return t[0].isUpperCase() && t.split(Regex("\\s+")).size <= 7
     }
@@ -141,7 +192,7 @@ object AnswerSections {
             }
             val bullet = BULLET.containsMatchIn(line)
             if (!bullet && isTopHeading(line)) {
-                sawHeading = true; top = line.trimEnd(':').trim().lowercase(); cur = null
+                sawHeading = true; top = canonical(line); cur = null
                 if (!QUICK.matches(top) && top != "laws cited") open(line)
                 continue
             }

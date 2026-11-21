@@ -147,7 +147,8 @@ CATEGORIES: tuple[dict, ...] = (
                      "How long do I have to file an injury claim in Georgia?")),
     dict(key="insurance_claim", label="Insurance claim problem", side=_CLAIM,
          pattern=r"insur\w*.{0,80}\b(den\w*|refus\w*|won'?t pay|not paying|slow|delay\w*|lowball|low offer|offer\w*|cancel\w*|dropped|claim|adjuster|bad faith)|"
-                 r"claim (was )?(denied|rejected|refused)|adjuster|bad faith|(homeowners'?|renters'?|auto|car|life|health|flood|fire) (insurance|policy|claim)",
+                 r"claim (was )?(denied|rejected|refused)|adjuster|bad faith|(homeowners'?|renters'?|auto|car|life|health|flood|fire) (insurance|policy|claim)|"
+                 r"recorded statement|insurance (company|carrier)|\binsurer\b|(other driver'?s?|their|at[- ]fault (driver'?s? )?) (insurance|insurer)",
          # No general contract limit (9-3-24, six years) here: an insurance policy usually sets its own, shorter
          # deadline to sue, so telling the user "six years" could make them miss it. See deadline_note.
          sections=("33-4-6", "33-4-7", "33-6-34", "33-24-40", "33-32-1", "13-6-11"),
@@ -431,6 +432,37 @@ OTHER = dict(key="other_civil", label="Other civil problem", side=_CLAIM, patter
 _BY_KEY = {c["key"]: c for c in CATEGORIES + (OTHER,)}
 _COMPILED = tuple((c, re.compile(c["pattern"], re.I)) for c in CATEGORIES)
 
+# "Keeps calling me" is harassment only when a person is doing it. An insurance company, adjuster, debt collector or
+# other business that keeps calling is not a protective-order problem (Nov 21: "the other driver's insurance company
+# keeps calling me ... wants a recorded statement" was titled "Your Civil Plan: Protective order").
+_PO_WEAK = re.compile(r"(keeps?|kept) (threaten\w*|following|harass\w*|calling|texting|showing up)", re.I)
+_BUSINESS_CALLER = re.compile(r"\b(insur\w*|adjuster|collector|collection agency|collections|creditor|lender|bank|"
+                              r"telemarket\w*|robocall\w*|spam call\w*|company|business|landlord'?s? office)\b", re.I)
+# The question is about dealing with the insurer itself (not just a wreck that mentions insurance): insurance wins.
+_INSURANCE_FOCUS = re.compile(
+    r"recorded statement|\b(insurance (company|carrier|adjuster)|insurer|adjuster)\b.{0,60}\b(keeps? calling|calling me|call(ed|s)? me|"
+    r"wants? (a|my|me|to)|asking (for|me)|pressur\w*|harass\w*|statement|lowball\w*|low offer|denied|denying|won'?t pay|refus\w*|bad faith)|"
+    r"bad faith|claim (was )?(denied|rejected|refused)", re.I)
+
+
+_PERSON = re.compile(r"\b(ex|husband|wife|boyfriend|girlfriend|partner|he|she|neighbou?r|stalker|someone|somebody|man|woman|guy|"
+                     r"coworker|co-worker|boss|relative|cousin|brother|sister|father|mother|dad|mom)\b", re.I)
+
+
+def _protective_order_only_from_business_calls(cat: dict, q: str) -> bool:
+    """True when the protective-order match comes only from a business that "keeps calling" (no threats, no person)."""
+    if cat["key"] != "protective_order" or not _BUSINESS_CALLER.search(q):
+        return False
+    if re.search(cat["pattern"], _PO_WEAK.sub(" ", q), re.I):
+        return False  # threats, stalking, violence ... named another way: keep it
+    for m in _PO_WEAK.finditer(q):
+        before = q[max(0, m.start() - 60):m.start()]
+        biz = list(_BUSINESS_CALLER.finditer(before))
+        if not biz or _PERSON.search(before[biz[-1].end():]):
+            return False  # a person keeps calling/threatening: keep the protective order
+    return True
+
+
 # A civil problem the catalog doesn't name still gets the catch-all guide when the person describes their own problem.
 _CIVIL_HINT = re.compile(r"\b(sue|sued|suing|lawsuit|court|judge|claim|damages|owe[sd]?|money|pay|paid|refund|landlord|neighbor|company|business|"
                          r"contract|insurance|property|house|home|car|job|boss|bill|fee|fine|lien|deposit|loan|account|policy|agency|benefits?|"
@@ -453,7 +485,11 @@ def is_accused(text: str) -> bool:
 def detect_all(text: str) -> list[dict]:
     """Every civil category the text mentions, in catalog order."""
     q = _text(text)
-    return [c for c, rx in _COMPILED if rx.search(q)]
+    found = [c for c, rx in _COMPILED if rx.search(q) and not _protective_order_only_from_business_calls(c, q)]
+    if _INSURANCE_FOCUS.search(q) and not any(c["key"] == "protective_order" for c in found):  # safety first
+        ins = [c for c in found if c["key"] == "insurance_claim"]
+        found = ins + [c for c in found if c["key"] != "insurance_claim"]
+    return found
 
 
 def detect(text: str, *, fallback: bool = False) -> dict | None:

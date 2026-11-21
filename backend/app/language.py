@@ -161,3 +161,107 @@ def localize_note(text: str | None, language: str | None = "es") -> str:
     elif NOTE_ES not in t:
         t += "\n\nNota: " + NOTE_ES
     return _re.sub(r"\n{3,}", "\n\n", t)
+
+
+# Spanish titles and section headings. The model writes the fixed English headings the app's prompts ask for; a
+# Spanish answer gets them translated as the very last step (after citation checks and section extraction), so
+# English answers are unchanged. Keys are lower-case English headings.
+HEADINGS_ES = {
+    "short answer": "Respuesta corta",
+    "quick answer": "Respuesta rápida",
+    "how it works in georgia": "Cómo funciona en Georgia",
+    "how it works": "Cómo funciona",
+    "steps you can take": "Pasos que puede tomar",
+    "questions to ask your lawyer": "Preguntas para su abogado",
+    "motions that could help": "Mociones que podrían ayudar",
+    "deadlines and costs": "Plazos y costos",
+    "where to get help": "Dónde obtener ayuda",
+    "what's happening": "Qué está pasando",
+    "stay safe right now": "Manténgase seguro ahora",
+    "your rights": "Sus derechos",
+    "what police can and can't do": "Lo que la policía puede y no puede hacer",
+    "what to say or do": "Qué decir o hacer",
+    "facts to confirm": "Hechos que confirmar",
+    "legal issues": "Asuntos legales",
+    "the other side's arguments": "Argumentos de la otra parte",
+    "your side's arguments": "Sus argumentos",
+    "possible motions": "Posibles mociones",
+    "next steps": "Próximos pasos",
+    "your situation": "Su situación",
+    "rights that may apply": "Derechos que pueden aplicar",
+    "what police can do": "Lo que la policía puede hacer",
+    "what police can't do": "Lo que la policía no puede hacer",
+    "your options": "Sus opciones",
+    "the issue": "El asunto",
+    "facts or evidence needed": "Hechos o pruebas necesarios",
+    "questions to check": "Preguntas para verificar",
+    "things you may not know to ask": "Cosas que quizás no sepa preguntar",
+    "how they'd build the case against you": "Cómo armarían el caso en su contra",
+    "how to fight back": "Cómo defenderse",
+    "your strongest defenses": "Sus mejores defensas",
+    "ways to challenge the evidence": "Formas de cuestionar las pruebas",
+    "ways to challenge their case": "Formas de cuestionar su caso",
+    "options to lessen the outcome": "Opciones para reducir las consecuencias",
+    "ways to resolve it": "Formas de resolverlo",
+    "motions and filings that could help": "Mociones y escritos que podrían ayudar",
+    "key deadlines": "Plazos clave",
+    "evidence to gather now": "Pruebas que reunir ahora",
+    "what helps in your paperwork": "Lo que ayuda en sus papeles",
+    "while you find that out": "Mientras lo averigua",
+    "problem with my public defender?": "¿Problemas con mi defensor público?",
+    "what you'd need to show": "Lo que tendría que demostrar",
+    "what the other side may say": "Lo que podría decir la otra parte",
+    "steps to take now": "Pasos que tomar ahora",
+    "laws cited": "Leyes citadas",
+}
+PLAN_TITLES_ES = {"Your Defense Plan": "Su plan de defensa", "Your Civil Plan": "Su plan civil"}
+PLAN_LABELS_ES = {
+    "Probation violation": "Violación de libertad condicional", "After a conviction": "Después de una condena", "DUI": "DUI",
+    "Drug possession": "Posesión de drogas", "Traffic ticket": "Multa de tránsito", "Theft or shoplifting": "Robo o hurto en tienda",
+    "Eviction": "Desalojo", "Custody or family case": "Custodia o caso familiar", "Debt or collection lawsuit": "Deuda o demanda de cobro",
+    "Job or wage dispute": "Problema de trabajo o salario", "Criminal charge": "Cargo penal", "Lawsuit": "Demanda",
+    "Protective order": "Orden de protección", "Work injury (workers' comp)": "Lesión en el trabajo (compensación laboral)",
+    "Medical mistake (malpractice)": "Error médico (negligencia médica)", "Car wreck injury": "Lesión por accidente de auto",
+    "Dog bite or animal attack": "Mordida de perro o ataque de animal", "Slip, trip or fall injury": "Lesión por resbalón, tropiezo o caída",
+    "Insurance claim problem": "Problema con un reclamo de seguro", "Fire, water or property damage": "Daños por fuego, agua o a la propiedad",
+    "Divorce": "Divorcio", "Custody or child support": "Custodia o manutención de menores",
+    "Foreclosure or mortgage problem": "Ejecución hipotecaria o problema con la hipoteca", "Identity theft": "Robo de identidad",
+    "Scam or bad business deal": "Estafa o mal negocio", "Contract or money owed": "Contrato o dinero adeudado",
+    "Will, estate or probate": "Testamento, herencia o sucesión", "Name change": "Cambio de nombre",
+    "Neighbor, HOA or property line": "Vecino, asociación de propietarios o lindero", "Government benefits": "Beneficios del gobierno",
+    "Eviction or landlord problem": "Desalojo o problema con el arrendador", "Debt, collection or garnishment": "Deuda, cobro o embargo",
+    "Job or wage problem": "Problema de trabajo o salario", "Small claims or lawsuit": "Reclamos menores o demanda",
+    "Other civil problem": "Otro problema civil",
+}
+_PLAN_TITLE_LINE = _re.compile(r"^(Your (?:Defense|Civil) Plan)(?:[ \t]*([:—–-])[ \t]*(.+?))?[ \t]*$")
+
+
+def plan_title_es(title: str) -> str:
+    """'Your Defense Plan: Eviction' -> 'Su plan de defensa: Desalojo' (unknown labels stay as they are)."""
+    m = _PLAN_TITLE_LINE.match(str(title or "").strip())
+    if not m:
+        return title
+    head = PLAN_TITLES_ES[m.group(1)]
+    return f"{head}: {PLAN_LABELS_ES.get(m.group(3).strip(), m.group(3).strip())}" if m.group(3) else head
+
+
+def localize_headings(text: str, language: str = "es") -> str:
+    """Translate the plan title (first line) and the fixed section headings of a Spanish answer. Only whole heading
+    lines change; bullets and sentences are left alone. Non-Spanish text is returned unchanged."""
+    if language != "es" or not text:
+        return text
+    out = []
+    first = True
+    for line in str(text).split("\n"):
+        s = line.strip()
+        if first and s:
+            first = False
+            if _PLAN_TITLE_LINE.match(s):
+                out.append(plan_title_es(s))
+                continue
+        key = s.rstrip(":").strip().lower()
+        if key in HEADINGS_ES and not s.startswith(("•", "-", "*")):
+            out.append(HEADINGS_ES[key] + (":" if s.endswith(":") else ""))
+        else:
+            out.append(line)
+    return "\n".join(out)
