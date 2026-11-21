@@ -193,6 +193,17 @@ def citation_check(analysis,verified):
  for m in _ANY_SECTION_RE.finditer(str(analysis or "")):
   if m.group(1) not in cited:cited.append(m.group(1))
  return {"cited":cited,"unsupported":[c for c in cited if c not in allowed]}
+RETRY_MIN_SECONDS_LEFT=float(__import__("os").getenv("AI_RETRY_MIN_SECONDS_LEFT","22"))
+def drop_unsupported_lines(analysis,unsupported):
+ """The answer without the lines that cite a Code section we could not verify."""
+ bad=set(unsupported or [])
+ keep=[ln for ln in str(analysis or "").split("\n") if not any(m.group(1) in bad for m in _ANY_SECTION_RE.finditer(ln))]
+ return re.sub(r"\n{3,}","\n\n","\n".join(keep)).strip()
+def _substantial(trimmed,original):
+ """At least ~3/4 of the answer's lines (and its quick answer) survived."""
+ lines=lambda t:[x for x in str(t or "").split("\n") if x.strip()]
+ a,b=lines(original),lines(trimmed)
+ return bool(b) and len(b)>=0.75*len(a) and len(trimmed)>=0.6*len(str(original or ""))
 def source_limited_answer(verified):
  """Fail-closed reply when the model cited law we could not match to retrieved sources."""
  lines=["We couldn't verify the legal citations in the generated answer against our stored Georgia sources, so we are not showing it. Deadlines and rules can decide a case, so please don't rely on a guessed answer."]
@@ -275,6 +286,9 @@ def _clarify_response(plan,query,mode):
  q=plan.get("facts") or retrieval_question(query)
  pd_lang="es" if "Respond in Spanish" in (query or "") else "en"
  analysis,pd_hit=_pd.attach(analysis,q,pd_lang)
+ if pd_lang=="es":
+  from .language import localize_note
+  analysis=localize_note(analysis,"es")
  out={"suggested_motions":[],"help_resources":help_resources,"citation_check":"passed","unsupported_citations":[],"deadline_warning":False,"mode":mode,
   "analysis":analysis,"authorities":[],"laws_cited":[],"amendment_note":None,"grounded_authority_count":0,"cited_authority_count":0,"coverage_notice":None,
   "used_encounter_pack":False,"defense_plan":_dp.meta(plan),"follow_ups":_dp.follow_ups(plan),"sections":{},"public_defender_problems":pd_hit}
@@ -363,10 +377,23 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None,conversation:list|
  analysis=ask_ai(prompt)
  check=citation_check(analysis,verified)
  if plan and check["unsupported"]:
-  # One retry before failing closed: a plan is long, so a stray citation shouldn't cost the whole answer.
-  _log.warning("Plan cited sections not in retrieved sources: %s; retrying once",check["unsupported"])
-  analysis=ask_ai(prompt+"\n\nIMPORTANT: cite ONLY these sections: "+", ".join(sorted({k for h in verified for k in _cite_keys(h.get("citation"))}))+". Describe any other law in plain words without a section number.")
-  check=citation_check(analysis,verified)
+  # A plan is long, so a stray citation shouldn't cost the whole answer. First drop just the lines that cite law we
+  # couldn't verify (no second model call); only if that guts the answer, retry once, and only when there is time
+  # left in the request budget (a second full call used to push answers past the phone's 60 s limit).
+  trimmed=drop_unsupported_lines(analysis,check["unsupported"])
+  tcheck=citation_check(trimmed,verified)
+  if not tcheck["unsupported"] and _substantial(trimmed,analysis):
+   _log.warning("Plan cited sections not in retrieved sources: %s; dropped those lines",check["unsupported"])
+   analysis,check=trimmed,tcheck
+  else:
+   from .ai_assistant import time_left
+   left=time_left()
+   if left is None or left>RETRY_MIN_SECONDS_LEFT:
+    _log.warning("Plan cited sections not in retrieved sources: %s; retrying once",check["unsupported"])
+    analysis=ask_ai(prompt+"\n\nIMPORTANT: cite ONLY these sections: "+", ".join(sorted({k for h in verified for k in _cite_keys(h.get("citation"))}))+". Describe any other law in plain words without a section number.")
+    check=citation_check(analysis,verified)
+   else:
+    _log.warning("Plan cited sections not in retrieved sources: %s; no time to retry (%.0fs left)",check["unsupported"],left)
  if check["unsupported"]:
   _log.warning("Answer cited sections not in retrieved sources: %s",check["unsupported"])
   analysis=source_limited_answer(verified)
@@ -432,6 +459,10 @@ def grounded_legal_response(query:str,mode:str,ask_ai,db=None,conversation:list|
  pd_lang="es" if "Respond in Spanish" in (query or "") else "en"
  response["analysis"],pd_hit=_pd.attach(response["analysis"],topic_text,pd_lang)
  response["public_defender_problems"]=pd_hit
+ if pd_lang=="es":
+  # The disclaimer footnote matches the answer's language ("Nota: Esta es información legal, no asesoramiento legal.").
+  from .language import localize_note
+  response["analysis"]=localize_note(response["analysis"],"es")
  if pd_hit:
   response["follow_ups"]=_pd.merge_follow_ups(response.get("follow_ups"),topic_text,pd_lang)[:3]
   response["follow_up_details"]=_pd.merge_follow_up_details(response.get("follow_up_details"),topic_text,pd_lang)[:3]

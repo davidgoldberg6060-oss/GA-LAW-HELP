@@ -154,8 +154,10 @@ def _http_post_json(provider: dict, model: str, url: str, payload: dict, headers
         raise RuntimeError("AI provider returned an invalid response") from exc
 
 
-def _ask_responses_api(provider: dict, question: str) -> str:
+def _ask_responses_api(provider: dict, question: str, timeout_cap: float | None = None) -> str:
     profile = _request_profile(question, provider["default_model"])
+    if timeout_cap:
+        profile["timeout"] = max(3.0, min(profile["timeout"], timeout_cap))
     model = profile["model"]
     data = _http_post_json(
         provider, model, provider["url"],
@@ -221,7 +223,7 @@ last_model_used = threading.local()
 def _ask_gemini(provider: dict, question: str, speed: str | None = None, model_override: str | None = None, timeout_cap: float | None = None) -> str:
     profile = _gemini_profile(question, provider["default_model"], speed)
     if timeout_cap:
-        profile["timeout"] = max(5.0, min(profile["timeout"], timeout_cap))
+        profile["timeout"] = max(3.0, min(profile["timeout"], timeout_cap))
     model = model_override or profile["model"]
     generation_config = {"maxOutputTokens": profile["max_output_tokens"]}
     if profile["thinking_level"] and not model.startswith("gemini-2."):  # 2.x models use thinkingBudget, not thinkingLevel
@@ -268,7 +270,7 @@ def _ask_gemini(provider: dict, question: str, speed: str | None = None, model_o
     return text
 
 
-def _ask_compat(provider: dict, model: str, question: str, speed: str | None) -> str:
+def _ask_compat(provider: dict, model: str, question: str, speed: str | None, timeout_cap: float | None = None) -> str:
     """OpenAI-compatible chat-completions call (Groq, OpenRouter, Cerebras, Mistral, GitHub Models...)."""
     fast = speed == "fast" or (speed != "quality" and not _is_complex_legal_request(question))
     data = _http_post_json(
@@ -277,7 +279,7 @@ def _ask_compat(provider: dict, model: str, question: str, speed: str | None) ->
          "messages": [{"role": "system", "content": SYSTEM_INSTRUCTIONS}, {"role": "user", "content": question}]},
         {"Authorization": "Bearer " + provider["api_key"], "Content-Type": "application/json",
          "User-Agent": "GA.LAW.HELP/1.6 (+https://ga-law-help-production.up.railway.app)", **(provider.get("headers") or {})},
-        20.0 if fast else 55.0,
+        max(3.0, min(20.0 if fast else 55.0, timeout_cap or 99.0)),
     )
     choice = (data.get("choices") or [{}])[0] or {}
     text = ((choice.get("message") or {}).get("content") or "").strip()
@@ -329,41 +331,150 @@ def _try_model(key: str, call):
         return None
 
 
-def ask_openai(question: str, speed: str | None = None) -> str:
-    """Free-model rotation: Gemini chain (fastest-first for chat, quality-first for checks), then any
-    OpenAI-compatible free providers with keys set, then xAI/OpenAI. Cooling-down models are skipped."""
-    started = time.monotonic()
-    budget = float(os.getenv("AI_CHAIN_BUDGET_SECONDS", "60"))  # a bit more room for free-tier fallbacks
+# ------------------------------------------------------------------ latency
+# Nov 21: answers took 38-70 s because the chain tried models one after another, each allowed 20 s, and slow Gemini
+# models (timeouts) ate the time before the fallbacks ran; a plan with a stray citation then ran the whole chain again.
+# Now: one overall budget per request, every call capped by the time left, and for chat answers a "hedged" second
+# model starts if the first hasn't answered after a few seconds (first good answer wins).
+FAST_BUDGET_SECONDS = float(os.getenv("AI_FAST_CHAIN_BUDGET_SECONDS", "38"))
+QUALITY_BUDGET_SECONDS = float(os.getenv("AI_CHAIN_BUDGET_SECONDS", "50"))
+FAST_MODEL_TIMEOUT_SECONDS = float(os.getenv("AI_FAST_MODEL_TIMEOUT_SECONDS", "15"))
+QUALITY_MODEL_TIMEOUT_SECONDS = float(os.getenv("AI_QUALITY_MODEL_TIMEOUT_SECONDS", "30"))
+HEDGE_AFTER_SECONDS = float(os.getenv("AI_HEDGE_AFTER_SECONDS", "7"))
+MAX_IN_FLIGHT = max(1, int(os.getenv("AI_MAX_IN_FLIGHT", "2")))
+MIN_CALL_SECONDS = 4.0
+
+import contextlib as _contextlib
+import contextvars as _contextvars
+from concurrent.futures import FIRST_COMPLETED as _FIRST_COMPLETED, ThreadPoolExecutor as _Pool, wait as _wait
+
+_POOL = _Pool(max_workers=int(os.getenv("AI_POOL_WORKERS", "16")), thread_name_prefix="ai-call")
+_request_deadline: _contextvars.ContextVar[float | None] = _contextvars.ContextVar("ai_request_deadline", default=None)
+
+
+@_contextlib.contextmanager
+def request_budget(seconds: float):
+    """Every model call made inside this block (including a retry) finishes within ``seconds`` from now."""
+    token = _request_deadline.set(time.monotonic() + seconds)
+    try:
+        yield
+    finally:
+        _request_deadline.reset(token)
+
+
+def time_left() -> float | None:
+    """Seconds left in the current request budget (None when no budget is set)."""
+    d = _request_deadline.get()
+    return None if d is None else d - time.monotonic()
+
+
+def _candidates(question: str, speed: str | None, kind: str):
+    """(key, call(timeout)) in priority order: Gemini chain, free compatible providers, then xAI/OpenAI."""
     gemini = _gemini_provider()
-    kind = _chain_kind(question, speed)
     if gemini["api_key"]:
-        # Leave time for the free fallback providers: Gemini may use ~60% of the budget, and one slow
-        # model can't eat it all (a timeout also puts that model on a short cooldown).
-        gemini_budget = budget * 0.6
         for model in ai_models.gemini_chain(kind):
-            left = gemini_budget - (time.monotonic() - started)
-            if left < 5:
-                break
-            text = _try_model("gemini:" + model, lambda m=model, cap=min(left, 25.0): _ask_gemini(gemini, question, speed, model_override=m, timeout_cap=cap))
-            if text:
-                return _answered("gemini:" + model, started, text)
-    logger.info("AI chain: Gemini phase done or skipped; trying %d compatible providers", len(list(ai_models.compat_providers())))
+            yield "gemini:" + model, (lambda t, m=model: _ask_gemini(gemini, question, speed, model_override=m, timeout_cap=t))
     for provider in ai_models.compat_providers():
         for model in provider["models"]:
-            if time.monotonic() - started > budget:
-                break
-            text = _try_model(provider["name"] + ":" + model, lambda p=provider, m=model: _ask_compat(p, m, question, speed))
-            if text:
-                return _answered(provider["name"] + ":" + model, started, text)
-    others = [p for p in _providers() if p["name"] != "gemini"]
-    for provider in others:
+            yield provider["name"] + ":" + model, (lambda t, p=provider, m=model: _ask_compat(p, m, question, speed, timeout_cap=t))
+    for provider in [p for p in _providers() if p["name"] != "gemini"]:
         model = _request_profile(question, provider["default_model"])["model"]
-        text = _try_model(provider["name"] + ":" + model, lambda p=provider: _ask_responses_api(p, question))
-        if text:
-            return _answered(provider["name"] + ":" + model, started, text)
+        yield provider["name"] + ":" + model, (lambda t, p=provider: _ask_responses_api(p, question, timeout_cap=t))
+
+
+def _provider_of(key: str) -> str:
+    return key.split(":", 1)[0]
+
+
+def _run_chain(candidates, deadline: float, per_call: float, hedge_after: float | None, max_in_flight: int):
+    """Try candidates until one answers or the deadline passes. With ``hedge_after``, a second candidate starts in
+    parallel when the running one hasn't answered after that many seconds. Returns (key, text) or (None, error).
+
+    When a provider is slow (still running at the hedge point, or timed out), the next call goes to a *different*
+    provider first: on Nov 21 every Gemini model was timing out at once, and walking them one by one used the whole budget."""
+    queue = list(candidates)
+    pending: dict = {}
+    slow: set[str] = set()
+    rejected = None
+
+    def launch() -> bool:
+        busy = {_provider_of(k) for k in pending.values()} | slow
+        order = [c for c in queue if _provider_of(c[0]) not in busy] + [c for c in queue if _provider_of(c[0]) in busy]
+        for item in order:
+            key, call = item
+            queue.remove(item)
+            if ai_models.is_cooling(key):
+                logger.info("AI model skipped (cooling down): %s", key)
+                continue
+            left = deadline - time.monotonic()
+            if left < MIN_CALL_SECONDS:
+                return False
+            cap = min(per_call, left)
+            started_at = time.monotonic()
+            pending[_POOL.submit(_try_model, key, lambda c=call, t=cap: c(t))] = key
+            launched_at[key] = (started_at, cap)
+            return True
+        return False
+
+    launched_at: dict = {}
+    launch()
+    while pending:
+        now = time.monotonic()
+        if now >= deadline:
+            break
+        hedge = hedge_after is not None and len(pending) < max_in_flight
+        done, _ = _wait(list(pending), timeout=max(0.05, min(hedge_after if hedge else deadline - now, deadline - now)),
+                        return_when=_FIRST_COMPLETED)
+        for fut in done:
+            key = pending.pop(fut)
+            try:
+                text = fut.result()
+            except RuntimeError as exc:  # the provider rejected the prompt itself (HTTP 400): don't burn every model
+                rejected = exc
+                continue
+            if text:
+                return key, text
+            t0, cap = launched_at.get(key, (now, per_call))
+            if time.monotonic() - t0 >= cap * 0.9:
+                slow.add(_provider_of(key))  # it timed out: try other providers before more of its models
+        if rejected is not None and not pending:
+            return None, rejected
+        if not done and hedge:
+            slow.update(_provider_of(k) for k in pending.values())
+            logger.info("AI chain: no answer after %.0fs; starting a second model in parallel", hedge_after)
+            launch()
+        elif done and len(pending) < max_in_flight:
+            launch()  # a model failed: start the next one right away
+    for fut in pending:
+        fut.cancel()  # already-running calls finish in the background within their own capped timeout
+    return None, rejected
+
+
+def ask_openai(question: str, speed: str | None = None) -> str:
+    """Free-model rotation: Gemini chain (fastest-first for chat, quality-first for checks), then any
+    OpenAI-compatible free providers with keys set, then xAI/OpenAI. Cooling-down models are skipped.
+
+    One overall budget (fast ~38 s, quality ~50 s, never past the request budget), each call capped by the time left,
+    and chat answers hedge: a second model starts in parallel if the first is slow."""
+    started = time.monotonic()
+    kind = _chain_kind(question, speed)
+    fast = kind == "chat"
+    budget = FAST_BUDGET_SECONDS if fast else QUALITY_BUDGET_SECONDS
+    left = time_left()
+    if left is not None:
+        budget = min(budget, left)
+    gemini = _gemini_provider()
+    others = [p for p in _providers() if p["name"] != "gemini"]
     if not gemini["api_key"] and not others and not ai_models.compat_providers():
         logger.error("AI provider configuration failure: no AI provider keys are set")
         raise RuntimeError("AI service is not configured")
+    key, result = _run_chain(_candidates(question, speed, kind), started + budget,
+                             FAST_MODEL_TIMEOUT_SECONDS if fast else QUALITY_MODEL_TIMEOUT_SECONDS,
+                             HEDGE_AFTER_SECONDS if fast else None, MAX_IN_FLIGHT if fast else 1)
+    if key:
+        return _answered(key, started, result)
+    if isinstance(result, RuntimeError):
+        raise result
     logger.error("AI unavailable: every model in the %s chain failed or is cooling down (budget=%.0fs elapsed=%.1fs)", kind, budget, time.monotonic() - started)
     raise RuntimeError("AI provider is temporarily unavailable")
 

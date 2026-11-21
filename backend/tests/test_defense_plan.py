@@ -140,12 +140,35 @@ def test_build_my_defense_uses_earlier_facts():
     assert p["status"] == "build" and p["case_type"] == "dui" and "blood" in p["facts"]
 
 
-def test_unverified_citation_retries_once_then_fails_closed(wired):
+def test_one_unverified_citation_drops_that_line_without_a_second_call(wired):
     prompts = []
     bad = DUI_MODEL.replace("O.C.G.A. § 42-8-60", "O.C.G.A. § 99-9-99")
     r = ask("I got pulled over and arrested for DUI, they took my blood at the hospital", bad, prompts)
+    assert len(prompts) == 1  # no second full model call (it used to push answers past 60 s)
+    assert r["citation_check"] == "passed" and "99-9-99" not in r["analysis"] and "How to fight back" in r["analysis"]
+
+
+def _mostly_bad(text):
+    import re as _re
+    return _re.sub(r"O\.C\.G\.A\. § [\d.-]+", "O.C.G.A. § 99-9-99", text)
+
+
+def test_unverified_citations_everywhere_retry_once_then_fail_closed(wired):
+    prompts = []
+    bad = _mostly_bad(DUI_MODEL)
+    bad = "\n".join(ln + (" (O.C.G.A. § 99-9-98)" if ln.startswith(("•", "-")) else "") for ln in bad.split("\n"))
+    r = ask("I got pulled over and arrested for DUI, they took my blood at the hospital", bad, prompts)
     assert len(prompts) == 2 and "cite ONLY these sections" in prompts[1]
     assert r["citation_check"] == "failed_closed" and "99-9-99" not in r["analysis"]
+
+
+def test_no_retry_when_the_request_budget_is_nearly_used(wired):
+    from app import ai_assistant
+    prompts = []
+    bad = "\n".join(ln + (" (O.C.G.A. § 99-9-98)" if ln.startswith(("•", "-")) else "") for ln in _mostly_bad(DUI_MODEL).split("\n"))
+    with ai_assistant.request_budget(10):  # less than AI_RETRY_MIN_SECONDS_LEFT
+        r = ask("I got pulled over and arrested for DUI, they took my blood at the hospital", bad, prompts)
+    assert len(prompts) == 1 and r["citation_check"] == "failed_closed"
 
 
 def test_retry_success_keeps_the_plan(wired):

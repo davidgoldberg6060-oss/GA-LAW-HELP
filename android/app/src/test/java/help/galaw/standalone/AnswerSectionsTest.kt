@@ -74,4 +74,10 @@ Laws cited
         assertEquals("Do I have to appeal my license suspension within 30 days?", s.items[0].head)
         assertEquals("Why it matters: The ALS appeal is separate from the criminal case.", s.items[0].detail)
     }
+
+    @Test fun spanishNotaIsTheFootnote() {
+        val a = AnswerSections.structure("Quick answer\nLlame a un abogado.\n\nNota: Esta es información legal, no asesoramiento legal.")
+        assertTrue(a.note.contains("Esta es información legal"))
+        assertTrue(!a.quick.contains("Nota"))
+    }
 }
